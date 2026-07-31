@@ -1,5 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { Placeholder } from "@/components/placeholder";
+import { CourseCard } from "@/components/course-card";
+import { samplePracticeItems } from "@/data/sample-courses";
 
 export default function PracticePage() {
   return (
@@ -9,26 +11,26 @@ export default function PracticePage() {
         subtitle="Duyệt qua các thử thách, bộ sưu tập và bài luyện tập hàng tuần"
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">
         <Placeholder label="Đã làm" />
         <Placeholder label="Tổng bài" />
         <Placeholder label="Đang thịnh hành" />
         <Placeholder label="Bộ sưu tập" />
       </div>
 
-      <Placeholder label="Bài tập đề xuất cho bạn (AI)" className="mb-8" />
+      <Placeholder label="Bài tập đề xuất cho bạn (AI)" className="mb-5" />
 
-      <div className="mb-4 flex gap-6 border-b border-zinc-200 text-sm font-medium text-zinc-500">
+      <div className="mb-4 flex gap-6 border-b border-border text-sm font-medium text-text-muted">
         {["Đã làm", "Tất cả", "Thử thách", "Bộ sưu tập", "Hàng tuần"].map((t) => (
-          <span key={t} className="border-b-2 border-transparent pb-3">
+          <span key={t} className="border-b-2 border-transparent pb-2.5">
             {t}
           </span>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Placeholder key={i} label={`Bài luyện tập #${i + 1}`} />
+        {samplePracticeItems.map((item) => (
+          <CourseCard key={item.title} {...item} />
         ))}
       </div>
     </div>

@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Placeholder } from "@/components/placeholder";
-
-const paths = ["nhap-mon", "cau-truc-du-lieu", "oop-cpp", "python-co-ban"];
+import { CourseCard } from "@/components/course-card";
+import { samplePaths } from "@/data/sample-courses";
 
 export default function PathsPage() {
   return (
@@ -12,17 +11,15 @@ export default function PathsPage() {
         subtitle="Chuỗi mô-đun có cấu trúc cho chương trình lập trình cốt lõi"
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Placeholder label="Tổng số lộ trình" />
         <Placeholder label="Đang học dở" />
         <Placeholder label="Trung bình hoàn thành" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {paths.map((id) => (
-          <Link key={id} href={`/paths/${id}`}>
-            <Placeholder label={`Lộ trình: ${id}`} />
-          </Link>
+        {samplePaths.map((item) => (
+          <CourseCard key={item.title} {...item} />
         ))}
       </div>
     </div>

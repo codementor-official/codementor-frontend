@@ -8,7 +8,7 @@ export default async function SolvePage({
   const { exerciseId } = await params;
 
   return (
-    <div className="-m-6 flex h-[calc(100%+3rem)] flex-col">
+    <div className="-m-5 flex h-[calc(100%+2.5rem)] flex-col">
       <div className="flex flex-1 min-h-0">
         <Placeholder label={`Đề bài / Thảo luận: ${exerciseId}`} className="w-72 shrink-0 border-r" />
         <div className="flex flex-1 flex-col min-w-0">

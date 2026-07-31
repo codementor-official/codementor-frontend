@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { Testimonials } from "@/components/landing/testimonials";
 import { Faq } from "@/components/landing/faq";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const navLinks = [
   { label: "Tính năng", href: "#features" },
@@ -107,18 +109,13 @@ export default function LandingPage() {
         <Link href="/login" className="text-sm font-semibold text-navy">
           Đăng nhập
         </Link>
-        <Link
-          href="/signup"
-          className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover"
-        >
-          Đăng ký miễn phí
-        </Link>
+        <Button href="/signup">Đăng ký miễn phí</Button>
       </header>
 
-      <section className="bg-navy px-6 py-16 text-white sm:px-10 lg:py-24">
-        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
+      <section className="bg-navy px-6 py-12 text-white sm:px-10 lg:py-16">
+        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2 lg:items-center">
           <div>
-            <span className="mb-6 inline-flex rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-primary">
+            <span className="mb-5 inline-flex rounded-md border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-primary">
               AI Agent đồng hành, không làm thay
             </span>
             <h1 className="mb-4 text-4xl leading-tight font-bold tracking-tight sm:text-5xl">
@@ -126,21 +123,18 @@ export default function LandingPage() {
               <br />
               lập trình tự tin hơn
             </h1>
-            <p className="mb-8 max-w-lg text-base leading-relaxed text-zinc-300">
+            <p className="mb-6 max-w-lg text-base leading-relaxed text-zinc-300">
               Nền tảng tự học và luyện tập lập trình cho tất cả mọi người — lộ
               trình theo mục tiêu, chấm bài tự động trong sandbox, gợi ý AI
               theo 3 mức và không gian học nhóm.
             </p>
-            <div className="mb-10 flex flex-wrap gap-3">
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold hover:bg-primary-hover"
-              >
+            <div className="mb-8 flex flex-wrap gap-3">
+              <Button href="/signup">
                 Bắt đầu miễn phí <ArrowRight className="h-4 w-4" />
-              </Link>
+              </Button>
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 text-sm font-semibold hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-md border border-white/25 px-4 py-2.5 text-sm font-semibold hover:bg-white/10"
               >
                 Tôi đã có tài khoản
               </Link>
@@ -193,9 +187,9 @@ if (delta > 0) {
         </div>
       </section>
 
-      <section id="features" className="px-6 py-20 sm:px-10">
+      <section id="features" className="px-6 py-12 sm:px-10">
         <div className="mx-auto max-w-6xl">
-          <div className="mx-auto mb-12 max-w-xl text-center">
+          <div className="mx-auto mb-8 max-w-xl text-center">
             <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
               Tính năng chính
             </div>
@@ -209,24 +203,21 @@ if (delta > 0) {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((f) => (
-              <div
-                key={f.title}
-                className="rounded-xl border border-border bg-surface p-6 shadow-card"
-              >
-                <div className={`mb-3.5 flex h-11 w-11 items-center justify-center rounded-xl ${f.tint}`}>
+              <Card key={f.title} className="p-5">
+                <div className={`mb-3 flex h-11 w-11 items-center justify-center rounded-md ${f.tint}`}>
                   <f.icon className="h-5 w-5" />
                 </div>
                 <div className="mb-1.5 text-base font-semibold text-navy">{f.title}</div>
                 <div className="text-sm leading-relaxed text-text-muted">{f.desc}</div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="border-y border-border bg-bg px-6 py-16 sm:px-10">
+      <section className="border-y border-border bg-bg px-6 py-12 sm:px-10">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-9 text-center">
+          <div className="mb-6 text-center">
             <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
               Cách hoạt động
             </div>
@@ -234,21 +225,21 @@ if (delta > 0) {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {steps.map((s) => (
-              <div key={s.n} className="rounded-xl border border-border bg-surface p-6 shadow-card">
-                <div className={`mb-3.5 flex h-10 w-10 items-center justify-center rounded-full font-mono text-sm font-bold text-white ${s.bg}`}>
+              <Card key={s.n} className="p-5">
+                <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full font-mono text-sm font-bold text-white ${s.bg}`}>
                   {s.n}
                 </div>
                 <div className="mb-1.5 text-base font-semibold text-navy">{s.title}</div>
                 <div className="text-sm leading-relaxed text-text-muted">{s.desc}</div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-20 sm:px-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-16">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
+      <section className="px-6 py-12 sm:px-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-10">
+          <div className="grid items-center gap-8 lg:grid-cols-2">
             <div>
               <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
                 Không gian làm việc
@@ -269,31 +260,31 @@ if (delta > 0) {
                 ))}
               </ul>
             </div>
-            <div className="rounded-xl border border-border bg-surface p-3 shadow-card">
-              <div className="rounded-lg bg-navy p-4 font-mono text-xs leading-loose text-zinc-300">
+            <Card className="p-3">
+              <div className="rounded-md bg-navy p-4 font-mono text-xs leading-loose text-zinc-300">
                 <div className="text-blue-300">if (delta &gt; 0) {"{"}</div>
                 <div className="pl-4 text-zinc-400">x1 = (-b + sqrt(delta)) / (2*a);</div>
                 <div className="text-blue-300">{"}"}</div>
               </div>
-            </div>
+            </Card>
           </div>
 
-          <div id="groups" className="grid items-center gap-10 lg:grid-cols-2">
-            <div className="order-2 rounded-xl border border-border bg-surface p-6 shadow-card lg:order-1">
+          <div id="groups" className="grid items-center gap-8 lg:grid-cols-2">
+            <Card className="order-2 p-5 lg:order-1">
               <div className="flex flex-col gap-3">
                 {["Nhóm Nhập môn Lập trình", "Ôn tập Cấu trúc Dữ liệu"].map((g) => (
                   <div
                     key={g}
-                    className="flex items-center gap-3 rounded-lg border border-border-soft bg-bg p-3"
+                    className="flex items-center gap-3 rounded-md border border-border-soft bg-bg p-3"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-navy font-mono text-xs font-bold text-white">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-navy font-mono text-xs font-bold text-white">
                       {g[0]}
                     </span>
                     <span className="text-sm font-medium text-navy">{g}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
             <div className="order-1 lg:order-2">
               <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
                 Nhóm học tập
@@ -318,8 +309,8 @@ if (delta > 0) {
         </div>
       </section>
 
-      <section className="border-y border-border bg-bg px-6 py-20 sm:px-10">
-        <div className="mb-10 text-center">
+      <section className="border-y border-border bg-bg px-6 py-12 sm:px-10">
+        <div className="mb-8 text-center">
           <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
             Sinh viên nói gì
           </div>
@@ -330,8 +321,8 @@ if (delta > 0) {
         <Testimonials />
       </section>
 
-      <section className="px-6 py-20 sm:px-10">
-        <div className="mb-10 text-center">
+      <section className="px-6 py-12 sm:px-10">
+        <div className="mb-8 text-center">
           <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
             Câu hỏi thường gặp
           </div>
@@ -340,18 +331,14 @@ if (delta > 0) {
         <Faq />
       </section>
 
-      <section className="bg-navy px-6 py-16 text-center text-white sm:px-10">
+      <section className="bg-navy px-6 py-12 text-center text-white sm:px-10">
         <h2 className="mb-3 text-3xl font-bold">Sẵn sàng rèn kỹ năng lập trình?</h2>
-        <p className="mb-6 text-sm text-zinc-300">
-          Đăng ký bằng email trường và bắt đầu bài luyện tập đầu tiên ngay
-          hôm nay.
+        <p className="mb-5 text-sm text-zinc-300">
+          Đăng ký bằng email và bắt đầu bài luyện tập đầu tiên ngay hôm nay.
         </p>
-        <Link
-          href="/signup"
-          className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold hover:bg-primary-hover"
-        >
+        <Button href="/signup">
           Tạo tài khoản miễn phí <ArrowRight className="h-4 w-4" />
-        </Link>
+        </Button>
       </section>
 
       <footer className="flex flex-col items-center justify-between gap-4 border-t border-border px-6 py-6 text-xs text-text-faint sm:flex-row sm:px-10">

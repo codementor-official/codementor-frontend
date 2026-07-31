@@ -4,21 +4,24 @@ import { useState } from "react";
 import Link from "next/link";
 import StackIcon from "tech-stack-icons";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-bg p-6">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-card">
-        <h1 className="mb-6 text-center text-xl font-bold text-navy">
+    <div className="flex flex-1 items-center justify-center bg-bg p-5">
+      <Card className="w-full max-w-sm p-7">
+        <h1 className="mb-5 text-center text-xl font-bold text-navy">
           {mode === "login" ? "Chào mừng trở lại!" : "Tạo tài khoản mới"}
         </h1>
 
-        <div className="mb-6 flex justify-center gap-6 border-b border-border text-sm font-medium">
+        <div className="mb-5 flex justify-center gap-6 border-b border-border text-sm font-medium">
           <Link
             href="/login"
-            className={`border-b-2 pb-3 ${
+            className={`border-b-2 pb-2.5 ${
               mode === "login" ? "border-navy text-navy" : "border-transparent text-text-muted"
             }`}
           >
@@ -26,7 +29,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           </Link>
           <Link
             href="/signup"
-            className={`border-b-2 pb-3 ${
+            className={`border-b-2 pb-2.5 ${
               mode === "signup" ? "border-navy text-navy" : "border-transparent text-text-muted"
             }`}
           >
@@ -34,71 +37,62 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           </Link>
         </div>
 
-        <div className="mb-5 flex flex-col gap-2.5">
-          <button className="flex items-center gap-2.5 rounded-full border border-border px-4 py-2.5 text-sm font-semibold text-navy">
+        <div className="mb-4 flex flex-col gap-2">
+          <Button variant="outline" className="w-full justify-start">
             <span className="h-5 w-5 shrink-0">
               <StackIcon name="google" />
             </span>
             {mode === "login" ? "Đăng nhập với Google" : "Đăng ký với Google"}
-          </button>
-          <button className="flex items-center gap-2.5 rounded-full border border-border px-4 py-2.5 text-sm font-semibold text-navy">
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
             <span className="h-5 w-5 shrink-0">
               <StackIcon name="github" />
             </span>
             {mode === "login" ? "Đăng nhập với GitHub" : "Đăng ký với GitHub"}
-          </button>
+          </Button>
         </div>
 
-        <div className="mb-5 flex items-center gap-2.5 text-xs font-medium text-text-faint">
+        <div className="mb-4 flex items-center gap-2.5 text-xs font-medium text-text-faint">
           <div className="h-px flex-1 bg-border" />
           hoặc
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <form className="flex flex-col gap-3.5">
+        <form className="flex flex-col gap-3">
           {mode === "signup" && (
             <div>
               <label className="mb-1.5 block text-xs font-medium text-text-muted">
                 Họ và tên
               </label>
-              <input
-                type="text"
-                placeholder="Nguyễn Văn A"
-                className="w-full rounded-full border border-border px-3.5 py-2.5 text-sm outline-none focus:border-navy"
-              />
+              <Input type="text" placeholder="Nguyễn Văn A" />
             </div>
           )}
 
           <div>
             <label className="mb-1.5 block text-xs font-medium text-text-muted">Email</label>
-            <div className="relative">
-              <Mail className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-faint" />
-              <input
-                type="text"
-                placeholder="ban@student.iuh.edu.vn"
-                className="w-full rounded-full border border-border py-2.5 pr-3.5 pl-10 text-sm outline-none focus:border-navy"
-              />
-            </div>
+            <Input
+              type="text"
+              placeholder="ban@student.iuh.edu.vn"
+              icon={<Mail />}
+            />
           </div>
 
           <div>
             <label className="mb-1.5 block text-xs font-medium text-text-muted">Mật khẩu</label>
-            <div className="relative">
-              <Lock className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-faint" />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="w-full rounded-full border border-border py-2.5 pr-10 pl-10 text-sm outline-none focus:border-navy"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                className="absolute top-1/2 right-3.5 -translate-y-1/2 text-text-faint"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              icon={<Lock />}
+              rightSlot={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              }
+            />
           </div>
 
           {mode === "signup" && (
@@ -106,26 +100,20 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               <label className="mb-1.5 block text-xs font-medium text-text-muted">
                 Xác nhận mật khẩu
               </label>
-              <div className="relative">
-                <Lock className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-faint" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="w-full rounded-full border border-border py-2.5 pr-3.5 pl-10 text-sm outline-none focus:border-navy"
-                />
-              </div>
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                icon={<Lock />}
+              />
             </div>
           )}
 
-          <button
-            type="submit"
-            className="mt-1.5 rounded-full bg-primary py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
-          >
+          <Button type="submit" className="mt-1 w-full">
             {mode === "login" ? "Đăng nhập" : "Đăng ký"}
-          </button>
+          </Button>
         </form>
 
-        <div className="mt-5 text-center text-xs text-text-muted">
+        <div className="mt-4 text-center text-xs text-text-muted">
           {mode === "login" ? (
             <>
               Chưa có tài khoản?{" "}
@@ -142,7 +130,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
             </>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
