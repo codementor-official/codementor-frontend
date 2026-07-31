@@ -35,11 +35,25 @@ Semantic aliases (map straight to the tokens above, do not add new hues):
 
 ## Radius
 
-- **Pill (`999px`)** — all buttons, text/password inputs, textareas. This is a hard rule in the mockup (`button, input, textarea { border-radius: pill !important }`).
-- **`8px`** — small boxed elements needing square corners inside a pill-default page (code editors, textareas acting as code boxes) — use the escape-hatch `.box-radius` utility.
-- **`10–12px`** — cards, stat widgets, list containers.
-- **`14–16px`** — modals.
-- **`50%`** — avatars, icon circles.
+Deliberately squarer than the mockup — the mockup pills every control (`999px`); this build caps at `12px` and defaults form controls to `8px`.
+
+| Token | Value | Use |
+|---|---|---|
+| `--radius-xs` | `4px` | Small tags/chips |
+| `--radius-sm` | `6px` | Badges, difficulty pills, status labels |
+| `--radius-md` | `8px` | Buttons, inputs, textareas — component default |
+| `--radius-lg` | `10px` | Cards, list rows, stat widgets |
+| `--radius-xl` | `12px` | Large panels, hero banners, modals |
+| `50%` / `rounded-full` (Tailwind builtin) | — | Avatars, icon circles, dots — never use the scale above for circles |
+
+## Spacing
+
+Tighter than the mockup's generous whitespace — sections should sit close enough to read as one continuous page, not isolated blocks.
+
+- Section vertical padding: `py-10`–`py-14` (mockup used `py-16`–`py-24`).
+- Gap between stacked sections: `0` (adjacent `border-t`/`border-b` do the separating) instead of large margins.
+- Card/grid gaps: `gap-4`–`gap-5` (mockup used `gap-6`–`gap-7`).
+- Page content padding ((app) shell `<main>`): `p-5`.
 
 ## Shadows
 
@@ -60,3 +74,15 @@ Semantic aliases (map straight to the tokens above, do not add new hues):
 | Cơ bản | `navy` | `border-soft` |
 | Trung bình | `white` | `primary` |
 | Nâng cao | `white` | `navy` |
+
+## Shared components
+
+Reusable primitives live in `src/components/ui/`; page code should compose these rather than re-declaring styled `<button>`/`<input>`/card divs inline.
+
+| Component | File | Notes |
+|---|---|---|
+| `Button` | `ui/button.tsx` | Variants `primary` \| `outline` \| `ghost`; sizes `sm` \| `md`. `radius-md`. |
+| `Input` | `ui/input.tsx` | Optional leading icon slot; `radius-md`. |
+| `Badge` | `ui/badge.tsx` | Generic tone badge + `DifficultyBadge` (maps Cơ bản/Trung bình/Nâng cao to the table above). `radius-sm`. |
+| `Card` | `ui/card.tsx` | Bordered surface container, `radius-lg`, `shadow-card`. |
+| `CourseCard` | `course-card.tsx` | The tile-header + title/desc + tags + footer-meta card repeated for paths/practice/explore items in the mockup. |
