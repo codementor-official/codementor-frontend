@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, GraduationCap, Lock, Mail } from "lucide-react";
+import StackIcon from "tech-stack-icons";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -35,17 +36,17 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
 
         <div className="mb-5 flex flex-col gap-2.5">
           <button className="flex items-center gap-2.5 rounded-full border border-border px-4 py-2.5 text-sm font-semibold text-navy">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-tint text-[11px] font-bold text-accent">
-              G
+            <span className="h-5 w-5 shrink-0">
+              <StackIcon name="google" />
             </span>
             {mode === "login" ? "Đăng nhập với Google" : "Đăng ký với Google"}
           </button>
-          {mode === "login" && (
-            <button className="flex items-center gap-2.5 rounded-full border border-border px-4 py-2.5 text-sm font-semibold text-navy">
-              <GraduationCap className="h-4.5 w-4.5 text-text-muted" />
-              Đăng nhập với email trường
-            </button>
-          )}
+          <button className="flex items-center gap-2.5 rounded-full border border-border px-4 py-2.5 text-sm font-semibold text-navy">
+            <span className="h-5 w-5 shrink-0">
+              <StackIcon name="github" />
+            </span>
+            {mode === "login" ? "Đăng nhập với GitHub" : "Đăng ký với GitHub"}
+          </button>
         </div>
 
         <div className="mb-5 flex items-center gap-2.5 text-xs font-medium text-text-faint">
