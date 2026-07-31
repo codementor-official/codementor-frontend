@@ -24,6 +24,8 @@ interface WorkspaceCtx {
   setDragging: (d: DragInfo | null) => void;
   dropTarget: DropTarget | null;
   setDropTarget: (d: DropTarget | null) => void;
+  contentDropTarget: PaneId | null;
+  setContentDropTarget: (p: PaneId | null) => void;
   maximized: PaneId | null;
   toggleMaximize: (pane: PaneId) => void;
 }
@@ -40,6 +42,7 @@ export function WorkspaceProvider({
   const [panes, setPanes] = useState<PanesState>(initialPanes);
   const [dragging, setDragging] = useState<DragInfo | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const [contentDropTarget, setContentDropTarget] = useState<PaneId | null>(null);
   const [maximized, setMaximized] = useState<PaneId | null>(null);
 
   const setActive = (pane: PaneId, tab: TabKind) =>
@@ -97,6 +100,8 @@ export function WorkspaceProvider({
         setDragging,
         dropTarget,
         setDropTarget,
+        contentDropTarget,
+        setContentDropTarget,
         maximized,
         toggleMaximize,
       }}

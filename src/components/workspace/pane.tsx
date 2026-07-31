@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { DragEvent, ReactNode } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import type { PaneId, TabKind } from "./types";
 import { TabBar } from "./tab-bar";
@@ -17,8 +17,22 @@ export function Pane({
   className?: string;
   children: (activeTab: TabKind) => ReactNode;
 }) {
-  const { panes, maximized, toggleMaximize } = useWorkspace();
+  const { panes, maximized, toggleMaximize, dragging, moveTab, contentDropTarget, setContentDropTarget } =
+    useWorkspace();
   const pane = panes[id];
+  const isContentDropTarget = contentDropTarget === id;
+
+  const handleDragOver = (e: DragEvent) => {
+    if (!dragging) return;
+    e.preventDefault();
+    setContentDropTarget(id);
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    if (dragging) moveTab(dragging.tab, dragging.from, id);
+    setContentDropTarget(null);
+  };
 
   const maximizeButton = (
     <button
@@ -41,8 +55,21 @@ export function Pane({
           </div>
         }
       />
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={() => setContentDropTarget(null)}
+        onDrop={handleDrop}
+        className="relative min-h-0 flex-1 overflow-hidden"
+      >
         {pane.active ? children(pane.active) : <EmptyDropHint />}
+        {isContentDropTarget && (
+          <div className="pointer-events-none absolute inset-2 z-20">
+            <span className="absolute top-0 right-0 left-0 h-1 rounded-full bg-primary" />
+            <span className="absolute right-0 bottom-0 left-0 h-1 rounded-full bg-primary" />
+            <span className="absolute top-0 bottom-0 left-0 w-1 rounded-full bg-primary" />
+            <span className="absolute top-0 right-0 bottom-0 w-1 rounded-full bg-primary" />
+          </div>
+        )}
       </div>
     </div>
   );

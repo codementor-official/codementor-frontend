@@ -247,7 +247,7 @@ function WorkspaceBody({
     </Pane>
   );
   const aiPane = (
-    <Pane id="ai" className="min-h-0 border-l border-ai">
+    <Pane id="ai" className="min-h-0">
       {renderTabContent}
     </Pane>
   );
