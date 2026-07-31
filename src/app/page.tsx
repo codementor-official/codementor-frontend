@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -88,8 +89,8 @@ export default function LandingPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-20 flex h-16 items-center gap-6 border-b border-border bg-surface px-6 sm:px-10">
-        <Link href="/" className="text-lg font-bold text-navy">
-          CodeMentor
+        <Link href="/" className="shrink-0">
+          <Image src="/logo.png" alt="CodeMentor" width={460} height={159} className="h-9 w-auto" priority />
         </Link>
         <nav className="hidden gap-6 md:flex">
           {navLinks.map((n) => (

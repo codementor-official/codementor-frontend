@@ -1,10 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function Topbar() {
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b border-zinc-200 bg-white px-4">
-      <Link href="/dashboard" className="text-lg font-bold text-zinc-900">
-        CodeMentor
+      <Link href="/dashboard" className="shrink-0">
+        <Image src="/logo.png" alt="CodeMentor" width={460} height={159} className="h-10 w-auto" priority />
       </Link>
       <input
         type="text"
