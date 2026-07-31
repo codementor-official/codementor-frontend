@@ -1,11 +1,24 @@
-export const navItems = [
-  { href: "/dashboard", label: "Tổng quan" },
-  { href: "/explore", label: "Khám phá" },
-  { href: "/paths", label: "Lộ trình học" },
-  { href: "/create-problem", label: "Tạo bài tập" },
-  { href: "/workspace", label: "Không gian học tập" },
-  { href: "/ai-tutor", label: "Trợ lý AI" },
-  { href: "/submissions", label: "Bài đã nộp" },
-  { href: "/progress", label: "Tiến độ" },
-  { href: "/settings", label: "Cài đặt" },
-] as const;
+import {
+  BarChart3,
+  Bot,
+  CheckSquare,
+  Compass,
+  FilePlus2,
+  LayoutGrid,
+  Map,
+  Settings,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+
+export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/dashboard", label: "Tổng quan", icon: LayoutGrid },
+  { href: "/explore", label: "Khám phá", icon: Compass },
+  { href: "/paths", label: "Lộ trình học", icon: Map },
+  { href: "/create-problem", label: "Tạo bài tập", icon: FilePlus2 },
+  { href: "/workspace", label: "Không gian học tập", icon: Users },
+  { href: "/ai-tutor", label: "Trợ lý AI", icon: Bot },
+  { href: "/submissions", label: "Bài đã nộp", icon: CheckSquare },
+  { href: "/progress", label: "Tiến độ", icon: BarChart3 },
+  { href: "/settings", label: "Cài đặt", icon: Settings },
+];
