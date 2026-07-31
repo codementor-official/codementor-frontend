@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root {
+@theme {
   --color-bg: #f8fafc;
   --color-surface: #ffffff;
   --color-border: #e5e7eb;
@@ -25,16 +25,10 @@
   --color-ai: var(--color-navy);
   --color-ai-tint: var(--color-border-soft);
 
-  --radius-pill: 999px;
-
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.25);
   --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.35);
-}
 
-@theme inline {
-  --color-background: var(--color-bg);
-  --color-foreground: var(--color-text);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-roboto-mono);
 }
@@ -42,7 +36,6 @@
 body {
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
 /* mockup rule: every button/text-input/textarea defaults to pill radius */
@@ -50,7 +43,7 @@ button,
 input[type="text"],
 input[type="password"],
 textarea {
-  border-radius: var(--radius-pill);
+  border-radius: 999px;
 }
 
 /* escape hatch for elements that need square-ish corners (code boxes, etc.) */
