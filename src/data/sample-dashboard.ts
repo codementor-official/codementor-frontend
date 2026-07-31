@@ -1,5 +1,5 @@
 export const dashStats = [
-  { label: "Chuỗi ngày", value: "5 🔥", sub: "Kỷ lục: 12 ngày" },
+  { label: "Chuỗi ngày", value: "5", sub: "Kỷ lục: 12 ngày" },
   { label: "Mục tiêu tuần", value: "3/5h", sub: "60% hoàn thành" },
   { label: "Tổng XP", value: "2.450", sub: "Hạng #3 trong nhóm" },
   { label: "Bài đã giải", value: "47", sub: "Trên 6 chủ đề" },

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BarChart3, Check, Circle, Clock, Star, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DifficultyBadge } from "@/components/ui/badge";
@@ -38,10 +39,18 @@ export default async function PathDetailPage({
             <h1 className="mb-2 text-2xl font-bold">{path.title}</h1>
             <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-zinc-300">{path.desc}</p>
             <div className="flex flex-wrap gap-4 text-xs font-medium text-zinc-200">
-              <span>⭐ {path.rating}</span>
-              <span>📊 {path.level}</span>
-              <span>⏱ {path.duration}</span>
-              <span>👥 {path.students} học viên</span>
+              <span className="flex items-center gap-1">
+                <Star className="h-3.5 w-3.5 fill-primary text-primary" /> {path.rating}
+              </span>
+              <span className="flex items-center gap-1">
+                <BarChart3 className="h-3.5 w-3.5" /> {path.level}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" /> {path.duration}
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" /> {path.students} học viên
+              </span>
             </div>
             <div className="mt-3.5 flex flex-wrap gap-2">
               <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold">
@@ -61,7 +70,7 @@ export default async function PathDetailPage({
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {path.whatYouLearn.map((w) => (
                 <div key={w} className="flex items-start gap-2 text-xs text-text">
-                  <span className="mt-0.5 text-primary">✓</span>
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                   {w}
                 </div>
               ))}
@@ -129,7 +138,11 @@ export default async function PathDetailPage({
                             key={ex.title}
                             className="flex flex-wrap items-center gap-2.5 rounded-md border border-border-soft bg-surface px-3 py-2"
                           >
-                            <span className={ex.done ? "text-navy" : "text-text-faint"}>{ex.done ? "✓" : "○"}</span>
+                            {ex.done ? (
+                              <Check className="h-3.5 w-3.5 shrink-0 text-navy" />
+                            ) : (
+                              <Circle className="h-3.5 w-3.5 shrink-0 text-text-faint" />
+                            )}
                             <span className="flex-1 text-xs font-medium text-navy">{ex.title}</span>
                             <DifficultyBadge difficulty={ex.difficulty} />
                             <span className="text-[11px] text-text-faint">{ex.xp} XP</span>
@@ -185,7 +198,11 @@ export default async function PathDetailPage({
             <p className="mb-2.5 text-[11px] leading-relaxed text-text-faint">
               Dành cho học viên đã hoàn thành khóa học — chia sẻ trải nghiệm để người hướng dẫn cải thiện nội dung.
             </p>
-            <div className="mb-2.5 flex gap-1 text-lg text-border">★★★★★</div>
+            <div className="mb-2.5 flex gap-1 text-border">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="h-5 w-5" />
+              ))}
+            </div>
             <Input placeholder="Viết nhận xét về khóa học này..." />
             <Button className="mt-2 w-full" size="sm">
               Gửi đánh giá
@@ -203,7 +220,11 @@ export default async function PathDetailPage({
                   <div className="min-w-0">
                     <div className="mb-0.5 flex items-center gap-1.5">
                       <span className="text-xs font-semibold text-navy">{r.author}</span>
-                      <span className="text-[11px] text-primary">{"★".repeat(r.rating)}</span>
+                      <span className="flex items-center gap-0.5 text-primary">
+                        {Array.from({ length: r.rating }).map((_, i) => (
+                          <Star key={i} className="h-3 w-3 fill-primary" />
+                        ))}
+                      </span>
                     </div>
                     <div className="text-xs leading-relaxed text-text-muted">{r.text}</div>
                   </div>

@@ -1,9 +1,17 @@
-export const learningCollections = [
-  { icon: "🎨", name: "Frontend Collection", desc: "HTML, CSS, JavaScript và React — từ cơ bản đến dự án thực tế.", count: "42 bài · 6 khóa", tag: "Frontend" },
-  { icon: "🏗️", name: "Backend Collection", desc: "API, database và authentication với Node.js và Spring Boot.", count: "38 bài · 5 khóa", tag: "Backend" },
-  { icon: "☕", name: "Java Roadmap", desc: "Từ cú pháp Java đến OOP, Collections và lập trình đa luồng.", count: "56 bài · 8 khóa", tag: "Java" },
-  { icon: "🌱", name: "Spring Boot Collection", desc: "REST API, JPA, Security và triển khai ứng dụng Spring.", count: "30 bài · 4 khóa", tag: "Spring" },
-  { icon: "⚛️", name: "React Collection", desc: "Component, hooks, quản lý state và routing trong React.", count: "34 bài · 5 khóa", tag: "React" },
+import { Atom, Coffee, FileText, Map, Palette, Server, Sprout, Trophy, Users, type LucideIcon } from "lucide-react";
+
+export const learningCollections: {
+  icon: LucideIcon;
+  name: string;
+  desc: string;
+  count: string;
+  tag: string;
+}[] = [
+  { icon: Palette, name: "Frontend Collection", desc: "HTML, CSS, JavaScript và React — từ cơ bản đến dự án thực tế.", count: "42 bài · 6 khóa", tag: "Frontend" },
+  { icon: Server, name: "Backend Collection", desc: "API, database và authentication với Node.js và Spring Boot.", count: "38 bài · 5 khóa", tag: "Backend" },
+  { icon: Coffee, name: "Java Roadmap", desc: "Từ cú pháp Java đến OOP, Collections và lập trình đa luồng.", count: "56 bài · 8 khóa", tag: "Java" },
+  { icon: Sprout, name: "Spring Boot Collection", desc: "REST API, JPA, Security và triển khai ứng dụng Spring.", count: "30 bài · 4 khóa", tag: "Spring" },
+  { icon: Atom, name: "React Collection", desc: "Component, hooks, quản lý state và routing trong React.", count: "34 bài · 5 khóa", tag: "React" },
 ];
 
 export const popularProblems = [
@@ -52,9 +60,15 @@ export const recommendedTopics = [
   "Big-O",
 ];
 
-export const communityItems = [
-  { icon: "👥", kind: "Nhóm học tập", title: "CLB Lập trình Thi đấu FIT", meta: "210 thành viên đang hoạt động" },
-  { icon: "🗺️", kind: "Roadmap nổi bật", title: "Fullstack Developer 2026", meta: "Được 1.2k người theo dõi" },
-  { icon: "📄", kind: "Tài liệu đánh giá cao", title: "Big-O cho người mới bắt đầu", meta: "★ 4.9 · 890 lượt lưu" },
-  { icon: "🏆", kind: "Challenge trong tuần", title: "Tuần 30: Tối ưu thuật toán sắp xếp", meta: "320 người đang tham gia" },
+export const communityItems: {
+  icon: LucideIcon;
+  kind: string;
+  title: string;
+  meta: string;
+  rating?: string;
+}[] = [
+  { icon: Users, kind: "Nhóm học tập", title: "CLB Lập trình Thi đấu FIT", meta: "210 thành viên đang hoạt động" },
+  { icon: Map, kind: "Roadmap nổi bật", title: "Fullstack Developer 2026", meta: "Được 1.2k người theo dõi" },
+  { icon: FileText, kind: "Tài liệu đánh giá cao", title: "Big-O cho người mới bắt đầu", meta: "890 lượt lưu", rating: "4.9" },
+  { icon: Trophy, kind: "Challenge trong tuần", title: "Tuần 30: Tối ưu thuật toán sắp xếp", meta: "320 người đang tham gia" },
 ];

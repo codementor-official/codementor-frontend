@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Flame, BookOpen, Star, Target, Globe } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { CourseCard } from "@/components/course-card";
@@ -15,7 +16,9 @@ export default function ExplorePage() {
       />
 
       <section className="mb-6">
-        <h2 className="mb-3 text-base font-bold text-navy">🔥 Khóa học đang nổi</h2>
+        <h2 className="mb-3 flex items-center gap-1.5 text-base font-bold text-navy">
+          <Flame className="h-4 w-4 text-primary" /> Khóa học đang nổi
+        </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {samplePaths.map((item) => (
             <CourseCard key={item.title} {...item} />
@@ -24,13 +27,15 @@ export default function ExplorePage() {
       </section>
 
       <section className="mb-6">
-        <h2 className="mb-1 text-base font-bold text-navy">📚 Bộ sưu tập học tập</h2>
+        <h2 className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy">
+          <BookOpen className="h-4 w-4 text-primary" /> Bộ sưu tập học tập
+        </h2>
         <p className="mb-3 text-xs text-text-faint">Các lộ trình chủ đề được tuyển chọn theo công nghệ</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {learningCollections.map((c) => (
             <Card key={c.name} className="flex flex-col gap-2.5 p-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-md bg-border-soft text-lg">
-                {c.icon}
+              <div className="flex h-11 w-11 items-center justify-center rounded-md bg-border-soft text-navy">
+                <c.icon className="h-5 w-5" />
               </div>
               <h3 className="text-sm font-bold text-navy">{c.name}</h3>
               <p className="flex-1 text-xs leading-relaxed text-text-muted">{c.desc}</p>
@@ -49,7 +54,9 @@ export default function ExplorePage() {
         <div className="flex min-w-0 flex-col gap-5">
           <section>
             <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-base font-bold text-navy">⭐ Bài luyện tập phổ biến</h2>
+              <h2 className="flex items-center gap-1.5 text-base font-bold text-navy">
+                <Star className="h-4 w-4 fill-primary text-primary" /> Bài luyện tập phổ biến
+              </h2>
               <Link href="/practice" className="text-xs font-semibold text-primary">
                 Xem tất cả →
               </Link>
@@ -62,7 +69,9 @@ export default function ExplorePage() {
           </section>
 
           <section>
-            <div className="mb-1 text-base font-bold text-navy">🎯 Chủ đề AI đề xuất cho bạn</div>
+            <div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy">
+              <Target className="h-4 w-4 text-primary" /> Chủ đề AI đề xuất cho bạn
+            </div>
             <p className="mb-3 text-xs text-text-faint">Dựa trên lĩnh vực bạn chọn khi đăng ký</p>
             <div className="flex flex-wrap gap-2">
               {recommendedTopics.map((t) => (
@@ -79,19 +88,28 @@ export default function ExplorePage() {
         </div>
 
         <Card className="h-fit p-4">
-          <div className="mb-3.5 text-sm font-bold text-navy">🌐 Cộng đồng</div>
+          <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
+            <Globe className="h-4 w-4 text-primary" /> Cộng đồng
+          </div>
           <div className="flex flex-col gap-4">
             {communityItems.map((c) => (
               <div key={c.title} className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft text-base">
-                  {c.icon}
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft text-navy">
+                  <c.icon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
                   <div className="mb-0.5 text-[10px] font-bold tracking-wide text-primary uppercase">
                     {c.kind}
                   </div>
                   <div className="mb-0.5 text-sm font-semibold text-navy">{c.title}</div>
-                  <div className="text-xs text-text-faint">{c.meta}</div>
+                  <div className="flex items-center gap-1 text-xs text-text-faint">
+                    {c.rating && (
+                      <span className="flex items-center gap-0.5 text-primary">
+                        <Star className="h-3 w-3 fill-primary" /> {c.rating} ·
+                      </span>
+                    )}
+                    {c.meta}
+                  </div>
                 </div>
               </div>
             ))}

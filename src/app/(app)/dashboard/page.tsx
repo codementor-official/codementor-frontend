@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Bot, Calendar, Eye, Flame, Pencil, Target } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +30,7 @@ export default function DashboardPage() {
           </h1>
         </div>
         <Button href="/settings" variant="outline" size="sm">
-          ✎ Chỉnh hồ sơ học tập
+          <Pencil className="h-3.5 w-3.5" /> Chỉnh hồ sơ học tập
         </Button>
       </div>
 
@@ -47,8 +48,8 @@ export default function DashboardPage() {
         href="/paths"
         className="mb-5 flex flex-wrap items-center gap-5 rounded-lg bg-navy p-5 text-white"
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10 text-lg">
-          🤖
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10">
+          <Bot className="h-5 w-5" />
         </div>
         <div className="min-w-[260px] flex-1">
           <div className="mb-1.5 text-[10.5px] font-bold tracking-wide text-primary uppercase">
@@ -135,7 +136,9 @@ export default function DashboardPage() {
 
         <div className="flex min-w-0 flex-col gap-4">
           <Card className="p-4">
-            <div className="mb-3.5 text-sm font-bold text-navy">🎯 Mục tiêu tuần</div>
+            <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
+              <Target className="h-4 w-4 text-primary" /> Mục tiêu tuần
+            </div>
             <div className="flex items-center gap-4">
               <div
                 className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full"
@@ -160,18 +163,20 @@ export default function DashboardPage() {
 
           <Card className="p-4">
             <div className="mb-3.5 flex items-baseline justify-between">
-              <span className="text-sm font-bold text-navy">🔥 Chuỗi ngày</span>
+              <span className="flex items-center gap-1.5 text-sm font-bold text-navy">
+                <Flame className="h-4 w-4 text-primary" /> Chuỗi ngày
+              </span>
               <span className="text-base font-bold text-primary">5 ngày</span>
             </div>
             <div className="flex justify-between gap-1.5">
               {streakCells.map((c) => (
                 <div key={c.label} className="flex-1 text-center">
                   <div
-                    className={`mb-1 flex h-8 items-center justify-center rounded-md text-xs ${
+                    className={`mb-1 flex h-8 items-center justify-center rounded-md ${
                       c.active ? "bg-primary text-white" : "bg-border-soft"
                     }`}
                   >
-                    {c.active ? "🔥" : ""}
+                    {c.active && <Flame className="h-4 w-4" />}
                   </div>
                   <div className="text-[10px] font-medium text-text-faint">{c.label}</div>
                 </div>
@@ -180,7 +185,9 @@ export default function DashboardPage() {
           </Card>
 
           <Card className="p-4">
-            <div className="mb-3.5 text-sm font-bold text-navy">📅 Hạn sắp tới</div>
+            <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
+              <Calendar className="h-4 w-4 text-primary" /> Hạn sắp tới
+            </div>
             <div className="flex flex-col gap-3">
               {dashDeadlines.map((d) => (
                 <div key={d.title} className="flex items-center gap-2.5">
@@ -199,7 +206,9 @@ export default function DashboardPage() {
           </Card>
 
           <Card className="p-4">
-            <div className="mb-3.5 text-sm font-bold text-navy">👀 Xem gần đây</div>
+            <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
+              <Eye className="h-4 w-4 text-primary" /> Xem gần đây
+            </div>
             <div className="flex flex-col gap-3">
               {recentlyViewed.map((r) => (
                 <Link key={r.title} href={r.href} className="flex items-center gap-2.5">
