@@ -5,7 +5,7 @@ import { TAB_META, type PaneId, type TabKind } from "./types";
 import { useWorkspace } from "./workspace-context";
 
 export function Tab({ pane, kind }: { pane: PaneId; kind: TabKind }) {
-  const { panes, setActive, closeTab, dragging, setDragging } = useWorkspace();
+  const { panes, setActive, closeTab, dragging, setDragging, setDropTarget } = useWorkspace();
   const meta = TAB_META[kind];
   const active = panes[pane].active === kind;
   const isDragged = dragging?.tab === kind;
@@ -17,13 +17,16 @@ export function Tab({ pane, kind }: { pane: PaneId; kind: TabKind }) {
         setDragging({ tab: kind, from: pane });
         e.dataTransfer.effectAllowed = "move";
       }}
-      onDragEnd={() => setDragging(null)}
+      onDragEnd={() => {
+        setDragging(null);
+        setDropTarget(null);
+      }}
       onClick={() => setActive(pane, kind)}
-      className={`group/tab relative flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors duration-150 ${
+      className={`group/tab relative flex shrink-0 cursor-grab items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors duration-150 active:cursor-grabbing ${
         active
           ? "border-navy text-navy"
           : "border-transparent text-text-faint hover:border-border-soft hover:text-navy"
-      } ${isDragged ? "opacity-40" : ""}`}
+      } ${isDragged ? "border-dashed border-primary/50 text-text-faint opacity-50" : ""}`}
     >
       <meta.icon className={`h-3.5 w-3.5 transition-colors duration-150 ${active ? meta.iconClassName : "text-text-faint group-hover/tab:text-navy"}`} />
       {meta.label}

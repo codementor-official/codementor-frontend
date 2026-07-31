@@ -8,14 +8,22 @@ interface DragInfo {
   from: PaneId;
 }
 
+interface DropTarget {
+  pane: PaneId;
+  index: number;
+  x: number;
+}
+
 interface WorkspaceCtx {
   panes: PanesState;
   setActive: (pane: PaneId, tab: TabKind) => void;
-  moveTab: (tab: TabKind, from: PaneId, to: PaneId) => void;
+  moveTab: (tab: TabKind, from: PaneId, to: PaneId, index?: number) => void;
   openTab: (pane: PaneId, tab: TabKind) => void;
   closeTab: (pane: PaneId, tab: TabKind) => void;
   dragging: DragInfo | null;
   setDragging: (d: DragInfo | null) => void;
+  dropTarget: DropTarget | null;
+  setDropTarget: (d: DropTarget | null) => void;
   maximized: PaneId | null;
   toggleMaximize: (pane: PaneId) => void;
 }
@@ -31,16 +39,22 @@ export function WorkspaceProvider({
 }) {
   const [panes, setPanes] = useState<PanesState>(initialPanes);
   const [dragging, setDragging] = useState<DragInfo | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const [maximized, setMaximized] = useState<PaneId | null>(null);
 
   const setActive = (pane: PaneId, tab: TabKind) =>
     setPanes((p) => ({ ...p, [pane]: { ...p[pane], active: tab } }));
 
-  const moveTab = (tab: TabKind, from: PaneId, to: PaneId) => {
-    if (from === to) return;
+  const moveTab = (tab: TabKind, from: PaneId, to: PaneId, index?: number) => {
     setPanes((p) => {
       const fromTabs = p[from].tabs.filter((t) => t !== tab);
-      const toTabs = p[to].tabs.includes(tab) ? p[to].tabs : [...p[to].tabs, tab];
+      const toBase = from === to ? fromTabs : p[to].tabs.filter((t) => t !== tab);
+      const insertAt = index ?? toBase.length;
+      const toTabs = [...toBase.slice(0, insertAt), tab, ...toBase.slice(insertAt)];
+
+      if (from === to) {
+        return { ...p, [to]: { tabs: toTabs, active: tab } };
+      }
       return {
         ...p,
         [from]: { tabs: fromTabs, active: fromTabs[0] ?? null },
@@ -73,7 +87,19 @@ export function WorkspaceProvider({
 
   return (
     <Ctx.Provider
-      value={{ panes, setActive, moveTab, openTab, closeTab, dragging, setDragging, maximized, toggleMaximize }}
+      value={{
+        panes,
+        setActive,
+        moveTab,
+        openTab,
+        closeTab,
+        dragging,
+        setDragging,
+        dropTarget,
+        setDropTarget,
+        maximized,
+        toggleMaximize,
+      }}
     >
       {children}
     </Ctx.Provider>

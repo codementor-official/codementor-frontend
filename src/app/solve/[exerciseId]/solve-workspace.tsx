@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
-import { ArrowLeft, Loader2, Play, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Braces, Loader2, Play, RotateCcw, Send, Sparkles } from "lucide-react";
 import { Pane } from "@/components/workspace/pane";
 import { ResizeHandle } from "@/components/workspace/resize-handle";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
+import { LanguageDropdown } from "@/components/workspace/language-dropdown";
 import { useWorkspace, WorkspaceProvider } from "@/components/workspace/workspace-context";
 import type { PanesState, TabKind } from "@/components/workspace/types";
 import { type Problem } from "@/data/sample-problem";
@@ -34,9 +35,14 @@ const initialPanes: PanesState = {
   ai: { tabs: [], active: null },
 };
 
+interface MonacoEditorHandle {
+  getAction: (id: string) => { run: () => void } | null;
+}
+
 export function SolveWorkspace({ problem }: { problem: Problem }) {
   const [language, setLanguage] = useState(languages[0]);
   const [code, setCode] = useState<Record<string, string>>(problem.starter);
+  const editorRef = useRef<MonacoEditorHandle | null>(null);
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<{ input: string; expected: string; pass: boolean }[] | null>(null);
   const [aiInput, setAiInput] = useState("");
@@ -46,6 +52,9 @@ export function SolveWorkspace({ problem }: { problem: Problem }) {
       text: "Chào bạn! Mình sẽ gợi ý theo hướng dẫn từng bước, không đưa đáp án hoàn chỉnh. Bạn đang vướng ở đâu?",
     },
   ]);
+
+  const resetCode = () => setCode((c) => ({ ...c, [language]: problem.starter[language] }));
+  const formatCode = () => editorRef.current?.getAction("editor.action.formatDocument")?.run();
 
   const runCode = () => {
     setRunning(true);
@@ -98,22 +107,31 @@ export function SolveWorkspace({ problem }: { problem: Problem }) {
       case "code":
         return (
           <div className="flex h-full flex-col">
-            <div className="flex shrink-0 justify-end border-b border-border-soft bg-surface px-2 py-1">
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="rounded-md border border-border bg-surface px-2 py-1 text-xs font-semibold text-navy"
-              >
-                {languages.map((l) => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
-                ))}
-              </select>
+            <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 bg-[#1e1e1e] px-2 py-1">
+              <LanguageDropdown language={language} onChange={setLanguage} languages={languages} />
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={resetCode}
+                  title="Khôi phục code mẫu"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={formatCode}
+                  title="Format code"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
+                >
+                  <Braces className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
             <div className="min-h-0 flex-1">
               <Editor
                 key={language}
+                onMount={(editor) => {
+                  editorRef.current = editor;
+                }}
                 language={monacoLang[language]}
                 value={code[language]}
                 onChange={(v) => setCode((c) => ({ ...c, [language]: v ?? "" }))}
