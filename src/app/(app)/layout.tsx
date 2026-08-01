@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,6 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Sidebar />
         <main className="flex-1 overflow-y-auto p-5">{children}</main>
       </div>
+      <OnboardingModal />
     </div>
   );
 }

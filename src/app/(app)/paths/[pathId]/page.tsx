@@ -1,30 +1,21 @@
 import Link from "next/link";
-import { BarChart3, Check, Circle, Clock, Star, Users } from "lucide-react";
+import { BarChart3, Check, Clock, Layers, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { DifficultyBadge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { getPathDetail } from "@/data/path-detail";
+import { RoadmapCurriculum } from "@/components/roadmap/roadmap-curriculum";
+import { roadmapService } from "@/lib/roadmap/roadmap-service";
+import { LEVEL_DISPLAY_LABEL, formatEstimatedHours } from "@/lib/roadmap/roadmap-stats";
 
-const reviews = [
-  { initials: "VB", author: "Trần Văn Bình", rating: 5, text: "Lộ trình rất dễ theo, bài tập tăng độ khó hợp lý." },
-  { initials: "TC", author: "Lê Thị Cường", rating: 4, text: "Phần vòng lặp hơi nhanh, mong có thêm ví dụ." },
-];
-
-export default async function PathDetailPage({
+export default async function RoadmapDetailPage({
   params,
 }: {
   params: Promise<{ pathId: string }>;
 }) {
   const { pathId } = await params;
-  const path = getPathDetail(pathId);
+  const roadmap = await roadmapService.getBySlug(pathId);
 
-  const allExercises = path.chapters.flatMap((c) => c.lessons.flatMap((l) => l.exercises));
-  const doneExercises = allExercises.filter((e) => e.done);
-  const pct = allExercises.length ? Math.round((doneExercises.length / allExercises.length) * 100) : 0;
-  const xp = doneExercises.reduce((t, e) => t + e.xp, 0);
-  const doneLessons = path.chapters.flatMap((c) => c.lessons).filter((l) => l.done).length;
-  const lessonCount = path.chapters.reduce((t, c) => t + c.lessons.length, 0);
+  const totalLessons = roadmap.courses.reduce((t, c) => t + c.totalLessons, 0);
+  const totalChapters = roadmap.courses.reduce((t, c) => t + c.totalChapters, 0);
+  const started = roadmap.userProgress !== null;
 
   return (
     <div>
@@ -36,64 +27,65 @@ export default async function PathDetailPage({
         <div className="min-w-0 flex-1">
           <div className="mb-5 rounded-lg bg-navy p-6 text-white">
             <div className="mb-2 text-[10.5px] font-bold tracking-wide text-primary uppercase">Lộ trình học</div>
-            <h1 className="mb-2 text-2xl font-bold">{path.title}</h1>
-            <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-zinc-300">{path.desc}</p>
+            <h1 className="mb-2 text-2xl font-bold">{roadmap.title}</h1>
+            <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-zinc-300">{roadmap.description}</p>
             <div className="flex flex-wrap gap-4 text-xs font-medium text-zinc-200">
               <span className="flex items-center gap-1">
-                <Star className="h-3.5 w-3.5 fill-primary text-primary" /> {path.rating}
+                <BarChart3 className="h-3.5 w-3.5" /> {LEVEL_DISPLAY_LABEL[roadmap.level]}
               </span>
               <span className="flex items-center gap-1">
-                <BarChart3 className="h-3.5 w-3.5" /> {path.level}
+                <Clock className="h-3.5 w-3.5" /> {formatEstimatedHours(roadmap.estimatedHours)}
               </span>
               <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" /> {path.duration}
+                <Layers className="h-3.5 w-3.5" /> {roadmap.courses.length} khóa học
               </span>
-              <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" /> {path.students} học viên
-              </span>
+              {roadmap.targetAudience.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" /> {roadmap.targetAudience[0]}
+                </span>
+              )}
             </div>
             <div className="mt-3.5 flex flex-wrap gap-2">
-              <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold">
-                {path.chapters.length} chương
-              </span>
-              <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold">
-                {lessonCount} bài học
-              </span>
-              <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold">
-                {allExercises.length} bài tập
-              </span>
+              <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold">{totalChapters} chương</span>
+              <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold">{totalLessons} bài học</span>
             </div>
           </div>
 
-          <Card className="mb-3.5 p-5">
-            <h2 className="mb-3 text-sm font-bold text-navy">Bạn sẽ học được gì</h2>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {path.whatYouLearn.map((w) => (
-                <div key={w} className="flex items-start gap-2 text-xs text-text">
-                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                  {w}
-                </div>
-              ))}
-            </div>
-          </Card>
+          {roadmap.learningOutcomes.length > 0 && (
+            <Card className="mb-3.5 p-5">
+              <h2 className="mb-3 text-sm font-bold text-navy">Bạn sẽ học được gì</h2>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {roadmap.learningOutcomes.map((w) => (
+                  <div key={w} className="flex items-start gap-2 text-xs text-text">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                    {w}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           <div className="mb-5 flex flex-col gap-3.5 sm:flex-row">
             <Card className="flex-1 p-5">
               <div className="mb-2.5 text-sm font-bold text-navy">Điều kiện tiên quyết</div>
               <ul className="flex flex-col gap-1.5">
-                {path.prerequisites.map((p) => (
-                  <li key={p} className="flex gap-2 text-xs leading-relaxed text-text-muted">
-                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                    {p}
-                  </li>
-                ))}
+                {roadmap.prerequisites.length > 0 ? (
+                  roadmap.prerequisites.map((p) => (
+                    <li key={p} className="flex gap-2 text-xs leading-relaxed text-text-muted">
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
+                      {p}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-xs text-text-faint">Không yêu cầu kiến thức nền</li>
+                )}
               </ul>
             </Card>
-            {path.technologies.length > 0 && (
+            {roadmap.technologies.length > 0 && (
               <Card className="flex-1 p-5">
                 <div className="mb-2.5 text-sm font-bold text-navy">Công nghệ liên quan</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {path.technologies.map((t) => (
+                  {roadmap.technologies.map((t) => (
                     <span key={t} className="rounded-sm bg-border-soft px-2.5 py-1 text-xs font-semibold text-navy">
                       {t}
                     </span>
@@ -103,135 +95,63 @@ export default async function PathDetailPage({
             )}
           </div>
 
-          <h2 className="mb-1 text-base font-bold text-navy">Nội dung lộ trình</h2>
+          <h2 id="curriculum" className="mb-1 text-base font-bold text-navy">
+            Khóa học trong lộ trình
+          </h2>
           <p className="mb-3.5 text-xs text-text-faint">
-            Chọn một chương để xem danh sách bài học — mỗi bài học gồm các bài tập thực hành kèm gợi ý AI.
+            Chọn một khóa học để xem chương và bài học — mỗi bài học có nhiều dạng nội dung khác nhau.
           </p>
-          <div className="flex flex-col gap-2.5">
-            {path.chapters.map((c, ci) => (
-              <details key={c.name} className="group rounded-lg border border-border bg-surface open:border-primary" open={ci === 0}>
-                <summary className="flex cursor-pointer list-none items-center gap-3 p-3.5">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-border-soft font-mono text-xs font-bold text-text-muted group-open:bg-primary group-open:text-white">
-                    {String(ci + 1).padStart(2, "0")}
-                  </span>
-                  <span className="flex-1 text-sm font-semibold text-navy">{c.name}</span>
-                  <span className="text-xs text-text-faint">{c.lessons.length} bài học</span>
-                  <span className="text-text-faint transition-transform group-open:rotate-45">＋</span>
-                </summary>
-                <div className="flex flex-col border-t border-border-soft">
-                  {c.lessons.map((l) => (
-                    <details key={l.name} className="group/lesson border-t border-border-soft first:border-t-0">
-                      <summary className="flex cursor-pointer list-none items-center gap-2.5 py-2.5 pr-3.5 pl-9">
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                            l.done ? "bg-border-soft text-navy" : "bg-primary-tint text-primary"
-                          }`}
-                        >
-                          {l.done ? "Xong" : "Chưa học"}
-                        </span>
-                        <span className="flex-1 text-xs font-medium text-text">{l.name}</span>
-                        <span className="text-[11px] text-text-faint">{l.exercises.length} bài tập</span>
-                      </summary>
-                      <div className="flex flex-col gap-1.5 bg-bg py-2 pr-3.5 pl-9">
-                        {l.exercises.map((ex) => (
-                          <div
-                            key={ex.title}
-                            className="flex flex-wrap items-center gap-2.5 rounded-md border border-border-soft bg-surface px-3 py-2"
-                          >
-                            {ex.done ? (
-                              <Check className="h-3.5 w-3.5 shrink-0 text-navy" />
-                            ) : (
-                              <Circle className="h-3.5 w-3.5 shrink-0 text-text-faint" />
-                            )}
-                            <span className="flex-1 text-xs font-medium text-navy">{ex.title}</span>
-                            <DifficultyBadge difficulty={ex.difficulty} />
-                            <span className="text-[11px] text-text-faint">{ex.xp} XP</span>
-                          </div>
-                        ))}
-                        {l.exercises.length === 0 && (
-                          <div className="text-[11px] text-text-faint">Chưa có bài tập.</div>
-                        )}
-                      </div>
-                    </details>
-                  ))}
-                </div>
-              </details>
-            ))}
-          </div>
+          {roadmap.courses.length > 0 ? (
+            <RoadmapCurriculum roadmapSlug={roadmap.slug} courses={roadmap.courses} />
+          ) : (
+            <Card className="p-6 text-center text-sm text-text-faint">
+              Chưa có khóa học nào trong lộ trình này.
+            </Card>
+          )}
         </div>
 
         <div className="flex w-full flex-col gap-3.5 lg:w-80 lg:shrink-0">
           <Card className="p-4">
             <div className="mb-3 text-sm font-bold text-navy">Tiến độ của bạn</div>
             <div className="mb-2 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-primary">{pct}%</span>
+              <span className="text-2xl font-bold text-primary">{roadmap.userProgress?.percent ?? 0}%</span>
               <span className="text-xs text-text-faint">hoàn thành</span>
             </div>
             <div className="mb-3.5 h-1.5 overflow-hidden rounded-full bg-border-soft">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${roadmap.userProgress?.percent ?? 0}%` }}
+              />
             </div>
-            <div className="flex flex-col gap-1.5 text-xs text-text">
-              <div className="flex justify-between">
-                <span>Bài tập đã hoàn thành</span>
+            {roadmap.userProgress && (
+              <div className="mb-3.5 flex justify-between text-xs text-text">
+                <span>Khóa học đã hoàn thành</span>
                 <b>
-                  {doneExercises.length}/{allExercises.length}
+                  {roadmap.userProgress.completedCourses}/{roadmap.userProgress.totalCourses}
                 </b>
               </div>
-              <div className="flex justify-between">
-                <span>Bài học đã hoàn thành</span>
-                <b>
-                  {doneLessons}/{lessonCount}
-                </b>
-              </div>
-              <div className="flex justify-between">
-                <span>XP tích lũy từ khóa học</span>
-                <b>{xp} XP</b>
-              </div>
-            </div>
-            <Button className="mt-3.5 w-full">
-              {pct > 0 ? "Học tiếp bài đang dở →" : "Bắt đầu học ngay →"}
-            </Button>
+            )}
+            <Link
+              href="#curriculum"
+              className="mt-1 block w-full rounded-md bg-primary py-2.5 text-center text-sm font-semibold text-white hover:bg-primary-hover"
+            >
+              {started ? "Học tiếp bài đang dở →" : "Bắt đầu học ngay →"}
+            </Link>
           </Card>
 
-          <Card className="p-4">
-            <div className="mb-1 text-sm font-bold text-navy">Đánh giá khóa học</div>
-            <p className="mb-2.5 text-[11px] leading-relaxed text-text-faint">
-              Dành cho học viên đã hoàn thành khóa học — chia sẻ trải nghiệm để người hướng dẫn cải thiện nội dung.
-            </p>
-            <div className="mb-2.5 flex gap-1 text-border">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="h-5 w-5" />
-              ))}
-            </div>
-            <Input placeholder="Viết nhận xét về khóa học này..." />
-            <Button className="mt-2 w-full" size="sm">
-              Gửi đánh giá
-            </Button>
-          </Card>
-
-          <Card className="p-4">
-            <div className="mb-3 text-sm font-bold text-navy">Nhận xét từ học viên</div>
-            <div className="flex flex-col gap-3.5">
-              {reviews.map((r) => (
-                <div key={r.author} className="flex gap-2.5">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-semibold text-white">
-                    {r.initials}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="mb-0.5 flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-navy">{r.author}</span>
-                      <span className="flex items-center gap-0.5 text-primary">
-                        {Array.from({ length: r.rating }).map((_, i) => (
-                          <Star key={i} className="h-3 w-3 fill-primary" />
-                        ))}
-                      </span>
-                    </div>
-                    <div className="text-xs leading-relaxed text-text-muted">{r.text}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          {roadmap.targetAudience.length > 0 && (
+            <Card className="p-4">
+              <div className="mb-2.5 text-sm font-bold text-navy">Phù hợp với</div>
+              <ul className="flex flex-col gap-1.5">
+                {roadmap.targetAudience.map((a) => (
+                  <li key={a} className="flex gap-2 text-xs leading-relaxed text-text-muted">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-navy" />
+                    {a}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
         </div>
       </div>
     </div>
