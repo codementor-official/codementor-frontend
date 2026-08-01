@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import StackIcon from "tech-stack-icons";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Card } from "@/components/ui/card";
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   return (
     <div className="flex flex-1 items-center justify-center bg-bg p-5">
@@ -58,7 +60,13 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <form className="flex flex-col gap-3">
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            router.push("/dashboard");
+          }}
+        >
           {mode === "signup" && (
             <div>
               <label className="mb-1.5 block text-xs font-medium text-text-muted">
