@@ -69,7 +69,7 @@ export function createGroupDraft(name: string, description: string, ownerName: s
     memberCount: 1,
     openTaskCount: 0,
     progressPercent: 0,
-    lastActiveLabel: "vừa xong",
+    lastActiveMinutesAgo: 0,
     role: "owner",
     ownerName,
   };

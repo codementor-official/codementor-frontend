@@ -1,13 +1,19 @@
-import { Users } from "lucide-react";
+import { Crown, UsersRound } from "lucide-react";
 import { EntityCard } from "@/components/entity-card";
 import { Badge } from "@/components/ui/badge";
-import { ROLE_LABEL, isOwned } from "@/lib/study-group/study-group-stats";
+import { ROLE_LABEL, formatRelativeTime, isOwned } from "@/lib/study-group/study-group-stats";
 import type { StudyGroup } from "@/types/study-group";
+
+/** Group type at a glance — a crown for groups you run, a people icon for ones you joined.
+ * Reinforces the section split so a card still reads correctly out of context (search results). */
+const GROUP_TYPE = {
+  owned: { icon: Crown, label: "Nhóm bạn quản lý" },
+  joined: { icon: UsersRound, label: "Nhóm đã tham gia" },
+} as const;
 
 /**
  * Thin wrapper around `EntityCard` — same card anatomy as roadmaps/courses so the
- * whole app has one "browse this thing" grid. Group-specific bits are the role
- * badge and the owner/last-active footer.
+ * whole app has one "browse this thing" grid.
  */
 export function StudyGroupCard({ group }: { group: StudyGroup }) {
   const owned = isOwned(group);
@@ -18,12 +24,10 @@ export function StudyGroupCard({ group }: { group: StudyGroup }) {
       // tiles must not become a block of brand colour. Role is carried by the badge.
       tileVariant="ink"
       tileHeight="sm"
-      kind={{ icon: Users, label: "Nhóm học tập" }}
+      kind={GROUP_TYPE[owned ? "owned" : "joined"]}
       title={group.name}
       description={group.description}
-      badge={
-        <Badge tone={owned ? "brown" : "neutral"}>{ROLE_LABEL[group.role]}</Badge>
-      }
+      badge={<Badge tone={owned ? "brown" : "neutral"}>{ROLE_LABEL[group.role]}</Badge>}
       tags={[group.topic]}
       stats={[
         { label: "thành viên", value: group.memberCount },
@@ -35,7 +39,7 @@ export function StudyGroupCard({ group }: { group: StudyGroup }) {
           <span className="truncate">
             {owned ? `Mã: ${group.code}` : `Chủ nhóm: ${group.ownerName}`}
           </span>
-          <span className="shrink-0">Hoạt động {group.lastActiveLabel}</span>
+          <span className="shrink-0">{formatRelativeTime(group.lastActiveMinutesAgo)}</span>
         </>
       }
       href={`/workspace/${group.id}`}
