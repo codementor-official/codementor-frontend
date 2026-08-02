@@ -1,17 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  Award,
   ArrowRight,
-  BarChart3,
+  BookOpen,
+  Bot,
   Check,
-  Lightbulb,
-  Terminal,
+  Code2,
+  FilePlus2,
+  GraduationCap,
+  Share2,
+  Trophy,
   Users,
 } from "lucide-react";
 import { Testimonials } from "@/components/landing/testimonials";
 import { Faq } from "@/components/landing/faq";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { StatBlock } from "@/components/ui/stat-block";
 
 const navLinks = [
   { label: "Tính năng", href: "#features" },
@@ -27,30 +33,33 @@ const stats = [
   { value: "24/7", label: "AI đồng hành" },
 ];
 
-const features = [
+const personas = [
   {
-    icon: Lightbulb,
-    tint: "bg-ai-tint text-ai",
-    title: "Gợi ý AI theo 3 mức",
-    desc: "Hướng tiếp cận → khung code → giải thích lỗi. AI dẫn dắt tư duy, không đưa đáp án hoàn chỉnh.",
+    title: "Người học",
+    desc: "Luyện kỹ năng lập trình cùng cộng đồng người học trên khắp cả nước. Học theo lộ trình, thực hành và xây dựng portfolio của riêng bạn.",
+    features: [
+      { icon: Trophy, label: "Bài luyện tập & lộ trình học có cấu trúc" },
+      { icon: Code2, label: "Không gian làm việc trực quan, chấm bài tự động" },
+      { icon: GraduationCap, label: "Theo dõi tiến độ và tích lũy XP" },
+    ],
   },
   {
-    icon: Terminal,
-    tint: "bg-primary-tint text-primary",
-    title: "Chấm bài tự động",
-    desc: "Biên dịch và chạy trong sandbox với test Public, Hidden và Custom — kết quả trong vài giây.",
+    title: "Giảng viên & Tổ chức",
+    desc: "Đưa bài toán và tài liệu giảng dạy của bạn đến hàng nghìn người học, đo lường năng lực thực tế thay vì chỉ lý thuyết.",
+    features: [
+      { icon: FilePlus2, label: "Tạo bài luyện tập và bộ đề riêng" },
+      { icon: Users, label: "Tổ chức nhóm học tập, theo dõi từng thành viên" },
+      { icon: Award, label: "Sàng lọc và đánh giá năng lực lập trình" },
+    ],
   },
   {
-    icon: Users,
-    tint: "bg-accent-tint text-accent",
     title: "Nhóm học tập",
-    desc: "Tạo nhóm học tập, chia sẻ tài liệu và để AI soạn bài luyện tập từ chính tài liệu của nhóm.",
-  },
-  {
-    icon: BarChart3,
-    tint: "bg-success-tint text-success",
-    title: "Tiến độ minh bạch",
-    desc: "Heatmap hoạt động, chủ đề vững / còn yếu và bảng xếp hạng XP trong từng nhóm.",
+    desc: "Xây dựng, chia sẻ và duy trì tài liệu học tập trên một nền tảng chung — cả nhóm cùng luyện một bộ đề, cùng tiến bộ.",
+    features: [
+      { icon: Share2, label: "Chia sẻ tài liệu và giáo trình trong nhóm" },
+      { icon: Bot, label: "AI soạn bài luyện tập từ chính tài liệu của nhóm" },
+      { icon: BookOpen, label: "Bảng xếp hạng XP và tiến độ từng thành viên" },
+    ],
   },
 ];
 
@@ -141,10 +150,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-wrap gap-8">
               {stats.map((s) => (
-                <div key={s.label}>
-                  <div className="text-2xl font-bold text-primary">{s.value}</div>
-                  <div className="text-xs text-zinc-400">{s.label}</div>
-                </div>
+                <StatBlock key={s.label} value={s.value} label={s.label} tone="onDark" />
               ))}
             </div>
           </div>
@@ -189,27 +195,29 @@ if (delta > 0) {
 
       <section id="features" className="px-6 py-12 sm:px-10">
         <div className="mx-auto max-w-6xl">
-          <div className="mx-auto mb-8 max-w-xl text-center">
+          <div className="mb-10">
             <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
-              Tính năng chính
+              Dành cho ai
             </div>
-            <h2 className="mb-3 text-3xl font-bold text-navy">
-              Mọi thứ bạn cần để tự học lập trình
-            </h2>
-            <p className="text-sm leading-relaxed text-text-muted">
-              Học theo lộ trình cá nhân hóa, luyện tập mỗi ngày và tiến bộ
-              thật sự.
-            </p>
+            <h2 className="text-3xl font-bold text-navy">Ai đang dùng CodeMentor?</h2>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((f) => (
-              <Card key={f.title} className="p-5">
-                <div className={`mb-3 flex h-11 w-11 items-center justify-center rounded-md ${f.tint}`}>
-                  <f.icon className="h-5 w-5" />
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
+            {personas.map((p) => (
+              <div key={p.title}>
+                <h3 className="mb-2 text-xl font-bold text-navy">{p.title}</h3>
+                <p className="mb-5 text-sm leading-relaxed text-text-muted">{p.desc}</p>
+                <div className="mb-3 text-xs font-bold tracking-widest text-text-faint uppercase">
+                  Tính năng nổi bật
                 </div>
-                <div className="mb-1.5 text-base font-semibold text-navy">{f.title}</div>
-                <div className="text-sm leading-relaxed text-text-muted">{f.desc}</div>
-              </Card>
+                <ul className="flex flex-col gap-3">
+                  {p.features.map((f) => (
+                    <li key={f.label} className="flex items-start gap-2.5 text-sm text-text">
+                      <f.icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      {f.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </div>
         </div>

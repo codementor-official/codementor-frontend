@@ -1,16 +1,24 @@
-import Link from "next/link";
-import { Card } from "@/components/ui/card";
-import { Badge, DifficultyBadge, type Difficulty } from "@/components/ui/badge";
+import { BookOpen } from "lucide-react";
+import { EntityCard } from "@/components/entity-card";
+import type { Difficulty } from "@/components/ui/badge";
+import { placeholderCoverUrl } from "@/lib/placeholder-image";
 
-const tileVariantClasses = {
-  navy: "bg-navy",
-  accent: "bg-accent",
-  primary: "bg-primary",
+const tileVariantMap = {
+  navy: "ink",
+  accent: "accent",
+  primary: "primary",
 } as const;
+
+/** Auto-derives a "Mới" eyebrow badge from the `updated` copy unless one is explicitly passed. */
+function recentEyebrow(updated?: string) {
+  return updated && /hôm qua|hôm nay|\b[12] ngày/.test(updated) ? "Mới" : undefined;
+}
 
 export interface CourseCardProps {
   tile: string;
-  tileVariant?: keyof typeof tileVariantClasses;
+  tileVariant?: keyof typeof tileVariantMap;
+  /** Small pill overlaid top-left on the tile, e.g. "MỚI" — see `EntityCard`. */
+  eyebrow?: string;
   title: string;
   desc: string;
   difficulty: Difficulty;
@@ -21,9 +29,14 @@ export interface CourseCardProps {
   href?: string;
 }
 
+/**
+ * Thin wrapper around `EntityCard` — kept for call-site compatibility (dashboard, practice,
+ * explore all import `CourseCard` directly). See `entity-card.tsx` for the shared implementation.
+ */
 export function CourseCard({
   tile,
   tileVariant = "navy",
+  eyebrow,
   title,
   desc,
   difficulty,
@@ -33,48 +46,27 @@ export function CourseCard({
   progress,
   href,
 }: CourseCardProps) {
-  const content = (
-    <Card className="flex h-full flex-col overflow-hidden">
-      <div
-        className={`flex h-20 shrink-0 items-center justify-center font-mono text-lg font-bold text-white ${tileVariantClasses[tileVariant]}`}
-      >
-        {tile}
-      </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="text-sm font-semibold text-navy">{title}</h3>
-        <p className="text-xs leading-relaxed text-text-muted">{desc}</p>
-        <div className="flex flex-wrap gap-1.5">
-          <DifficultyBadge difficulty={difficulty} />
-          {tags.map((t) => (
-            <Badge key={t} tone="neutral">
-              {t}
-            </Badge>
-          ))}
-        </div>
-        {typeof progress === "number" && (
-          <div className="flex flex-col gap-1">
-            <div className="h-1.5 overflow-hidden rounded-full bg-border-soft">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
-            </div>
-            <span className="text-xs font-semibold text-primary">Hoàn thành {progress}%</span>
-          </div>
-        )}
-        {(participants || updated) && (
-          <div className="mt-auto flex justify-between border-t border-border-soft pt-2.5 text-xs text-text-faint">
+  return (
+    <EntityCard
+      tile={tile}
+      tileVariant={tileVariantMap[tileVariant]}
+      eyebrow={eyebrow ?? recentEyebrow(updated)}
+      coverImage={placeholderCoverUrl(title)}
+      kind={{ icon: BookOpen, label: "Khóa học" }}
+      title={title}
+      description={desc}
+      difficulty={difficulty}
+      tags={tags}
+      progress={progress}
+      href={href}
+      footer={
+        (participants || updated) && (
+          <>
             <span>{participants ? `${participants} học viên` : ""}</span>
             <span>{updated}</span>
-          </div>
-        )}
-      </div>
-    </Card>
+          </>
+        )
+      }
+    />
   );
-
-  if (href) {
-    return (
-      <Link href={href} className="block h-full">
-        {content}
-      </Link>
-    );
-  }
-  return content;
 }
