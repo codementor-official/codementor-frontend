@@ -127,14 +127,18 @@ export function DataTable<TData>({
   );
 }
 
-/** Wires the common table options so each tab only declares columns + data. */
+/**
+ * Wires the common table options so each tab only declares columns + data.
+ *
+ * Global filter and row selection are left *uncontrolled* on purpose: hoisting them
+ * into the calling component's `useState` made TanStack's auto-reset call the parent
+ * setter during render, which React 19 reports as "Can't perform a React state update
+ * on a component that hasn't mounted yet". Read them back off the table instead
+ * (`table.getState().globalFilter`, `table.getSelectedRowModel()`).
+ */
 export function useDataTable<TData>({
   data,
   columns,
-  globalFilter,
-  onGlobalFilterChange,
-  rowSelection,
-  onRowSelectionChange,
   getRowId,
   initialSorting = [],
 }: {
@@ -142,24 +146,16 @@ export function useDataTable<TData>({
   // TanStack's own public shape for a heterogeneous column list.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: ColumnDef<TData, any>[];
-  globalFilter: string;
-  onGlobalFilterChange: (value: string) => void;
-  rowSelection: RowSelectionState;
-  onRowSelectionChange: (value: RowSelectionState) => void;
   getRowId: (row: TData) => string;
   initialSorting?: SortingState;
 }) {
   return useReactTable({
     data,
     columns,
-    state: { globalFilter, rowSelection },
     initialState: { sorting: initialSorting },
     getRowId,
     enableRowSelection: true,
-    onGlobalFilterChange: (updater) =>
-      onGlobalFilterChange(typeof updater === "function" ? updater(globalFilter) : updater),
-    onRowSelectionChange: (updater) =>
-      onRowSelectionChange(typeof updater === "function" ? updater(rowSelection) : updater),
+    autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
