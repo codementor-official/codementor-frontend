@@ -1,45 +1,72 @@
 import Link from "next/link";
-import { Bot, Calendar, Eye, Flame, Pencil, Target } from "lucide-react";
+import {
+  Activity,
+  Award,
+  BarChart3,
+  Bot,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Eye,
+  Flame,
+  Pencil,
+  PlayCircle,
+  Target,
+  type LucideIcon,
+} from "lucide-react";
+import { PageBanner } from "@/components/page-banner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CourseCard } from "@/components/course-card";
+import { EntityCard } from "@/components/entity-card";
 import { ProblemRow } from "@/components/problem-row";
-import { samplePaths } from "@/data/sample-courses";
+import { StatBlock } from "@/components/ui/stat-block";
+import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { courseDifficulty, courseHref, featuredCourses } from "@/lib/roadmap/course-catalog";
 import {
   continueLearning,
   dashDeadlines,
   dashStats,
   popularTopics,
+  recentActivity,
   recentlyViewed,
   recommendedProblems,
+  skillProgress,
   streakCells,
   weeklyGoal,
 } from "@/data/sample-dashboard";
 
+const ACTIVITY_ICON: Record<(typeof recentActivity)[number]["kind"], LucideIcon> = {
+  solved: CheckCircle2,
+  lesson: PlayCircle,
+  streak: Flame,
+  badge: Award,
+};
+
 export default function DashboardPage() {
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="mb-2 text-xs font-bold tracking-widest text-primary uppercase">
-            Chào mừng trở lại, Gia Sĩ
-          </div>
-          <h1 className="max-w-lg text-2xl font-bold text-navy">
-            Lộ trình Frontend Developer của bạn đang chờ — mục tiêu: học để đi làm.
-          </h1>
-        </div>
-        <Button href="/settings" variant="outline" size="sm">
-          <Pencil className="h-3.5 w-3.5" /> Chỉnh hồ sơ học tập
-        </Button>
-      </div>
+      <PageBanner
+        eyebrow="Chào mừng trở lại, Gia Sĩ"
+        title="Lộ trình Frontend Developer của bạn đang chờ"
+        description="Bạn đang ở 14% chặng đường — còn 2 bài nữa là xong chương CSS layout. Giữ nhịp 5 giờ/tuần thì khoảng 7 tháng nữa bạn hoàn thành toàn bộ lộ trình."
+        actions={
+          <>
+            <Button href="/paths/frontend-developer" size="sm">
+              Tiếp tục học →
+            </Button>
+            <Button href="/settings" variant="outline" size="sm">
+              <Pencil className="h-3.5 w-3.5" /> Chỉnh hồ sơ học tập
+            </Button>
+          </>
+        }
+      />
 
       <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
         {dashStats.map((w) => (
           <Card key={w.label} className="p-4">
-            <div className="mb-2 text-xs font-medium text-text-muted">{w.label}</div>
-            <div className="mb-1 text-xl font-bold text-navy">{w.value}</div>
-            <div className="text-xs text-text-faint">{w.sub}</div>
+            <StatBlock value={w.value} label={w.label} />
+            <div className="mt-1 text-xs text-text-faint">{w.sub}</div>
           </Card>
         ))}
       </div>
@@ -118,6 +145,38 @@ export default function DashboardPage() {
           </section>
 
           <section>
+            <div className="mb-1 flex items-baseline justify-between">
+              <h2 className="flex items-center gap-1.5 text-base font-bold text-navy">
+                <BarChart3 className="h-4 w-4 text-primary" /> Kỹ năng của bạn
+              </h2>
+              <Link href="/progress" className="text-xs font-semibold text-primary">
+                Xem chi tiết →
+              </Link>
+            </div>
+            <p className="mb-3 text-xs text-text-faint">
+              Tỷ lệ bài đã giải trên từng nhóm chủ đề — chủ đề thấp nhất là nơi nên luyện tiếp.
+            </p>
+            <Card className="flex flex-col gap-3.5 p-4">
+              {skillProgress.map((s) => {
+                const percent = Math.round((s.solved / s.total) * 100);
+                return (
+                  <div key={s.topic}>
+                    <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                      <span className="truncate text-xs font-semibold text-navy">{s.topic}</span>
+                      <span className="shrink-0 text-[11px] text-text-faint">
+                        {s.solved}/{s.total} bài · {percent}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-border-soft">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </Card>
+          </section>
+
+          <section>
             <div className="mb-3 flex items-baseline justify-between">
               <h2 className="text-base font-bold text-navy">Đề xuất khóa học cho bạn</h2>
               <Link href="/paths" className="text-xs font-semibold text-primary">
@@ -125,9 +184,24 @@ export default function DashboardPage() {
               </Link>
             </div>
             <div className="flex gap-4 overflow-x-auto pb-1">
-              {samplePaths.map((item) => (
-                <div key={item.title} className="w-64 shrink-0">
-                  <CourseCard {...item} />
+              {featuredCourses.map((course, i) => (
+                <div key={course.id} className="w-64 shrink-0">
+                  <EntityCard
+                    tile={course.thumbnail}
+                    tileVariant={i % 2 === 0 ? "ink" : "primary"}
+                    coverImage={placeholderCoverUrl(course.slug)}
+                    kind={{ icon: BookOpen, label: course.roadmapTitle }}
+                    title={course.title}
+                    description={course.description}
+                    difficulty={courseDifficulty(course.level)}
+                    tags={course.technologies.slice(0, 3)}
+                    stats={[
+                      { label: "chương", value: course.totalChapters },
+                      { label: "giờ", value: course.durationHours },
+                    ]}
+                    progress={course.progressPercent > 0 ? course.progressPercent : undefined}
+                    href={courseHref(course)}
+                  />
                 </div>
               ))}
             </div>
@@ -202,6 +276,28 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
               ))}
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
+              <Activity className="h-4 w-4 text-primary" /> Hoạt động gần đây
+            </div>
+            <div className="flex flex-col gap-3.5">
+              {recentActivity.map((a) => {
+                const Icon = ACTIVITY_ICON[a.kind];
+                return (
+                  <div key={a.text} className="flex items-start gap-2.5">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-border-soft text-navy">
+                      <Icon className="h-3 w-3" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs leading-relaxed text-navy">{a.text}</div>
+                      <div className="text-[11px] text-text-faint">{a.time}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Card>
 
