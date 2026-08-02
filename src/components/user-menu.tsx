@@ -18,7 +18,8 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    // Expanded: take the leftover row width so the collapse toggle sits flush right.
+    <div ref={ref} className={`relative ${collapsed ? "" : "min-w-0 flex-1"}`}>
       {open && (
         <div className="absolute bottom-full left-0 mb-2 w-48 rounded-md border border-border bg-surface py-1 shadow-dropdown">
           <div className="border-b border-border-soft px-3 py-2">
@@ -44,15 +45,16 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
       <button
         onClick={() => setOpen((v) => !v)}
         title="Tài khoản"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-white"
+        aria-label="Tài khoản: Gia Sĩ"
+        className={`flex h-9 w-full items-center gap-2 rounded-md hover:bg-bg ${
+          collapsed ? "justify-center" : "px-1"
+        }`}
       >
-        GS
-      </button>
-      {!collapsed && (
-        <span className="pointer-events-none absolute top-1/2 left-11 w-32 -translate-y-1/2 truncate text-sm font-medium text-navy">
-          Gia Sĩ
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-white">
+          GS
         </span>
-      )}
+        {!collapsed && <span className="min-w-0 truncate text-sm font-medium text-navy">Gia Sĩ</span>}
+      </button>
     </div>
   );
 }

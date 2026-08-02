@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Plus } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
 import { createAction, navItems } from "./nav-items";
 import { UserMenu } from "./user-menu";
 import { useSidebarStore } from "@/lib/store/sidebar-store";
@@ -19,19 +19,20 @@ export function Sidebar() {
         collapsed ? "w-16" : "w-60"
       }`}
     >
-      <div className={`mb-3 flex shrink-0 items-center gap-2 ${collapsed ? "justify-center" : ""}`}>
-        <button
-          onClick={toggle}
-          title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy"
-        >
-          <Menu className="h-4.5 w-4.5" />
-        </button>
-        {!collapsed && (
-          <Link href="/dashboard" className="min-w-0">
-            <Image src="/logo.png" alt="CodeMentor" width={460} height={159} className="h-7 w-auto" priority />
-          </Link>
-        )}
+      {/* Fixed height so collapsing (wordmark -> icon mark) doesn't shift the nav below. */}
+      <div className={`mb-3 flex h-9 shrink-0 items-center ${collapsed ? "justify-center" : ""}`}>
+        <Link href="/dashboard" className="min-w-0" title="CodeMentor">
+          <Image
+            src="/logo.png"
+            alt="CodeMentor"
+            width={460}
+            height={159}
+            priority
+            /* Collapsed: crop to the leftmost square of the asset, which is the icon mark
+             * (the wordmark starts past it) — avoids shipping a second logo file. */
+            className={collapsed ? "h-8 w-8 object-cover object-left" : "h-7 w-auto"}
+          />
+        </Link>
       </div>
 
       <Link
@@ -64,8 +65,20 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="flex items-center gap-2 border-t border-border-soft pt-3">
+      <div
+        className={`flex shrink-0 items-center gap-2 border-t border-border-soft pt-3 ${
+          collapsed ? "flex-col" : ""
+        }`}
+      >
         <UserMenu collapsed={collapsed} />
+        <button
+          onClick={toggle}
+          title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+          aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy"
+        >
+          {collapsed ? <PanelLeftOpen className="h-4.5 w-4.5" /> : <PanelLeftClose className="h-4.5 w-4.5" />}
+        </button>
       </div>
     </aside>
   );
