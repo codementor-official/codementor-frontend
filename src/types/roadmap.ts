@@ -50,6 +50,12 @@ export interface Course {
   chapters: Chapter[];
   status: CourseStatus;
   progressPercent: number;
+  /** Udemy-style detail-page metadata — optional because it's only authored for a
+   * handful of demo courses so far, not the whole catalog. */
+  instructor?: string;
+  rating?: number;
+  ratingCount?: number;
+  studentCount?: number;
 }
 
 export interface RoadmapProgress {
