@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Briefcase, ChevronUp, ClipboardList, Code2, Pencil, RefreshCw, Sparkles, Sprout, TrendingUp } from "lucide-react";
 import { PageBanner } from "@/components/page-banner";
 import { PageHeader } from "@/components/page-header";
@@ -146,12 +145,12 @@ export function RoadmapPage() {
                 </>
               )}
             </button>
-            <Link
-              href="/explore"
+            <a
+              href="#all-roadmaps"
               className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-navy hover:bg-bg"
             >
-              Khám phá tất cả khóa học
-            </Link>
+              Khám phá tất cả lộ trình
+            </a>
           </>
         }
       />
@@ -166,7 +165,9 @@ export function RoadmapPage() {
 
       {openList && <RoadmapCuratedSection list={openList} onCollapse={() => setActiveQuickList(null)} />}
 
-      <h2 className="mb-3 text-base font-bold text-navy">Toàn bộ lộ trình</h2>
+      <h2 id="all-roadmaps" className="mb-3 scroll-mt-4 text-base font-bold text-navy">
+        Toàn bộ lộ trình
+      </h2>
       <RoadmapList roadmaps={visible} hasMore={hasMore} onLoadMore={loadMore} isFiltered={isFiltered} />
     </div>
   );
