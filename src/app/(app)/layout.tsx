@@ -4,11 +4,16 @@ import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full flex-1 flex-col">
-      <Topbar />
-      <div className="flex flex-1 min-h-0">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto p-5">{children}</main>
+    // Sidebar spans the full viewport height with the logo at its top, and the search
+    // header sits beside it in the content column — Kaggle's arrangement. A full-width
+    // top bar would push the sidebar (and logo) down a row instead.
+    <div className="flex h-full min-h-0 flex-1">
+      <Sidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar />
+        <main className="flex-1 overflow-y-auto p-5">
+          <div className="mx-auto max-w-(--container-max)">{children}</div>
+        </main>
       </div>
       <OnboardingModal />
     </div>
