@@ -1,28 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f8fafc;
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
   --color-border: #e5e7eb;
   --color-border-soft: #f3f4f6;
-  --color-navy: #1f2937;
+
+  /* true neutral ink — no blue undertone, satisfies orange/black/white/gray-only palette */
+  --color-ink: #18181b;
+  --color-navy: var(--color-ink); /* legacy alias — kept so existing bg-navy/text-navy usages don't break */
+
   --color-text: #374151;
   --color-text-muted: #6b7280;
   --color-text-faint: #9ca3af;
   --color-primary: #ea580c;
   --color-primary-hover: #dc4f09;
+  --color-primary-active: #c2410c;
   --color-primary-tint: #fff7ed;
   --color-brown: #78350f;
   --color-brown-tint: #faf0e6;
 
-  /* semantic aliases: only two hues in this UI (navy + orange) */
-  --color-accent: var(--color-navy);
+  /* semantic aliases: only two hues in this UI (ink + orange) */
+  --color-accent: var(--color-ink);
   --color-accent-tint: var(--color-border-soft);
-  --color-success: var(--color-navy);
+  --color-success: var(--color-ink);
   --color-success-tint: var(--color-border-soft);
   --color-danger: var(--color-primary);
   --color-danger-tint: var(--color-primary-tint);
-  --color-ai: var(--color-navy);
+  --color-ai: var(--color-ink);
   --color-ai-tint: var(--color-border-soft);
 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06);
@@ -35,9 +40,66 @@
   --radius-md: 8px;
   --radius-lg: 10px;
   --radius-xl: 12px;
+  --radius-2xl: 16px;
+
+  /* z-index scale — formalizes the ad-hoc z-10/20/40/100/150 already in use */
+  --z-dropdown: 20;
+  --z-sheet: 40;
+  --z-overlay: 100;
+  --z-modal: 150;
+
+  /* motion — only color/background/border/transform ever animate, nothing else */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-roboto-mono);
+
+  /* type scale — weight is the primary hierarchy lever, size steps stay narrow */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+
+  /* spacing scale — 4px base unit */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* container / grid */
+  --container-max: 1200px;
+  --container-padding: 24px;
+  --container-padding-sm: 16px;
+  --grid-gap: 16px;
+
+  /* icon sizes */
+  --icon-xs: 14px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+
+  /* component heights */
+  --h-input-sm: 32px;
+  --h-input-md: 40px;
+  --h-button-sm: 32px;
+  --h-button-md: 40px;
+  --h-topbar: 64px;
+  --h-tile-row: 36px;
+  --h-tile-card: 64px;
 }
 
 body {
@@ -45,10 +107,14 @@ body {
   color: var(--color-text);
 }
 
-/* component default: buttons/inputs/textareas are square-ish (radius-md), not pills */
-button,
-input[type="text"],
-input[type="password"],
-textarea {
-  border-radius: var(--radius-md);
+/* Component default: buttons/inputs/textareas are square-ish (radius-md), not pills.
+ * Must live in `@layer base` — unlayered CSS outranks Tailwind's layered utilities in v4,
+ * so leaving this unlayered silently killed every `rounded-full`/`rounded-lg` on a button. */
+@layer base {
+  button,
+  input[type="text"],
+  input[type="password"],
+  textarea {
+    border-radius: var(--radius-md);
+  }
 }
