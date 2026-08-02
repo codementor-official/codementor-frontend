@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { navItems } from "./nav-items";
+import { Menu, Plus } from "lucide-react";
+import { createAction, navItems } from "./nav-items";
 import { UserMenu } from "./user-menu";
 import { useSidebarStore } from "@/lib/store/sidebar-store";
 
@@ -18,6 +19,32 @@ export function Sidebar() {
         collapsed ? "w-16" : "w-60"
       }`}
     >
+      <div className={`mb-3 flex shrink-0 items-center gap-2 ${collapsed ? "justify-center" : ""}`}>
+        <button
+          onClick={toggle}
+          title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy"
+        >
+          <Menu className="h-4.5 w-4.5" />
+        </button>
+        {!collapsed && (
+          <Link href="/dashboard" className="min-w-0">
+            <Image src="/logo.png" alt="CodeMentor" width={460} height={159} className="h-7 w-auto" priority />
+          </Link>
+        )}
+      </div>
+
+      <Link
+        href={createAction.href}
+        title={collapsed ? createAction.label : undefined}
+        className={`mb-3 flex shrink-0 items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-navy hover:border-navy hover:bg-bg ${
+          collapsed ? "justify-center" : ""
+        }`}
+      >
+        <Plus className="h-4 w-4 shrink-0" />
+        {!collapsed && <span className="truncate">{createAction.label}</span>}
+      </Link>
+
       <nav className="flex flex-1 flex-col gap-1">
         {navItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -37,16 +64,8 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className={`flex items-center gap-2 border-t border-border-soft pt-3 ${collapsed ? "flex-col" : ""}`}>
+      <div className="flex items-center gap-2 border-t border-border-soft pt-3">
         <UserMenu collapsed={collapsed} />
-        {!collapsed && <div className="flex-1" />}
-        <button
-          onClick={toggle}
-          title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy"
-        >
-          {collapsed ? <PanelLeftOpen className="h-4.5 w-4.5" /> : <PanelLeftClose className="h-4.5 w-4.5" />}
-        </button>
       </div>
     </aside>
   );

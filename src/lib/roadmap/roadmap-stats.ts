@@ -1,5 +1,5 @@
 import type { CurrentLevel } from "@/types/learning-preference";
-import type { Chapter } from "@/types/roadmap";
+import type { Chapter, Course, LessonType } from "@/types/roadmap";
 
 export const LEVEL_DISPLAY_LABEL: Record<CurrentLevel, string> = {
   none: "Mới bắt đầu",
@@ -22,4 +22,14 @@ export function formatMinutes(minutes: number): string {
 export function formatEstimatedHours(hours: number): string {
   const months = Math.max(1, Math.round(hours / 20));
   return `${hours} giờ · ~${months} tháng`;
+}
+
+/** Lesson-type breakdown for a course — drives the Udemy-style "khóa học này bao gồm"
+ * list without needing separate mock counters that could drift from the real curriculum. */
+export function getLessonTypeCounts(course: Course): Record<LessonType, number> {
+  const counts: Record<LessonType, number> = { video: 0, article: 0, exercise: 0, quiz: 0, challenge: 0, project: 0 };
+  for (const chapter of course.chapters) {
+    for (const lesson of chapter.lessons) counts[lesson.type] += 1;
+  }
+  return counts;
 }

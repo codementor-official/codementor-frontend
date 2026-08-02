@@ -43,6 +43,10 @@ interface CourseInput {
   totalLessons?: number;
   status?: Course["status"];
   progressPercent?: number;
+  instructor?: string;
+  rating?: number;
+  ratingCount?: number;
+  studentCount?: number;
 }
 
 function course(input: CourseInput): Course {
@@ -63,6 +67,10 @@ function course(input: CourseInput): Course {
     totalLessons: input.totalLessons ?? chapters.reduce((t, c) => t + c.lessons.length, 0),
     status: input.status ?? "not-started",
     progressPercent: input.progressPercent ?? 0,
+    instructor: input.instructor,
+    rating: input.rating,
+    ratingCount: input.ratingCount,
+    studentCount: input.studentCount,
   };
 }
 
@@ -188,6 +196,10 @@ const htmlCoBan = course({
   outcomes: ["Xây dựng cấu trúc trang bằng thẻ ngữ nghĩa", "Tạo biểu mẫu nhập liệu hợp lệ"],
   status: "completed",
   progressPercent: 100,
+  instructor: "Nguyễn Minh Anh · Frontend Mentor tại CodeMentor",
+  rating: 4.7,
+  ratingCount: 1240,
+  studentCount: 15800,
   chapters: [
     chapter("Cấu trúc tài liệu HTML", "Thẻ cơ bản, ngữ nghĩa và cách trình duyệt đọc HTML", [
       lesson("Thẻ HTML cơ bản", "video", 10, { isCompleted: true, isPreview: true }),
@@ -196,6 +208,11 @@ const htmlCoBan = course({
     chapter("Biểu mẫu và bảng", "Thu thập dữ liệu người dùng và trình bày bảng biểu", [
       lesson("Form và các loại input", "video", 12, { isCompleted: true }),
       lesson("Bài tập: Xây dựng form đăng ký", "exercise", 25, { isCompleted: true }),
+    ]),
+    chapter("Semantic HTML & Accessibility cơ bản", "Viết HTML dễ tiếp cận và thân thiện với SEO", [
+      lesson("ARIA và accessibility cơ bản", "video", 14, { isPreview: true }),
+      lesson("Chuẩn SEO on-page với thẻ meta", "article", 9),
+      lesson("Quiz: Semantic HTML", "quiz", 8),
     ]),
   ],
 });
@@ -212,6 +229,10 @@ const cssCoBan = course({
   outcomes: ["Dựng layout bằng Flexbox và Grid", "Áp dụng box model và selector chính xác"],
   status: "in-progress",
   progressPercent: 40,
+  instructor: "Trần Gia Bảo · Frontend Mentor tại CodeMentor",
+  rating: 4.6,
+  ratingCount: 980,
+  studentCount: 12300,
   chapters: [
     chapter("Box Model & Selector", "Cách CSS tính toán kích thước và chọn phần tử", [
       lesson("Box model", "video", 10, { isCompleted: true, isPreview: true }),
@@ -221,6 +242,11 @@ const cssCoBan = course({
       lesson("Flexbox cơ bản", "video", 16),
       lesson("CSS Grid cơ bản", "video", 16),
       lesson("Bài tập: Dựng layout trang landing page", "exercise", 30),
+    ]),
+    chapter("Responsive Design & Animation cơ bản", "Thích ứng nhiều màn hình và tạo chuyển động cơ bản", [
+      lesson("Media query và mobile-first", "video", 14, { isPreview: true }),
+      lesson("Transition và animation cơ bản", "video", 12),
+      lesson("Bài tập: Responsive hóa trang landing page", "exercise", 25),
     ]),
   ],
 });
@@ -235,6 +261,10 @@ const javascriptCoBan = course({
   technologies: ["JavaScript"],
   prerequisites: ["Đã hoàn thành HTML & CSS cơ bản"],
   outcomes: ["Thao tác DOM và xử lý sự kiện", "Làm việc với mảng, object và hàm bậc cao"],
+  instructor: "Lê Thị Hồng Nhung · Frontend Mentor tại CodeMentor",
+  rating: 4.8,
+  ratingCount: 2100,
+  studentCount: 21400,
   chapters: [
     chapter("Cú pháp cơ bản", "Biến, kiểu dữ liệu và toán tử trong JavaScript", [
       lesson("Biến, kiểu dữ liệu, toán tử", "video", 14, { isPreview: true }),
@@ -244,6 +274,11 @@ const javascriptCoBan = course({
       lesson("Hàm và phạm vi biến (scope)", "video", 14),
       lesson("Thao tác DOM cơ bản", "video", 16),
       lesson("Bài tập: To-do list bằng JavaScript thuần", "exercise", 35),
+    ]),
+    chapter("Làm việc với API & Bất đồng bộ", "Promise, async/await và gọi dữ liệu từ API thật", [
+      lesson("Promise và async/await", "video", 16, { isPreview: true }),
+      lesson("Gọi API bằng fetch", "article", 10),
+      lesson("Bài tập: Ứng dụng thời tiết gọi API thật", "exercise", 40),
     ]),
   ],
 });

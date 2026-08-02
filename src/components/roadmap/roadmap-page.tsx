@@ -1,18 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { Briefcase, ClipboardList, Code2, Pencil, RefreshCw, Sprout, TrendingUp } from "lucide-react";
+import { Briefcase, ChevronUp, ClipboardList, Code2, Pencil, RefreshCw, Sparkles, Sprout, TrendingUp } from "lucide-react";
+import { PageBanner } from "@/components/page-banner";
 import { PageHeader } from "@/components/page-header";
 import { useRoadmapRecommendation } from "@/hooks/use-roadmap-recommendation";
 import { useRoadmapFilters } from "@/hooks/use-roadmap-filters";
 import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
 import { DEFAULT_ROADMAP_FILTERS, getAvailableTechnologies } from "@/lib/roadmap/roadmap-filter";
-import { RoadmapHero } from "./roadmap-hero";
+import { RoadmapCard } from "./roadmap-card";
 import { RoadmapDiscoverRow, type QuickList } from "./roadmap-discover-row";
 import { RoadmapFilterBar } from "./roadmap-filter-bar";
 import { RoadmapList } from "./roadmap-list";
 import { RoadmapLoadingState } from "./roadmap-loading";
-import { RoadmapQuickListModal } from "./roadmap-quick-list-modal";
+
+function RoadmapCuratedSection({ list, onCollapse }: { list: QuickList; onCollapse: () => void }) {
+  if (list.roadmaps.length === 0) return null;
+  return (
+    <section className="mb-8">
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <list.icon className="h-4 w-4 text-navy" />
+          <h2 className="text-base font-bold text-navy">{list.label}</h2>
+        </div>
+        <button
+          type="button"
+          onClick={onCollapse}
+          className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary hover:underline"
+        >
+          Thu gọn <ChevronUp className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <p className="mb-3 text-xs text-text-faint">{list.description}</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {list.roadmaps.slice(0, 4).map((r) => (
+          <RoadmapCard key={r.id} roadmap={r} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function RoadmapPage() {
   const { rankedRoadmaps, isLoading, hasPreference } = useRoadmapRecommendation();
@@ -32,10 +59,18 @@ export function RoadmapPage() {
     );
   }
 
-  const [hero] = rankedRoadmaps;
   const isFiltered = JSON.stringify(filters) !== JSON.stringify(DEFAULT_ROADMAP_FILTERS);
 
   const quickLists: QuickList[] = [
+    {
+      key: "for-you",
+      label: "Phù hợp nhất với bạn",
+      icon: Sparkles,
+      description: hasPreference
+        ? "Xếp hạng theo kết quả khảo sát học tập bạn đã chọn."
+        : "Xếp hạng theo mức độ phổ biến — làm khảo sát 2 phút để có gợi ý cá nhân hóa hơn.",
+      roadmaps: rankedRoadmaps.slice(0, 6),
+    },
     {
       key: "popular",
       label: "Lộ trình phổ biến",
@@ -89,47 +124,51 @@ export function RoadmapPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <PageHeader
-          title="Lộ trình học"
-          subtitle="Học theo lộ trình có cấu trúc — mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp"
-        />
-        {hasPreference ? (
-          <button
-            type="button"
-            onClick={openModal}
-            className="flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-navy hover:bg-bg"
-          >
-            <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa sở thích học tập
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={openModal}
-            className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-white hover:bg-primary-hover"
-          >
-            <ClipboardList className="h-3.5 w-3.5" />
-            {hasSkippedOnboarding ? "Thiết lập gợi ý cá nhân hóa" : "Khảo sát 2 phút để nhận gợi ý phù hợp"}
-          </button>
-        )}
-      </div>
+      <PageBanner
+        title="Lộ trình học"
+        description="Học theo lộ trình có cấu trúc — mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp, sắp xếp sẵn thứ tự để bạn không phải tự mò mẫm nên học gì trước."
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={openModal}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover"
+            >
+              {hasPreference ? (
+                <>
+                  <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa sở thích học tập
+                </>
+              ) : (
+                <>
+                  <ClipboardList className="h-3.5 w-3.5" />
+                  {hasSkippedOnboarding ? "Thiết lập gợi ý cá nhân hóa" : "Khảo sát 2 phút để nhận gợi ý phù hợp"}
+                </>
+              )}
+            </button>
+            <a
+              href="#all-roadmaps"
+              className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-navy hover:bg-bg"
+            >
+              Khám phá tất cả lộ trình
+            </a>
+          </>
+        }
+      />
 
-      {hero && <RoadmapHero roadmap={hero} />}
-
-      <RoadmapDiscoverRow lists={quickLists} onSelect={setActiveQuickList} />
-
-      <h2 className="mb-3 text-base font-bold text-navy">Toàn bộ lộ trình</h2>
       <RoadmapFilterBar filters={filters} onChange={setFilters} technologyOptions={getAvailableTechnologies(rankedRoadmaps)} />
-      <RoadmapList roadmaps={visible} hasMore={hasMore} onLoadMore={loadMore} isFiltered={isFiltered} />
 
-      {openList && (
-        <RoadmapQuickListModal
-          title={openList.label}
-          description={openList.description}
-          roadmaps={openList.roadmaps}
-          onClose={() => setActiveQuickList(null)}
-        />
-      )}
+      <RoadmapDiscoverRow
+        lists={quickLists}
+        activeKey={activeQuickList}
+        onSelect={(key) => setActiveQuickList((cur) => (cur === key ? null : key))}
+      />
+
+      {openList && <RoadmapCuratedSection list={openList} onCollapse={() => setActiveQuickList(null)} />}
+
+      <h2 id="all-roadmaps" className="mb-3 scroll-mt-4 text-base font-bold text-navy">
+        Toàn bộ lộ trình
+      </h2>
+      <RoadmapList roadmaps={visible} hasMore={hasMore} onLoadMore={loadMore} isFiltered={isFiltered} />
     </div>
   );
 }

@@ -5,9 +5,9 @@ type Variant = "primary" | "outline" | "ghost";
 type Size = "sm" | "md";
 
 const variantClasses: Record<Variant, string> = {
-  primary: "bg-primary text-white hover:bg-primary-hover",
-  outline: "border border-border bg-surface text-navy hover:bg-bg",
-  ghost: "text-navy hover:bg-bg",
+  primary: "bg-primary text-white hover:bg-primary-hover active:bg-primary-active",
+  outline: "border border-border bg-surface text-navy hover:bg-bg active:bg-border-soft",
+  ghost: "text-navy hover:bg-bg active:bg-border-soft",
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -16,7 +16,7 @@ const sizeClasses: Record<Size, string> = {
 };
 
 function buttonClasses(variant: Variant, size: Size, className: string) {
-  return `inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+  return `inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -47,10 +47,12 @@ export function Button({
       />
     );
   }
+  const buttonProps = props as ButtonHTMLAttributes<HTMLButtonElement>;
   return (
     <button
       className={buttonClasses(variant, size, className)}
-      {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
+      aria-disabled={buttonProps.disabled || undefined}
+      {...buttonProps}
     />
   );
 }

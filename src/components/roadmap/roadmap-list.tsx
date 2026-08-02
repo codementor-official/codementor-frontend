@@ -30,7 +30,7 @@ export function RoadmapList({
 
   return (
     <div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {primary.map((r) => (
           <RoadmapCard key={r.id} roadmap={r} />
         ))}
@@ -41,7 +41,7 @@ export function RoadmapList({
           <div className="my-5 flex items-center gap-3 text-xs font-semibold text-text-faint">
             <span className="h-px flex-1 bg-border" /> Các lộ trình khác <span className="h-px flex-1 bg-border" />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {rest.map((r) => (
               <RoadmapCard key={r.id} roadmap={r} />
             ))}

@@ -81,3 +81,21 @@ export const popularTopics = [
   "Sắp xếp",
   "Danh sách liên kết",
 ];
+
+/** Per-topic mastery for the "Kỹ năng của bạn" breakdown — `solved`/`total` are problem
+ * counts, `percent` is derived so the bar and the caption can never disagree. */
+export const skillProgress: { topic: string; solved: number; total: number }[] = [
+  { topic: "Cấu trúc điều kiện & vòng lặp", solved: 18, total: 20 },
+  { topic: "Mảng và chuỗi", solved: 14, total: 22 },
+  { topic: "Hàm & đệ quy", solved: 9, total: 18 },
+  { topic: "Lập trình hướng đối tượng", solved: 4, total: 16 },
+  { topic: "Cấu trúc dữ liệu nâng cao", solved: 2, total: 24 },
+];
+
+export const recentActivity: { kind: "solved" | "lesson" | "streak" | "badge"; text: string; time: string }[] = [
+  { kind: "solved", text: "Giải xong “Số nguyên tố trong khoảng”", time: "2 giờ trước" },
+  { kind: "lesson", text: "Hoàn thành bài “Selector và độ ưu tiên” — CSS cơ bản", time: "Hôm qua" },
+  { kind: "badge", text: "Nhận huy hiệu “Chuỗi 5 ngày”", time: "Hôm qua" },
+  { kind: "solved", text: "Giải xong “Tính tổng phần tử mảng”", time: "2 ngày trước" },
+  { kind: "streak", text: "Bắt đầu chuỗi học tập mới", time: "5 ngày trước" },
+];
