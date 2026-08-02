@@ -1,81 +1,62 @@
-import Link from "next/link";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Map } from "lucide-react";
+import { EntityCard } from "@/components/entity-card";
 import { LEVEL_DISPLAY_LABEL, formatEstimatedHours } from "@/lib/roadmap/roadmap-stats";
+import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import type { RankedRoadmap, RoadmapField } from "@/types/roadmap";
 
-const TONE_BY_FIELD: Record<RoadmapField, "navy" | "primary"> = {
+const TONE_BY_FIELD: Record<RoadmapField, "ink" | "primary"> = {
   frontend: "primary",
-  backend: "navy",
+  backend: "ink",
   fullstack: "primary",
-  mobile: "navy",
+  mobile: "ink",
   "data-ai": "primary",
-  foundation: "navy",
+  foundation: "ink",
 };
 
-export function RoadmapCard({
-  roadmap,
-  showReason = false,
-}: {
-  roadmap: RankedRoadmap;
-  showReason?: boolean;
-}) {
-  const tone = TONE_BY_FIELD[roadmap.field];
-  const started = roadmap.userProgress !== null;
+const RECENT_DAYS_THRESHOLD = 5;
+const POPULAR_THRESHOLD = 80;
 
+function roadmapEyebrow(roadmap: RankedRoadmap): string | undefined {
+  const daysSinceUpdate = (Date.now() - Date.parse(roadmap.updatedAt)) / 86_400_000;
+  if (daysSinceUpdate <= RECENT_DAYS_THRESHOLD) return "Mới";
+  if (roadmap.popularity >= POPULAR_THRESHOLD) return "Phổ biến";
+  return undefined;
+}
+
+function roadmapStatus(roadmap: RankedRoadmap): string {
+  if (!roadmap.userProgress) return "Chưa bắt đầu";
+  return roadmap.userProgress.percent >= 100 ? "Hoàn thành" : `Đang học · ${roadmap.userProgress.percent}%`;
+}
+
+/**
+ * Thin wrapper around `EntityCard` — kept for call-site compatibility (paths, dashboard,
+ * quick-list modal all import `RoadmapCard` directly). See `entity-card.tsx` for the shared implementation.
+ * Whole card is a link with a minimal two-part footer (level / status) — Kaggle's
+ * competition-card anatomy, no in-card CTA button or progress bar.
+ */
+export function RoadmapCard({ roadmap }: { roadmap: RankedRoadmap }) {
   return (
-    <Card className="flex h-full flex-col overflow-hidden">
-      <div
-        className={`flex h-16 shrink-0 items-center justify-center font-mono text-base font-bold text-white ${
-          tone === "primary" ? "bg-primary" : "bg-navy"
-        }`}
-      >
-        {roadmap.thumbnail}
-      </div>
-      <div className="flex flex-1 flex-col gap-2.5 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold text-navy">{roadmap.title}</h3>
-          <Badge tone="neutral" className="shrink-0">
-            {LEVEL_DISPLAY_LABEL[roadmap.level]}
-          </Badge>
-        </div>
-        <p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{roadmap.shortDescription}</p>
-        <div className="flex flex-wrap gap-1.5">
-          {roadmap.technologies.slice(0, 3).map((t) => (
-            <Badge key={t} tone="neutral">
-              {t}
-            </Badge>
-          ))}
-        </div>
-        <div className="flex items-center gap-3 text-xs text-text-faint">
-          <span>{roadmap.courses.length} khóa học</span>
-          <span>{formatEstimatedHours(roadmap.estimatedHours)}</span>
-        </div>
-        {showReason && roadmap.matchedReasons[0] && (
-          <p className="rounded-md bg-border-soft px-2.5 py-2 text-[11px] leading-relaxed text-text">
-            {roadmap.matchedReasons[0]}
-          </p>
-        )}
-        {started && roadmap.userProgress && (
-          <div className="flex flex-col gap-1">
-            <div className="h-1.5 overflow-hidden rounded-full bg-border-soft">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${roadmap.userProgress.percent}%` }}
-              />
-            </div>
-            <span className="text-xs font-semibold text-primary">
-              Hoàn thành {roadmap.userProgress.percent}%
-            </span>
-          </div>
-        )}
-        <Link
-          href={`/paths/${roadmap.slug}`}
-          className="mt-auto rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-white hover:bg-navy/90"
-        >
-          {started ? "Tiếp tục học →" : "Xem chi tiết →"}
-        </Link>
-      </div>
-    </Card>
+    <EntityCard
+      tile={roadmap.thumbnail}
+      tileVariant={TONE_BY_FIELD[roadmap.field]}
+      tileHeight="sm"
+      eyebrow={roadmapEyebrow(roadmap)}
+      coverImage={placeholderCoverUrl(roadmap.slug)}
+      kind={{ icon: Map, label: "Lộ trình" }}
+      title={roadmap.title}
+      description={roadmap.shortDescription}
+      tags={roadmap.technologies.slice(0, 3)}
+      stats={[
+        { label: "khóa học", value: roadmap.courses.length },
+        { label: "", value: formatEstimatedHours(roadmap.estimatedHours) },
+      ]}
+      footer={
+        <>
+          <span className="font-semibold text-navy">{LEVEL_DISPLAY_LABEL[roadmap.level]}</span>
+          <span>{roadmapStatus(roadmap)}</span>
+        </>
+      }
+      href={`/paths/${roadmap.slug}`}
+    />
   );
 }
