@@ -10,10 +10,12 @@ import { ArrowLeft, Braces, Loader2, Play, RotateCcw, Send, Sparkles } from "luc
 import { Pane } from "@/components/workspace/pane";
 import { ResizeHandle } from "@/components/workspace/resize-handle";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
+import { UserMenu } from "@/components/user-menu";
 import { LanguageDropdown } from "@/components/workspace/language-dropdown";
 import { useWorkspace, WorkspaceProvider } from "@/components/workspace/workspace-context";
 import type { PanesState, TabKind } from "@/components/workspace/types";
 import { type Problem } from "@/data/sample-problem";
+import { useResolvedTheme } from "@/lib/store/use-resolved-theme";
 import "highlight.js/styles/github-dark.css";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -40,6 +42,7 @@ interface MonacoEditorHandle {
 }
 
 export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: Problem; backHref?: string }) {
+  const editorTheme = useResolvedTheme();
   const [language, setLanguage] = useState(languages[0]);
   const [code, setCode] = useState<Record<string, string>>(problem.starter);
   const editorRef = useRef<MonacoEditorHandle | null>(null);
@@ -89,7 +92,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
                 </span>
               ))}
             </div>
-            <article className="prose-sm max-w-none text-sm leading-relaxed text-text [&_code]:rounded-sm [&_code]:bg-border-soft [&_code]:px-1 [&_code]:font-mono [&_code]:text-[13px] [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-navy [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:text-zinc-100 [&_strong]:font-semibold [&_strong]:text-navy">
+            <article className="prose-sm max-w-none text-sm leading-relaxed text-text [&_code]:rounded-sm [&_code]:bg-border-soft [&_code]:px-1 [&_code]:font-mono [&_code]:text-[13px] [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-ink-fixed [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:text-zinc-100 [&_strong]:font-semibold [&_strong]:text-navy">
               <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{problem.description}</ReactMarkdown>
             </article>
             <div className="mt-4 text-xs font-bold tracking-wide text-text-faint uppercase">Ràng buộc</div>
@@ -107,20 +110,20 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
       case "code":
         return (
           <div className="flex h-full flex-col">
-            <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 bg-[#1e1e1e] px-2 py-1">
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-2 py-1">
               <LanguageDropdown language={language} onChange={setLanguage} languages={languages} />
               <div className="flex items-center gap-0.5">
                 <button
                   onClick={resetCode}
                   title="Khôi phục code mẫu"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={formatCode}
                   title="Format code"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
                 >
                   <Braces className="h-3.5 w-3.5" />
                 </button>
@@ -135,7 +138,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
                 language={monacoLang[language]}
                 value={code[language] ?? ""}
                 onChange={(v) => setCode((c) => ({ ...c, [language]: v ?? "" }))}
-                theme="vs-dark"
+                theme={editorTheme === "dark" ? "vs-dark" : "vs"}
                 options={{ fontSize: 13, minimap: { enabled: false }, automaticLayout: true, padding: { top: 12 } }}
               />
             </div>
@@ -292,7 +295,9 @@ function WorkspaceBody({
           </button>
         </div>
 
-        <div />
+        <div className="flex items-center justify-end">
+          <UserMenu collapsed placement="down" />
+        </div>
       </div>
 
       <div className="min-h-0 flex-1">

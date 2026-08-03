@@ -5,7 +5,15 @@ import Link from "next/link";
 import { LogOut, UserRound } from "lucide-react";
 import { ThemePicker } from "@/components/theme-picker";
 
-export function UserMenu({ collapsed }: { collapsed: boolean }) {
+export function UserMenu({
+  collapsed = false,
+  /** The sidebar sits at the bottom of the screen so its menu opens upward; the solve
+   * topbar needs the opposite. */
+  placement = "up",
+}: {
+  collapsed?: boolean;
+  placement?: "up" | "down";
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -22,7 +30,11 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
     // Expanded: take the leftover row width so the collapse toggle sits flush right.
     <div ref={ref} className={`relative ${collapsed ? "" : "min-w-0 flex-1"}`}>
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-64 rounded-md border border-border bg-surface py-1 shadow-dropdown">
+        <div
+          className={`absolute z-100 w-64 rounded-md border border-border bg-surface py-1 shadow-dropdown ${
+            placement === "up" ? "bottom-full left-0 mb-2" : "top-full right-0 mt-2"
+          }`}
+        >
           <div className="border-b border-border-soft px-3 py-2">
             <div className="text-sm font-semibold text-navy">Gia Sĩ</div>
             <div className="truncate text-xs text-text-faint">giasi.nguyen@student.iuh.edu.vn</div>

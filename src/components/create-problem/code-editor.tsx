@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useResolvedTheme } from "@/lib/store/use-resolved-theme";
 
 /** Monaco ships a worker bundle that can't run during SSR, so it's client-only —
  * same pattern as the solve workspace. */
@@ -26,13 +27,15 @@ export function CodeEditor({
   placeholder?: string;
   height?: number;
 }) {
+  // Monaco ships its own themes; "vs-dark" in a light UI was the mismatch here.
+  const theme = useResolvedTheme();
   return (
     <div className="relative overflow-hidden rounded-md border border-border" style={{ height }}>
       <Editor
         language={language}
         value={value}
         onChange={(v) => onChange(v ?? "")}
-        theme="vs-dark"
+        theme={theme === "dark" ? "vs-dark" : "vs"}
         options={{
           fontSize: 13,
           minimap: { enabled: false },
@@ -45,7 +48,7 @@ export function CodeEditor({
       {/* Monaco has no placeholder API — an overlay is the usual workaround. It must not
        * swallow the click that focuses the editor underneath. */}
       {value === "" && placeholder && (
-        <span className="pointer-events-none absolute top-2.5 left-14 font-mono text-[13px] text-zinc-500">
+        <span className="pointer-events-none absolute top-2.5 left-14 font-mono text-[13px] text-text-faint">
           {placeholder}
         </span>
       )}

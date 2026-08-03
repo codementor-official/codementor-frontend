@@ -28,7 +28,7 @@ export function LanguageDropdown({
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-zinc-200 hover:bg-white/10"
+        className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-navy hover:bg-bg"
       >
         {language}
         <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} />
@@ -40,7 +40,7 @@ export function LanguageDropdown({
             <div className="fixed inset-0 z-100" onClick={() => setOpen(false)} />
             <div
               style={{ top: pos.top, left: pos.left }}
-              className="fixed z-101 grid grid-cols-2 gap-x-4 gap-y-0.5 rounded-md border border-zinc-700 bg-zinc-800 p-1.5 shadow-dropdown"
+              className="fixed z-101 grid grid-cols-2 gap-x-4 gap-y-0.5 rounded-md border border-border bg-surface p-1.5 shadow-dropdown"
             >
               {languages.map((l) => (
                 <button
@@ -49,7 +49,7 @@ export function LanguageDropdown({
                     onChange(l);
                     setOpen(false);
                   }}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs whitespace-nowrap text-zinc-200 hover:bg-white/10"
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs whitespace-nowrap text-text hover:bg-bg"
                 >
                   <Check className={`h-3 w-3 shrink-0 text-primary ${l === language ? "opacity-100" : "opacity-0"}`} />
                   {l}
