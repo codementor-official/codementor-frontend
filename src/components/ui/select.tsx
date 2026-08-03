@@ -28,7 +28,9 @@ export function Select({
   const shapeClasses =
     shape === "pill" ? "rounded-full py-2.5 pl-3.5" : "h-9 rounded-md py-0 pl-3 text-xs";
   return (
-    <div className="relative w-full sm:w-auto">
+    // `inline-block` so the wrapper hugs the select. As a block element it stretched to
+    // fill its parent (a grid cell, a flex row), leaving the chevron floating in the gap.
+    <div className="relative inline-block w-full sm:w-auto">
       <select
         aria-label={label}
         value={value}
