@@ -110,6 +110,24 @@ const documents: GroupDocument[] = [
     uploaderName: "Lê Minh Anh",
     uploadedAt: "22/07/2026",
     sizeLabel: "2,1 MB",
+    previewText: `# Đề cương môn học Nhập môn Lập trình
+
+**Thời lượng:** 15 tuần · 45 tiết
+
+## Chương 1 — Biến và kiểu dữ liệu
+- Khai báo biến, hằng số
+- Các kiểu dữ liệu cơ bản và ép kiểu
+
+## Chương 2 — Cấu trúc điều kiện
+- Câu lệnh \`if\` / \`else if\` / \`else\`
+- Câu lệnh \`switch\` và các bẫy thường gặp
+
+## Chương 3 — Vòng lặp
+- \`for\`, \`while\`, \`do-while\`
+- Vòng lặp lồng nhau và độ phức tạp
+
+## Đánh giá
+Giữa kỳ 30% · Bài tập nhóm 20% · Cuối kỳ 50%`,
     status: "published",
     verdict: "valid",
   },
@@ -121,6 +139,16 @@ const documents: GroupDocument[] = [
     uploaderName: "Lê Minh Anh",
     uploadedAt: "21/07/2026",
     sizeLabel: "5,4 MB",
+    previewText: `# Buổi 4 — Cấu trúc điều kiện
+
+## Mục tiêu
+- Hiểu luồng rẽ nhánh
+- Viết được điều kiện lồng nhau
+
+## Nội dung chính
+- So sánh và toán tử logic
+- \`if\` / \`else\` / \`switch\`
+- Bài tập: giải phương trình bậc hai`,
     status: "published",
     verdict: "valid",
   },
@@ -132,6 +160,21 @@ const documents: GroupDocument[] = [
     uploaderName: "Nguyễn Trần Gia Sĩ",
     uploadedAt: "23/07/2026",
     sizeLabel: "14 KB",
+    previewText: `# Ghi chú: Vòng lặp
+
+Điểm hay nhầm khi mới học:
+
+1. **Sai điều kiện dừng** — \`i <= n\` với mảng 0-based sẽ vượt chỉ số.
+2. **Quên cập nhật biến đếm** trong \`while\` → lặp vô hạn.
+3. Vòng lặp lồng nhau: độ phức tạp là **O(n²)**, không phải O(2n).
+
+\`\`\`c
+for (int i = 0; i < n; i++) {
+  // thân vòng lặp
+}
+\`\`\`
+
+> Mẹo: viết ra giá trị của biến đếm sau mỗi vòng để kiểm tra.`,
     status: "published",
     verdict: "valid",
   },
@@ -154,6 +197,7 @@ const documents: GroupDocument[] = [
     uploaderName: "Nguyễn Trung Nguyên",
     uploadedAt: "17/07/2026",
     sizeLabel: "Liên kết ngoài",
+    url: "https://example.com/big-o-cho-nguoi-moi",
     status: "pending",
     verdict: "warning",
   },

@@ -29,7 +29,9 @@ export interface MemberAchievement {
 
 /** AI pre-screen verdict; anything but `valid` needs a human moderator. */
 export type DocumentVerdict = "valid" | "warning" | "invalid";
-export type DocumentStatus = "published" | "pending" | "changes" | "rejected";
+/** `hidden` is an owner action; `pending`/`changes`/`rejected` come from moderation.
+ * Only `published` is visible to members without manage rights. */
+export type DocumentStatus = "published" | "pending" | "changes" | "rejected" | "hidden";
 
 export interface GroupDocument {
   id: string;
@@ -41,6 +43,10 @@ export interface GroupDocument {
   uploadedAt: string;
   sizeLabel: string;
   status: DocumentStatus;
+  /** Mock preview body — markdown/plain text for text-ish formats. */
+  previewText?: string;
+  /** Target for `type: "Link"` documents. */
+  url?: string;
   verdict: DocumentVerdict;
 }
 

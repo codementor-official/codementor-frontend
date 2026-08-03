@@ -20,7 +20,17 @@ export const DOCUMENT_STATUS_META: Record<DocumentStatus, { label: string; tone:
   pending: { label: "Chờ kiểm duyệt", tone: "neutral" },
   changes: { label: "Cần chỉnh sửa", tone: "primary" },
   rejected: { label: "Bị từ chối", tone: "primary" },
+  hidden: { label: "Đã ẩn", tone: "neutral" },
 };
+
+/** What a member without manage rights is allowed to see: published only. Hidden and
+ * unmoderated documents simply don't exist for them — not greyed out, absent. */
+export function visibleDocuments<T extends { status: DocumentStatus }>(
+  documents: T[],
+  canManage: boolean,
+): T[] {
+  return canManage ? documents : documents.filter((d) => d.status === "published");
+}
 
 export const DOCUMENT_VERDICT_META: Record<DocumentVerdict, { label: string; tone: Tone }> = {
   valid: { label: "Hợp lệ", tone: "navy" },
