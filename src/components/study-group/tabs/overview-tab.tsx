@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import { rankMembers } from "@/lib/study-group/group-detail-meta";
+import { SubmissionChart } from "@/components/study-group/submission-chart";
 import type { StudyGroup } from "@/types/study-group";
 import type { GroupDetail } from "@/types/study-group-detail";
 
@@ -16,25 +17,6 @@ function MetaItem({ icon: Icon, label, value }: { icon: typeof Users; label: str
         <div className="text-2xs font-bold tracking-wide text-text-faint uppercase">{label}</div>
         <div className="truncate text-sm font-medium text-navy">{value}</div>
       </div>
-    </div>
-  );
-}
-
-/** Bare bars — a 7-point series doesn't justify pulling a chart library onto the page. */
-function SubmissionTrend({ data }: { data: GroupDetail["submissionTrend"] }) {
-  const max = Math.max(...data.map((d) => d.value), 1);
-  return (
-    <div className="flex h-28 items-end gap-2">
-      {data.map((d) => (
-        <div key={d.label} className="flex flex-1 flex-col items-center gap-1.5">
-          <span className="text-2xs font-semibold text-text-muted">{d.value}</span>
-          <div
-            className="w-full rounded-t-sm bg-primary"
-            style={{ height: `${Math.max(4, (d.value / max) * 100)}%` }}
-          />
-          <span className="text-2xs text-text-faint">{d.label}</span>
-        </div>
-      ))}
     </div>
   );
 }
@@ -117,7 +99,7 @@ export function OverviewTab({
         <Card className="p-5 lg:col-span-2">
           <h3 className="text-sm font-bold text-navy">Lượt nộp bài 7 ngày qua</h3>
           <p className="mt-0.5 mb-4 text-xs text-text-faint">Tổng số lượt nộp của cả nhóm mỗi ngày.</p>
-          <SubmissionTrend data={detail.submissionTrend} />
+          <SubmissionChart data={detail.submissionTrend} />
         </Card>
 
         <div className="flex flex-col gap-4">
