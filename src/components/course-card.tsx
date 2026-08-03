@@ -27,6 +27,8 @@ export interface CourseCardProps {
   updated?: string;
   progress?: number;
   href?: string;
+  /** Optional mock/CMS artwork; falls back to the stable generated cover. */
+  coverImage?: string;
 }
 
 /**
@@ -45,13 +47,14 @@ export function CourseCard({
   updated,
   progress,
   href,
+  coverImage,
 }: CourseCardProps) {
   return (
     <EntityCard
       tile={tile}
       tileVariant={tileVariantMap[tileVariant]}
       eyebrow={eyebrow ?? recentEyebrow(updated)}
-      coverImage={placeholderCoverUrl(title)}
+      coverImage={coverImage ?? placeholderCoverUrl(title)}
       kind={{ icon: BookOpen, label: "Khóa học" }}
       title={title}
       description={desc}

@@ -17,13 +17,16 @@ import type { RoadmapField } from "@/types/roadmap";
 export function RoadmapFilterBar({
   filters,
   onChange,
+  onClear,
   technologyOptions,
 }: {
   filters: RoadmapFilterState;
   onChange: (patch: Partial<RoadmapFilterState>) => void;
+  onClear: () => void;
   technologyOptions: string[];
 }) {
   const activeFilterCount = [
+    filters.search !== DEFAULT_ROADMAP_FILTERS.search,
     filters.field !== DEFAULT_ROADMAP_FILTERS.field,
     filters.level !== DEFAULT_ROADMAP_FILTERS.level,
     filters.technology !== DEFAULT_ROADMAP_FILTERS.technology,
@@ -62,6 +65,15 @@ export function RoadmapFilterBar({
         options={SORT_OPTIONS}
         onChange={(v) => onChange({ sort: v as RoadmapSort })}
       />
+      {activeFilterCount > 0 && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="h-9 rounded-full px-3 text-xs font-semibold text-primary hover:bg-primary-tint"
+        >
+          Xóa bộ lọc
+        </button>
+      )}
     </>
   );
 
@@ -72,6 +84,8 @@ export function RoadmapFilterBar({
       searchPlaceholder="Tìm lộ trình theo tên, công nghệ..."
       controls={controls}
       activeFilterCount={activeFilterCount}
+      onClearFilters={onClear}
+      displayMode="inline"
     />
   );
 }

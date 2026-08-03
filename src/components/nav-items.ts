@@ -3,6 +3,7 @@ import {
   Bot,
   CheckSquare,
   Compass,
+  Dumbbell,
   FilePlus2,
   LayoutGrid,
   Map,
@@ -17,6 +18,7 @@ export const createAction = { href: "/create-problem", label: "Tạo bài tập"
 export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutGrid },
   { href: "/explore", label: "Khám phá", icon: Compass },
+  { href: "/practice", label: "Luyện tập", icon: Dumbbell },
   { href: "/paths", label: "Lộ trình học", icon: Map },
   { href: "/workspace", label: "Không gian học tập", icon: Users },
   { href: "/ai-tutor", label: "Trợ lý AI", icon: Bot },

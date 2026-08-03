@@ -9,7 +9,9 @@ export function FilterBar({
   searchPlaceholder = "Tìm kiếm...",
   controls,
   activeFilterCount = 0,
+  onClearFilters,
   sheetTitle = "Bộ lọc",
+  displayMode = "popover",
   className = "",
 }: {
   searchValue: string;
@@ -17,7 +19,9 @@ export function FilterBar({
   searchPlaceholder?: string;
   controls: ReactNode;
   activeFilterCount?: number;
+  onClearFilters?: () => void;
   sheetTitle?: string;
+  displayMode?: "popover" | "inline";
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -66,10 +70,23 @@ export function FilterBar({
           className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-navy outline-none placeholder:text-text-faint"
         />
         {filterButton}
+        {activeFilterCount > 0 && onClearFilters && (
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="shrink-0 rounded-full px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary-tint"
+          >
+            Xóa lọc
+          </button>
+        )}
       </div>
 
       {open && (
-        <div className="absolute top-full right-0 z-20 mt-2 hidden w-max max-w-full rounded-lg border border-border bg-surface p-4 shadow-dropdown sm:block">
+        <div
+          className={`${
+            displayMode === "inline" ? "mt-2" : "absolute top-full right-0 z-20 mt-2 w-max max-w-full shadow-dropdown"
+          } hidden rounded-lg border border-border bg-surface p-4 sm:block`}
+        >
           <div className="flex flex-wrap items-center gap-2.5">{controls}</div>
         </div>
       )}

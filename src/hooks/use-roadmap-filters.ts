@@ -12,28 +12,32 @@ import type { RankedRoadmap } from "@/types/roadmap";
 
 export function useRoadmapFilters(source: RankedRoadmap[]) {
   const [filters, setFiltersState] = useState<RoadmapFilterState>(DEFAULT_ROADMAP_FILTERS);
-  const [visibleCount, setVisibleCount] = useState(ROADMAP_LIST_CONFIG.pageSize);
+  const [page, setPage] = useState(1);
 
   function setFilters(patch: Partial<RoadmapFilterState>) {
     setFiltersState((prev) => ({ ...prev, ...patch }));
-    setVisibleCount(ROADMAP_LIST_CONFIG.pageSize);
+    setPage(1);
   }
 
   function resetFilters() {
     setFiltersState(DEFAULT_ROADMAP_FILTERS);
-    setVisibleCount(ROADMAP_LIST_CONFIG.pageSize);
+    setPage(1);
   }
 
   const filtered = useMemo(
     () => sortRoadmaps(filterRoadmaps(source, filters), filters.sort),
     [source, filters],
   );
-  const visible = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / ROADMAP_LIST_CONFIG.pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const visible = filtered.slice(
+    (currentPage - 1) * ROADMAP_LIST_CONFIG.pageSize,
+    currentPage * ROADMAP_LIST_CONFIG.pageSize,
+  );
 
-  function loadMore() {
-    setVisibleCount((c) => c + ROADMAP_LIST_CONFIG.pageSize);
+  function goToPage(nextPage: number) {
+    setPage(Math.max(1, Math.min(nextPage, pageCount)));
   }
 
-  return { filters, setFilters, resetFilters, filtered, visible, hasMore, loadMore };
+  return { filters, setFilters, resetFilters, filtered, visible, currentPage, pageCount, goToPage };
 }

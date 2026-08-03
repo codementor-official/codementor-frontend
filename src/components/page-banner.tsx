@@ -12,12 +12,15 @@ export function PageBanner({
   title,
   description,
   actions,
+  illustrationSrc = "/icon-header.PNG",
 }: {
   /** Small uppercase line above the title, e.g. "Chào mừng trở lại, Gia Sĩ". */
   eyebrow?: string;
   title: string;
   description: string;
   actions?: ReactNode;
+  /** Decorative local artwork. Supply a page-specific image when the page has one. */
+  illustrationSrc?: string;
 }) {
   return (
     <section className="relative mb-6 overflow-hidden rounded-xl bg-surface p-7">
@@ -34,7 +37,7 @@ export function PageBanner({
         )}
       </div>
       <Image
-        src="/icon-header.PNG"
+        src={illustrationSrc}
         alt=""
         width={596}
         height={377}

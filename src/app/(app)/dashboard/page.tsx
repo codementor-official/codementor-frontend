@@ -11,7 +11,6 @@ import {
   Flame,
   Pencil,
   PlayCircle,
-  Target,
   type LucideIcon,
 } from "lucide-react";
 import { PageBanner } from "@/components/page-banner";
@@ -21,7 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { EntityCard } from "@/components/entity-card";
 import { ProblemRow } from "@/components/problem-row";
 import { StatBlock } from "@/components/ui/stat-block";
+import { WeeklyGoalCard } from "@/components/personalization/weekly-goal-card";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { PAGE_ILLUSTRATIONS } from "@/lib/content-illustrations";
 import { courseDifficulty, courseHref, featuredCourses } from "@/lib/roadmap/course-catalog";
 import {
   continueLearning,
@@ -47,6 +48,7 @@ export default function DashboardPage() {
   return (
     <div>
       <PageBanner
+        illustrationSrc={PAGE_ILLUSTRATIONS.dashboard}
         eyebrow="Chào mừng trở lại, Gia Sĩ"
         title="Lộ trình Frontend Developer của bạn đang chờ"
         description="Bạn đang ở 14% chặng đường — còn 2 bài nữa là xong chương CSS layout. Giữ nhịp 5 giờ/tuần thì khoảng 7 tháng nữa bạn hoàn thành toàn bộ lộ trình."
@@ -209,31 +211,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
-          <Card className="p-4">
-            <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
-              <Target className="h-4 w-4 text-primary" /> Mục tiêu tuần
-            </div>
-            <div className="flex items-center gap-4">
-              <div
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full"
-                style={{
-                  background: `conic-gradient(var(--color-primary) ${weeklyGoal.pct}%, var(--color-border-soft) 0)`,
-                }}
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface text-sm font-bold text-navy">
-                  {weeklyGoal.pct}%
-                </div>
-              </div>
-              <div>
-                <div className="mb-1 text-lg font-bold text-navy">
-                  {weeklyGoal.doneH} / {weeklyGoal.targetH}h
-                </div>
-                <div className="text-xs text-text-muted">
-                  Còn {weeklyGoal.targetH - weeklyGoal.doneH}h để đạt mục tiêu tuần này
-                </div>
-              </div>
-            </div>
-          </Card>
+          <WeeklyGoalCard completedHours={weeklyGoal.doneH} />
 
           <Card className="p-4">
             <div className="mb-3.5 flex items-baseline justify-between">

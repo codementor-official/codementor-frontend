@@ -1,16 +1,17 @@
 import { RoadmapCard } from "./roadmap-card";
-import { ROADMAP_LIST_CONFIG } from "@/lib/roadmap/roadmap-filter";
 import type { RankedRoadmap } from "@/types/roadmap";
 
 export function RoadmapList({
   roadmaps,
-  hasMore,
-  onLoadMore,
+  currentPage,
+  pageCount,
+  onPageChange,
   isFiltered,
 }: {
   roadmaps: RankedRoadmap[];
-  hasMore: boolean;
-  onLoadMore: () => void;
+  currentPage: number;
+  pageCount: number;
+  onPageChange: (page: number) => void;
   isFiltered: boolean;
 }) {
   if (roadmaps.length === 0) {
@@ -24,39 +25,44 @@ export function RoadmapList({
     );
   }
 
-  const showDivider = !isFiltered && roadmaps.length > ROADMAP_LIST_CONFIG.highRelevanceCount;
-  const primary = showDivider ? roadmaps.slice(0, ROADMAP_LIST_CONFIG.highRelevanceCount) : roadmaps;
-  const rest = showDivider ? roadmaps.slice(ROADMAP_LIST_CONFIG.highRelevanceCount) : [];
-
   return (
     <div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {primary.map((r) => (
-          <RoadmapCard key={r.id} roadmap={r} />
+        {roadmaps.map((roadmap) => (
+          <RoadmapCard key={roadmap.id} roadmap={roadmap} />
         ))}
       </div>
 
-      {showDivider && (
-        <>
-          <div className="my-5 flex items-center gap-3 text-xs font-semibold text-text-faint">
-            <span className="h-px flex-1 bg-border" /> Các lộ trình khác <span className="h-px flex-1 bg-border" />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {rest.map((r) => (
-              <RoadmapCard key={r.id} roadmap={r} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {hasMore && (
-        <button
-          type="button"
-          onClick={onLoadMore}
-          className="mt-5 w-full rounded-md border border-border bg-surface py-2.5 text-sm font-semibold text-navy hover:bg-bg"
-        >
-          Xem thêm lộ trình
-        </button>
+      {pageCount > 1 && (
+        <nav aria-label="Phân trang lộ trình" className="mt-6 flex items-center justify-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-navy hover:bg-bg disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            Trước
+          </button>
+          {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+            <button
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+              aria-current={page === currentPage ? "page" : undefined}
+              className={`h-9 min-w-9 rounded-md px-2 text-xs font-semibold ${page === currentPage ? "bg-navy text-white" : "border border-border bg-surface text-navy hover:bg-bg"}`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === pageCount}
+            className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-navy hover:bg-bg disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            Sau
+          </button>
+        </nav>
       )}
     </div>
   );

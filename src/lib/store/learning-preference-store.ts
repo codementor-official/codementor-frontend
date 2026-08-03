@@ -32,6 +32,8 @@ interface LearningPreferenceState {
   goBack: () => void;
   toggleMultiValue: (field: keyof LearningPreference, value: string) => void;
   setSingleValue: (field: keyof LearningPreference, value: string) => void;
+  updatePreference: (patch: Partial<LearningPreference>) => void;
+  savePreferenceSettings: (patch: Partial<LearningPreference>) => void;
   completeOnboarding: () => void;
   skipOnboarding: () => void;
 }
@@ -69,6 +71,18 @@ export const useLearningPreferenceStore = create<LearningPreferenceState>()(
           },
         })),
 
+      updatePreference: (patch) =>
+        set((s) => ({
+          preference: { ...s.preference, ...patch },
+        })),
+
+      savePreferenceSettings: (patch) =>
+        set((s) => ({
+          preference: { ...s.preference, ...patch },
+          hasCompletedOnboarding: true,
+          hasSkippedOnboarding: false,
+        })),
+
       completeOnboarding: () =>
         set({ isModalOpen: false, hasCompletedOnboarding: true, hasSkippedOnboarding: false }),
       skipOnboarding: () => set({ isModalOpen: false, hasSkippedOnboarding: true }),
@@ -82,6 +96,16 @@ export const useLearningPreferenceStore = create<LearningPreferenceState>()(
         hasSkippedOnboarding: state.hasSkippedOnboarding,
       }),
       onRehydrateStorage: () => (state) => {
+        // Settings added after the first onboarding release should not disappear
+        // for learners who already have a persisted preference object.
+        state?.updatePreference({
+          weeklyStudySchedule:
+            state.preference.weeklyStudySchedule ?? EMPTY_LEARNING_PREFERENCE.weeklyStudySchedule,
+          remindersEnabled: state.preference.remindersEnabled ?? EMPTY_LEARNING_PREFERENCE.remindersEnabled,
+          reminderTime: state.preference.reminderTime ?? EMPTY_LEARNING_PREFERENCE.reminderTime,
+          adaptiveRecommendations:
+            state.preference.adaptiveRecommendations ?? EMPTY_LEARNING_PREFERENCE.adaptiveRecommendations,
+        });
         state?.setHasHydrated(true);
       },
     },

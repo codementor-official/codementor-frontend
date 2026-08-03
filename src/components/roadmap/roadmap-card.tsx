@@ -1,7 +1,7 @@
 import { Map } from "lucide-react";
 import { EntityCard } from "@/components/entity-card";
 import { LEVEL_DISPLAY_LABEL, formatEstimatedHours } from "@/lib/roadmap/roadmap-stats";
-import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { contentIllustration } from "@/lib/content-illustrations";
 import type { RankedRoadmap, RoadmapField } from "@/types/roadmap";
 
 const TONE_BY_FIELD: Record<RoadmapField, "ink" | "primary"> = {
@@ -41,7 +41,7 @@ export function RoadmapCard({ roadmap }: { roadmap: RankedRoadmap }) {
       tileVariant={TONE_BY_FIELD[roadmap.field]}
       tileHeight="sm"
       eyebrow={roadmapEyebrow(roadmap)}
-      coverImage={placeholderCoverUrl(roadmap.slug)}
+      coverImage={contentIllustration(roadmap.slug)}
       kind={{ icon: Map, label: "Lộ trình" }}
       title={roadmap.title}
       description={roadmap.shortDescription}

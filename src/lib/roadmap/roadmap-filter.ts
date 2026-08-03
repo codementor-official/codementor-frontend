@@ -23,12 +23,8 @@ export const DEFAULT_ROADMAP_FILTERS: RoadmapFilterState = {
 
 /** Tunables for how the full roadmap list is presented — adjust freely. */
 export const ROADMAP_LIST_CONFIG = {
-  /** How many top-ranked roadmaps count as "directly relevant" before the
-   * list shows a "lộ trình khác" divider. Real spec target is 10-20 once the
-   * catalog is bigger — set lower here to stay meaningful over ~10 mock roadmaps. */
-  highRelevanceCount: 6,
-  /** Items per page for the load-more control. */
-  pageSize: 9,
+  /** A compact page keeps the list scannable while pagination remains easy to use. */
+  pageSize: 8,
 };
 
 export function filterRoadmaps(roadmaps: RankedRoadmap[], filters: RoadmapFilterState): RankedRoadmap[] {

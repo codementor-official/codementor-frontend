@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { PAGE_ILLUSTRATIONS } from "@/lib/content-illustrations";
 import { courseDifficulty, courseHref, featuredCourses } from "@/lib/roadmap/course-catalog";
 import { PageBanner } from "@/components/page-banner";
 import { Card } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import { Select } from "@/components/ui/select";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
 import { EntityCard } from "@/components/entity-card";
 import { ProblemRow } from "@/components/problem-row";
+import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import {
   communityItems,
   latestArticles,
@@ -107,6 +109,7 @@ export default function ExplorePage() {
   return (
     <div>
       <PageBanner
+        illustrationSrc={PAGE_ILLUSTRATIONS.explore}
         title="Khám phá"
         description="Nội dung mới đang nổi trên toàn hệ thống — khóa học, bài luyện tập, bộ sưu tập và cộng đồng. Lọc theo loại nội dung bên dưới, hoặc tìm thẳng thứ bạn cần."
         actions={
@@ -114,6 +117,7 @@ export default function ExplorePage() {
             <Button href="/paths" size="sm">
               Xem lộ trình học
             </Button>
+            <PersonalizationSettingsTrigger label="Thiết lập gợi ý" />
             <Button href="/create-problem" variant="outline" size="sm">
               Tạo bài luyện tập
             </Button>
