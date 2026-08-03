@@ -35,7 +35,7 @@ export function OverviewTab({
       {/* Identity first: who this group is and what it's working on. */}
       <Card className="overflow-hidden">
         <div className="flex h-28 items-center justify-center bg-navy sm:h-32">
-          <span className="font-mono text-3xl font-bold text-white">{group.tile}</span>
+          <span className="font-mono text-3xl font-bold text-on-ink">{group.tile}</span>
         </div>
         <div className="p-5">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">

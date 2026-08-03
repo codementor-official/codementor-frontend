@@ -16,7 +16,7 @@ function CourseSummaryCard({ roadmapSlug, course, index }: { roadmapSlug: string
       </h3>
       <div className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-surface p-4">
         <div
-          className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg font-mono text-lg font-bold text-white ${tone}`}
+          className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-lg font-mono text-lg font-bold text-on-ink ${tone}`}
         >
           {course.thumbnail}
         </div>
@@ -37,7 +37,7 @@ function CourseSummaryCard({ roadmapSlug, course, index }: { roadmapSlug: string
         </div>
         <Link
           href={`/paths/${roadmapSlug}/courses/${course.slug}`}
-          className={`shrink-0 rounded-md px-4 py-2 text-xs font-semibold text-white ${
+          className={`shrink-0 rounded-md px-4 py-2 text-xs font-semibold text-on-ink ${
             hasCurriculum ? "bg-navy hover:bg-navy/90" : "bg-text-faint hover:bg-text-muted"
           }`}
         >

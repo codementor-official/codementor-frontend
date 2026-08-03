@@ -65,7 +65,7 @@ export function EntityCard({
   const content = (
     <Card interactive={Boolean(href)} className="flex h-full flex-col overflow-hidden">
       <div
-        className={`relative flex shrink-0 items-center justify-center font-mono font-bold text-white ${
+        className={`relative flex shrink-0 items-center justify-center font-mono font-bold text-on-ink ${
           coverImage ? "bg-border-soft" : tileVariantClasses[tileVariant]
         } ${tileHeight === "sm" ? "h-16 text-base" : "h-20 text-lg"}`}
       >
@@ -79,13 +79,13 @@ export function EntityCard({
           />
         )}
         {eyebrow && (
-          <span className="absolute top-2 left-2 z-10 rounded-sm bg-white/90 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-navy uppercase">
+          <span className="absolute top-2 left-2 z-10 rounded-sm bg-surface/90 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-navy uppercase">
             {eyebrow}
           </span>
         )}
         {coverImage ? (
           <span
-            className={`absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full text-[10px] ring-2 ring-white ${tileVariantClasses[tileVariant]}`}
+            className={`absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full text-[10px] ring-2 ring-surface ${tileVariantClasses[tileVariant]}`}
           >
             {tile}
           </span>

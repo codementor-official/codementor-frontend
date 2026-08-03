@@ -88,7 +88,7 @@ function ProblemTableRow({ item, number, featured, favorite, onToggleFavorite }:
       <Link href={item.href ?? "/practice"} className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="truncate text-sm font-semibold text-navy group-hover:text-primary">{item.title}</span>
-          {item.isDaily && <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white">Daily</span>}
+          {item.isDaily && <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-on-ink">Daily</span>}
           {featured && <span className="hidden rounded-full bg-primary-tint px-2 py-0.5 text-[10px] font-bold text-primary sm:inline">{featured}</span>}
         </div>
         <div className="mt-1 flex flex-wrap gap-1.5">

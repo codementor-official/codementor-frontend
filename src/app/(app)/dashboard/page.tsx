@@ -109,7 +109,7 @@ export default function DashboardPage() {
                 <Link key={cl.title} href={cl.href}>
                   <Card className="flex items-center gap-3.5 p-4 hover:border-navy">
                     <span
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md font-mono text-sm font-bold text-white ${
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md font-mono text-sm font-bold text-on-ink ${
                         cl.tileVariant === "primary" ? "bg-primary" : "bg-navy"
                       }`}
                     >
