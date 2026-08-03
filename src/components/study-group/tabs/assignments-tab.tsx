@@ -2,15 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, MessageSquare, Send } from "lucide-react";
+import { ChevronDown, ChevronRight, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { ReviewModal, type ReviewComment } from "@/components/study-group/review-modal";
-import { SplitStatusPill } from "@/components/study-group/status-pill";
+import { SubmissionsTable } from "@/components/study-group/submissions-table";
 import {
-  REVIEW_STATUS_META,
-  SUBMISSION_STATUS_META,
   formatDueDate,
   isOverdue,
   summarizeAssignments,
@@ -69,6 +67,10 @@ export function AssignmentsTab({
   const memberById = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
   const exerciseById = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises]);
   const stats = useMemo(() => summarizeAssignments(assignments), [assignments]);
+  const commentCounts = useMemo(
+    () => Object.fromEntries(Object.entries(comments).map(([id, list]) => [id, list.length])),
+    [comments],
+  );
 
   const query = search.trim().toLowerCase();
   const groups = useMemo(
@@ -181,43 +183,14 @@ export function AssignmentsTab({
                 </button>
 
                 {isOpen && (
-                  <ul className="divide-y divide-border-soft border-t border-border-soft">
-                    {rows.map((assignment) => {
-                      const member = memberById.get(assignment.memberId);
-                      const last = assignment.submissions.at(-1);
-                      const commentCount = comments[assignment.id]?.length ?? 0;
-                      return (
-                        <li key={assignment.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">
-                            {member?.initials ?? "?"}
-                          </span>
-                          <div className="min-w-40 flex-1">
-                            <div className="truncate text-sm font-medium text-navy">
-                              {member?.name ?? "Thành viên đã rời nhóm"}
-                            </div>
-                            <div className="text-xs text-text-faint">
-                              {last
-                                ? `Nộp lần ${last.version} · ${last.submittedAt} · ${last.detail}`
-                                : "Chưa nộp lần nào"}
-                            </div>
-                          </div>
-                          <SplitStatusPill
-                            left={SUBMISSION_STATUS_META[assignment.status].label}
-                            right={REVIEW_STATUS_META[assignment.reviewStatus].label}
-                          />
-                          <Button size="sm" variant="outline" onClick={() => setReviewing(assignment)}>
-                            <MessageSquare className="h-3.5 w-3.5" />
-                            Đánh giá
-                            {commentCount > 0 && (
-                              <span className="rounded-full bg-border-soft px-1.5 text-2xs text-text-muted">
-                                {commentCount}
-                              </span>
-                            )}
-                          </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <div className="border-t border-border-soft">
+                    <SubmissionsTable
+                      rows={rows}
+                      memberById={memberById}
+                      commentCounts={commentCounts}
+                      onReview={setReviewing}
+                    />
+                  </div>
                 )}
               </Card>
             );
