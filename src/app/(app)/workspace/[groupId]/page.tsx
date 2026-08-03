@@ -65,6 +65,7 @@ export default async function WorkspaceGroupPage({
           exercises={detail.exercises}
           members={detail.members}
           assignments={detail.assignments}
+          documents={detail.documents}
           canManage={canManage}
         />
       )}

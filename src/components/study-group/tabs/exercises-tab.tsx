@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, EyeOff, Plus, Send, Trash2 } from "lucide-react";
+import { Eye, Globe, Lock, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -20,17 +20,37 @@ import {
   visibleExercises,
 } from "@/lib/study-group/group-detail-meta";
 import { AssignExerciseModal } from "@/components/study-group/assign-exercise-modal";
-import type { Assignment, GroupExercise, GroupMember } from "@/types/study-group-detail";
+import {
+  CreateExerciseModal,
+  ExerciseEditModal,
+  ExercisePreviewModal,
+} from "@/components/study-group/exercise-modals";
+import { RowActionMenu } from "@/components/ui/row-action-menu";
+import type {
+  Assignment,
+  GroupDocument,
+  GroupExercise,
+  GroupMember,
+} from "@/types/study-group-detail";
+
+/** ponytail: stands in for the signed-in user's own problem library until there's an API. */
+const PERSONAL_EXERCISES = [
+  { id: "p-1", title: "Đếm số nguyên tố trong khoảng", difficulty: "Trung bình" as const, topic: "Số học" },
+  { id: "p-2", title: "Kiểm tra chuỗi đối xứng", difficulty: "Cơ bản" as const, topic: "Chuỗi" },
+  { id: "p-3", title: "Tìm kiếm nhị phân", difficulty: "Nâng cao" as const, topic: "Thuật toán" },
+];
 
 export function ExercisesTab({
   exercises,
   members,
   assignments,
+  documents,
   canManage,
 }: {
   exercises: GroupExercise[];
   members: GroupMember[];
   assignments: Assignment[];
+  documents: GroupDocument[];
   canManage: boolean;
 }) {
   // ponytail: session-scoped. Swap for a service call once there's a backend.
@@ -41,6 +61,9 @@ export function ExercisesTab({
     return map;
   });
   const [assigning, setAssigning] = useState<GroupExercise | null>(null);
+  const [previewing, setPreviewing] = useState<GroupExercise | null>(null);
+  const [editing, setEditing] = useState<GroupExercise | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [status, setStatus] = useState("all");
   const [difficulty, setDifficulty] = useState("all");
 
@@ -149,45 +172,86 @@ export function ExercisesTab({
         },
       },
       { accessorKey: "xp", header: "XP", size: 70 },
-      ...(canManage
-        ? [
-            {
-              id: "actions",
-              header: "",
-              size: 100,
-              enableSorting: false,
-              cell: ({ row }) => {
-                const ex = row.original;
-                return (
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      type="button"
-                      title="Phân công cho thành viên"
-                      aria-label={`Phân công ${ex.title}`}
-                      onClick={() => setAssigning(ex)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      title={ex.status === "hidden" ? "Bỏ ẩn bài tập" : "Ẩn với thành viên"}
-                      aria-label={`${ex.status === "hidden" ? "Bỏ ẩn" : "Ẩn"} ${ex.title}`}
-                      onClick={() => setStatusFor([ex], ex.status === "hidden" ? "published" : "hidden")}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
-                    >
-                      {ex.status === "hidden" ? (
-                        <Eye className="h-3.5 w-3.5" />
-                      ) : (
-                        <EyeOff className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
-                );
-              },
-            } satisfies ColumnDef<GroupExercise, unknown>,
-          ]
-        : []),
+      {
+        id: "actions",
+        header: "",
+        size: 90,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const ex = row.original;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <button
+                type="button"
+                title="Xem trước bài tập"
+                aria-label={`Xem trước ${ex.title}`}
+                onClick={() => setPreviewing(ex)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </button>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+                {canManage && (
+                  <RowActionMenu
+                    label={`Tùy chọn cho ${ex.title}`}
+                    sections={[
+                      {
+                        label: "Hiển thị",
+                        items: [
+                          {
+                            key: "published",
+                            label: "Công khai",
+                            icon: <Globe className="h-3.5 w-3.5" />,
+                            disabled: ex.status === "published",
+                            onSelect: () => setStatusFor([ex], "published"),
+                          },
+                          {
+                            key: "draft",
+                            label: "Bản nháp",
+                            icon: <Pencil className="h-3.5 w-3.5" />,
+                            disabled: ex.status === "draft",
+                            onSelect: () => setStatusFor([ex], "draft"),
+                          },
+                          {
+                            key: "closed",
+                            label: "Tạm đóng",
+                            icon: <Lock className="h-3.5 w-3.5" />,
+                            disabled: ex.status === "closed",
+                            onSelect: () => setStatusFor([ex], "closed"),
+                          },
+                        ],
+                      },
+                    ]}
+                    items={[
+                      {
+                        key: "edit",
+                        label: "Chỉnh sửa",
+                        icon: <Pencil className="h-3.5 w-3.5" />,
+                        separatorBefore: true,
+                        onSelect: () => setEditing(ex),
+                      },
+                      {
+                        key: "assign",
+                        label: "Phân công",
+                        icon: <UsersRound className="h-3.5 w-3.5" />,
+                        onSelect: () => setAssigning(ex),
+                      },
+                      {
+                        key: "delete",
+                        label: "Xóa",
+                        icon: <Trash2 className="h-3.5 w-3.5" />,
+                        danger: true,
+                        separatorBefore: true,
+                        onSelect: () => setItems((prev) => prev.filter((e) => e.id !== ex.id)),
+                      },
+                    ]}
+                  />
+                )}
+              </span>
+            </div>
+          );
+        },
+      },
     ],
     [canManage],
   );
@@ -242,7 +306,7 @@ export function ExercisesTab({
         }
         primaryAction={
           canManage ? (
-            <Button size="sm">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="h-3.5 w-3.5" /> Tạo bài tập
             </Button>
           ) : undefined
@@ -250,12 +314,8 @@ export function ExercisesTab({
         bulkActions={
           canManage ? (
             <>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setStatusFor(selectedRows, "hidden")}
-              >
-                <EyeOff className="h-3.5 w-3.5" /> Ẩn
+              <Button size="sm" variant="outline" onClick={() => setStatusFor(selectedRows, "hidden")}>
+                <Lock className="h-3.5 w-3.5" /> Ẩn
               </Button>
               <Button size="sm" variant="outline" className="text-primary">
                 <Trash2 className="h-3.5 w-3.5" /> Xóa
@@ -266,6 +326,49 @@ export function ExercisesTab({
       />
       <DataTable table={table} emptyMessage="Không có bài tập nào khớp bộ lọc." />
       <TablePagination table={table} />
+
+      <ExercisePreviewModal exercise={previewing} onClose={() => setPreviewing(null)} />
+
+      <ExerciseEditModal
+        exercise={editing}
+        onClose={() => setEditing(null)}
+        onSave={(next) => {
+          setItems((prev) => prev.map((e) => (e.id === next.id ? next : e)));
+          setEditing(null);
+        }}
+      />
+
+      <CreateExerciseModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        documents={documents.filter((d) => d.status === "published")}
+        personalExercises={PERSONAL_EXERCISES}
+        onCreate={(title) => {
+          setItems((prev) => [
+            {
+              id: `created-${Date.now()}`,
+              title,
+              difficulty: "Cơ bản",
+              source: "manual",
+              status: "draft",
+              topic: "Chưa đặt chủ đề",
+              xp: 30,
+              dueAt: null,
+              assignedCount: 0,
+              completedCount: 0,
+              objective: "Nội dung đang được soạn.",
+              estTime: "15 phút",
+              sampleInput: "(chưa có)",
+              sampleOutput: "(chưa có)",
+              criteria: "",
+              phase: "",
+              refDoc: "",
+            },
+            ...prev,
+          ]);
+          setCreateOpen(false);
+        }}
+      />
 
       <AssignExerciseModal
         exercise={assigning}

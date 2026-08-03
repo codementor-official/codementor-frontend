@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { ROLE_LABEL } from "@/lib/study-group/study-group-stats";
 import type { GroupExercise, GroupMember } from "@/types/study-group-detail";
+
+const MEMBERS_PER_PAGE = 5;
 
 /**
  * Picks which members an exercise is assigned to. Opens pre-checked with whoever is
@@ -26,18 +28,24 @@ export function AssignExerciseModal({
 }) {
   const [picked, setPicked] = useState<string[]>(assignedMemberIds);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
 
   // Re-seed when a different exercise opens the modal.
   useEffect(() => {
     setPicked(assignedMemberIds);
     setSearch("");
+    setPage(0);
   }, [exercise?.id, assignedMemberIds]);
 
   const query = search.trim().toLowerCase();
-  const shown = useMemo(
+  const matched = useMemo(
     () => members.filter((m) => !query || m.name.toLowerCase().includes(query)),
     [members, query],
   );
+  const pageCount = Math.max(1, Math.ceil(matched.length / MEMBERS_PER_PAGE));
+  // Filtering can shrink the list under the current page — clamp instead of showing blank.
+  const safePage = Math.min(page, pageCount - 1);
+  const shown = matched.slice(safePage * MEMBERS_PER_PAGE, (safePage + 1) * MEMBERS_PER_PAGE);
 
   if (!exercise) return null;
 
@@ -69,7 +77,10 @@ export function AssignExerciseModal({
           <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-text-faint" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
             placeholder="Tìm thành viên..."
             className="h-9 w-full rounded-md border border-border bg-surface pr-3 pl-8 text-sm text-navy outline-none placeholder:text-text-faint focus:border-navy"
           />
@@ -115,6 +126,35 @@ export function AssignExerciseModal({
           );
         })}
       </ul>
+
+      {pageCount > 1 && (
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="text-xs text-text-muted">{matched.length} thành viên</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+              aria-label="Trang trước"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-bg hover:text-navy disabled:opacity-40"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <span className="px-1.5 text-xs font-medium text-navy">
+              {safePage + 1}/{pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+              disabled={safePage >= pageCount - 1}
+              aria-label="Trang sau"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-bg hover:text-navy disabled:opacity-40"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }

@@ -70,6 +70,14 @@ export interface GroupExercise {
   /** Members this exercise is assigned to, and how many have finished. */
   assignedCount: number;
   completedCount: number;
+  /** Fields the preview and edit form need. */
+  objective: string;
+  estTime: string;
+  sampleInput: string;
+  sampleOutput: string;
+  criteria: string;
+  phase: string;
+  refDoc: string;
 }
 
 /* ---------- Assignments (Phân công & Nộp bài) ---------- */
