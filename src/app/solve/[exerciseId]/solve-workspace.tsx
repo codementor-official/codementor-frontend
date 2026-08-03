@@ -25,8 +25,8 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
-const languages = ["C", "C++", "Python", "JavaScript"];
-const monacoLang: Record<string, string> = { C: "c", "C++": "cpp", Python: "python", JavaScript: "javascript" };
+const languages = ["C", "C++", "Python", "Java", "JavaScript"];
+const monacoLang: Record<string, string> = { C: "c", "C++": "cpp", Python: "python", Java: "java", JavaScript: "javascript" };
 
 const initialPanes: PanesState = {
   left: { tabs: ["description", "discussion"], active: "description" },
@@ -39,7 +39,7 @@ interface MonacoEditorHandle {
   getAction: (id: string) => { run: () => void } | null;
 }
 
-export function SolveWorkspace({ problem }: { problem: Problem }) {
+export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: Problem; backHref?: string }) {
   const [language, setLanguage] = useState(languages[0]);
   const [code, setCode] = useState<Record<string, string>>(problem.starter);
   const editorRef = useRef<MonacoEditorHandle | null>(null);
@@ -53,7 +53,7 @@ export function SolveWorkspace({ problem }: { problem: Problem }) {
     },
   ]);
 
-  const resetCode = () => setCode((c) => ({ ...c, [language]: problem.starter[language] }));
+  const resetCode = () => setCode((c) => ({ ...c, [language]: problem.starter[language] ?? "" }));
   const formatCode = () => editorRef.current?.getAction("editor.action.formatDocument")?.run();
 
   const runCode = () => {
@@ -133,7 +133,7 @@ export function SolveWorkspace({ problem }: { problem: Problem }) {
                   editorRef.current = editor;
                 }}
                 language={monacoLang[language]}
-                value={code[language]}
+                value={code[language] ?? ""}
                 onChange={(v) => setCode((c) => ({ ...c, [language]: v ?? "" }))}
                 theme="vs-dark"
                 options={{ fontSize: 13, minimap: { enabled: false }, automaticLayout: true, padding: { top: 12 } }}
@@ -211,18 +211,20 @@ export function SolveWorkspace({ problem }: { problem: Problem }) {
 
   return (
     <WorkspaceProvider initialPanes={initialPanes}>
-      <WorkspaceBody problem={problem} runCode={runCode} running={running} renderTabContent={renderTabContent} />
+      <WorkspaceBody problem={problem} backHref={backHref} runCode={runCode} running={running} renderTabContent={renderTabContent} />
     </WorkspaceProvider>
   );
 }
 
 function WorkspaceBody({
   problem,
+  backHref,
   runCode,
   running,
   renderTabContent,
 }: {
   problem: Problem;
+  backHref: string;
   runCode: () => void;
   running: boolean;
   renderTabContent: (kind: TabKind) => ReactNode;
@@ -259,7 +261,7 @@ function WorkspaceBody({
       <div className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-surface px-3">
         <div className="flex min-w-0 items-center gap-1">
           <Link
-            href="/practice"
+            href={backHref}
             title="Danh sách bài luyện tập"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
           >

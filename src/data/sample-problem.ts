@@ -82,6 +82,35 @@ Output: [5,6,7,1,2,3,4]
       JavaScript: "// TODO: đọc mảng và xoay phải k vị trí\n",
     },
   },
+  {
+    slug: "library-management-oop",
+    title: "Mô hình hóa hệ thống quản lý thư viện",
+    difficulty: "Trung bình",
+    tags: ["Java", "OOP", "Class & Object"],
+    description: `Một thư viện cần theo dõi sách và lượt mượn. Hãy hoàn thiện các class để chỉ cho mượn khi sách còn sẵn, đồng thời cập nhật trạng thái sách sau khi mượn thành công.
+
+Viết phương thức \`borrowBook(Book book, Member member)\` trả về \`true\` khi lượt mượn hợp lệ; nếu sách đã được mượn thì trả về \`false\` và không tạo lượt mượn mới.
+
+**Ví dụ:**
+
+\`\`\`
+Input: book.available=true, member=\"An\"
+Output: true, book.available=false
+\`\`\`
+`,
+    constraints: ["Mỗi Book có mã sách duy nhất", "Không thay đổi trạng thái sách nếu thao tác mượn thất bại", "Ưu tiên tách rõ dữ liệu Book, Member và Loan"],
+    testCases: [
+      { input: "book.available=true, member=An", expected: "true, available=false" },
+      { input: "book.available=false, member=Bình", expected: "false, available=false" },
+    ],
+    starter: {
+      C: "// Bài tập này khuyến khích giải bằng Java OOP.\nint main() { return 0; }",
+      "C++": "// Bài tập này khuyến khích giải bằng Java OOP.\nint main() { return 0; }",
+      Python: "# Bài tập này khuyến khích giải bằng Java OOP.\n",
+      Java: "class Book {\n  String id;\n  String title;\n  boolean available = true;\n}\n\nclass Member {\n  String name;\n}\n\npublic class Main {\n  static boolean borrowBook(Book book, Member member) {\n    // TODO: kiểm tra trạng thái sách và cập nhật khi mượn thành công\n    return false;\n  }\n\n  public static void main(String[] args) {\n    // TODO: tạo dữ liệu mẫu để tự kiểm tra\n  }\n}",
+      JavaScript: "// Bài tập này khuyến khích giải bằng Java OOP.\n",
+    },
+  },
 ];
 
 export function getProblem(slug: string): Problem {

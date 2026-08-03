@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CheckCircle2, Circle, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatMinutes, getChapterDurationMinutes } from "@/lib/roadmap/roadmap-stats";
@@ -12,20 +13,28 @@ function findNextLessonId(course: Course): string | null {
   return null;
 }
 
-function LessonRow({ lesson, isNext }: { lesson: Lesson; isNext: boolean }) {
+function LessonRow({ lesson, isNext, href }: { lesson: Lesson; isNext: boolean; href: string }) {
+  const content = <>
+    {lesson.isLocked ? (
+      <Lock className="h-4 w-4 shrink-0 text-text-faint" />
+    ) : lesson.isCompleted ? (
+      <CheckCircle2 className="h-4 w-4 shrink-0 text-navy" />
+    ) : (
+      <Circle className="h-4 w-4 shrink-0 text-text-faint" />
+    )}
+    <span className={`flex-1 truncate ${isNext ? "font-semibold text-primary" : "text-navy"}`}>{lesson.title}</span>
+    {lesson.isPreview && <Badge tone="neutral">Học thử</Badge>}
+    <span className="shrink-0 text-xs text-text-faint">{formatMinutes(lesson.durationMinutes)}</span>
+  </>;
+
+  if (lesson.isLocked) {
+    return <div className="flex items-center gap-2.5 px-4 py-2.5 text-sm opacity-60">{content}</div>;
+  }
+
   return (
-    <div className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${isNext ? "bg-primary-tint" : ""}`}>
-      {lesson.isLocked ? (
-        <Lock className="h-4 w-4 shrink-0 text-text-faint" />
-      ) : lesson.isCompleted ? (
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-navy" />
-      ) : (
-        <Circle className="h-4 w-4 shrink-0 text-text-faint" />
-      )}
-      <span className={`flex-1 truncate ${isNext ? "font-semibold text-primary" : "text-navy"}`}>{lesson.title}</span>
-      {lesson.isPreview && <Badge tone="neutral">Học thử</Badge>}
-      <span className="shrink-0 text-xs text-text-faint">{formatMinutes(lesson.durationMinutes)}</span>
-    </div>
+    <Link href={href} className={`flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-bg ${isNext ? "bg-primary-tint" : ""}`}>
+      {content}
+    </Link>
   );
 }
 
@@ -33,10 +42,16 @@ function ChapterBlock({
   chapter,
   index,
   nextLessonId,
+  roadmapSlug,
+  courseSlug,
+  hrefForLesson,
 }: {
   chapter: Chapter;
   index: number;
   nextLessonId: string | null;
+  roadmapSlug: string;
+  courseSlug: string;
+  hrefForLesson?: (lesson: Lesson) => string;
 }) {
   const doneCount = chapter.lessons.filter((l) => l.isCompleted).length;
   const containsNext = chapter.lessons.some((l) => l.id === nextLessonId);
@@ -53,14 +68,22 @@ function ChapterBlock({
       </summary>
       <div className="divide-y divide-border-soft">
         {chapter.lessons.map((lesson) => (
-          <LessonRow key={lesson.id} lesson={lesson} isNext={lesson.id === nextLessonId} />
+          <LessonRow key={lesson.id} lesson={lesson} isNext={lesson.id === nextLessonId} href={hrefForLesson?.(lesson) ?? `/paths/${roadmapSlug}/courses/${courseSlug}/learn/${lesson.id}`} />
         ))}
       </div>
     </details>
   );
 }
 
-export function CourseCurriculumOutline({ course }: { course: Course }) {
+export function CourseCurriculumOutline({
+  course,
+  roadmapSlug,
+  hrefForLesson,
+}: {
+  course: Course;
+  roadmapSlug: string;
+  hrefForLesson?: (lesson: Lesson) => string;
+}) {
   if (course.chapters.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-surface px-4 py-8 text-center text-sm text-text-faint">
@@ -74,7 +97,7 @@ export function CourseCurriculumOutline({ course }: { course: Course }) {
   return (
     <div className="overflow-hidden rounded-lg border border-border">
       {course.chapters.map((chapter, i) => (
-        <ChapterBlock key={chapter.id} chapter={chapter} index={i} nextLessonId={nextLessonId} />
+        <ChapterBlock key={chapter.id} chapter={chapter} index={i} nextLessonId={nextLessonId} roadmapSlug={roadmapSlug} courseSlug={course.slug} hrefForLesson={hrefForLesson} />
       ))}
     </div>
   );

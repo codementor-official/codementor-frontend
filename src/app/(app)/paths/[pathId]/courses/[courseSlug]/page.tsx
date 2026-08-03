@@ -24,7 +24,7 @@ import { roadmapService } from "@/lib/roadmap/roadmap-service";
 import { LEVEL_DISPLAY_LABEL, getLessonTypeCounts } from "@/lib/roadmap/roadmap-stats";
 import { FIELD_FILTER_OPTIONS } from "@/lib/roadmap/roadmap-filter";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
-import type { Course } from "@/types/roadmap";
+import type { Course, Lesson } from "@/types/roadmap";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -74,6 +74,13 @@ export default async function CourseDetailPage({
   const includes = courseIncludes(course);
   const relatedTopics = Array.from(new Set([fieldLabel, ...course.technologies]));
   const updatedLabel = new Date(roadmap.updatedAt).toLocaleDateString("vi-VN", { month: "numeric", year: "numeric" });
+  const firstAvailableLesson = course.chapters.flatMap((chapter) => chapter.lessons).find((lesson) => !lesson.isLocked);
+  const hrefForLesson = (lesson: Lesson) => {
+    const lessonHref = `/paths/${roadmap.slug}/courses/${course.slug}/learn/${lesson.id}`;
+    return course.slug === "java-core" && lesson.type === "exercise"
+      ? `/solve/library-management-oop?returnTo=${encodeURIComponent(lessonHref)}`
+      : lessonHref;
+  };
 
   return (
     <div>
@@ -197,7 +204,7 @@ export default async function CourseDetailPage({
           <p className="mb-3.5 text-xs text-text-faint">
             {course.totalChapters} chương · {course.totalLessons} bài học · {course.durationHours} giờ học
           </p>
-          <CourseCurriculumOutline course={course} />
+          <CourseCurriculumOutline course={course} roadmapSlug={roadmap.slug} hrefForLesson={hrefForLesson} />
         </div>
 
         <div className="flex w-full flex-col gap-3.5 lg:w-80 lg:shrink-0">
@@ -225,12 +232,16 @@ export default async function CourseDetailPage({
             <div className="mb-3.5 h-1.5 overflow-hidden rounded-full bg-border-soft">
               <div className="h-full rounded-full bg-primary" style={{ width: `${course.progressPercent}%` }} />
             </div>
-            <Link
-              href="#curriculum"
-              className="mt-1 block w-full rounded-md bg-primary py-2.5 text-center text-sm font-semibold text-white hover:bg-primary-hover"
-            >
-              {started ? "Học tiếp bài đang dở →" : "Bắt đầu học ngay →"}
-            </Link>
+            {firstAvailableLesson ? (
+              <Link
+                href={hrefForLesson(firstAvailableLesson)}
+                className="mt-1 block w-full rounded-md bg-primary py-2.5 text-center text-sm font-semibold text-white hover:bg-primary-hover"
+              >
+                {started ? "Học tiếp bài đang dở →" : "Bắt đầu học ngay →"}
+              </Link>
+            ) : (
+              <span className="mt-1 block rounded-md bg-bg py-2.5 text-center text-sm font-semibold text-text-faint">Nội dung đang biên soạn</span>
+            )}
           </Card>
         </div>
       </div>
