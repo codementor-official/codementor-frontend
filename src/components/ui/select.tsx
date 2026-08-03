@@ -14,21 +14,26 @@ export function Select({
   value,
   options,
   onChange,
+  shape = "pill",
   className = "",
 }: {
   label: string;
   value: string;
   options: SelectOption[];
   onChange: (value: string) => void;
+  /** `pill` matches `FilterBar`'s rounded row; `box` matches the h-9 inputs in `TableToolbar`. */
+  shape?: "pill" | "box";
   className?: string;
 }) {
+  const shapeClasses =
+    shape === "pill" ? "rounded-full py-2.5 pl-3.5" : "h-9 rounded-md py-0 pl-3 text-xs";
   return (
     <div className="relative w-full sm:w-auto">
       <select
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full appearance-none rounded-full border border-border bg-surface py-2.5 pr-8 pl-3.5 text-xs font-semibold text-navy outline-none focus:border-navy sm:w-auto ${className}`}
+        className={`w-full appearance-none border border-border bg-surface pr-8 text-xs font-semibold text-navy outline-none focus:border-navy sm:w-auto ${shapeClasses} ${className}`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

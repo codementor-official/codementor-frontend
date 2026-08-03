@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 
-type Tone = "neutral" | "navy" | "primary" | "accent" | "success" | "danger" | "ai";
+type Tone = "neutral" | "navy" | "primary" | "accent" | "success" | "danger" | "ai" | "brown";
 
 const toneClasses: Record<Tone, string> = {
   neutral: "bg-border-soft text-text",
@@ -10,6 +10,8 @@ const toneClasses: Record<Tone, string> = {
   success: "bg-success-tint text-success",
   danger: "bg-danger-tint text-danger",
   ai: "bg-ai-tint text-ai",
+  /** Reserved for the "Chủ nhóm" role badge only — see docs/DESIGN_TOKENS.md. */
+  brown: "bg-brown-tint text-brown",
 };
 
 export function Badge({

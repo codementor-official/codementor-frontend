@@ -118,3 +118,13 @@ body {
     border-radius: var(--radius-md);
   }
 }
+
+/* Horizontally scrollable strips (tab bars) still scroll by wheel/swipe/keyboard, but
+ * don't draw a scrollbar under the tabs. Only for strips whose overflow is obvious
+ * from the clipped content — never for a scroll region a user has to discover. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
