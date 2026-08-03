@@ -40,6 +40,18 @@ export function slugifyGroupName(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** Initials from a person's name — Vietnamese names put the given name last, so the
+ * last two words are the meaningful ones ("Nguyễn Trần Gia Sĩ" -> "GS"). */
+export function initialsFromName(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return (
+    words
+      .slice(-2)
+      .map((w) => w[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  );
+}
+
 /** Two-letter mono tile from the group name, matching the tile convention in `data/study-groups.ts`. */
 function tileFromName(name: string): string {
   const initials = name
@@ -67,6 +79,8 @@ export function createGroupDraft(name: string, description: string, ownerName: s
     code: (slug || "nhom").toUpperCase(),
     topic: "Chưa đặt chủ đề",
     memberCount: 1,
+    // A brand-new group has exactly one member: whoever just created it.
+    memberPreview: [{ id: "owner", initials: initialsFromName(ownerName), name: ownerName }],
     openTaskCount: 0,
     progressPercent: 0,
     lastActiveMinutesAgo: 0,
