@@ -5,6 +5,7 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
@@ -12,7 +13,7 @@ import {
   type SortingState,
   type Table as TanstackTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Inbox } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsUpDown, Inbox } from "lucide-react";
 
 /** Ticks the header/row checkboxes. Native input so keyboard + indeterminate come free. */
 export function TableCheckbox({
@@ -141,6 +142,7 @@ export function useDataTable<TData>({
   columns,
   getRowId,
   initialSorting = [],
+  pageSize = 10,
 }: {
   data: TData[];
   // TanStack's own public shape for a heterogeneous column list.
@@ -148,18 +150,65 @@ export function useDataTable<TData>({
   columns: ColumnDef<TData, any>[];
   getRowId: (row: TData) => string;
   initialSorting?: SortingState;
+  /** Rows per page. */
+  pageSize?: number;
 }) {
   return useReactTable({
     data,
     columns,
-    initialState: { sorting: initialSorting },
+    initialState: { sorting: initialSorting, pagination: { pageIndex: 0, pageSize } },
     getRowId,
     enableRowSelection: true,
     autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
+}
+
+/**
+ * Page controls. Hidden entirely on a single page — a pager that can never move is
+ * noise. Counts describe filtered rows, not the raw dataset.
+ */
+export function TablePagination<TData>({ table }: { table: TanstackTable<TData> }) {
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const total = table.getFilteredRowModel().rows.length;
+  if (table.getPageCount() <= 1) return null;
+
+  const first = pageIndex * pageSize + 1;
+  const last = Math.min(total, (pageIndex + 1) * pageSize);
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <span className="text-xs text-text-muted">
+        {first}–{last} trên {total}
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+          aria-label="Trang trước"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-muted hover:bg-bg hover:text-navy disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="px-2 text-xs font-medium text-navy">
+          Trang {pageIndex + 1}/{table.getPageCount()}
+        </span>
+        <button
+          type="button"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+          aria-label="Trang sau"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-muted hover:bg-bg hover:text-navy disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /** Bar above a table: search, filters, then a selection-aware action strip. */

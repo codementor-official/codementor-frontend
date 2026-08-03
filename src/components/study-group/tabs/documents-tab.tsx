@@ -3,11 +3,16 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Check, Download, Eye, EyeOff, Trash2, Upload } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Select } from "@/components/ui/select";
-import { DataTable, TableCheckbox, TableToolbar, useDataTable } from "@/components/ui/data-table";
+import {
+  DataTable,
+  TableCheckbox,
+  TablePagination,
+  TableToolbar,
+  useDataTable,
+} from "@/components/ui/data-table";
 import { DocumentPreviewModal } from "@/components/study-group/document-preview-modal";
 import {
   DOCUMENT_STATUS_META,
@@ -96,7 +101,8 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
         size: 140,
         cell: ({ row }) => {
           const meta = DOCUMENT_STATUS_META[row.original.status];
-          return <Badge tone={meta.tone}>{meta.label}</Badge>;
+          // Plain text, not a badge — only genuinely alerting states take the accent.
+          return <span className={meta.tone === "primary" ? "text-primary" : "text-text"}>{meta.label}</span>;
         },
       },
       ...(canManage
@@ -265,6 +271,7 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
         }
       />
       <DataTable table={table} emptyMessage="Không có tài liệu nào khớp bộ lọc." />
+      <TablePagination table={table} />
 
       <DocumentPreviewModal
         doc={preview}

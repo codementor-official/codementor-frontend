@@ -3,10 +3,15 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, EyeOff, Plus, Send, Trash2 } from "lucide-react";
-import { Badge, DifficultyBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { DataTable, TableCheckbox, TableToolbar, useDataTable } from "@/components/ui/data-table";
+import {
+  DataTable,
+  TableCheckbox,
+  TablePagination,
+  TableToolbar,
+  useDataTable,
+} from "@/components/ui/data-table";
 import {
   EXERCISE_STATUS_META,
   exerciseCompletionPercent,
@@ -94,7 +99,7 @@ export function ExercisesTab({
         accessorKey: "difficulty",
         header: "Độ khó",
         size: 120,
-        cell: ({ row }) => <DifficultyBadge difficulty={row.original.difficulty} />,
+        cell: ({ row }) => <span className="text-text">{row.original.difficulty}</span>,
       },
       {
         accessorKey: "status",
@@ -102,7 +107,7 @@ export function ExercisesTab({
         size: 130,
         cell: ({ row }) => {
           const meta = EXERCISE_STATUS_META[row.original.status];
-          return <Badge tone={meta.tone}>{meta.label}</Badge>;
+          return <span className={meta.tone === "primary" ? "text-primary" : "text-text"}>{meta.label}</span>;
         },
       },
       {
@@ -260,6 +265,7 @@ export function ExercisesTab({
         }
       />
       <DataTable table={table} emptyMessage="Không có bài tập nào khớp bộ lọc." />
+      <TablePagination table={table} />
 
       <AssignExerciseModal
         exercise={assigning}

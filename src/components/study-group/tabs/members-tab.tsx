@@ -5,12 +5,17 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Award, Mail, Trophy, UserMinus } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InviteMemberModal } from "@/components/study-group/invite-member-modal";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
-import { DataTable, TableCheckbox, TableToolbar, useDataTable } from "@/components/ui/data-table";
+import {
+  DataTable,
+  TableCheckbox,
+  TablePagination,
+  TableToolbar,
+  useDataTable,
+} from "@/components/ui/data-table";
 import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import { initialsFromName } from "@/lib/study-group/study-group-service";
 import { rankMembers } from "@/lib/study-group/group-detail-meta";
@@ -140,11 +145,7 @@ export function MembersTab({
         accessorKey: "role",
         header: "Vai trò",
         size: 120,
-        cell: ({ row }) => (
-          <Badge tone={row.original.role === "owner" ? "brown" : "neutral"}>
-            {ROLE_LABEL[row.original.role]}
-          </Badge>
-        ),
+        cell: ({ row }) => <span className="text-text">{ROLE_LABEL[row.original.role]}</span>,
       },
       {
         accessorKey: "progressPercent",
@@ -263,6 +264,7 @@ export function MembersTab({
       />
 
       <DataTable table={table} emptyMessage="Không có thành viên nào khớp bộ lọc." />
+      <TablePagination table={table} />
 
       <Modal
         open={detailMember !== null}
