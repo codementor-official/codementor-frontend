@@ -33,10 +33,6 @@ function describe(problem: AuthoredProblem): string {
   return `${problem.chapter} · ${problem.durationMinutes} phút · ${problem.objectiveCount} mục tiêu`;
 }
 
-function learnerCount(problem: AuthoredProblem): number {
-  return problem.kind === "code" ? problem.solverCount : problem.readerCount;
-}
-
 export function AuthoredProblemsTab() {
   const router = useRouter();
   const [problems, setProblems] = useState(authoredProblems);
@@ -104,20 +100,6 @@ export function AuthoredProblemsTab() {
           return (
             <span className="text-text-muted" title={groups.join(", ")}>
               {groups.length === 1 ? groups[0] : `${groups.length} nhóm`}
-            </span>
-          );
-        },
-      },
-      {
-        id: "learners",
-        header: "Người học",
-        size: 110,
-        accessorFn: learnerCount,
-        cell: ({ row }) => {
-          const count = learnerCount(row.original);
-          return (
-            <span className={count === 0 ? "text-text-faint" : "text-navy"}>
-              {count === 0 ? "—" : count}
             </span>
           );
         },
