@@ -1,6 +1,7 @@
 import { Placeholder } from "@/components/placeholder";
 import { CodeProblemForm } from "@/components/create-problem/code-problem-form";
 import { ProblemTabNav } from "@/components/create-problem/problem-tab-nav";
+import { TheoryLessonForm } from "@/components/create-problem/theory-lesson-form";
 import { resolveProblemTab } from "@/components/create-problem/problem-tabs";
 
 export default async function CreateProblemPage({
@@ -22,6 +23,7 @@ export default async function CreateProblemPage({
       <ProblemTabNav active={tab} />
 
       {tab === "code" && <CodeProblemForm />}
+      {tab === "theory" && <TheoryLessonForm />}
       {tab === "quiz" && <Placeholder label="Soạn câu hỏi trắc nghiệm: đáp án, giải thích, điểm" />}
       {tab === "essay" && <Placeholder label="Soạn bài tự luận: đề bài, tiêu chí chấm, đáp án mẫu" />}
     </div>

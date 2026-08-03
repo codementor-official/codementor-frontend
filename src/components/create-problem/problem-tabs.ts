@@ -1,6 +1,6 @@
-import { Code2, ListChecks, PenLine, type LucideIcon } from "lucide-react";
+import { BookOpen, Code2, ListChecks, PenLine, type LucideIcon } from "lucide-react";
 
-export type ProblemTabKey = "code" | "quiz" | "essay";
+export type ProblemTabKey = "code" | "theory" | "quiz" | "essay";
 
 export interface ProblemTab {
   key: ProblemTabKey;
@@ -10,6 +10,7 @@ export interface ProblemTab {
 
 export const PROBLEM_TABS: ProblemTab[] = [
   { key: "code", label: "Code", icon: Code2 },
+  { key: "theory", label: "Lý thuyết", icon: BookOpen },
   { key: "quiz", label: "Trắc nghiệm", icon: ListChecks },
   { key: "essay", label: "Tự luận", icon: PenLine },
 ];

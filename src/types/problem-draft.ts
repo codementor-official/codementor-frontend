@@ -21,6 +21,18 @@ export interface ProblemTestCase {
   generated: boolean;
 }
 
+export interface TheoryLessonDraft {
+  title: string;
+  chapter: string;
+  /** Estimated reading/watching time, in minutes. */
+  durationMinutes: number;
+  summary: string;
+  /** The "Sau bài này bạn có thể" checklist shown above the content. */
+  objectives: string[];
+  /** Rich-text body as HTML — what the Tiptap editor produces. */
+  content: string;
+}
+
 /** Starter and reference code are per language — both keyed by `ProblemLanguage.id`. */
 export interface CodeProblemDraft {
   title: string;
