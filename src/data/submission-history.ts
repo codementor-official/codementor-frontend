@@ -1,22 +1,4 @@
-export type SubmissionOrigin = "Nhóm học tập" | "Bài luyện tập";
-
-export interface SubmissionHistoryItem {
-  id: string;
-  title: string;
-  origin: SubmissionOrigin;
-  groupName?: string;
-  language: string;
-  result: "Đạt" | "Không đạt" | "Lỗi biên dịch";
-  score: number;
-  passedTests: number;
-  totalTests: number;
-  runtime: string;
-  memory: string;
-  submittedAt: string;
-  version: number;
-  sourceCode: string;
-  note: string;
-}
+import type { SubmissionHistoryItem } from "@/types/submission";
 
 export const submissionHistory: SubmissionHistoryItem[] = [
   { id: "sub-01", title: "Đảo ngược danh sách liên kết", origin: "Nhóm học tập", groupName: "Nhóm Nhập môn Lập trình", language: "C++17", result: "Đạt", score: 100, passedTests: 6, totalTests: 6, runtime: "12 ms", memory: "4.2 MB", submittedAt: "23/07/2026 21:18", version: 1, sourceCode: "Node* reverse(Node* head) {\n  Node* prev = nullptr;\n  while (head) {\n    Node* next = head->next;\n    head->next = prev;\n    prev = head;\n    head = next;\n  }\n  return prev;\n}", note: "Đảo đúng liên kết, không dùng mảng phụ." },
