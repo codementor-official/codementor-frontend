@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sortableDate } from "@/lib/sortable-date";
 import type { ColumnDef } from "@tanstack/react-table";
-import { BookOpen, Code2, Plus } from "lucide-react";
+import { BookOpen, Code2, Eye, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
@@ -15,6 +15,7 @@ import {
   useDataTable,
 } from "@/components/ui/data-table";
 import { RowActionMenu } from "@/components/ui/row-action-menu";
+import { AuthoredPreviewModal } from "@/components/exercises/authored-preview-modal";
 import { authoredProblems } from "@/data/authored-problems";
 import type { AuthoredProblem } from "@/types/authored-problem";
 
@@ -38,6 +39,7 @@ export function AuthoredProblemsTab() {
   const [problems, setProblems] = useState(authoredProblems);
   const [kind, setKind] = useState("all");
   const [status, setStatus] = useState("all");
+  const [previewing, setPreviewing] = useState<AuthoredProblem | null>(null);
 
   const rows = useMemo(
     () =>
@@ -115,12 +117,21 @@ export function AuthoredProblemsTab() {
       {
         id: "actions",
         header: "",
-        size: 56,
+        size: 92,
         enableSorting: false,
         cell: ({ row }) => {
           const problem = row.original;
           return (
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-0.5">
+              <button
+                type="button"
+                onClick={() => setPreviewing(problem)}
+                aria-label={`Xem trước ${problem.title}`}
+                title="Xem trước"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-text-faint transition-colors hover:bg-bg hover:text-navy"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
               <RowActionMenu
                 label={`Tùy chọn cho ${problem.title}`}
                 items={[
@@ -229,6 +240,8 @@ export function AuthoredProblemsTab() {
 
       <DataTable table={table} emptyMessage="Chưa có bài tập nào khớp bộ lọc." />
       <TablePagination table={table} />
+
+      <AuthoredPreviewModal problem={previewing} onClose={() => setPreviewing(null)} />
     </div>
   );
 }
