@@ -95,13 +95,7 @@ export function OverviewTab({
       </Card>
 
       {/* Numbers come after identity. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-2">
-          <h3 className="text-sm font-bold text-navy">Lượt nộp bài 7 ngày qua</h3>
-          <p className="mt-0.5 mb-4 text-xs text-text-faint">Tổng số lượt nộp của cả nhóm mỗi ngày.</p>
-          <SubmissionChart data={detail.submissionTrend} />
-        </Card>
-
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
           <Card className="p-5">
             <h3 className="mb-3 text-sm font-bold text-navy">Tiến độ nhóm</h3>
@@ -138,6 +132,14 @@ export function OverviewTab({
           </Card>
         </div>
       </div>
+
+      {/* The chart gets its own full-width row at the bottom: 7 bars squeezed into a
+       * third of the width were cramped, and it's the least at-a-glance thing here. */}
+      <Card className="p-5">
+        <h3 className="text-sm font-bold text-navy">Lượt nộp bài 7 ngày qua</h3>
+        <p className="mt-0.5 mb-4 text-xs text-text-faint">Tổng số lượt nộp của cả nhóm mỗi ngày.</p>
+        <SubmissionChart data={detail.submissionTrend} />
+      </Card>
     </div>
   );
 }

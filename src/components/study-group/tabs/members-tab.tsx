@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Award, Mail, Trophy, UserMinus } from "lucide-react";
+import { Award, Mail, ShieldCheck, Trophy, User, UserMinus } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InviteMemberModal } from "@/components/study-group/invite-member-modal";
+import { XpRankingCard } from "@/components/study-group/xp-ranking-card";
+import { RowActionMenu } from "@/components/ui/row-action-menu";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
@@ -35,7 +37,7 @@ function Podium({ ranked, onOpen }: { ranked: GroupMember[]; onOpen: (m: GroupMe
   if (top.length === 0) return null;
 
   return (
-    <Card className="mb-5 px-5 pt-4">
+    <Card className="px-5 pt-4">
       <div className="mb-3 flex items-center gap-2">
         <Trophy className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-bold text-navy">Bảng xếp hạng</h3>
@@ -93,6 +95,9 @@ export function MembersTab({
   const [removing, setRemoving] = useState<GroupMember[]>([]);
   const [role, setRole] = useState("all");
   const [detailMember, setDetailMember] = useState<GroupMember | null>(null);
+
+  const setRole_ = (id: string, next: GroupMember["role"]) =>
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role: next } : m)));
 
   const ranked = useMemo(() => rankMembers(members), [members]);
   const rows = useMemo(
@@ -181,28 +186,61 @@ export function MembersTab({
         header: "",
         size: 160,
         enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setDetailMember(row.original)}
-              className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-            >
-              <Award className="h-3.5 w-3.5" /> Thành tích
-            </button>
-            {canManage && row.original.role !== "owner" && (
+        cell: ({ row }) => {
+          const member = row.original;
+          const isOwner = member.role === "owner";
+          return (
+            // Fixed-width button + a menu slot that's always reserved, so the owner row
+            // (which has no menu) lines up with every other row instead of shifting.
+            <div className="flex items-center justify-end gap-1">
               <button
                 type="button"
-                title="Xóa khỏi nhóm"
-                aria-label={`Xóa ${row.original.name} khỏi nhóm`}
-                onClick={() => setRemoving([row.original])}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-primary"
+                onClick={() => setDetailMember(member)}
+                className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-primary hover:bg-primary-tint"
               >
-                <UserMinus className="h-3.5 w-3.5" />
+                <Award className="h-3.5 w-3.5" /> Thành tích
               </button>
-            )}
-          </div>
-        ),
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+                {canManage && !isOwner && (
+                  <RowActionMenu
+                    label={`Tùy chọn cho ${member.name}`}
+                    sections={[
+                      {
+                        label: "Phân quyền",
+                        items: [
+                          {
+                            key: "deputy",
+                            label: "Phó nhóm",
+                            icon: <ShieldCheck className="h-3.5 w-3.5" />,
+                            disabled: member.role === "deputy",
+                            onSelect: () => setRole_(member.id, "deputy"),
+                          },
+                          {
+                            key: "member",
+                            label: "Thành viên",
+                            icon: <User className="h-3.5 w-3.5" />,
+                            disabled: member.role === "member",
+                            onSelect: () => setRole_(member.id, "member"),
+                          },
+                        ],
+                      },
+                    ]}
+                    items={[
+                      {
+                        key: "remove",
+                        label: "Xóa khỏi nhóm",
+                        icon: <UserMinus className="h-3.5 w-3.5" />,
+                        danger: true,
+                        separatorBefore: true,
+                        onSelect: () => setRemoving([member]),
+                      },
+                    ]}
+                  />
+                )}
+              </span>
+            </div>
+          );
+        },
       },
     ],
     [canManage],
@@ -220,7 +258,10 @@ export function MembersTab({
 
   return (
     <div>
-      <Podium ranked={ranked} onOpen={setDetailMember} />
+      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Podium ranked={ranked} onOpen={setDetailMember} />
+        <XpRankingCard ranked={ranked} />
+      </div>
 
       <TableToolbar
         searchValue={globalFilter}
