@@ -81,7 +81,11 @@ export default function DashboardPage() {
 
       <Link
         href="/paths"
-        className="mb-5 flex flex-wrap items-center gap-5 rounded-lg bg-navy p-5 text-on-ink"
+        // ink-fixed, not ink: this band is a dark promo panel by design, and its children
+        // (the white/10 icon tile, the zinc-300 body) are written for a dark background.
+        // Letting it invert turned it into a light slab with washed-out text. On a dark
+        // page it no longer separates from the background on its own, so it takes a border.
+        className="mb-5 flex flex-wrap items-center gap-5 rounded-lg bg-ink-fixed p-5 text-white dark:border dark:border-border"
       >
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10">
           <Bot className="h-5 w-5" />
@@ -95,7 +99,8 @@ export default function DashboardPage() {
             Dựa trên mục tiêu &ldquo;Học để đi làm&rdquo; và trình độ Beginner bạn chọn khi đăng ký.
           </div>
         </div>
-        <span className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-semibold">
+        {/* Inherited text-white would sit on the lighter dark-mode orange at 2.1:1. */}
+        <span className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-ink">
           Xem lộ trình →
         </span>
       </Link>
