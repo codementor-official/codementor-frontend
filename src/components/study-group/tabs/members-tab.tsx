@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Award, Mail, Trophy, UserMinus } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { InviteMemberModal } from "@/components/study-group/invite-member-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +12,7 @@ import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { DataTable, TableCheckbox, TableToolbar, useDataTable } from "@/components/ui/data-table";
 import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-stats";
+import { initialsFromName } from "@/lib/study-group/study-group-service";
 import { rankMembers } from "@/lib/study-group/group-detail-meta";
 import type { GroupMember } from "@/types/study-group-detail";
 
@@ -70,7 +73,19 @@ function Podium({ ranked, onOpen }: { ranked: GroupMember[]; onOpen: (m: GroupMe
   );
 }
 
-export function MembersTab({ members, canManage }: { members: GroupMember[]; canManage: boolean }) {
+export function MembersTab({
+  members: initialMembers,
+  groupCode,
+  canManage,
+}: {
+  members: GroupMember[];
+  groupCode: string;
+  canManage: boolean;
+}) {
+  // ponytail: session-scoped. Swap for service calls once there's a backend.
+  const [members, setMembers] = useState(initialMembers);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [removing, setRemoving] = useState<GroupMember[]>([]);
   const [role, setRole] = useState("all");
   const [detailMember, setDetailMember] = useState<GroupMember | null>(null);
 
@@ -163,16 +178,29 @@ export function MembersTab({ members, canManage }: { members: GroupMember[]; can
       {
         id: "actions",
         header: "",
-        size: 110,
+        size: 160,
         enableSorting: false,
         cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => setDetailMember(row.original)}
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-          >
-            <Award className="h-3.5 w-3.5" /> Thành tích
-          </button>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDetailMember(row.original)}
+              className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+            >
+              <Award className="h-3.5 w-3.5" /> Thành tích
+            </button>
+            {canManage && row.original.role !== "owner" && (
+              <button
+                type="button"
+                title="Xóa khỏi nhóm"
+                aria-label={`Xóa ${row.original.name} khỏi nhóm`}
+                onClick={() => setRemoving([row.original])}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-primary"
+              >
+                <UserMinus className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         ),
       },
     ],
@@ -215,14 +243,19 @@ export function MembersTab({ members, canManage }: { members: GroupMember[]; can
         }
         primaryAction={
           canManage ? (
-            <Button size="sm">
+            <Button size="sm" onClick={() => setInviteOpen(true)}>
               <Mail className="h-3.5 w-3.5" /> Mời thành viên
             </Button>
           ) : undefined
         }
         bulkActions={
           canManage ? (
-            <Button size="sm" variant="outline" className="text-primary">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-primary"
+              onClick={() => setRemoving(table.getSelectedRowModel().rows.map((r) => r.original))}
+            >
               <UserMinus className="h-3.5 w-3.5" /> Xóa khỏi nhóm
             </Button>
           ) : undefined
@@ -265,6 +298,58 @@ export function MembersTab({ members, canManage }: { members: GroupMember[]; can
           </div>
         )}
       </Modal>
+
+      <InviteMemberModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        groupCode={groupCode}
+        onInvite={(identifier, inviteRole) => {
+          setMembers((prev) => [
+            ...prev,
+            {
+              id: `invited-${Date.now()}`,
+              name: identifier,
+              initials: initialsFromName(identifier),
+              role: inviteRole,
+              progressPercent: 0,
+              xp: 0,
+              solvedCount: 0,
+              streakDays: 0,
+              joinedAt: "Vừa xong",
+              lastActiveMinutesAgo: 0,
+              achievements: [],
+            },
+          ]);
+          setInviteOpen(false);
+        }}
+      />
+
+      <ConfirmDialog
+        open={removing.length > 0}
+        onClose={() => setRemoving([])}
+        onConfirm={() => {
+          const ids = new Set(removing.map((m) => m.id));
+          setMembers((prev) => prev.filter((m) => !ids.has(m.id)));
+          setRemoving([]);
+          table.resetRowSelection();
+        }}
+        title="Xóa khỏi nhóm?"
+        confirmLabel={`Xóa ${removing.length} thành viên`}
+        message={
+          <>
+            <span className="font-semibold text-navy">{removing.length} thành viên</span> sẽ mất quyền truy
+            cập vào tài liệu, bài tập và tiến độ của nhóm ngay lập tức. Bài đã nộp của họ vẫn được giữ lại.
+          </>
+        }
+      >
+        <ul className="max-h-32 overflow-y-auto rounded-md bg-bg p-2.5 text-xs text-text-muted">
+          {removing.map((m) => (
+            <li key={m.id} className="truncate py-0.5">
+              {m.name} · {ROLE_LABEL[m.role]}
+            </li>
+          ))}
+        </ul>
+      </ConfirmDialog>
     </div>
   );
 }
