@@ -3,9 +3,12 @@
 import { useState, type ReactNode } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Placeholder } from "@tiptap/extensions";
 import TextAlign from "@tiptap/extension-text-align";
 import Image from "@tiptap/extension-image";
 import Youtube from "@tiptap/extension-youtube";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { common, createLowlight } from "lowlight";
 import {
   AlignCenter,
   AlignJustify,
@@ -32,27 +35,31 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
+import { MediaInsertModal, type MediaKind } from "./media-insert-modal";
+import { FileVideo } from "./video-node";
+import "highlight.js/styles/github-dark.css";
 
-/** What the "insert URL" modal is currently collecting. */
-type UrlKind = "link" | "image" | "video";
+/** `common` is lowlight's ~37-language bundle; these are the ones this platform teaches,
+ * surfaced in the picker so the list stays readable. Anything else still highlights if
+ * the language attribute is set by hand. */
+const CODE_LANGUAGES = [
+  { value: "plaintext", label: "Không tô màu" },
+  { value: "c", label: "C" },
+  { value: "cpp", label: "C++" },
+  { value: "java", label: "Java" },
+  { value: "python", label: "Python" },
+  { value: "javascript", label: "JavaScript" },
+  { value: "typescript", label: "TypeScript" },
+  { value: "go", label: "Go" },
+  { value: "sql", label: "SQL" },
+  { value: "bash", label: "Bash" },
+  { value: "json", label: "JSON" },
+  { value: "xml", label: "HTML/XML" },
+  { value: "css", label: "CSS" },
+];
 
-const URL_COPY: Record<UrlKind, { title: string; description: string; placeholder: string }> = {
-  link: {
-    title: "Chèn liên kết",
-    description: "Liên kết mở ở tab mới. Bôi đen chữ trước khi chèn để gắn vào đoạn văn bản đó.",
-    placeholder: "https://...",
-  },
-  image: {
-    title: "Chèn ảnh",
-    description: "Dán URL ảnh từ nguồn bên ngoài.",
-    placeholder: "https://.../hinh-anh.png",
-  },
-  video: {
-    title: "Chèn video YouTube",
-    description: "Dán link YouTube đầy đủ — video được nhúng trực tiếp vào bài.",
-    placeholder: "https://www.youtube.com/watch?v=...",
-  },
-};
+const lowlight = createLowlight(common);
 
 function ToolbarButton({
   onClick,
@@ -88,8 +95,17 @@ function Divider() {
   return <span className="mx-0.5 h-5 w-px shrink-0 bg-border" aria-hidden />;
 }
 
-function Toolbar({ editor, onInsert }: { editor: Editor; onInsert: (kind: UrlKind) => void }) {
+function Toolbar({
+  editor,
+  onInsertLink,
+  onInsertMedia,
+}: {
+  editor: Editor;
+  onInsertLink: () => void;
+  onInsertMedia: (kind: MediaKind) => void;
+}) {
   const chain = () => editor.chain().focus();
+  const inCodeBlock = editor.isActive("codeBlock");
 
   return (
     <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-surface p-1.5">
@@ -132,11 +148,25 @@ function Toolbar({ editor, onInsert }: { editor: Editor; onInsert: (kind: UrlKin
       </ToolbarButton>
       <ToolbarButton
         label="Khối code"
-        active={editor.isActive("codeBlock")}
+        active={inCodeBlock}
         onClick={() => chain().toggleCodeBlock().run()}
       >
         <Code2 className="h-4 w-4" />
       </ToolbarButton>
+      {/* Only meaningful inside a code block, so it appears with one rather than sitting
+       * permanently disabled in the strip. */}
+      {inCodeBlock && (
+        <Select
+          label="Ngôn ngữ tô màu"
+          shape="box"
+          className="h-8"
+          value={(editor.getAttributes("codeBlock").language as string) || "plaintext"}
+          onChange={(language) =>
+            chain().updateAttributes("codeBlock", { language }).run()
+          }
+          options={CODE_LANGUAGES}
+        />
+      )}
 
       <Divider />
 
@@ -184,7 +214,7 @@ function Toolbar({ editor, onInsert }: { editor: Editor; onInsert: (kind: UrlKin
 
       <Divider />
 
-      <ToolbarButton label="Chèn liên kết" active={editor.isActive("link")} onClick={() => onInsert("link")}>
+      <ToolbarButton label="Chèn liên kết" active={editor.isActive("link")} onClick={onInsertLink}>
         <Link2 className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
@@ -194,10 +224,10 @@ function Toolbar({ editor, onInsert }: { editor: Editor; onInsert: (kind: UrlKin
       >
         <Link2Off className="h-4 w-4" />
       </ToolbarButton>
-      <ToolbarButton label="Chèn ảnh" onClick={() => onInsert("image")}>
+      <ToolbarButton label="Chèn ảnh" onClick={() => onInsertMedia("image")}>
         <ImagePlus className="h-4 w-4" />
       </ToolbarButton>
-      <ToolbarButton label="Chèn video YouTube" onClick={() => onInsert("video")}>
+      <ToolbarButton label="Chèn video" onClick={() => onInsertMedia("video")}>
         <Video className="h-4 w-4" />
       </ToolbarButton>
 
@@ -224,8 +254,8 @@ function Toolbar({ editor, onInsert }: { editor: Editor; onInsert: (kind: UrlKin
 /**
  * Tiptap is headless — it ships no CSS, so the rendered document is styled by the
  * `.rich-text` rules in globals.css and nothing here fights the design system.
- * StarterKit already brings Bold/Italic/Underline/Link/Heading/CodeBlock/lists in v3;
- * only alignment, images and YouTube embeds are added on top.
+ * StarterKit already brings Bold/Italic/Underline/Link/Heading/lists in v3; alignment,
+ * media, the placeholder and syntax-highlighted code blocks are added on top.
  */
 export function RichTextEditor({
   value,
@@ -236,17 +266,28 @@ export function RichTextEditor({
   onChange: (html: string) => void;
   placeholder?: string;
 }) {
-  const [urlKind, setUrlKind] = useState<UrlKind | null>(null);
-  const [url, setUrl] = useState("");
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [mediaKind, setMediaKind] = useState<MediaKind | null>(null);
+  const [localMediaWarning, setLocalMediaWarning] = useState(false);
 
   const editor = useEditor({
     // Tiptap renders to the DOM on mount; rendering during SSR would mismatch on hydration.
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ link: { openOnClick: false, HTMLAttributes: { target: "_blank" } } }),
+      StarterKit.configure({
+        link: { openOnClick: false, HTMLAttributes: { target: "_blank" } },
+        // Replaced by the lowlight variant below — leaving both registered would duplicate the node.
+        codeBlock: false,
+      }),
+      CodeBlockLowlight.configure({ lowlight, defaultLanguage: "plaintext" }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Image,
       Youtube.configure({ width: 640, height: 360 }),
+      FileVideo,
+      // Rendered as a ::before on the empty node itself, so it disappears the moment a
+      // code block or quote is inserted. The old hand-rolled overlay kept drawing over them.
+      Placeholder.configure({ placeholder }),
     ],
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -258,27 +299,33 @@ export function RichTextEditor({
     },
   });
 
-  const openInsert = (kind: UrlKind) => {
+  const openLink = () => {
     // Prefill with the current link so the modal edits rather than blanks it.
-    setUrl(kind === "link" ? (editor?.getAttributes("link").href ?? "") : "");
-    setUrlKind(kind);
+    setLinkUrl(editor?.getAttributes("link").href ?? "");
+    setLinkOpen(true);
   };
 
-  const confirmInsert = () => {
-    const href = url.trim();
-    if (!editor || !href || !urlKind) return;
+  const confirmLink = () => {
+    const href = linkUrl.trim();
+    if (!editor || !href) return;
+    editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
+    setLinkOpen(false);
+    setLinkUrl("");
+  };
+
+  const insertMedia = (src: string, isLocal: boolean) => {
+    if (!editor || !mediaKind) return;
     const chain = editor.chain().focus();
-    if (urlKind === "link") {
-      chain.extendMarkRange("link").setLink({ href }).run();
-    } else {
-      // An inserted image/video lands as a *selected* node, so the author's next keystroke
-      // would replace it. createParagraphNear drops the caret into a new line after it.
-      const inserted =
-        urlKind === "image" ? chain.setImage({ src: href }) : chain.setYoutubeVideo({ src: href });
-      inserted.createParagraphNear().run();
-    }
-    setUrlKind(null);
-    setUrl("");
+    // An inserted image/video lands as a *selected* node, so the author's next keystroke
+    // would replace it. createParagraphNear drops the caret into a new line after it.
+    let inserted;
+    if (mediaKind === "image") inserted = chain.setImage({ src });
+    // Only a real YouTube URL can become a YouTube embed; a picked file or a direct .mp4
+    // link has to render as a plain <video> instead.
+    else if (/youtube\.com|youtu\.be/.test(src)) inserted = chain.setYoutubeVideo({ src });
+    else inserted = chain.setFileVideo({ src });
+    inserted.createParagraphNear().run();
+    if (isLocal) setLocalMediaWarning(true);
   };
 
   if (!editor) {
@@ -292,29 +339,33 @@ export function RichTextEditor({
   return (
     <>
       <div className="overflow-hidden rounded-md border border-border">
-        <Toolbar editor={editor} onInsert={openInsert} />
-        <div className="relative bg-surface">
+        <Toolbar editor={editor} onInsertLink={openLink} onInsertMedia={setMediaKind} />
+        <div className="bg-surface">
           <EditorContent editor={editor} />
-          {editor.isEmpty && (
-            <span className="pointer-events-none absolute top-3 left-4 text-sm text-text-faint">
-              {placeholder}
-            </span>
-          )}
         </div>
       </div>
 
+      {localMediaWarning && (
+        <p className="mt-2 rounded-md border border-border bg-bg px-3 py-2 text-xs text-navy">
+          Tệp từ máy chỉ hiển thị tạm trong phiên soạn thảo này — chưa có kho lưu trữ nên nội
+          dung sẽ mất khi tải lại trang.
+        </p>
+      )}
+
+      <MediaInsertModal kind={mediaKind} onClose={() => setMediaKind(null)} onInsert={insertMedia} />
+
       <Modal
-        open={urlKind !== null}
-        onClose={() => setUrlKind(null)}
+        open={linkOpen}
+        onClose={() => setLinkOpen(false)}
         width="sm"
-        title={urlKind ? URL_COPY[urlKind].title : ""}
-        description={urlKind ? URL_COPY[urlKind].description : undefined}
+        title="Chèn liên kết"
+        description="Liên kết mở ở tab mới. Bôi đen chữ trước khi chèn để gắn vào đoạn văn bản đó."
         footer={
           <>
-            <Button variant="outline" onClick={() => setUrlKind(null)}>
+            <Button variant="outline" onClick={() => setLinkOpen(false)}>
               Hủy
             </Button>
-            <Button onClick={confirmInsert} disabled={!url.trim()}>
+            <Button onClick={confirmLink} disabled={!linkUrl.trim()}>
               Chèn
             </Button>
           </>
@@ -322,10 +373,10 @@ export function RichTextEditor({
       >
         <Input
           autoFocus
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && confirmInsert()}
-          placeholder={urlKind ? URL_COPY[urlKind].placeholder : ""}
+          value={linkUrl}
+          onChange={(e) => setLinkUrl(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && confirmLink()}
+          placeholder="https://..."
         />
       </Modal>
     </>
