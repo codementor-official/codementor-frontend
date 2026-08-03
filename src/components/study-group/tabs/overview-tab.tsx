@@ -32,9 +32,7 @@ export function OverviewTab({
 
   return (
     <div className="flex flex-col gap-5">
-      <LeaderboardSection members={detail.members} />
-
-      {/* Identity: who this group is and what it's working on. */}
+      {/* Identity first: who this group is and what it's working on. */}
       <Card className="overflow-hidden">
         <div className="flex h-28 items-center justify-center bg-navy sm:h-32">
           <span className="font-mono text-3xl font-bold text-white">{group.tile}</span>
@@ -56,6 +54,8 @@ export function OverviewTab({
           </div>
         </div>
       </Card>
+
+      <LeaderboardSection members={detail.members} />
 
       {/* Numbers come after identity. */}
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
