@@ -95,7 +95,8 @@ function ProblemTableRow({ item, number, featured, favorite, onToggleFavorite }:
           {(item.tags ?? []).slice(0, 3).map((tag) => <span key={tag} className="rounded bg-border-soft px-1.5 py-0.5 text-[10px] font-medium text-text-muted">{tag}</span>)}
         </div>
       </Link>
-      <span className="hidden w-15 text-right text-xs tabular-nums text-text-muted lg:block">{item.acceptanceRate.toFixed(1)}%</span>
+      <span className="inline-flex w-14 shrink-0 items-center justify-end gap-1 text-xs font-bold text-primary"><Trophy className="h-3.5 w-3.5" />{item.xp} XP</span>
+      <span className="hidden w-15 text-right text-xs tabular-nums text-text-muted xl:block">{item.acceptanceRate.toFixed(1)}%</span>
       <span className={`hidden w-20 text-right text-xs font-semibold sm:block ${difficultyClass(item.difficulty)}`}>{item.difficulty}</span>
       <span className="hidden w-12 text-right text-xs text-text-faint xl:block">{item.estimatedMinutes}p</span>
       <button type="button" aria-label={favorite ? "Bỏ lưu bài tập" : "Lưu bài tập"} onClick={onToggleFavorite} className={`shrink-0 rounded p-1.5 ${favorite ? "text-accent" : "text-text-faint hover:bg-border-soft hover:text-navy"}`}>
@@ -159,6 +160,7 @@ export default function PracticePage() {
   const paginatedItems = tableItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const activeCollection = collection ? COLLECTIONS[collection] : null;
   const solvedCount = practiceItems.filter((item) => item.status === "solved").length;
+  const earnedXp = practiceItems.filter((item) => item.status === "solved").reduce((total, item) => total + item.xp, 0);
   const toggleFavorite = (id: string) => setFavorites((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id);
@@ -217,7 +219,8 @@ export default function PracticePage() {
             <div className="flex items-center gap-3 border-b border-border bg-bg px-4 py-3">
               <Search className="h-4 w-4 text-text-faint" />
               <span className="flex-1 text-sm font-bold text-navy">Danh sách bài tập</span>
-              <span className="hidden text-xs text-text-faint lg:block">Tỷ lệ đạt</span>
+              <span className="w-14 text-right text-xs text-text-faint">XP</span>
+              <span className="hidden text-xs text-text-faint xl:block">Tỷ lệ đạt</span>
               <span className="hidden w-20 text-right text-xs text-text-faint sm:block">Độ khó</span>
               <span className="w-7" />
             </div>
@@ -231,8 +234,8 @@ export default function PracticePage() {
         </main>
 
         <aside className="space-y-4 xl:sticky xl:top-5 xl:self-start">
-          <Card className="p-4"><div className="mb-3 flex items-center justify-between"><span className="text-sm font-bold text-navy">Chuỗi luyện tập</span><Flame className="h-4 w-4 text-accent" /></div><div className="mb-3 flex items-baseline gap-1"><span className="text-3xl font-bold text-primary">5</span><span className="text-xs text-text-faint">ngày liên tiếp</span></div><div className="grid grid-cols-7 gap-1.5">{[true, true, true, true, true, false, false].map((done, index) => <div key={index} className="text-center"><span className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${done ? "bg-primary text-white" : "bg-border-soft text-text-faint"}`}>{done ? <Check className="h-3.5 w-3.5" /> : index + 1}</span><span className="mt-1 block text-[9px] text-text-faint">T{index + 2}</span></div>)}</div><p className="mt-3 border-t border-border-soft pt-3 text-xs leading-relaxed text-text-muted">Giải thêm 1 bài hôm nay để giữ chuỗi và nhận 20 XP.</p></Card>
-          <Card className="p-4"><div className="mb-3 flex items-center justify-between"><span className="text-sm font-bold text-navy">Tiến độ của bạn</span><span className="text-xs font-semibold text-primary">{solvedCount}/{practiceItems.length}</span></div><div className="mb-2 h-2 overflow-hidden rounded-full bg-border-soft"><div className="h-full rounded-full bg-primary" style={{ width: `${(solvedCount / practiceItems.length) * 100}%` }} /></div><div className="flex justify-between text-[11px] text-text-faint"><span>{solvedCount} đã giải</span><span>{favorites.size} đã lưu</span></div></Card>
+          <Card className="p-4"><div className="mb-3 flex items-center justify-between"><span className="text-sm font-bold text-navy">Chuỗi luyện tập</span><Flame className="h-4 w-4 text-accent" /></div><div className="mb-3 flex items-baseline gap-1"><span className="text-3xl font-bold text-primary">5</span><span className="text-xs text-text-faint">ngày liên tiếp</span></div><div className="grid grid-cols-7 gap-1.5">{[true, true, true, true, true, false, false].map((done, index) => <div key={index} className="text-center"><span className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${done ? "bg-primary text-white" : "bg-border-soft text-text-faint"}`}>{done ? <Check className="h-3.5 w-3.5" /> : index + 1}</span><span className="mt-1 block text-[9px] text-text-faint">T{index + 2}</span></div>)}</div><p className="mt-3 border-t border-border-soft pt-3 text-xs leading-relaxed text-text-muted">Giải thêm 1 bài hôm nay để giữ chuỗi và nhận XP theo độ khó.</p></Card>
+          <Card className="p-4"><div className="mb-3 flex items-center justify-between"><span className="text-sm font-bold text-navy">Tiến độ & XP</span><span className="text-xs font-bold text-primary">{earnedXp.toLocaleString("vi-VN")} XP</span></div><div className="mb-2 h-2 overflow-hidden rounded-full bg-border-soft"><div className="h-full rounded-full bg-primary" style={{ width: `${(solvedCount / practiceItems.length) * 100}%` }} /></div><div className="flex justify-between text-[11px] text-text-faint"><span>{solvedCount}/{practiceItems.length} đã giải</span><span>{favorites.size} đã lưu</span></div><p className="mt-3 border-t border-border-soft pt-3 text-xs text-text-muted">Hoàn thành bài để nhận XP theo độ khó: 25 · 50 · 80 XP.</p></Card>
           <Card className="p-4"><h2 className="mb-3 text-sm font-bold text-navy">Từ khóa thịnh hành</h2><div className="flex flex-wrap gap-2">{["Array", "String", "SQL", "React", "REST API", "BFS/DFS", "OOP", "Dynamic Programming", "System design", "Git"].map((tag) => <button key={tag} type="button" onClick={() => { setSearch(tag); setCollection(null); setPage(1); }} className="rounded-full bg-bg px-2.5 py-1.5 text-xs font-medium text-text-muted hover:bg-primary-tint hover:text-primary">{tag}</button>)}</div></Card>
           <Card className="p-4"><h2 className="mb-2 text-sm font-bold text-navy">Nhu cầu tuyển dụng</h2><p className="mb-3 text-xs leading-relaxed text-text-muted">Các kỹ năng xuất hiện nhiều trong bộ bài phỏng vấn mock.</p><div className="flex flex-wrap gap-1.5">{["VNG", "MoMo", "Viettel", "FPT Software", "KMS", "NashTech"].map((company) => <span key={company} className="rounded-full border border-border px-2 py-1 text-[10px] font-semibold text-text-muted">{company}</span>)}</div></Card>
         </aside>

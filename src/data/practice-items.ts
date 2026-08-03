@@ -9,6 +9,8 @@ export interface PracticeItem extends CourseCardProps {
   level: CurrentLevel;
   goals: Array<"workplace" | "fundamental" | "interview" | "algorithm">;
   estimatedMinutes: number;
+  /** XP awarded once the exercise is accepted. Kept on the catalogue item so every surface uses the same reward. */
+  xp: number;
   popularity: number;
   topic: PracticeTopic;
   status: PracticeStatus;
@@ -21,7 +23,7 @@ export interface PracticeItem extends CourseCardProps {
 export type PracticeTopic = "Algorithms" | "Frontend" | "Backend" | "Database" | "Data & AI" | "Mobile" | "Foundation";
 export type PracticeStatus = "solved" | "attempted" | "todo";
 
-type PracticeItemSeed = Omit<PracticeItem, "topic" | "status" | "acceptanceRate" | "companies" | "isFavorite" | "isDaily">;
+type PracticeItemSeed = Omit<PracticeItem, "topic" | "status" | "acceptanceRate" | "companies" | "isFavorite" | "isDaily" | "xp">;
 
 const practice = (item: PracticeItemSeed) => item;
 
@@ -69,6 +71,7 @@ const SOLVED_IDS = new Set([
 ]);
 const ATTEMPTED_IDS = new Set(["cart-discount-rule", "react-product-filter", "todo-api-pagination", "linked-list-history"]);
 const FAVORITE_IDS = new Set(["cart-discount-rule", "todo-api-pagination", "binary-search-orders", "tree-permissions", "sql-window-ranking"]);
+const XP_BY_DIFFICULTY: Record<PracticeItem["difficulty"], number> = { "Cơ bản": 25, "Trung bình": 50, "Nâng cao": 80 };
 const COMPANY_BY_TOPIC: Record<PracticeTopic, string[]> = {
   Algorithms: ["FPT Software", "VNG", "Google"],
   Frontend: ["VNG", "MoMo", "Tiki"],
@@ -87,6 +90,7 @@ export const practiceItems: PracticeItem[] = practiceItemSeeds.map((item, index)
     topic,
     status: SOLVED_IDS.has(item.id) ? "solved" : ATTEMPTED_IDS.has(item.id) ? "attempted" : "todo",
     acceptanceRate: Math.max(28.4, Math.min(78.6, 77.8 - index * 1.9 + (index % 4) * 3.2)),
+    xp: XP_BY_DIFFICULTY[item.difficulty],
     companies: COMPANY_BY_TOPIC[topic],
     isFavorite: FAVORITE_IDS.has(item.id),
     isDaily: item.id === "cart-discount-rule",

@@ -7,10 +7,11 @@ import { usePathname } from "next/navigation";
 export function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLearningWorkspace = /^\/paths\/[^/]+\/courses\/[^/]+\/learn\/[^/]+$/.test(pathname);
+  const isAiWorkspace = pathname === "/ai-tutor";
 
   return (
     <main className={`flex-1 overflow-y-auto ${isLearningWorkspace ? "p-0" : "p-5"}`}>
-      {isLearningWorkspace ? <div className="mx-auto w-full py-3 sm:w-[94%] sm:py-4 xl:w-[90%]">{children}</div> : <div className="mx-auto max-w-(--container-max)">{children}</div>}
+      {isLearningWorkspace || isAiWorkspace ? <div className="mx-auto w-full py-3 sm:w-[94%] sm:py-4 xl:w-[90%]">{children}</div> : <div className="mx-auto max-w-(--container-max)">{children}</div>}
     </main>
   );
 }

@@ -1,5 +1,4 @@
 import {
-  BarChart3,
   Bot,
   CheckSquare,
   Compass,
@@ -23,6 +22,5 @@ export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/workspace", label: "Nhóm học tập", icon: Users },
   { href: "/ai-tutor", label: "Trợ lý AI", icon: Bot },
   { href: "/submissions", label: "Bài đã nộp", icon: CheckSquare },
-  { href: "/progress", label: "Tiến độ", icon: BarChart3 },
   { href: "/settings", label: "Cài đặt", icon: Settings },
 ];
