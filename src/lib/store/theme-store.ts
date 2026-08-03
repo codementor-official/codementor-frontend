@@ -17,8 +17,27 @@ export function resolveTheme(preference: ThemePreference): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-export function applyTheme(preference: ThemePreference) {
-  document.documentElement.classList.toggle("dark", resolveTheme(preference) === "dark");
+let transitionTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Flips the `.dark` class, optionally cross-fading the colour change.
+ *
+ * The `.theme-transition` class is deliberately temporary: the rule behind it targets `*`,
+ * so leaving it on would add a 220ms lag to every hover state in the app.
+ *
+ * `animate` is off for the calls that run on load/rehydrate — there is no previous colour
+ * to fade from there, and animating would just delay first paint.
+ */
+export function applyTheme(preference: ThemePreference, animate = false) {
+  const root = document.documentElement;
+
+  if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    root.classList.add("theme-transition");
+    clearTimeout(transitionTimer);
+    transitionTimer = setTimeout(() => root.classList.remove("theme-transition"), 260);
+  }
+
+  root.classList.toggle("dark", resolveTheme(preference) === "dark");
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -26,7 +45,7 @@ export const useThemeStore = create<ThemeState>()(
     (set) => ({
       preference: "system",
       setPreference: (preference) => {
-        applyTheme(preference);
+        applyTheme(preference, true);
         set({ preference });
       },
     }),

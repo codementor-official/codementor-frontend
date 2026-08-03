@@ -49,7 +49,7 @@ export function Modal({
   // generate z utilities from them (onboarding-modal hardcodes the same value).
   return (
     <div
-      className="fixed inset-0 z-150 flex items-start justify-center overflow-y-auto bg-navy/55 p-4 sm:p-6"
+      className="animate-overlay-in fixed inset-0 z-150 flex items-start justify-center overflow-y-auto bg-ink-fixed/55 p-4 sm:p-6"
       onClick={onClose}
     >
       <div
@@ -57,7 +57,7 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`my-auto w-full rounded-xl bg-surface shadow-modal ${widthClasses[width]}`}
+        className={`animate-modal-in my-auto w-full rounded-xl bg-surface shadow-modal ${widthClasses[width]}`}
       >
         <div className="flex items-start gap-4 border-b border-border-soft px-5 py-4">
           <div className="min-w-0 flex-1">

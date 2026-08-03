@@ -92,7 +92,7 @@ export function FilterBar({
       )}
 
       {open && (
-        <div className="fixed inset-0 z-40 flex items-end bg-navy/55 sm:hidden" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-40 flex items-end bg-ink-fixed/55 sm:hidden" onClick={() => setOpen(false)}>
           <div className="w-full rounded-t-xl bg-surface p-5" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <span className="text-sm font-bold text-navy">{sheetTitle}</span>

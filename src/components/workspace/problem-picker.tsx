@@ -23,7 +23,7 @@ export function ProblemPicker({ current }: { current: Problem }) {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 z-20 mt-1 max-h-80 w-72 overflow-y-auto rounded-md border border-border bg-surface py-1 shadow-dropdown">
+          <div className="animate-menu-in absolute top-full left-0 z-20 mt-1 max-h-80 w-72 overflow-y-auto rounded-md border border-border bg-surface py-1 shadow-dropdown">
             {problems.map((p: Problem) => (
               <button
                 key={p.slug}

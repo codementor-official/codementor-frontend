@@ -65,6 +65,7 @@
   /* motion — only color/background/border/transform ever animate, nothing else */
   --duration-fast: 120ms;
   --duration-base: 180ms;
+  --duration-theme: 220ms;
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
   --font-sans: var(--font-inter);
@@ -116,13 +117,40 @@
   --h-tile-card: 64px;
 }
 
-/* Thin, borderless scrollbars everywhere. Both properties inherit, so `html` covers
- * every scroll container; `scrollbar-width: thin` is also what drops Chromium's
- * stepper arrows. Standard properties only — setting `scrollbar-color` makes
- * Chromium ignore ::-webkit-scrollbar rules, so there's no point writing both. */
-html {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
+/* Thin, borderless scrollbars everywhere.
+ *
+ * `scrollbar-width: thin` alone did NOT drop Chromium's stepper arrows — the arrows only
+ * go away via ::-webkit-scrollbar-button. But Chromium ignores every ::-webkit-scrollbar
+ * rule the moment `scrollbar-color` is set, so the two approaches are mutually exclusive
+ * and the colour declaration has to be fenced off to browsers without the pseudo-element
+ * (Firefox), which is what the @supports block below does. */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-border);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+}
+/* The arrows at each end. */
+::-webkit-scrollbar-button {
+  display: none;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
 }
 
 /* Dark theme.
@@ -174,6 +202,89 @@ html {
 body {
   background: var(--color-bg);
   color: var(--color-text);
+}
+
+/* Theme switch: cross-fade every painted colour instead of snapping.
+ *
+ * Applied only while `.theme-transition` is on <html> (the picker adds it, then removes it
+ * once the transition is done). Leaving it on permanently would put a 220ms lag on every
+ * hover state in the app.
+ *
+ * `*` is acceptable here precisely because it is temporary, and it is the only way to catch
+ * elements whose colours come from utilities rather than a shared component. */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color var(--duration-theme) var(--ease-standard),
+    border-color var(--duration-theme) var(--ease-standard),
+    color var(--duration-theme) var(--ease-standard),
+    fill var(--duration-theme) var(--ease-standard),
+    stroke var(--duration-theme) var(--ease-standard) !important;
+}
+
+/* In-page anchor navigation (the settings TOC) should glide, not jump. */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Overlay motion. Modals and drawers were mounting at full opacity with no movement,
+ * which reads as a flicker rather than something arriving. */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes drawer-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@utility animate-menu-in {
+  animation: menu-in var(--duration-fast) var(--ease-standard);
+}
+@utility animate-overlay-in {
+  animation: overlay-in var(--duration-base) var(--ease-standard);
+}
+@utility animate-modal-in {
+  animation: modal-in var(--duration-base) var(--ease-standard);
+}
+@utility animate-drawer-in {
+  animation: drawer-in-right var(--duration-base) var(--ease-standard);
+}
+
+/* Motion is decoration here — every one of these animations is safe to drop entirely. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition: none !important;
+  }
+  .animate-overlay-in,
+  .animate-modal-in,
+  .animate-drawer-in,
+  .animate-menu-in {
+    animation: none;
+  }
 }
 
 /* Component default: buttons/inputs/textareas are square-ish (radius-md), not pills.

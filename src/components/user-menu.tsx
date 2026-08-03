@@ -31,7 +31,7 @@ export function UserMenu({
     <div ref={ref} className={`relative ${collapsed ? "" : "min-w-0 flex-1"}`}>
       {open && (
         <div
-          className={`absolute z-100 w-64 rounded-md border border-border bg-surface py-1 shadow-dropdown ${
+          className={`animate-menu-in absolute z-100 w-64 rounded-md border border-border bg-surface py-1 shadow-dropdown ${
             placement === "up" ? "bottom-full left-0 mb-2" : "top-full right-0 mt-2"
           }`}
         >

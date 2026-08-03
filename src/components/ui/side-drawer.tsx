@@ -30,13 +30,13 @@ export function SideDrawer({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-150 flex justify-end bg-navy/35" onClick={onClose}>
+    <div className="animate-overlay-in fixed inset-0 z-150 flex justify-end bg-ink-fixed/50" onClick={onClose}>
       <aside
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
-        className={`flex h-full w-full flex-col bg-surface shadow-modal ${width === "wide" ? "max-w-6xl" : "max-w-2xl"}`}
+        className={`animate-drawer-in flex h-full w-full flex-col bg-surface shadow-modal ${width === "wide" ? "max-w-6xl" : "max-w-2xl"}`}
       >
         <header className="flex items-start gap-4 border-b border-border-soft px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">

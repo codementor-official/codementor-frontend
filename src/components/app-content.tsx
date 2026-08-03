@@ -10,7 +10,11 @@ export function AppContent({ children }: { children: React.ReactNode }) {
   const isAiWorkspace = pathname === "/ai-tutor";
 
   return (
-    <main className={`flex-1 overflow-y-auto ${isLearningWorkspace ? "p-0" : "p-5"}`}>
+    // `scroll-smooth` has to sit here, not on <html>: this element is the scroll container,
+    // so it is what an in-page anchor (the settings TOC) actually scrolls.
+    <main
+      className={`flex-1 overflow-y-auto scroll-smooth ${isLearningWorkspace ? "p-0" : "p-5"}`}
+    >
       {isLearningWorkspace || isAiWorkspace ? <div className="mx-auto w-full py-3 sm:w-[94%] sm:py-4 xl:w-[90%]">{children}</div> : <div className="mx-auto max-w-(--container-max)">{children}</div>}
     </main>
   );

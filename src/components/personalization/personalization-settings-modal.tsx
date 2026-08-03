@@ -97,8 +97,8 @@ export function PersonalizationSettingsModal({ open, onClose }: { open: boolean;
     : stepConfig.subtitle;
 
   return (
-    <div className="fixed inset-0 z-150 flex items-start justify-center overflow-y-auto bg-navy/55 p-4 sm:p-6">
-      <div className="my-auto w-full max-w-xl rounded-xl bg-surface p-6 shadow-modal sm:p-9">
+    <div className="animate-overlay-in fixed inset-0 z-150 flex items-start justify-center overflow-y-auto bg-ink-fixed/55 p-4 sm:p-6">
+      <div className="animate-modal-in my-auto w-full max-w-xl rounded-xl bg-surface p-6 shadow-modal sm:p-9">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Image src="/logo.png" alt="CodeMentor" width={460} height={159} className="h-8 w-auto" />
           <button type="button" onClick={onClose} className="text-xs font-medium text-text-muted hover:text-navy">

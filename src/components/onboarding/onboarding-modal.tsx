@@ -48,8 +48,8 @@ export function OnboardingModal() {
   const isStepValid = stepConfig.fields.every((f) => isFieldSatisfied(preference, f.field, f.minSelect));
 
   return (
-    <div className="fixed inset-0 z-150 flex items-start justify-center overflow-y-auto bg-navy/55 p-6">
-      <div className="my-auto w-full max-w-xl rounded-xl bg-surface p-6 shadow-modal sm:p-9">
+    <div className="animate-overlay-in fixed inset-0 z-150 flex items-start justify-center overflow-y-auto bg-ink-fixed/55 p-6">
+      <div className="animate-modal-in my-auto w-full max-w-xl rounded-xl bg-surface p-6 shadow-modal sm:p-9">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Image src="/logo.png" alt="CodeMentor" width={460} height={159} className="h-8 w-auto" />
           <button

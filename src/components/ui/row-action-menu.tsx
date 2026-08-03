@@ -99,7 +99,7 @@ export function RowActionMenu({
             <div
               role="menu"
               style={{ top: pos.top, right: pos.right }}
-              className="fixed z-101 min-w-48 rounded-lg border border-border bg-surface p-1 shadow-dropdown"
+              className="animate-menu-in fixed z-101 min-w-48 rounded-lg border border-border bg-surface p-1 shadow-dropdown"
             >
               {sections.map((section, i) => (
                 <div key={section.label} className={i > 0 ? "mt-1 border-t border-border-soft pt-1" : ""}>

@@ -40,7 +40,7 @@ export function LanguageDropdown({
             <div className="fixed inset-0 z-100" onClick={() => setOpen(false)} />
             <div
               style={{ top: pos.top, left: pos.left }}
-              className="fixed z-101 grid grid-cols-2 gap-x-4 gap-y-0.5 rounded-md border border-border bg-surface p-1.5 shadow-dropdown"
+              className="animate-menu-in fixed z-101 grid grid-cols-2 gap-x-4 gap-y-0.5 rounded-md border border-border bg-surface p-1.5 shadow-dropdown"
             >
               {languages.map((l) => (
                 <button
