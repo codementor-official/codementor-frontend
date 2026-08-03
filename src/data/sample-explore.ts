@@ -1,4 +1,5 @@
 import { Atom, Coffee, FileText, Map, Palette, Server, Sprout, Trophy, Users, type LucideIcon } from "lucide-react";
+import { practiceItems } from "@/data/practice-items";
 
 export const learningCollections: {
   icon: LucideIcon;
@@ -14,40 +15,17 @@ export const learningCollections: {
   { icon: Atom, name: "React Collection", desc: "Component, hooks, quản lý state và routing trong React.", count: "34 bài · 5 khóa", tag: "React" },
 ];
 
-export const popularProblems = [
-  {
-    tile: "√",
-    tileVariant: "primary" as const,
-    title: "Giải Phương trình Bậc hai",
-    meta: "4.502 lượt làm",
-    difficulty: "Cơ bản" as const,
-    href: "/solve/giai-phuong-trinh-bac-hai",
-  },
-  {
-    tile: "↻",
-    tileVariant: "navy" as const,
-    title: "Xoay Mảng",
-    meta: "2.890 lượt làm",
-    difficulty: "Trung bình" as const,
-    href: "/solve/xoay-mang",
-  },
-  {
-    tile: "aba",
-    tileVariant: "accent" as const,
-    title: "Kiểm tra Chuỗi Đối xứng",
-    meta: "3.340 lượt làm",
-    difficulty: "Cơ bản" as const,
-    href: "/solve/kiem-tra-chuoi-doi-xung",
-  },
-  {
-    tile: "⇥",
-    tileVariant: "primary" as const,
-    title: "Cài đặt Tìm kiếm Nhị phân",
-    meta: "1.655 lượt làm",
-    difficulty: "Nâng cao" as const,
-    href: "/solve/tim-kiem-nhi-phan",
-  },
-];
+/** Shared catalogue keeps Explore and Luyện tập consistent as new mock exercises are added. */
+export const popularProblems = [...practiceItems]
+  .sort((left, right) => right.popularity - left.popularity)
+  .map((item) => ({
+    tile: item.tile,
+    tileVariant: item.tileVariant,
+    title: item.title,
+    meta: `${item.participants} lượt làm · ${item.estimatedMinutes} phút`,
+    difficulty: item.difficulty,
+    href: item.href ?? "/practice",
+  }));
 
 export const recommendedTopics = [
   "React Hooks",
