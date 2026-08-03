@@ -30,7 +30,7 @@ export const GROUP_TABS: GroupTab[] = [
   { key: "overview", label: "Tổng quan", icon: LayoutDashboard },
   { key: "docs", label: "Tài liệu", icon: FileText },
   { key: "exercises", label: "Bài tập", icon: ClipboardList },
-  { key: "assignments", label: "Bài nộp", icon: ClipboardCheck, ownerOnly: true },
+  { key: "assignments", label: "Bài nộp", icon: ClipboardCheck },
   { key: "members", label: "Thành viên", icon: Users },
   { key: "progress", label: "Tiến độ", icon: BarChart3 },
   { key: "settings", label: "Cài đặt", icon: Settings, ownerOnly: true },

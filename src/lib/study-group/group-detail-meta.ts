@@ -41,8 +41,12 @@ export const DOCUMENT_VERDICT_META: Record<DocumentVerdict, { label: string; ton
 export const EXERCISE_STATUS_META: Record<ExerciseStatus, { label: string; tone: Tone }> = {
   published: { label: "Đã công bố", tone: "navy" },
   draft: { label: "Bản nháp", tone: "primary" },
+  pending_review: { label: "Chờ duyệt", tone: "primary" },
+  changes_requested: { label: "Cần chỉnh sửa", tone: "primary" },
+  rejected: { label: "Từ chối", tone: "primary" },
   closed: { label: "Tạm đóng", tone: "neutral" },
   hidden: { label: "Đã ẩn", tone: "neutral" },
+  archived: { label: "Đã lưu trữ", tone: "neutral" },
 };
 
 /** Members never see drafts or hidden exercises — only what the group has actually

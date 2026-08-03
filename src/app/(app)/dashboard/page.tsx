@@ -49,6 +49,12 @@ export default function DashboardPage() {
     <div>
       <PageBanner
         illustrationSrc={PAGE_ILLUSTRATIONS.dashboard}
+        variant="dashboard"
+        highlights={[
+          { value: "14%", label: "lộ trình hoàn thành" },
+          { value: "5 giờ", label: "mục tiêu tuần này" },
+          { value: "5 ngày", label: "chuỗi học hiện tại" },
+        ]}
         eyebrow="Chào mừng trở lại, Gia Sĩ"
         title="Lộ trình Frontend Developer của bạn đang chờ"
         description="Bạn đang ở 14% chặng đường — còn 2 bài nữa là xong chương CSS layout. Giữ nhịp 5 giờ/tuần thì khoảng 7 tháng nữa bạn hoàn thành toàn bộ lộ trình."

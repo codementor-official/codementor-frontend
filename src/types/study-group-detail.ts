@@ -17,6 +17,11 @@ export interface GroupMember {
   lastActiveMinutesAgo: number;
   /** Per-member achievement rows shown in the "thành tích" modal. */
   achievements: MemberAchievement[];
+  /** Technologies and courses give the profile modal useful learning context. */
+  technologies?: string[];
+  courses?: { title: string; progressPercent: number }[];
+  /** Overrides are intentionally per-person: two members of the same role may differ. */
+  permissionOverrides?: Partial<Record<PermissionKey, boolean>>;
 }
 
 export interface MemberAchievement {
@@ -53,7 +58,15 @@ export interface GroupDocument {
 /* ---------- Exercises ---------- */
 
 /** `hidden` and `draft` are manager-only; members see published/closed exercises. */
-export type ExerciseStatus = "published" | "draft" | "closed" | "hidden";
+export type ExerciseStatus =
+  | "published"
+  | "draft"
+  | "pending_review"
+  | "changes_requested"
+  | "rejected"
+  | "closed"
+  | "hidden"
+  | "archived";
 export type ExerciseSource = "ai" | "manual";
 export type ExerciseDifficulty = "Cơ bản" | "Trung bình" | "Nâng cao";
 
@@ -78,6 +91,20 @@ export interface GroupExercise {
   criteria: string;
   phase: string;
   refDoc: string;
+  authorId?: string;
+  authorName?: string;
+  createdAt?: string;
+  constraints?: string[];
+  hints?: string[];
+  /** Review workflow is mock-backed for now; persist these through the future API. */
+  reviewRequestedAt?: string;
+  reviewerName?: string;
+  reviewNote?: string;
+  supportLanguages?: string[];
+  testCaseCount?: number;
+  timeLimit?: string;
+  memoryLimit?: string;
+  creatorNote?: string;
 }
 
 /* ---------- Assignments (Phân công & Nộp bài) ---------- */
@@ -91,6 +118,14 @@ export interface AssignmentSubmission {
   result: "Đạt" | "Không đạt";
   detail: string;
   isLate: boolean;
+  score?: number;
+  totalScore?: number;
+  passedTests?: number;
+  totalTests?: number;
+  runtime?: string;
+  memory?: string;
+  language?: string;
+  sourceCode?: string;
 }
 
 export interface Assignment {
@@ -101,6 +136,11 @@ export interface Assignment {
   reviewStatus: ReviewStatus;
   feedback: string;
   submissions: AssignmentSubmission[];
+  /** These remain optional until assignment records are served by the backend. */
+  attemptLimit?: number;
+  allowRetry?: boolean;
+  allowLateSubmission?: boolean;
+  startedAt?: string;
 }
 
 /* ---------- Permissions (Cài đặt → Thành viên) ---------- */
@@ -117,6 +157,22 @@ export type PermissionKey =
 export type ConfigurableRole = Exclude<StudyGroupRole, "owner">;
 
 export type RolePermissions = Record<ConfigurableRole, Record<PermissionKey, boolean>>;
+
+export function effectiveMemberPermissions(
+  member: GroupMember,
+  permissions: RolePermissions,
+): Record<PermissionKey, boolean> {
+  const ownerPermissions: Record<PermissionKey, boolean> = {
+    uploadDoc: true,
+    createExercise: true,
+    editExercise: true,
+    deleteDoc: true,
+    reviewSubmission: true,
+    removeMember: true,
+  };
+  const base = member.role === "owner" ? ownerPermissions : permissions[member.role];
+  return { ...base, ...member.permissionOverrides };
+}
 
 /* ---------- Overview ---------- */
 

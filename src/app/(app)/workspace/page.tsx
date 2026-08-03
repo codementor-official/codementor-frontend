@@ -11,6 +11,13 @@ export default async function WorkspaceListPage() {
     <div>
       <PageBanner
         illustrationSrc={PAGE_ILLUSTRATIONS.workspace}
+        variant="workspace"
+        eyebrow="Cùng học, cùng hoàn thành mục tiêu"
+        highlights={[
+          { value: String(groups.length), label: "nhóm của bạn" },
+          { value: "1", label: "bài đang chờ" },
+          { value: "Tuần này", label: "cập nhật mới" },
+        ]}
         title="Nhóm học tập"
         description="Nơi học và luyện tập cùng các nhóm của bạn — nhóm tự tạo hoặc tham gia qua lời mời từ người khác. Mỗi nhóm có tài liệu, bài tập và bảng tiến độ riêng."
       />

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, Globe, Lock, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
+import { Download, Eye, Globe, Lock, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -19,7 +19,9 @@ import {
   isOverdue,
   visibleExercises,
 } from "@/lib/study-group/group-detail-meta";
+import { downloadCsv } from "@/lib/download-csv";
 import { AssignExerciseModal } from "@/components/study-group/assign-exercise-modal";
+import { ExerciseReviewQueue } from "@/components/study-group/exercise-review-queue";
 import {
   CreateExerciseModal,
   ExerciseEditModal,
@@ -46,12 +48,18 @@ export function ExercisesTab({
   assignments,
   documents,
   canManage,
+  canCreate,
+  currentMemberId,
+  currentMemberName,
 }: {
   exercises: GroupExercise[];
   members: GroupMember[];
   assignments: Assignment[];
   documents: GroupDocument[];
   canManage: boolean;
+  canCreate: boolean;
+  currentMemberId: string;
+  currentMemberName: string;
 }) {
   // ponytail: session-scoped. Swap for a service call once there's a backend.
   const [items, setItems] = useState(exercises);
@@ -74,10 +82,14 @@ export function ExercisesTab({
 
   const rows = useMemo(
     () =>
-      visibleExercises(items, canManage)
+      (canManage
+        ? visibleExercises(items, true)
+        : items.filter((exercise) =>
+            exercise.status === "published" || exercise.status === "closed" || exercise.authorId === currentMemberId,
+          ))
         .filter((e) => status === "all" || e.status === status)
         .filter((e) => difficulty === "all" || e.difficulty === difficulty),
-    [items, canManage, status, difficulty],
+    [items, canManage, currentMemberId, status, difficulty],
   );
 
   const columns = useMemo<ColumnDef<GroupExercise, unknown>[]>(
@@ -113,7 +125,7 @@ export function ExercisesTab({
           <div className="min-w-0">
             <div className="truncate font-medium text-navy">{row.original.title}</div>
             <div className="truncate text-xs text-text-faint">
-              {row.original.topic} · {row.original.source === "ai" ? "AI đề xuất" : "Tự soạn"}
+              {row.original.topic} · Tạo bởi {row.original.authorName ?? (row.original.source === "ai" ? "Trợ lý AI" : "Nhóm học tập")}
             </div>
           </div>
         ),
@@ -266,9 +278,36 @@ export function ExercisesTab({
   const selectedRows = table.getSelectedRowModel().rows.map((r) => r.original);
   const selectedCount = selectedRows.length;
   const globalFilter = table.getState().globalFilter ?? "";
+  const exportExercises = () =>
+    downloadCsv(
+      "danh-sach-bai-tap.csv",
+      ["Tên bài tập", "Chủ đề", "Người tạo", "Độ khó", "Hạn nộp", "Trạng thái", "XP"],
+      rows.map((exercise) => [
+        exercise.title,
+        exercise.topic,
+        exercise.authorName ?? "Nhóm học tập",
+        exercise.difficulty,
+        formatDueDate(exercise.dueAt),
+        EXERCISE_STATUS_META[exercise.status].label,
+        exercise.xp,
+      ]),
+    );
 
   return (
     <div>
+      {canManage && (
+        <ExerciseReviewQueue
+          exercises={items}
+          onDecision={(id, decision, reviewNote) => {
+            setItems((previous) => previous.map((exercise) => exercise.id === id ? {
+              ...exercise,
+              status: decision,
+              reviewNote,
+              reviewerName: "Nguyễn Trần Gia Sĩ",
+            } : exercise));
+          }}
+        />
+      )}
       <TableToolbar
         searchValue={globalFilter}
         onSearchChange={(v) => table.setGlobalFilter(v)}
@@ -286,8 +325,12 @@ export function ExercisesTab({
                 { value: "all", label: "Mọi trạng thái" },
                 { value: "published", label: "Đã công bố" },
                 { value: "draft", label: "Bản nháp" },
+                { value: "pending_review", label: "Chờ duyệt" },
+                { value: "changes_requested", label: "Cần chỉnh sửa" },
+                { value: "rejected", label: "Từ chối" },
                 { value: "closed", label: "Tạm đóng" },
                 { value: "hidden", label: "Đã ẩn" },
+                { value: "archived", label: "Đã lưu trữ" },
               ]}
             />
             <Select
@@ -305,11 +348,16 @@ export function ExercisesTab({
           </>
         }
         primaryAction={
-          canManage ? (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-3.5 w-3.5" /> Tạo bài tập
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={exportExercises}>
+              <Download className="h-3.5 w-3.5" /> Xuất CSV
             </Button>
-          ) : undefined
+            {canCreate && (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-3.5 w-3.5" /> Tạo bài tập
+              </Button>
+            )}
+          </div>
         }
         bulkActions={
           canManage ? (
@@ -350,7 +398,7 @@ export function ExercisesTab({
               title,
               difficulty: "Cơ bản",
               source: "manual",
-              status: "draft",
+              status: canManage ? "draft" : "pending_review",
               topic: "Chưa đặt chủ đề",
               xp: 30,
               dueAt: null,
@@ -363,6 +411,18 @@ export function ExercisesTab({
               criteria: "",
               phase: "",
               refDoc: "",
+              authorId: currentMemberId,
+              authorName: currentMemberName,
+              createdAt: "24/07/2026",
+              constraints: [],
+              hints: [],
+              reviewRequestedAt: canManage ? undefined : "24/07/2026 21:00",
+              reviewerName: canManage ? undefined : "Nguyễn Trần Gia Sĩ",
+              creatorNote: canManage ? undefined : "Bài tập do thành viên gửi, chờ chủ nhóm duyệt trước khi công bố.",
+              supportLanguages: ["C++", "Java", "Python"],
+              testCaseCount: 0,
+              timeLimit: "1 giây",
+              memoryLimit: "128 MB",
             },
             ...prev,
           ]);

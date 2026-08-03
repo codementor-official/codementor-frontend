@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileCode2, Play, Sparkles, Upload } from "lucide-react";
+import { CalendarClock, FileCode2, Lightbulb, ListChecks, Play, Sparkles, Upload, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -26,6 +26,7 @@ export function ExercisePreviewModal({
       onClose={onClose}
       title={exercise.title}
       description={`Coding · ${exercise.estTime} · ${exercise.xp} XP`}
+      width="lg"
       footer={
         <>
           <Button size="sm" variant="outline" onClick={onClose}>
@@ -47,6 +48,12 @@ export function ExercisePreviewModal({
         <span>{EXERCISE_STATUS_META[exercise.status].label}</span>
       </div>
 
+      <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="rounded-md bg-bg px-3 py-2 text-xs"><span className="text-text-faint">Tác giả</span><div className="mt-1 flex items-center gap-1 font-semibold text-navy"><UserRound className="h-3.5 w-3.5 text-primary" />{exercise.authorName ?? "Nhóm học tập"}</div></div>
+        <div className="rounded-md bg-bg px-3 py-2 text-xs"><span className="text-text-faint">Ngày tạo</span><div className="mt-1 font-semibold text-navy">{exercise.createdAt ?? "Chưa cập nhật"}</div></div>
+        <div className="rounded-md bg-bg px-3 py-2 text-xs"><span className="text-text-faint">Hạn hoàn thành</span><div className="mt-1 flex items-center gap-1 font-semibold text-navy"><CalendarClock className="h-3.5 w-3.5 text-primary" />{formatDueDate(exercise.dueAt)}</div></div>
+      </div>
+
       <p className="mb-4 text-sm leading-relaxed text-text">{exercise.objective}</p>
 
       <h3 className="mb-2 text-xs font-bold tracking-wide text-text-faint uppercase">
@@ -66,6 +73,22 @@ export function ExercisePreviewModal({
           <p className="text-sm text-text">{exercise.criteria}</p>
         </>
       )}
+
+      {(exercise.constraints?.length ?? 0) > 0 && (
+        <section className="mt-4">
+          <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-bold tracking-wide text-text-faint uppercase"><ListChecks className="h-3.5 w-3.5" /> Ràng buộc</h3>
+          <ul className="list-disc space-y-1 pl-4 text-sm text-text">{exercise.constraints?.map((constraint) => <li key={constraint}>{constraint}</li>)}</ul>
+        </section>
+      )}
+
+      {(exercise.hints?.length ?? 0) > 0 && (
+        <section className="mt-4 rounded-md border border-primary/20 bg-primary-tint p-3">
+          <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-navy"><Lightbulb className="h-3.5 w-3.5 text-primary" /> Gợi ý khi bí ý tưởng</h3>
+          <ul className="list-disc space-y-1 pl-4 text-sm text-text">{exercise.hints?.map((hint) => <li key={hint}>{hint}</li>)}</ul>
+        </section>
+      )}
+
+      {exercise.phase && <p className="mt-4 border-t border-border-soft pt-3 text-xs text-text-faint">{exercise.phase}{exercise.refDoc ? ` · Tham khảo: ${exercise.refDoc}` : ""}</p>}
     </Modal>
   );
 }

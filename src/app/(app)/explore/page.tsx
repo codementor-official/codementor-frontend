@@ -7,7 +7,6 @@ import {
   BookOpen,
   Dumbbell,
   FileText,
-  Layers,
   LayoutGrid,
   Star,
   Target,
@@ -30,7 +29,6 @@ import { PersonalizationSettingsTrigger } from "@/components/personalization/per
 import {
   communityItems,
   latestArticles,
-  learningCollections,
   popularProblems,
   recommendedTopics,
   topLearners,
@@ -38,13 +36,12 @@ import {
 import type { Difficulty } from "@/components/ui/badge";
 
 type DifficultyFilter = Difficulty | "all";
-type Category = "all" | "courses" | "problems" | "collections" | "articles" | "community";
+type Category = "all" | "courses" | "problems" | "articles" | "community";
 
 const CATEGORY_OPTIONS: CategoryFilterOption[] = [
   { value: "all", label: "Tất cả", description: "Toàn bộ nội dung, mới và cũ", icon: LayoutGrid },
   { value: "courses", label: "Khóa học", description: "Học theo lộ trình có cấu trúc", icon: BookOpen },
   { value: "problems", label: "Bài luyện tập", description: "Rèn kỹ năng qua từng bài", icon: Dumbbell },
-  { value: "collections", label: "Bộ sưu tập", description: "Tuyển chọn theo công nghệ", icon: Layers },
   { value: "articles", label: "Bài viết", description: "Kiến thức nền và mẹo thực chiến", icon: FileText },
   { value: "community", label: "Cộng đồng", description: "Nhóm học tập, chia sẻ tài liệu", icon: Users },
 ];
@@ -57,16 +54,6 @@ const DIFFICULTY_OPTIONS: { value: DifficultyFilter; label: string }[] = [
   { value: "Trung bình", label: "Trung bình" },
   { value: "Nâng cao", label: "Nâng cao" },
 ];
-
-/** Short mono tile per collection tag — mirrors the abbreviation convention used in
- * `data/roadmaps.ts` (e.g. "Jv" for Java, "⚛" for React) so tile text never wraps. */
-const COLLECTION_TILE: Record<string, string> = {
-  Frontend: "</>",
-  Backend: "Be",
-  Java: "Jv",
-  Spring: "Sb",
-  React: "Rx",
-};
 
 function matches(query: string, ...fields: (string | undefined)[]) {
   if (!query) return true;
@@ -81,7 +68,6 @@ export default function ExplorePage() {
   const query = search.trim().toLowerCase();
 
   const showCourses = category === "all" || category === "courses";
-  const showCollections = category === "all" || category === "collections";
   const showProblems = category === "all" || category === "problems";
   const showArticles = category === "all" || category === "articles";
   const showCommunity = category === "all" || category === "community";
@@ -110,8 +96,15 @@ export default function ExplorePage() {
     <div>
       <PageBanner
         illustrationSrc={PAGE_ILLUSTRATIONS.explore}
+        variant="explore"
+        eyebrow="Chọn nội dung theo mục tiêu của bạn"
+        highlights={[
+          { value: "24", label: "bài luyện tập" },
+          { value: "15", label: "lộ trình nghề nghiệp" },
+          { value: "8", label: "chủ đề nổi bật" },
+        ]}
         title="Khám phá"
-        description="Nội dung mới đang nổi trên toàn hệ thống — khóa học, bài luyện tập, bộ sưu tập và cộng đồng. Lọc theo loại nội dung bên dưới, hoặc tìm thẳng thứ bạn cần."
+        description="Nội dung mới đang nổi trên toàn hệ thống — khóa học, bài luyện tập, bài viết và cộng đồng. Lọc theo loại nội dung bên dưới, hoặc tìm thẳng thứ bạn cần."
         actions={
           <>
             <Button href="/paths" size="sm">
@@ -202,44 +195,25 @@ export default function ExplorePage() {
         </section>
       )}
 
-      {showCollections && (
-        <section className="mb-6">
-          <h2 className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy">
-            <BookOpen className="h-4 w-4 text-primary" /> Bộ sưu tập học tập
-          </h2>
-          <p className="mb-3 text-xs text-text-faint">Các lộ trình chủ đề được tuyển chọn theo công nghệ</p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {learningCollections.map((c) => (
-              <EntityCard
-                key={c.name}
-                tile={COLLECTION_TILE[c.tag] ?? c.tag.slice(0, 2)}
-                tileVariant="ink"
-                tileHeight="sm"
-                coverImage={placeholderCoverUrl(c.name)}
-                kind={{ icon: Layers, label: "Bộ sưu tập" }}
-                title={c.name}
-                description={c.desc}
-                footer={
-                  <>
-                    <span>{c.count}</span>
-                    <span className="rounded-sm bg-border-soft px-2 py-1 font-semibold text-navy">{c.tag}</span>
-                  </>
-                }
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {showArticles && filteredArticles.length > 0 && (
         <section className="mb-6">
-          <h2 className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy">
-            <FileText className="h-4 w-4 text-primary" /> Bài viết mới nhất
-          </h2>
+          <div className="mb-1 flex items-center justify-between gap-3">
+            <h2 className="flex items-center gap-1.5 text-base font-bold text-navy">
+              <FileText className="h-4 w-4 text-primary" /> Bài viết mới nhất
+            </h2>
+            <Link href="/articles" className="shrink-0 text-xs font-semibold text-primary hover:underline">
+              Xem tất cả →
+            </Link>
+          </div>
           <p className="mb-3 text-xs text-text-faint">Kiến thức nền và mẹo thực chiến từ mentor của CodeMentor</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredArticles.map((a) => (
-              <Card key={a.title} className="flex flex-col gap-2 p-4">
+              <Link
+                key={a.slug}
+                href={`/articles/${a.slug}`}
+                className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+              <Card className="flex h-full flex-col gap-2 p-4 transition group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-card">
                 <span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-[10px] font-bold tracking-wide text-navy uppercase">
                   {a.tag}
                 </span>
@@ -250,6 +224,7 @@ export default function ExplorePage() {
                   <span className="shrink-0">{a.readMinutes} phút đọc</span>
                 </div>
               </Card>
+              </Link>
             ))}
           </div>
         </section>

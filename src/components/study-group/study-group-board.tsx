@@ -54,7 +54,7 @@ function GroupSection({
       {groups.length === 0 ? (
         <p className="px-1 py-4 text-xs text-text-faint">{emptyMessage}</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {groups.map((g) => (
             <StudyGroupCard key={g.id} group={g} />
           ))}

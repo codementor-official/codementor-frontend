@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Award, Mail, ShieldCheck, User, UserMinus } from "lucide-react";
+import { Download, Mail, ShieldCheck, User, UserMinus } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InviteMemberModal } from "@/components/study-group/invite-member-modal";
-import { MemberAchievementsModal } from "@/components/study-group/member-achievements-modal";
+import { MemberProfileModal } from "@/components/study-group/member-profile-modal";
+import { LeaderboardSection } from "@/components/study-group/leaderboard-section";
 import { RowActionMenu } from "@/components/ui/row-action-menu";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -19,16 +20,23 @@ import {
 import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import { initialsFromName } from "@/lib/study-group/study-group-service";
 import { rankMembers } from "@/lib/study-group/group-detail-meta";
-import type { GroupMember } from "@/types/study-group-detail";
+import { downloadCsv } from "@/lib/download-csv";
+import type { Assignment, GroupExercise, GroupMember, PermissionKey, RolePermissions } from "@/types/study-group-detail";
 
 export function MembersTab({
   members: initialMembers,
   groupCode,
   canManage,
+  assignments,
+  exercises,
+  permissions,
 }: {
   members: GroupMember[];
   groupCode: string;
   canManage: boolean;
+  assignments: Assignment[];
+  exercises: GroupExercise[];
+  permissions: RolePermissions;
 }) {
   // ponytail: session-scoped. Swap for service calls once there's a backend.
   const [members, setMembers] = useState(initialMembers);
@@ -139,7 +147,7 @@ export function MembersTab({
                 onClick={() => setDetailMember(member)}
                 className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-primary hover:bg-primary-tint"
               >
-                <Award className="h-3.5 w-3.5" /> Thành tích
+                Xem hồ sơ
               </button>
               <span className="flex h-7 w-7 shrink-0 items-center justify-center">
                 {canManage && !isOwner && (
@@ -196,9 +204,17 @@ export function MembersTab({
 
   const selectedCount = table.getSelectedRowModel().rows.length;
   const globalFilter = table.getState().globalFilter ?? "";
+  const exportMembers = () => downloadCsv(
+    "thanh-vien-nhom.csv",
+    ["Họ tên", "Vai trò", "Tiến độ", "Bài đã làm", "XP", "Tham gia"],
+    ranked.map((member) => [member.name, ROLE_LABEL[member.role], `${member.progressPercent}%`, member.solvedCount, member.xp, member.joinedAt]),
+  );
 
   return (
     <div>
+      <div className="mb-5">
+        <LeaderboardSection members={ranked} />
+      </div>
       <TableToolbar
         searchValue={globalFilter}
         onSearchChange={(v) => table.setGlobalFilter(v)}
@@ -219,13 +235,7 @@ export function MembersTab({
             ]}
           />
         }
-        primaryAction={
-          canManage ? (
-            <Button size="sm" onClick={() => setInviteOpen(true)}>
-              <Mail className="h-3.5 w-3.5" /> Mời thành viên
-            </Button>
-          ) : undefined
-        }
+        primaryAction={<div className="flex gap-2"><Button size="sm" variant="outline" onClick={exportMembers}><Download className="h-3.5 w-3.5" /> Xuất CSV</Button>{canManage && <Button size="sm" onClick={() => setInviteOpen(true)}><Mail className="h-3.5 w-3.5" /> Mời thành viên</Button>}</div>}
         bulkActions={
           canManage ? (
             <Button
@@ -243,7 +253,22 @@ export function MembersTab({
       <DataTable table={table} emptyMessage="Không có thành viên nào khớp bộ lọc." />
       <TablePagination table={table} />
 
-      <MemberAchievementsModal member={detailMember} onClose={() => setDetailMember(null)} />
+      {detailMember && (
+        <MemberProfileModal
+          key={detailMember.id}
+          member={members.find((member) => member.id === detailMember.id) ?? detailMember}
+          assignments={assignments}
+          exercises={exercises}
+          permissions={permissions}
+          canManage={canManage}
+          onClose={() => setDetailMember(null)}
+          onSaveOverrides={(overrides: Partial<Record<PermissionKey, boolean>>) => {
+            setMembers((previous) => previous.map((member) =>
+              member.id === detailMember.id ? { ...member, permissionOverrides: overrides } : member,
+            ));
+          }}
+        />
+      )}
 
       <InviteMemberModal
         open={inviteOpen}

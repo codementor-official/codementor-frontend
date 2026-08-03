@@ -9,17 +9,19 @@ import { SplitStatusPill } from "@/components/study-group/status-pill";
 import { REVIEW_STATUS_META, SUBMISSION_STATUS_META } from "@/lib/study-group/group-detail-meta";
 import type { Assignment, GroupMember } from "@/types/study-group-detail";
 
-/** One exercise's assignees, as a table rather than a stack of list rows. */
+/** One exercise's assignees. Members see their own record; reviewers see the full cohort. */
 export function SubmissionsTable({
   rows,
   memberById,
   commentCounts,
   onReview,
+  canReview,
 }: {
   rows: Assignment[];
   memberById: Map<string, GroupMember>;
   commentCounts: Record<string, number>;
   onReview: (assignment: Assignment) => void;
+  canReview: boolean;
 }) {
   const columns = useMemo<ColumnDef<Assignment, unknown>[]>(
     () => [
@@ -31,12 +33,8 @@ export function SubmissionsTable({
           const member = memberById.get(row.original.memberId);
           return (
             <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">
-                {member?.initials ?? "?"}
-              </span>
-              <span className="min-w-0 truncate font-medium text-navy">
-                {member?.name ?? "Thành viên đã rời nhóm"}
-              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">{member?.initials ?? "?"}</span>
+              <span className="min-w-0 truncate font-medium text-navy">{member?.name ?? "Thành viên đã rời nhóm"}</span>
             </div>
           );
         },
@@ -48,14 +46,7 @@ export function SubmissionsTable({
         cell: ({ row }) => {
           const last = row.original.submissions.at(-1);
           if (!last) return <span className="text-text-faint">Chưa nộp lần nào</span>;
-          return (
-            <div className="min-w-0">
-              <div className="truncate text-text">
-                Lần {last.version} · {last.submittedAt}
-              </div>
-              <div className="truncate text-xs text-text-faint">{last.detail}</div>
-            </div>
-          );
+          return <div className="min-w-0"><div className="truncate text-text">Lần {last.version} · {last.submittedAt}</div><div className="truncate text-xs text-text-faint">{last.detail}</div></div>;
         },
       },
       {
@@ -63,53 +54,22 @@ export function SubmissionsTable({
         header: "Trạng thái",
         size: 220,
         accessorFn: (row) => row.status,
-        cell: ({ row }) => (
-          <SplitStatusPill
-            left={SUBMISSION_STATUS_META[row.original.status].label}
-            right={REVIEW_STATUS_META[row.original.reviewStatus].label}
-          />
-        ),
+        cell: ({ row }) => <SplitStatusPill left={SUBMISSION_STATUS_META[row.original.status].label} right={REVIEW_STATUS_META[row.original.reviewStatus].label} />,
       },
-      {
+      ...(canReview ? [{
         id: "actions",
         header: "",
         size: 150,
         enableSorting: false,
         cell: ({ row }) => {
           const count = commentCounts[row.original.id] ?? 0;
-          return (
-            <div className="flex justify-end">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onReview(row.original)}
-                className="whitespace-nowrap"
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                Đánh giá
-                {count > 0 && (
-                  <span className="rounded-full bg-border-soft px-1.5 text-2xs text-text-muted">{count}</span>
-                )}
-              </Button>
-            </div>
-          );
+          return <div className="flex justify-end"><Button size="sm" variant="outline" onClick={() => onReview(row.original)} className="whitespace-nowrap"><MessageSquare className="h-3.5 w-3.5" />Đánh giá{count > 0 && <span className="rounded-full bg-border-soft px-1.5 text-2xs text-text-muted">{count}</span>}</Button></div>;
         },
-      },
+      } satisfies ColumnDef<Assignment, unknown>] : []),
     ],
-    [memberById, commentCounts, onReview],
+    [memberById, commentCounts, onReview, canReview],
   );
 
-  const table = useDataTable({
-    data: rows,
-    columns,
-    getRowId: (row) => row.id,
-    pageSize: 10,
-  });
-
-  return (
-    <div className="p-3">
-      <DataTable table={table} emptyMessage="Không có thành viên nào khớp bộ lọc." />
-      <TablePagination table={table} />
-    </div>
-  );
+  const table = useDataTable({ data: rows, columns, getRowId: (row) => row.id, pageSize: 10 });
+  return <div className="p-3"><DataTable table={table} emptyMessage="Không có bài nộp nào khớp bộ lọc." /><TablePagination table={table} /></div>;
 }

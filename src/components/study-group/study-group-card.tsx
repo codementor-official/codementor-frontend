@@ -34,7 +34,10 @@ export function StudyGroupCard({ group }: { group: StudyGroup }) {
       description={group.description}
       badge={<Badge tone={owned ? "brown" : "neutral"}>{ROLE_LABEL[group.role]}</Badge>}
       tags={[group.topic]}
-      stats={[{ label: "bài tập đang mở", value: group.openTaskCount }]}
+      stats={[
+        { label: "thành viên", value: group.memberCount },
+        { label: "bài tập đang mở", value: group.openTaskCount },
+      ]}
       footer={
         <div className="flex w-full items-center justify-between gap-3">
           <AvatarGroup items={group.memberPreview} total={group.memberCount} size="sm" />

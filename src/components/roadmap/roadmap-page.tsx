@@ -122,6 +122,13 @@ export function RoadmapPage() {
     <div>
       <PageBanner
         illustrationSrc={PAGE_ILLUSTRATIONS.paths}
+        variant="paths"
+        eyebrow={hasPreference ? "Đề xuất đang theo hồ sơ học tập" : "Chọn hướng đi phù hợp với bạn"}
+        highlights={[
+          { value: String(rankedRoadmaps.length), label: "lộ trình sẵn sàng" },
+          { value: "6", label: "hướng chuyên môn" },
+          { value: "1", label: "bước để bắt đầu" },
+        ]}
         title="Lộ trình học"
         description="Học theo lộ trình có cấu trúc — mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp, sắp xếp sẵn thứ tự để bạn không phải tự mò mẫm nên học gì trước."
         actions={

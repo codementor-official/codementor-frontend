@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Construction } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { GroupTabNav } from "@/components/study-group/group-tab-nav";
@@ -11,9 +11,11 @@ import { ExercisesTab } from "@/components/study-group/tabs/exercises-tab";
 import { MembersTab } from "@/components/study-group/tabs/members-tab";
 import { OverviewTab } from "@/components/study-group/tabs/overview-tab";
 import { SettingsTab } from "@/components/study-group/tabs/settings-tab";
+import { ProgressTab } from "@/components/study-group/tabs/progress-tab";
 import { groupDetailService } from "@/lib/study-group/group-detail-service";
 import { studyGroupService } from "@/lib/study-group/study-group-service";
 import { ROLE_LABEL } from "@/lib/study-group/study-group-stats";
+import { effectiveMemberPermissions } from "@/types/study-group-detail";
 
 export default async function WorkspaceGroupPage({
   params,
@@ -33,6 +35,12 @@ export default async function WorkspaceGroupPage({
   const tab = resolveTab(rawTab, isOwner);
   // Deputies inherit the management-facing controls; plain members get read-only tables.
   const canManage = isOwner || group.role === "deputy";
+  const currentMember = group.role === "member"
+    ? detail.members.find((member) => member.id === "van-b")
+    : detail.members.find((member) => member.id === "gia-si") ?? detail.members[0];
+  const currentPermissions = currentMember
+    ? effectiveMemberPermissions(currentMember, detail.permissions)
+    : null;
 
   return (
     <div>
@@ -67,6 +75,9 @@ export default async function WorkspaceGroupPage({
           assignments={detail.assignments}
           documents={detail.documents}
           canManage={canManage}
+          canCreate={canManage || Boolean(currentPermissions?.createExercise)}
+          currentMemberId={currentMember?.id ?? ""}
+          currentMemberName={currentMember?.name ?? "Bạn"}
         />
       )}
       {tab === "assignments" && (
@@ -75,20 +86,21 @@ export default async function WorkspaceGroupPage({
           exercises={detail.exercises}
           members={detail.members}
           assignments={detail.assignments}
+          canReview={canManage || Boolean(currentPermissions?.reviewSubmission)}
+          currentMemberId={currentMember?.id ?? ""}
         />
       )}
       {tab === "members" && (
-        <MembersTab members={detail.members} groupCode={group.code} canManage={isOwner} />
+        <MembersTab
+          members={detail.members}
+          groupCode={group.code}
+          canManage={isOwner}
+          assignments={detail.assignments}
+          exercises={detail.exercises}
+          permissions={detail.permissions}
+        />
       )}
-      {tab === "progress" && (
-        <Card className="border-dashed p-12 text-center">
-          <Construction className="mx-auto mb-2 h-6 w-6 text-text-faint" />
-          <p className="text-sm font-semibold text-navy">Tiến độ đang được xây dựng</p>
-          <p className="mt-1 text-xs text-text-faint">
-            Biểu đồ tiến độ chi tiết của nhóm sẽ xuất hiện ở đây.
-          </p>
-        </Card>
-      )}
+      {tab === "progress" && <ProgressTab detail={detail} />}
       {tab === "settings" && (
         <SettingsTab group={group} members={detail.members} permissions={detail.permissions} />
       )}
