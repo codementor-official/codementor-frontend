@@ -18,7 +18,7 @@ const faqs = [
   },
   {
     q: "Làm sao để tham gia một nhóm học tập?",
-    a: "Nhập mã mời hoặc dán liên kết mời trong mục Không gian học tập. Chủ nhóm cũng có thể thêm bạn trực tiếp bằng tên đăng nhập.",
+    a: "Nhập mã mời hoặc dán liên kết mời trong mục Nhóm học tập. Chủ nhóm cũng có thể thêm bạn trực tiếp bằng tên đăng nhập.",
   },
 ];
 

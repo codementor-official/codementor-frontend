@@ -29,7 +29,9 @@ export interface MemberAchievement {
 
 /** AI pre-screen verdict; anything but `valid` needs a human moderator. */
 export type DocumentVerdict = "valid" | "warning" | "invalid";
-export type DocumentStatus = "published" | "pending" | "changes" | "rejected";
+/** `hidden` is an owner action; `pending`/`changes`/`rejected` come from moderation.
+ * Only `published` is visible to members without manage rights. */
+export type DocumentStatus = "published" | "pending" | "changes" | "rejected" | "hidden";
 
 export interface GroupDocument {
   id: string;
@@ -41,12 +43,17 @@ export interface GroupDocument {
   uploadedAt: string;
   sizeLabel: string;
   status: DocumentStatus;
+  /** Mock preview body — markdown/plain text for text-ish formats. */
+  previewText?: string;
+  /** Target for `type: "Link"` documents. */
+  url?: string;
   verdict: DocumentVerdict;
 }
 
 /* ---------- Exercises ---------- */
 
-export type ExerciseStatus = "published" | "draft" | "closed";
+/** `hidden` and `draft` are manager-only; members see published/closed exercises. */
+export type ExerciseStatus = "published" | "draft" | "closed" | "hidden";
 export type ExerciseSource = "ai" | "manual";
 export type ExerciseDifficulty = "Cơ bản" | "Trung bình" | "Nâng cao";
 
@@ -63,6 +70,14 @@ export interface GroupExercise {
   /** Members this exercise is assigned to, and how many have finished. */
   assignedCount: number;
   completedCount: number;
+  /** Fields the preview and edit form need. */
+  objective: string;
+  estTime: string;
+  sampleInput: string;
+  sampleOutput: string;
+  criteria: string;
+  phase: string;
+  refDoc: string;
 }
 
 /* ---------- Assignments (Phân công & Nộp bài) ---------- */

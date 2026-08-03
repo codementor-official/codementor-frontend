@@ -110,6 +110,24 @@ const documents: GroupDocument[] = [
     uploaderName: "Lê Minh Anh",
     uploadedAt: "22/07/2026",
     sizeLabel: "2,1 MB",
+    previewText: `# Đề cương môn học Nhập môn Lập trình
+
+**Thời lượng:** 15 tuần · 45 tiết
+
+## Chương 1 — Biến và kiểu dữ liệu
+- Khai báo biến, hằng số
+- Các kiểu dữ liệu cơ bản và ép kiểu
+
+## Chương 2 — Cấu trúc điều kiện
+- Câu lệnh \`if\` / \`else if\` / \`else\`
+- Câu lệnh \`switch\` và các bẫy thường gặp
+
+## Chương 3 — Vòng lặp
+- \`for\`, \`while\`, \`do-while\`
+- Vòng lặp lồng nhau và độ phức tạp
+
+## Đánh giá
+Giữa kỳ 30% · Bài tập nhóm 20% · Cuối kỳ 50%`,
     status: "published",
     verdict: "valid",
   },
@@ -121,6 +139,16 @@ const documents: GroupDocument[] = [
     uploaderName: "Lê Minh Anh",
     uploadedAt: "21/07/2026",
     sizeLabel: "5,4 MB",
+    previewText: `# Buổi 4 — Cấu trúc điều kiện
+
+## Mục tiêu
+- Hiểu luồng rẽ nhánh
+- Viết được điều kiện lồng nhau
+
+## Nội dung chính
+- So sánh và toán tử logic
+- \`if\` / \`else\` / \`switch\`
+- Bài tập: giải phương trình bậc hai`,
     status: "published",
     verdict: "valid",
   },
@@ -132,6 +160,21 @@ const documents: GroupDocument[] = [
     uploaderName: "Nguyễn Trần Gia Sĩ",
     uploadedAt: "23/07/2026",
     sizeLabel: "14 KB",
+    previewText: `# Ghi chú: Vòng lặp
+
+Điểm hay nhầm khi mới học:
+
+1. **Sai điều kiện dừng** — \`i <= n\` với mảng 0-based sẽ vượt chỉ số.
+2. **Quên cập nhật biến đếm** trong \`while\` → lặp vô hạn.
+3. Vòng lặp lồng nhau: độ phức tạp là **O(n²)**, không phải O(2n).
+
+\`\`\`c
+for (int i = 0; i < n; i++) {
+  // thân vòng lặp
+}
+\`\`\`
+
+> Mẹo: viết ra giá trị của biến đếm sau mỗi vòng để kiểm tra.`,
     status: "published",
     verdict: "valid",
   },
@@ -154,6 +197,7 @@ const documents: GroupDocument[] = [
     uploaderName: "Nguyễn Trung Nguyên",
     uploadedAt: "17/07/2026",
     sizeLabel: "Liên kết ngoài",
+    url: "https://example.com/big-o-cho-nguoi-moi",
     status: "pending",
     verdict: "warning",
   },
@@ -193,6 +237,13 @@ const exercises: GroupExercise[] = [
     dueAt: "2026-07-22",
     assignedCount: 3,
     completedCount: 1,
+    objective: "Vận dụng cấu trúc rẽ nhánh if/else và tính toán số thực để giải phương trình bậc hai.",
+    estTime: "15 phút",
+    sampleInput: "a=1 b=-3 c=2",
+    sampleOutput: "x1=2.00 x2=1.00",
+    criteria: "Đúng 5/5 test · Xử lý đủ 3 trường hợp delta · Code có chú thích",
+    phase: "Giai đoạn 1 — Cấu trúc điều kiện",
+    refDoc: "Đề cương môn học.pdf",
   },
   {
     id: "tong-phan-tu-mang",
@@ -205,6 +256,13 @@ const exercises: GroupExercise[] = [
     dueAt: "2026-07-28",
     assignedCount: 4,
     completedCount: 1,
+    objective: "Duyệt mảng bằng vòng lặp for và cộng dồn tổng các phần tử.",
+    estTime: "10 phút",
+    sampleInput: "n=5 arr=[1,2,3,4,5]",
+    sampleOutput: "15",
+    criteria: "Đúng toàn bộ test · Không dùng thư viện dựng sẵn",
+    phase: "Giai đoạn 2 — Mảng & Vòng lặp",
+    refDoc: "Ghi chú tự soạn.md",
   },
   {
     id: "kiem-tra-so-nguyen-to",
@@ -217,6 +275,13 @@ const exercises: GroupExercise[] = [
     dueAt: "2026-08-05",
     assignedCount: 0,
     completedCount: 0,
+    objective: "Kiểm tra tính chất số nguyên tố bằng vòng lặp chia thử.",
+    estTime: "20 phút",
+    sampleInput: "n=17",
+    sampleOutput: "Là số nguyên tố",
+    criteria: "Đúng toàn bộ test · Độ phức tạp tốt hơn O(n)",
+    phase: "Giai đoạn 2 — Mảng & Vòng lặp",
+    refDoc: "Slide buổi 4 - Cấu trúc điều kiện.pptx",
   },
   {
     id: "dao-nguoc-danh-sach",
@@ -229,6 +294,13 @@ const exercises: GroupExercise[] = [
     dueAt: "2026-07-18",
     assignedCount: 2,
     completedCount: 1,
+    objective: "Cài đặt thuật toán đảo ngược con trỏ next của danh sách liên kết đơn.",
+    estTime: "25 phút",
+    sampleInput: "1→2→3→4",
+    sampleOutput: "4→3→2→1",
+    criteria: "Không dùng mảng phụ · Giải phóng bộ nhớ đầy đủ",
+    phase: "Giai đoạn 3 — Cấu trúc dữ liệu",
+    refDoc: "",
   },
   {
     id: "xoay-mang",
@@ -241,6 +313,13 @@ const exercises: GroupExercise[] = [
     dueAt: null,
     assignedCount: 0,
     completedCount: 0,
+    objective: "Xoay mảng sang phải k vị trí, xử lý trường hợp k lớn hơn n.",
+    estTime: "20 phút",
+    sampleInput: "n=4 arr=[1,2,3,4] k=6",
+    sampleOutput: "[3,4,1,2]",
+    criteria: "Xoay tại chỗ · Không dùng mảng phụ O(n)",
+    phase: "Giai đoạn 2 — Mảng & Vòng lặp",
+    refDoc: "",
   },
 ];
 

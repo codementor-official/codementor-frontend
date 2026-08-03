@@ -70,6 +70,9 @@ export function SettingsTab({
   permissions: RolePermissions;
 }) {
   const [permissions, setPermissions] = useState(initialPermissions);
+  // Compared against the last saved snapshot, not the mount value, so saving clears
+  // the dirty state and toggling back to the original clears it too.
+  const [savedPermissions, setSavedPermissions] = useState(initialPermissions);
   const [name, setName] = useState(group.name);
   const [description, setDescription] = useState(group.description);
   const [topic, setTopic] = useState(group.topic);
@@ -82,6 +85,10 @@ export function SettingsTab({
       ...prev,
       [role]: { ...prev[role], [key]: !prev[role][key] },
     }));
+
+  const permissionsDirty = CONFIGURABLE_ROLES.some((role) =>
+    PERMISSION_LABELS.some((p) => permissions[role][p.key] !== savedPermissions[role][p.key]),
+  );
 
   const transferCandidates = members.filter((m) => m.role !== "owner");
 
@@ -204,6 +211,20 @@ export function SettingsTab({
               </tbody>
             </table>
           </div>
+
+          {permissionsDirty && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-soft pt-4">
+              <span className="mr-auto text-xs text-text-muted">
+                Có thay đổi chưa lưu trong bảng phân quyền.
+              </span>
+              <Button size="sm" variant="outline" onClick={() => setPermissions(savedPermissions)}>
+                Hoàn tác
+              </Button>
+              <Button size="sm" onClick={() => setSavedPermissions(permissions)}>
+                Lưu phân quyền
+              </Button>
+            </div>
+          )}
         </Card>
 
         <Card className="border-primary p-5">

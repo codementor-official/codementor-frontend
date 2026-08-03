@@ -11,7 +11,7 @@ export default async function WorkspaceListPage() {
     <div>
       <PageBanner
         illustrationSrc={PAGE_ILLUSTRATIONS.workspace}
-        title="Không gian học tập"
+        title="Nhóm học tập"
         description="Nơi học và luyện tập cùng các nhóm của bạn — nhóm tự tạo hoặc tham gia qua lời mời từ người khác. Mỗi nhóm có tài liệu, bài tập và bảng tiến độ riêng."
       />
       <StudyGroupBoard groups={groups} currentUserName={CURRENT_USER_NAME} />

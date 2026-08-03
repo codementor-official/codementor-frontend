@@ -14,6 +14,9 @@ export interface StudyGroup {
   /** Subject the group is currently working through — also the topic filter's value. */
   topic: string;
   memberCount: number;
+  /** First few members, for the card's avatar stack. `memberCount` stays the source
+   * of truth for the total — this is only what fits on a card. */
+  memberPreview: { id: string; initials: string; name: string }[];
   /** Assignments still open in the group. */
   openTaskCount: number;
   /** 0-100. Group-wide progress when you own it, your own progress when you joined. */

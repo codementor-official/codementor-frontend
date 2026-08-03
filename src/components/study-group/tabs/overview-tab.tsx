@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { CalendarDays, KeyRound, Sparkles, Target, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-stats";
-import { rankMembers } from "@/lib/study-group/group-detail-meta";
+import { LeaderboardSection } from "@/components/study-group/leaderboard-section";
+import { SubmissionChart } from "@/components/study-group/submission-chart";
 import type { StudyGroup } from "@/types/study-group";
 import type { GroupDetail } from "@/types/study-group-detail";
 
@@ -20,25 +20,6 @@ function MetaItem({ icon: Icon, label, value }: { icon: typeof Users; label: str
   );
 }
 
-/** Bare bars — a 7-point series doesn't justify pulling a chart library onto the page. */
-function SubmissionTrend({ data }: { data: GroupDetail["submissionTrend"] }) {
-  const max = Math.max(...data.map((d) => d.value), 1);
-  return (
-    <div className="flex h-28 items-end gap-2">
-      {data.map((d) => (
-        <div key={d.label} className="flex flex-1 flex-col items-center gap-1.5">
-          <span className="text-2xs font-semibold text-text-muted">{d.value}</span>
-          <div
-            className="w-full rounded-t-sm bg-primary"
-            style={{ height: `${Math.max(4, (d.value / max) * 100)}%` }}
-          />
-          <span className="text-2xs text-text-faint">{d.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function OverviewTab({
   group,
   detail,
@@ -46,13 +27,12 @@ export function OverviewTab({
   group: StudyGroup;
   detail: GroupDetail;
 }) {
-  const ranked = rankMembers(detail.members);
   const publishedExercises = detail.exercises.filter((e) => e.status === "published").length;
   const pendingDocs = detail.documents.filter((d) => d.status === "pending").length;
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Identity first: who this group is, what it's working on, who's in it. */}
+      {/* Identity first: who this group is and what it's working on. */}
       <Card className="overflow-hidden">
         <div className="flex h-28 items-center justify-center bg-navy sm:h-32">
           <span className="font-mono text-3xl font-bold text-white">{group.tile}</span>
@@ -75,52 +55,10 @@ export function OverviewTab({
         </div>
       </Card>
 
-      <Card className="p-5">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-bold text-navy">Thành viên</h3>
-          <Link
-            href={`/workspace/${group.id}?tab=members`}
-            className="text-xs font-semibold text-primary hover:underline"
-          >
-            Xem tất cả →
-          </Link>
-        </div>
-        <ul className="flex flex-col gap-3">
-          {ranked.slice(0, 5).map((member) => (
-            <li key={member.id} className="flex items-center gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">
-                {member.initials}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium text-navy">{member.name}</span>
-                  {member.role !== "member" && (
-                    <span className="shrink-0 text-2xs font-semibold text-text-faint">
-                      {ROLE_LABEL[member.role]}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 h-1 overflow-hidden rounded-full bg-border-soft">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${member.progressPercent}%` }} />
-                </div>
-              </div>
-              <span className="shrink-0 text-xs text-text-faint">
-                {formatRelativeTime(member.lastActiveMinutesAgo)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <LeaderboardSection members={detail.members} />
 
       {/* Numbers come after identity. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-2">
-          <h3 className="text-sm font-bold text-navy">Lượt nộp bài 7 ngày qua</h3>
-          <p className="mt-0.5 mb-4 text-xs text-text-faint">Tổng số lượt nộp của cả nhóm mỗi ngày.</p>
-          <SubmissionTrend data={detail.submissionTrend} />
-        </Card>
-
-        <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           <Card className="p-5">
             <h3 className="mb-3 text-sm font-bold text-navy">Tiến độ nhóm</h3>
             <ProgressBar value={group.progressPercent} />
@@ -154,8 +92,15 @@ export function OverviewTab({
               ))}
             </ul>
           </Card>
-        </div>
       </div>
+
+      {/* The chart gets its own full-width row at the bottom: 7 bars squeezed into a
+       * third of the width were cramped, and it's the least at-a-glance thing here. */}
+      <Card className="p-5">
+        <h3 className="text-sm font-bold text-navy">Lượt nộp bài 7 ngày qua</h3>
+        <p className="mt-0.5 mb-4 text-xs text-text-faint">Tổng số lượt nộp của cả nhóm mỗi ngày.</p>
+        <SubmissionChart data={detail.submissionTrend} />
+      </Card>
     </div>
   );
 }

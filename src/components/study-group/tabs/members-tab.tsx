@@ -2,77 +2,43 @@
 
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Award, Mail, Trophy, UserMinus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Award, Mail, ShieldCheck, User, UserMinus } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { InviteMemberModal } from "@/components/study-group/invite-member-modal";
+import { MemberAchievementsModal } from "@/components/study-group/member-achievements-modal";
+import { RowActionMenu } from "@/components/ui/row-action-menu";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
-import { DataTable, TableCheckbox, TableToolbar, useDataTable } from "@/components/ui/data-table";
+import {
+  DataTable,
+  TableCheckbox,
+  TablePagination,
+  TableToolbar,
+  useDataTable,
+} from "@/components/ui/data-table";
 import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-stats";
+import { initialsFromName } from "@/lib/study-group/study-group-service";
 import { rankMembers } from "@/lib/study-group/group-detail-meta";
 import type { GroupMember } from "@/types/study-group-detail";
 
-/** Order is 2nd, 1st, 3rd so the winner stands in the middle, on the tallest step. */
-const PODIUM_LAYOUT = [
-  { rank: 2, height: "h-12", step: "border-border bg-bg" },
-  { rank: 1, height: "h-20", step: "border-primary bg-primary-tint" },
-  { rank: 3, height: "h-8", step: "border-border bg-bg" },
-] as const;
-
-function Podium({ ranked, onOpen }: { ranked: GroupMember[]; onOpen: (m: GroupMember) => void }) {
-  const top = PODIUM_LAYOUT.map((step) => ({ ...step, member: ranked[step.rank - 1] })).filter(
-    (s) => s.member,
-  );
-  if (top.length === 0) return null;
-
-  return (
-    <Card className="mb-5 px-5 pt-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Trophy className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-bold text-navy">Bảng xếp hạng</h3>
-        <span className="text-xs text-text-faint">Theo XP tích lũy trong nhóm</span>
-      </div>
-
-      <div className="flex items-end justify-center gap-2 sm:gap-4">
-        {top.map(({ rank, height, step, member }) => (
-          <div key={rank} className="flex w-full max-w-40 flex-col items-center">
-            <span
-              className={`mb-1.5 flex items-center justify-center rounded-full bg-navy font-semibold text-white ${
-                rank === 1 ? "h-12 w-12 text-sm" : "h-10 w-10 text-xs"
-              }`}
-            >
-              {member.initials}
-            </span>
-            <span className="line-clamp-2 text-center text-xs font-semibold text-navy">{member.name}</span>
-            <span className="mt-0.5 text-center text-2xs text-text-faint">
-              {member.xp.toLocaleString("vi-VN")} XP · {member.solvedCount} bài
-            </span>
-            <button
-              type="button"
-              onClick={() => onOpen(member)}
-              className="mt-1 mb-2 text-2xs font-semibold text-primary hover:underline"
-            >
-              Thành tích
-            </button>
-            {/* The step itself carries the rank, so the podium reads as a podium. */}
-            <div
-              className={`flex w-full items-start justify-center rounded-t-md border border-b-0 pt-1.5 ${height} ${step}`}
-            >
-              <span className={`text-sm font-bold ${rank === 1 ? "text-primary" : "text-text-faint"}`}>
-                {rank}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-export function MembersTab({ members, canManage }: { members: GroupMember[]; canManage: boolean }) {
+export function MembersTab({
+  members: initialMembers,
+  groupCode,
+  canManage,
+}: {
+  members: GroupMember[];
+  groupCode: string;
+  canManage: boolean;
+}) {
+  // ponytail: session-scoped. Swap for service calls once there's a backend.
+  const [members, setMembers] = useState(initialMembers);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [removing, setRemoving] = useState<GroupMember[]>([]);
   const [role, setRole] = useState("all");
   const [detailMember, setDetailMember] = useState<GroupMember | null>(null);
+
+  const setRole_ = (id: string, next: GroupMember["role"]) =>
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role: next } : m)));
 
   const ranked = useMemo(() => rankMembers(members), [members]);
   const rows = useMemo(
@@ -125,11 +91,7 @@ export function MembersTab({ members, canManage }: { members: GroupMember[]; can
         accessorKey: "role",
         header: "Vai trò",
         size: 120,
-        cell: ({ row }) => (
-          <Badge tone={row.original.role === "owner" ? "brown" : "neutral"}>
-            {ROLE_LABEL[row.original.role]}
-          </Badge>
-        ),
+        cell: ({ row }) => <span className="text-text">{ROLE_LABEL[row.original.role]}</span>,
       },
       {
         accessorKey: "progressPercent",
@@ -163,17 +125,63 @@ export function MembersTab({ members, canManage }: { members: GroupMember[]; can
       {
         id: "actions",
         header: "",
-        size: 110,
+        size: 160,
         enableSorting: false,
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => setDetailMember(row.original)}
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-          >
-            <Award className="h-3.5 w-3.5" /> Thành tích
-          </button>
-        ),
+        cell: ({ row }) => {
+          const member = row.original;
+          const isOwner = member.role === "owner";
+          return (
+            // Fixed-width button + a menu slot that's always reserved, so the owner row
+            // (which has no menu) lines up with every other row instead of shifting.
+            <div className="flex items-center justify-end gap-1">
+              <button
+                type="button"
+                onClick={() => setDetailMember(member)}
+                className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-primary hover:bg-primary-tint"
+              >
+                <Award className="h-3.5 w-3.5" /> Thành tích
+              </button>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+                {canManage && !isOwner && (
+                  <RowActionMenu
+                    label={`Tùy chọn cho ${member.name}`}
+                    sections={[
+                      {
+                        label: "Phân quyền",
+                        items: [
+                          {
+                            key: "deputy",
+                            label: "Phó nhóm",
+                            icon: <ShieldCheck className="h-3.5 w-3.5" />,
+                            disabled: member.role === "deputy",
+                            onSelect: () => setRole_(member.id, "deputy"),
+                          },
+                          {
+                            key: "member",
+                            label: "Thành viên",
+                            icon: <User className="h-3.5 w-3.5" />,
+                            disabled: member.role === "member",
+                            onSelect: () => setRole_(member.id, "member"),
+                          },
+                        ],
+                      },
+                    ]}
+                    items={[
+                      {
+                        key: "remove",
+                        label: "Xóa khỏi nhóm",
+                        icon: <UserMinus className="h-3.5 w-3.5" />,
+                        danger: true,
+                        separatorBefore: true,
+                        onSelect: () => setRemoving([member]),
+                      },
+                    ]}
+                  />
+                )}
+              </span>
+            </div>
+          );
+        },
       },
     ],
     [canManage],
@@ -191,8 +199,6 @@ export function MembersTab({ members, canManage }: { members: GroupMember[]; can
 
   return (
     <div>
-      <Podium ranked={ranked} onOpen={setDetailMember} />
-
       <TableToolbar
         searchValue={globalFilter}
         onSearchChange={(v) => table.setGlobalFilter(v)}
@@ -215,14 +221,19 @@ export function MembersTab({ members, canManage }: { members: GroupMember[]; can
         }
         primaryAction={
           canManage ? (
-            <Button size="sm">
+            <Button size="sm" onClick={() => setInviteOpen(true)}>
               <Mail className="h-3.5 w-3.5" /> Mời thành viên
             </Button>
           ) : undefined
         }
         bulkActions={
           canManage ? (
-            <Button size="sm" variant="outline" className="text-primary">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-primary"
+              onClick={() => setRemoving(table.getSelectedRowModel().rows.map((r) => r.original))}
+            >
               <UserMinus className="h-3.5 w-3.5" /> Xóa khỏi nhóm
             </Button>
           ) : undefined
@@ -230,41 +241,61 @@ export function MembersTab({ members, canManage }: { members: GroupMember[]; can
       />
 
       <DataTable table={table} emptyMessage="Không có thành viên nào khớp bộ lọc." />
+      <TablePagination table={table} />
 
-      <Modal
-        open={detailMember !== null}
-        onClose={() => setDetailMember(null)}
-        title={detailMember ? `Thành tích của ${detailMember.name}` : ""}
-        description="Số liệu tổng hợp trên toàn bộ nền tảng, không chỉ trong nhóm này."
+      <MemberAchievementsModal member={detailMember} onClose={() => setDetailMember(null)} />
+
+      <InviteMemberModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        groupCode={groupCode}
+        onInvite={(identifier, inviteRole) => {
+          setMembers((prev) => [
+            ...prev,
+            {
+              id: `invited-${Date.now()}`,
+              name: identifier,
+              initials: initialsFromName(identifier),
+              role: inviteRole,
+              progressPercent: 0,
+              xp: 0,
+              solvedCount: 0,
+              streakDays: 0,
+              joinedAt: "Vừa xong",
+              lastActiveMinutesAgo: 0,
+              achievements: [],
+            },
+          ]);
+          setInviteOpen(false);
+        }}
+      />
+
+      <ConfirmDialog
+        open={removing.length > 0}
+        onClose={() => setRemoving([])}
+        onConfirm={() => {
+          const ids = new Set(removing.map((m) => m.id));
+          setMembers((prev) => prev.filter((m) => !ids.has(m.id)));
+          setRemoving([]);
+          table.resetRowSelection();
+        }}
+        title="Xóa khỏi nhóm?"
+        confirmLabel={`Xóa ${removing.length} thành viên`}
+        message={
+          <>
+            <span className="font-semibold text-navy">{removing.length} thành viên</span> sẽ mất quyền truy
+            cập vào tài liệu, bài tập và tiến độ của nhóm ngay lập tức. Bài đã nộp của họ vẫn được giữ lại.
+          </>
+        }
       >
-        {detailMember && (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "XP", value: detailMember.xp.toLocaleString("vi-VN") },
-                { label: "Bài đã làm", value: String(detailMember.solvedCount) },
-                { label: "Chuỗi ngày", value: `${detailMember.streakDays}` },
-              ].map((s) => (
-                <div key={s.label} className="rounded-md bg-bg p-3 text-center">
-                  <div className="text-lg font-bold text-navy">{s.value}</div>
-                  <div className="text-2xs text-text-faint">{s.label}</div>
-                </div>
-              ))}
-            </div>
-            <dl className="flex flex-col divide-y divide-border-soft">
-              {detailMember.achievements.map((a) => (
-                <div key={a.label} className="flex items-start justify-between gap-4 py-2.5">
-                  <div className="min-w-0">
-                    <dt className="text-sm font-medium text-navy">{a.label}</dt>
-                    <dd className="text-xs text-text-faint">{a.hint}</dd>
-                  </div>
-                  <span className="shrink-0 text-sm font-bold text-navy">{a.value}</span>
-                </div>
-              ))}
-            </dl>
-          </div>
-        )}
-      </Modal>
+        <ul className="max-h-32 overflow-y-auto rounded-md bg-bg p-2.5 text-xs text-text-muted">
+          {removing.map((m) => (
+            <li key={m.id} className="truncate py-0.5">
+              {m.name} · {ROLE_LABEL[m.role]}
+            </li>
+          ))}
+        </ul>
+      </ConfirmDialog>
     </div>
   );
 }

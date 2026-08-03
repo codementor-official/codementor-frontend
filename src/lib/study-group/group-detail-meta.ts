@@ -20,7 +20,17 @@ export const DOCUMENT_STATUS_META: Record<DocumentStatus, { label: string; tone:
   pending: { label: "Chờ kiểm duyệt", tone: "neutral" },
   changes: { label: "Cần chỉnh sửa", tone: "primary" },
   rejected: { label: "Bị từ chối", tone: "primary" },
+  hidden: { label: "Đã ẩn", tone: "neutral" },
 };
+
+/** What a member without manage rights is allowed to see: published only. Hidden and
+ * unmoderated documents simply don't exist for them — not greyed out, absent. */
+export function visibleDocuments<T extends { status: DocumentStatus }>(
+  documents: T[],
+  canManage: boolean,
+): T[] {
+  return canManage ? documents : documents.filter((d) => d.status === "published");
+}
 
 export const DOCUMENT_VERDICT_META: Record<DocumentVerdict, { label: string; tone: Tone }> = {
   valid: { label: "Hợp lệ", tone: "navy" },
@@ -32,7 +42,17 @@ export const EXERCISE_STATUS_META: Record<ExerciseStatus, { label: string; tone:
   published: { label: "Đã công bố", tone: "navy" },
   draft: { label: "Bản nháp", tone: "primary" },
   closed: { label: "Tạm đóng", tone: "neutral" },
+  hidden: { label: "Đã ẩn", tone: "neutral" },
 };
+
+/** Members never see drafts or hidden exercises — only what the group has actually
+ * published (or has since closed, which they may still have worked on). */
+export function visibleExercises<T extends { status: ExerciseStatus }>(
+  exercises: T[],
+  canManage: boolean,
+): T[] {
+  return canManage ? exercises : exercises.filter((e) => e.status === "published" || e.status === "closed");
+}
 
 export const SUBMISSION_STATUS_META: Record<SubmissionStatus, { label: string; tone: Tone }> = {
   notstarted: { label: "Chưa bắt đầu", tone: "neutral" },

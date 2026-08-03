@@ -1,5 +1,6 @@
 import { Crown, UsersRound } from "lucide-react";
 import { EntityCard } from "@/components/entity-card";
+import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";
 import { ROLE_LABEL, formatRelativeTime, isOwned } from "@/lib/study-group/study-group-stats";
 import type { StudyGroup } from "@/types/study-group";
@@ -14,6 +15,10 @@ const GROUP_TYPE = {
 /**
  * Thin wrapper around `EntityCard` — same card anatomy as roadmaps/courses so the
  * whole app has one "browse this thing" grid.
+ *
+ * The invite code and the progress bar are deliberately absent: a code is an action
+ * you go looking for (it lives in Cài đặt), and a single group-progress number said
+ * little while costing a whole row. Who's in the group says more at a glance.
  */
 export function StudyGroupCard({ group }: { group: StudyGroup }) {
   const owned = isOwned(group);
@@ -29,18 +34,12 @@ export function StudyGroupCard({ group }: { group: StudyGroup }) {
       description={group.description}
       badge={<Badge tone={owned ? "brown" : "neutral"}>{ROLE_LABEL[group.role]}</Badge>}
       tags={[group.topic]}
-      stats={[
-        { label: "thành viên", value: group.memberCount },
-        { label: "bài tập đang mở", value: group.openTaskCount },
-      ]}
-      progress={group.progressPercent}
+      stats={[{ label: "bài tập đang mở", value: group.openTaskCount }]}
       footer={
-        <>
-          <span className="truncate">
-            {owned ? `Mã: ${group.code}` : `Chủ nhóm: ${group.ownerName}`}
-          </span>
+        <div className="flex w-full items-center justify-between gap-3">
+          <AvatarGroup items={group.memberPreview} total={group.memberCount} size="sm" />
           <span className="shrink-0">{formatRelativeTime(group.lastActiveMinutesAgo)}</span>
-        </>
+        </div>
       }
       href={`/workspace/${group.id}`}
     />

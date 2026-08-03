@@ -60,15 +60,26 @@ export default async function WorkspaceGroupPage({
 
       {tab === "overview" && <OverviewTab group={group} detail={detail} />}
       {tab === "docs" && <DocumentsTab documents={detail.documents} canManage={canManage} />}
-      {tab === "exercises" && <ExercisesTab exercises={detail.exercises} canManage={canManage} />}
+      {tab === "exercises" && (
+        <ExercisesTab
+          exercises={detail.exercises}
+          members={detail.members}
+          assignments={detail.assignments}
+          documents={detail.documents}
+          canManage={canManage}
+        />
+      )}
       {tab === "assignments" && (
         <AssignmentsTab
+          groupId={groupId}
           exercises={detail.exercises}
           members={detail.members}
           assignments={detail.assignments}
         />
       )}
-      {tab === "members" && <MembersTab members={detail.members} canManage={isOwner} />}
+      {tab === "members" && (
+        <MembersTab members={detail.members} groupCode={group.code} canManage={isOwner} />
+      )}
       {tab === "progress" && (
         <Card className="border-dashed p-12 text-center">
           <Construction className="mx-auto mb-2 h-6 w-6 text-text-faint" />

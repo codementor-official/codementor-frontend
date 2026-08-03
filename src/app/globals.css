@@ -102,6 +102,15 @@
   --h-tile-card: 64px;
 }
 
+/* Thin, borderless scrollbars everywhere. Both properties inherit, so `html` covers
+ * every scroll container; `scrollbar-width: thin` is also what drops Chromium's
+ * stepper arrows. Standard properties only — setting `scrollbar-color` makes
+ * Chromium ignore ::-webkit-scrollbar rules, so there's no point writing both. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);

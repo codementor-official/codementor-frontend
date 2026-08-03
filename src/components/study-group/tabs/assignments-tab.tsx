@@ -1,29 +1,34 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { ChevronDown, ChevronRight, Send } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
+import { ReviewModal, type ReviewComment } from "@/components/study-group/review-modal";
+import { SubmissionsTable } from "@/components/study-group/submissions-table";
 import {
-  REVIEW_STATUS_META,
-  SUBMISSION_STATUS_META,
   formatDueDate,
   isOverdue,
   summarizeAssignments,
 } from "@/lib/study-group/group-detail-meta";
-import type { Assignment, GroupExercise, GroupMember } from "@/types/study-group-detail";
+import type {
+  Assignment,
+  GroupExercise,
+  GroupMember,
+  ReviewStatus,
+} from "@/types/study-group-detail";
 
 function StatStrip({ stats }: { stats: { label: string; value: number; alert?: boolean }[] }) {
   return (
     <Card className="mb-4 flex flex-wrap divide-y divide-border-soft sm:divide-x sm:divide-y-0">
       {stats.map((s) => (
-        <div key={s.label} className="flex-1 px-4 py-3">
-          <div className={`text-xl font-bold ${s.alert && s.value > 0 ? "text-primary" : "text-navy"}`}>
+        <div key={s.label} className="flex flex-1 items-baseline gap-2 px-4 py-2.5">
+          <span className={`text-lg font-bold ${s.alert && s.value > 0 ? "text-primary" : "text-navy"}`}>
             {s.value}
-          </div>
-          <div className="text-xs text-text-muted">{s.label}</div>
+          </span>
+          <span className="text-xs text-text-muted">{s.label}</span>
         </div>
       ))}
     </Card>
@@ -31,20 +36,41 @@ function StatStrip({ stats }: { stats: { label: string; value: number; alert?: b
 }
 
 export function AssignmentsTab({
+  groupId,
   exercises,
   members,
-  assignments,
+  assignments: initialAssignments,
 }: {
+  groupId: string;
   exercises: GroupExercise[];
   members: GroupMember[];
   assignments: Assignment[];
 }) {
+  const [assignments, setAssignments] = useState(initialAssignments);
+  // Seeded from each assignment's existing feedback so the modal opens with history.
+  const [comments, setComments] = useState<Record<string, ReviewComment[]>>(() => {
+    const map: Record<string, ReviewComment[]> = {};
+    for (const a of initialAssignments) {
+      if (a.feedback) {
+        map[a.id] = [
+          { id: `${a.id}-seed`, author: "Bạn", body: a.feedback, at: "Trước đó", outcome: a.reviewStatus },
+        ];
+      }
+    }
+    return map;
+  });
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(exercises[0]?.id ?? null);
+  const [reviewing, setReviewing] = useState<Assignment | null>(null);
 
   const memberById = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
+  const exerciseById = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises]);
   const stats = useMemo(() => summarizeAssignments(assignments), [assignments]);
+  const commentCounts = useMemo(
+    () => Object.fromEntries(Object.entries(comments).map(([id, list]) => [id, list.length])),
+    [comments],
+  );
 
   const query = search.trim().toLowerCase();
   const groups = useMemo(
@@ -64,6 +90,24 @@ export function AssignmentsTab({
         .filter((g) => g.rows.length > 0),
     [exercises, assignments, status, query, memberById],
   );
+
+  const submitReview = (assignmentId: string, body: string, outcome: ReviewStatus) => {
+    setComments((prev) => ({
+      ...prev,
+      [assignmentId]: [
+        ...(prev[assignmentId] ?? []),
+        { id: `${assignmentId}-${Date.now()}`, author: "Bạn", body, at: "Vừa xong", outcome },
+      ],
+    }));
+    setAssignments((prev) =>
+      prev.map((a) =>
+        a.id === assignmentId
+          ? { ...a, feedback: body, reviewStatus: outcome, status: outcome === "approved" ? "done" : a.status }
+          : a,
+      ),
+    );
+    setReviewing(null);
+  };
 
   return (
     <div>
@@ -96,8 +140,10 @@ export function AssignmentsTab({
             { value: "late", label: "Quá hạn" },
           ]}
         />
-        <Button size="sm">
-          <Send className="h-3.5 w-3.5" /> Phân công bài tập
+        {/* Assigning happens in the Bài tập tab, per exercise — this only points there
+         * instead of being a second, competing entry point. */}
+        <Button size="sm" variant="outline" href={`/workspace/${groupId}?tab=exercises`}>
+          <Send className="h-3.5 w-3.5" /> Phân công ở tab Bài tập
         </Button>
       </div>
 
@@ -137,42 +183,29 @@ export function AssignmentsTab({
                 </button>
 
                 {isOpen && (
-                  <ul className="divide-y divide-border-soft border-t border-border-soft">
-                    {rows.map((assignment) => {
-                      const member = memberById.get(assignment.memberId);
-                      const statusMeta = SUBMISSION_STATUS_META[assignment.status];
-                      const reviewMeta = REVIEW_STATUS_META[assignment.reviewStatus];
-                      const last = assignment.submissions.at(-1);
-                      return (
-                        <li key={assignment.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">
-                            {member?.initials ?? "?"}
-                          </span>
-                          <div className="min-w-40 flex-1">
-                            <div className="truncate text-sm font-medium text-navy">
-                              {member?.name ?? "Thành viên đã rời nhóm"}
-                            </div>
-                            <div className="text-xs text-text-faint">
-                              {last
-                                ? `Nộp lần ${last.version} · ${last.submittedAt} · ${last.detail}`
-                                : "Chưa nộp lần nào"}
-                            </div>
-                          </div>
-                          <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>
-                          <Badge tone={reviewMeta.tone}>{reviewMeta.label}</Badge>
-                          <Button size="sm" variant="outline">
-                            Đánh giá
-                          </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <div className="border-t border-border-soft">
+                    <SubmissionsTable
+                      rows={rows}
+                      memberById={memberById}
+                      commentCounts={commentCounts}
+                      onReview={setReviewing}
+                    />
+                  </div>
                 )}
               </Card>
             );
           })}
         </div>
       )}
+
+      <ReviewModal
+        assignment={reviewing}
+        member={reviewing ? memberById.get(reviewing.memberId) : undefined}
+        exercise={reviewing ? exerciseById.get(reviewing.exerciseId) : undefined}
+        comments={reviewing ? (comments[reviewing.id] ?? []) : []}
+        onClose={() => setReviewing(null)}
+        onSubmit={submitReview}
+      />
     </div>
   );
 }
