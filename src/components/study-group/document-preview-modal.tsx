@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { ExternalLink, FileText, Play, Table2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -75,13 +76,26 @@ export function DocumentPreviewModal({
   canManage,
   onApprove,
   onHide,
+  onReject,
 }: {
   doc: GroupDocument | null;
   onClose: () => void;
   canManage: boolean;
   onApprove: (doc: GroupDocument) => void;
   onHide: (doc: GroupDocument) => void;
+  /** Reject with a reason the uploader will see; optionally delete outright. */
+  onReject: (doc: GroupDocument, reason: string, alsoDelete: boolean) => void;
 }) {
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [alsoDelete, setAlsoDelete] = useState(false);
+
+  useEffect(() => {
+    setRejecting(false);
+    setReason("");
+    setAlsoDelete(false);
+  }, [doc?.id]);
+
   if (!doc) return null;
   const statusMeta = DOCUMENT_STATUS_META[doc.status];
   const verdictMeta = DOCUMENT_VERDICT_META[doc.verdict];
@@ -100,6 +114,11 @@ export function DocumentPreviewModal({
             {needsApproval && (
               <Button size="sm" onClick={() => onApprove(doc)}>
                 Duyệt tài liệu
+              </Button>
+            )}
+            {doc.status !== "rejected" && (
+              <Button size="sm" variant="outline" onClick={() => setRejecting((v) => !v)}>
+                Từ chối duyệt
               </Button>
             )}
             {doc.status !== "hidden" && (
@@ -128,6 +147,49 @@ export function DocumentPreviewModal({
         </span>
       </div>
       <PreviewBody doc={doc} />
+
+      {canManage && rejecting && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!reason.trim()) return;
+            onReject(doc, reason.trim(), alsoDelete);
+          }}
+          className="mt-4 rounded-md border border-primary bg-primary-tint p-4"
+        >
+          <label htmlFor="reject-reason" className="mb-1.5 block text-sm font-semibold text-navy">
+            Lý do từ chối
+          </label>
+          <p className="mb-2 text-xs text-text-muted">
+            Lý do này được gửi cho người tải lên, nên hãy nói rõ cần sửa gì.
+          </p>
+          <textarea
+            id="reject-reason"
+            rows={3}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Ví dụ: tài liệu chứa thông tin cá nhân, cần che trước khi tải lại..."
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy outline-none focus:border-navy"
+          />
+          <label className="mt-2.5 flex cursor-pointer items-center gap-2 text-sm text-text">
+            <input
+              type="checkbox"
+              checked={alsoDelete}
+              onChange={(e) => setAlsoDelete(e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            Xóa tài liệu sau khi từ chối
+          </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button type="submit" size="sm" disabled={!reason.trim()}>
+              Gửi từ chối
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setRejecting(false)}>
+              Hủy
+            </Button>
+          </div>
+        </form>
+      )}
     </Modal>
   );
 }

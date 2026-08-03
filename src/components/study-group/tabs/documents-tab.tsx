@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Check, Download, Eye, EyeOff, Trash2, Upload } from "lucide-react";
+import { Check, Download, Eye, EyeOff, Pencil, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Select } from "@/components/ui/select";
@@ -14,6 +14,10 @@ import {
   useDataTable,
 } from "@/components/ui/data-table";
 import { DocumentPreviewModal } from "@/components/study-group/document-preview-modal";
+import { UploadDocumentsModal } from "@/components/study-group/upload-documents-modal";
+import { RowActionMenu } from "@/components/ui/row-action-menu";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import {
   DOCUMENT_STATUS_META,
   DOCUMENT_VERDICT_META,
@@ -31,6 +35,9 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
   const [type, setType] = useState("all");
   const [preview, setPreview] = useState<GroupDocument | null>(null);
   const [pending, setPending] = useState<PendingAction>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [renaming, setRenaming] = useState<GroupDocument | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const typeOptions = useMemo(
     () => [
@@ -135,11 +142,13 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
       {
         id: "actions",
         header: "",
-        size: canManage ? 130 : 70,
+        size: 90,
         enableSorting: false,
         cell: ({ row }) => {
           const doc = row.original;
           return (
+            // Preview stays outside — it's the one thing everyone does. Everything
+            // else lives behind the single ⋮ so the row isn't a strip of icons.
             <div className="flex items-center justify-end gap-1">
               <button
                 type="button"
@@ -150,39 +159,68 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
               >
                 <Eye className="h-3.5 w-3.5" />
               </button>
-              {canManage && doc.status !== "published" && (
-                <button
-                  type="button"
-                  title="Duyệt tài liệu"
-                  aria-label={`Duyệt ${doc.title}`}
-                  onClick={() => applyStatus([doc], "published")}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
-                >
-                  <Check className="h-3.5 w-3.5" />
-                </button>
-              )}
-              {canManage && doc.status !== "hidden" && (
-                <button
-                  type="button"
-                  title="Ẩn với thành viên"
-                  aria-label={`Ẩn ${doc.title}`}
-                  onClick={() => setPending({ kind: "hide", docs: [doc] })}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
-                >
-                  <EyeOff className="h-3.5 w-3.5" />
-                </button>
-              )}
-              {canManage && (
-                <button
-                  type="button"
-                  title="Xóa tài liệu"
-                  aria-label={`Xóa ${doc.title}`}
-                  onClick={() => setPending({ kind: "delete", docs: [doc] })}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-primary"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              )}
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+                {canManage && (
+                  <RowActionMenu
+                    label={`Tùy chọn cho ${doc.title}`}
+                    items={[
+                      {
+                        key: "rename",
+                        label: "Đổi tên",
+                        icon: <Pencil className="h-3.5 w-3.5" />,
+                        onSelect: () => {
+                          setRenaming(doc);
+                          setRenameValue(doc.title);
+                        },
+                      },
+                      {
+                        key: "download",
+                        label: "Tải xuống",
+                        icon: <Download className="h-3.5 w-3.5" />,
+                        onSelect: () => undefined,
+                      },
+                      ...(doc.status !== "published"
+                        ? [
+                            {
+                              key: "approve",
+                              label: "Duyệt tài liệu",
+                              icon: <Check className="h-3.5 w-3.5" />,
+                              separatorBefore: true,
+                              onSelect: () => applyStatus([doc], "published"),
+                            },
+                          ]
+                        : []),
+                      ...(doc.status !== "hidden"
+                        ? [
+                            {
+                              key: "hide",
+                              label: "Ẩn với thành viên",
+                              icon: <EyeOff className="h-3.5 w-3.5" />,
+                              separatorBefore: doc.status === "published",
+                              onSelect: () => setPending({ kind: "hide", docs: [doc] }),
+                            },
+                          ]
+                        : []),
+                      {
+                        key: "generate",
+                        label: "Tạo bài tập từ tài liệu",
+                        icon: <Sparkles className="h-3.5 w-3.5" />,
+                        separatorBefore: true,
+                        disabled: doc.status !== "published",
+                        onSelect: () => undefined,
+                      },
+                      {
+                        key: "delete",
+                        label: "Xóa",
+                        icon: <Trash2 className="h-3.5 w-3.5" />,
+                        danger: true,
+                        separatorBefore: true,
+                        onSelect: () => setPending({ kind: "delete", docs: [doc] }),
+                      },
+                    ]}
+                  />
+                )}
+              </span>
             </div>
           );
         },
@@ -235,7 +273,7 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
         }
         primaryAction={
           canManage ? (
-            <Button size="sm">
+            <Button size="sm" onClick={() => setUploadOpen(true)}>
               <Upload className="h-3.5 w-3.5" /> Tải tài liệu lên
             </Button>
           ) : undefined
@@ -285,7 +323,72 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
           setPreview(null);
           setPending({ kind: "hide", docs: [doc] });
         }}
+        onReject={(doc, _reason, alsoDelete) => {
+          if (alsoDelete) removeDocs([doc]);
+          else applyStatus([doc], "rejected");
+          setPreview(null);
+        }}
       />
+
+      <UploadDocumentsModal
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUpload={(uploaded) => {
+          setDocs((prev) => [
+            ...uploaded.map((file, i) => ({
+              id: `uploaded-${Date.now()}-${i}`,
+              title: file.name,
+              type: file.name.split(".").pop()?.toUpperCase() ?? "Tệp",
+              topic: "Chưa phân loại",
+              uploaderName: "Bạn",
+              uploadedAt: "Vừa xong",
+              sizeLabel: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+              status: "pending" as const,
+              verdict: "warning" as const,
+            })),
+            ...prev,
+          ]);
+          setUploadOpen(false);
+        }}
+      />
+
+      <Modal
+        open={renaming !== null}
+        onClose={() => setRenaming(null)}
+        title="Đổi tên tài liệu"
+        description={renaming?.title}
+        width="sm"
+        footer={
+          <>
+            <Button size="sm" variant="outline" onClick={() => setRenaming(null)}>
+              Hủy
+            </Button>
+            <Button
+              size="sm"
+              disabled={!renameValue.trim()}
+              onClick={() => {
+                if (!renaming || !renameValue.trim()) return;
+                const id = renaming.id;
+                const title = renameValue.trim();
+                setDocs((prev) => prev.map((d) => (d.id === id ? { ...d, title } : d)));
+                setRenaming(null);
+              }}
+            >
+              Lưu tên mới
+            </Button>
+          </>
+        }
+      >
+        <label htmlFor="doc-rename" className="mb-1.5 block text-xs font-medium text-text-muted">
+          Tên mới
+        </label>
+        <Input
+          id="doc-rename"
+          value={renameValue}
+          onChange={(e) => setRenameValue(e.target.value)}
+          placeholder="Nhập tên tài liệu mới..."
+        />
+      </Modal>
 
       <ConfirmDialog
         open={pending !== null}
