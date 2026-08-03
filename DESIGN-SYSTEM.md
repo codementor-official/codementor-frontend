@@ -27,6 +27,79 @@ Semantic aliases (map straight to the tokens above, do not add new hues):
 | `accent`, `success`, `ai` | `navy` / `border-soft` (tint) |
 | `danger` | `primary` / `primary-tint` (tint) |
 
+## Dark mode
+
+Dark mode is a **token flip**, not a set of `dark:` variants. Around 1850 of the app's
+~2000 colour usages already resolve through the semantic tokens above, so redefining those
+tokens under `.dark` converts most of the UI with no component changes at all. Reach for a
+`dark:` utility only when a value genuinely cannot be expressed as a token.
+
+The `.dark` block lives **outside** `@theme` in `globals.css`. Tailwind v4 emits theme
+variables into a layer, and unlayered rules outrank layered ones, so the overrides win
+without `!important`.
+
+| Token | Light | Dark | Note |
+|---|---|---|---|
+| `--color-bg` | `#FFFFFF` | `#0F0F11` | Page |
+| `--color-surface` | `#FFFFFF` | `#18181B` | Cards — **lighter** than `bg`; elevation inverts |
+| `--color-border` | `#E5E7EB` | `#2E2E33` | |
+| `--color-border-soft` | `#F3F4F6` | `#232327` | |
+| `--color-ink` / `navy` | `#18181B` | `#F4F4F5` | Foreground ink — inverts |
+| `--color-on-ink` | `#FFFFFF` | `#18181B` | Text **on** an ink fill — inverts the other way |
+| `--color-text` | `#374151` | `#D4D4D8` | |
+| `--color-text-muted` | `#6B7280` | `#A1A1AA` | |
+| `--color-text-faint` | `#9CA3AF` | `#71717A` | |
+| `--color-primary` | `#EA580C` | `#FB923C` | Same hue ramp, lighter step |
+| `--color-primary-hover` | `#DC4F09` | `#FDBA74` | |
+| `--color-primary-active` | `#C2410C` | `#F97316` | |
+| `--color-primary-tint` | `#FFF7ED` | `#2A1A0E` | A tint is a **dark** wash in dark mode |
+| `--color-brown` | `#78350F` | `#FCD9B6` | |
+| `--color-brown-tint` | `#FAF0E6` | `#2E2015` | |
+| `--color-ink-fixed` | `#18181B` | `#18181B` | **Never flips** |
+| `--color-primary-fixed` | `#EA580C` | `#EA580C` | **Never flips** |
+
+### The three rules the values follow
+
+1. **Elevation inverts.** Light mode puts a white card on a grey page; dark mode puts a
+   lighter card on a darker page. `surface` must always sit a step above `bg`.
+2. **Orange lightens.** `#EA580C` on near-black is ~3.5:1 — below AA for text. The dark
+   steps move **up the same hue ramp**; they are not a second hue, so the two-hue rule holds.
+3. **A fill and its text invert in opposite directions.** This is why `--color-on-ink` exists.
+
+### `on-ink` — the one thing to get right
+
+`navy` is read 408× as `text-navy` but 65× as `bg-navy`. A single token cannot serve both:
+flipping it turns a `bg-navy text-white` avatar into white-on-white. So ink inverts as the
+**foreground**, and anything filled with it pairs `text-on-ink`.
+
+```
+✗ <span className="bg-navy text-white">        invisible in dark mode
+✓ <span className="bg-navy text-on-ink">       inverts to dark-on-light
+```
+
+Primary buttons take `text-on-ink` too: white on the lighter dark-mode orange is 2.1:1.
+
+`text-white` is still correct on surfaces that are dark in **both** themes — the landing
+hero, the solve workspace panes. Those don't invert, so nothing there changes.
+
+### What must not flip
+
+Use `ink-fixed` / `primary-fixed` for surfaces whose darkness is the point, not a
+consequence of the theme:
+
+- **Code blocks** (`.rich-text pre`, submission source, article snippets) — code is read on a
+  dark surface here, matching the Monaco panes.
+- **Decorative brand tiles** (the practice collection cards) — their gradients would
+  otherwise run light-to-orange beneath white text.
+
+### Preference and application
+
+`useThemeStore` (`lib/store/theme-store.ts`) persists `light | dark | system` and stamps
+`.dark` on `<html>`. `ThemeScript` applies the stored value inline in `<head>` before first
+paint — without it every load flashes light before hydration. `useResolvedTheme()` returns
+the concrete `light | dark` for code that can't use CSS, notably **Monaco**, which ships its
+own themes and must be handed `vs` or `vs-dark` explicitly.
+
 ## Typography
 
 - **UI font:** Inter, weights 400/500/600/700/800.

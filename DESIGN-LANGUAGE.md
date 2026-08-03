@@ -282,3 +282,31 @@ No changes needed — tone system (`neutral`/`navy→ink`/`primary`/aliases) alr
 - **Dashboard / Progress** — good candidate for `StatBlock` row (streak, XP, problems solved, current roadmap %) at the top, echoing Kaggle's profile-page stat header.
 
 This document is the spec to review before any implementation starts. Once approved, implementation should proceed in this order: (1) token changes in `globals.css`, (2) primitive extensions/additions (`Button` states, `Card` interactive prop, `ProgressBar`, `StatBlock`, `SegmentedTabs`, `FilterBar` generalization), (3) `EntityCard` consolidation, (4) page-level application.
+
+---
+
+## Dark Mode Addendum (2026-08-04)
+
+The Kaggle-derived analysis above assumed a single light theme. Dark mode was added without
+changing any of its conclusions, because the constraint that makes this system work — **only
+two hues, colour spent on state and action rather than decoration** — is what makes the theme
+flip cheap.
+
+The measurement that drove the approach: **1,846 of ~2,000 colour usages in `src/` already go
+through semantic tokens.** So dark mode is a token problem, not a component problem.
+Redefining the tokens under `.dark` converts the UI wholesale; only ~180 hardcoded usages
+needed touching, and most of those sat on surfaces that are dark in both themes anyway and
+were already correct.
+
+Three things the analysis above did not anticipate:
+
+1. **`navy` carries two jobs.** It is the foreground ink (408 `text-navy`) *and* a filled
+   surface (65 `bg-navy`). One token cannot invert both ways. Resolved by keeping ink as the
+   foreground and adding `--color-on-ink` for text that sits on an ink fill.
+2. **Elevation has to invert.** Section 6 above describes depth as "a white surface on a
+   slightly darker page". In dark mode that reverses — the card is *lighter* than the page —
+   otherwise cards disappear into the background.
+3. **Some darkness is semantic, not thematic.** Code blocks and the brand collection tiles are
+   dark because of what they are, not because the theme is light. Those use `ink-fixed`.
+
+Full token table and rules: `DESIGN-SYSTEM.md` → Dark mode.
