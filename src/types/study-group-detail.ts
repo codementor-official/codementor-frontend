@@ -52,7 +52,8 @@ export interface GroupDocument {
 
 /* ---------- Exercises ---------- */
 
-export type ExerciseStatus = "published" | "draft" | "closed";
+/** `hidden` and `draft` are manager-only; members see published/closed exercises. */
+export type ExerciseStatus = "published" | "draft" | "closed" | "hidden";
 export type ExerciseSource = "ai" | "manual";
 export type ExerciseDifficulty = "Cơ bản" | "Trung bình" | "Nâng cao";
 
