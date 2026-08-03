@@ -70,6 +70,7 @@ export default async function WorkspaceGroupPage({
       )}
       {tab === "assignments" && (
         <AssignmentsTab
+          groupId={groupId}
           exercises={detail.exercises}
           members={detail.members}
           assignments={detail.assignments}
