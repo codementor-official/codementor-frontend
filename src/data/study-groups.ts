@@ -72,7 +72,7 @@ export const studyGroups: StudyGroup[] = [
     tile: "py",
     name: "Python cho Người mới bắt đầu",
     description:
-      "Không gian luyện tập Python công khai — ai cũng có thể tham gia và đặt câu hỏi.",
+      "Nhóm luyện tập Python công khai — ai cũng có thể tham gia và đặt câu hỏi.",
     code: "PY-START",
     topic: "Python cơ bản",
     memberCount: 152,

@@ -39,7 +39,7 @@ const personas = [
     desc: "Luyện kỹ năng lập trình cùng cộng đồng người học trên khắp cả nước. Học theo lộ trình, thực hành và xây dựng portfolio của riêng bạn.",
     features: [
       { icon: Trophy, label: "Bài luyện tập & lộ trình học có cấu trúc" },
-      { icon: Code2, label: "Không gian làm việc trực quan, chấm bài tự động" },
+      { icon: Code2, label: "Nhóm làm việc trực quan, chấm bài tự động" },
       { icon: GraduationCap, label: "Theo dõi tiến độ và tích lũy XP" },
     ],
   },
@@ -135,7 +135,7 @@ export default function LandingPage() {
             <p className="mb-6 max-w-lg text-base leading-relaxed text-zinc-300">
               Nền tảng tự học và luyện tập lập trình cho tất cả mọi người — lộ
               trình theo mục tiêu, chấm bài tự động trong sandbox, gợi ý AI
-              theo 3 mức và không gian học nhóm.
+              theo 3 mức và Nhóm học nhóm.
             </p>
             <div className="mb-8 flex flex-wrap gap-3">
               <Button href="/signup">
@@ -250,7 +250,7 @@ if (delta > 0) {
           <div className="grid items-center gap-8 lg:grid-cols-2">
             <div>
               <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
-                Không gian làm việc
+                Nhóm làm việc
               </div>
               <h3 className="mb-3 text-2xl font-bold text-navy">
                 Đề bài, IDE và gợi ý — trong cùng một màn hình

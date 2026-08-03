@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
           <section>
             <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-base font-bold text-navy">Đề xuất khóa học cho bạn</h2>
+              <h2 className="text-base font-bold text-navy">Đề xuất lộ trình cho bạn</h2>
               <Link href="/paths" className="text-xs font-semibold text-primary">
                 Xem tất cả →
               </Link>

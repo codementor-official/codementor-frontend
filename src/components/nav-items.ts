@@ -18,7 +18,7 @@ export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutGrid },
   { href: "/explore", label: "Khám phá", icon: Compass },
   { href: "/paths", label: "Lộ trình học", icon: Map },
-  { href: "/workspace", label: "Không gian học tập", icon: Users },
+  { href: "/workspace", label: "Nhóm học tập", icon: Users },
   { href: "/ai-tutor", label: "Trợ lý AI", icon: Bot },
   { href: "/submissions", label: "Bài đã nộp", icon: CheckSquare },
   { href: "/progress", label: "Tiến độ", icon: BarChart3 },
