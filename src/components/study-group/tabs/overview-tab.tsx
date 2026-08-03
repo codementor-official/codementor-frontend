@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { CalendarDays, KeyRound, Sparkles, Target, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-stats";
-import { rankMembers } from "@/lib/study-group/group-detail-meta";
+import { LeaderboardSection } from "@/components/study-group/leaderboard-section";
 import { SubmissionChart } from "@/components/study-group/submission-chart";
 import type { StudyGroup } from "@/types/study-group";
 import type { GroupDetail } from "@/types/study-group-detail";
@@ -28,13 +27,14 @@ export function OverviewTab({
   group: StudyGroup;
   detail: GroupDetail;
 }) {
-  const ranked = rankMembers(detail.members);
   const publishedExercises = detail.exercises.filter((e) => e.status === "published").length;
   const pendingDocs = detail.documents.filter((d) => d.status === "pending").length;
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Identity first: who this group is, what it's working on, who's in it. */}
+      <LeaderboardSection members={detail.members} />
+
+      {/* Identity: who this group is and what it's working on. */}
       <Card className="overflow-hidden">
         <div className="flex h-28 items-center justify-center bg-navy sm:h-32">
           <span className="font-mono text-3xl font-bold text-white">{group.tile}</span>
@@ -57,46 +57,8 @@ export function OverviewTab({
         </div>
       </Card>
 
-      <Card className="p-5">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-bold text-navy">Thành viên</h3>
-          <Link
-            href={`/workspace/${group.id}?tab=members`}
-            className="text-xs font-semibold text-primary hover:underline"
-          >
-            Xem tất cả →
-          </Link>
-        </div>
-        <ul className="flex flex-col gap-3">
-          {ranked.slice(0, 5).map((member) => (
-            <li key={member.id} className="flex items-center gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">
-                {member.initials}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium text-navy">{member.name}</span>
-                  {member.role !== "member" && (
-                    <span className="shrink-0 text-2xs font-semibold text-text-faint">
-                      {ROLE_LABEL[member.role]}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 h-1 overflow-hidden rounded-full bg-border-soft">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${member.progressPercent}%` }} />
-                </div>
-              </div>
-              <span className="shrink-0 text-xs text-text-faint">
-                {formatRelativeTime(member.lastActiveMinutesAgo)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Card>
-
       {/* Numbers come after identity. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           <Card className="p-5">
             <h3 className="mb-3 text-sm font-bold text-navy">Tiến độ nhóm</h3>
             <ProgressBar value={group.progressPercent} />
@@ -130,7 +92,6 @@ export function OverviewTab({
               ))}
             </ul>
           </Card>
-        </div>
       </div>
 
       {/* The chart gets its own full-width row at the bottom: 7 bars squeezed into a

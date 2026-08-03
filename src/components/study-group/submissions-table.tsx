@@ -73,13 +73,18 @@ export function SubmissionsTable({
       {
         id: "actions",
         header: "",
-        size: 130,
+        size: 150,
         enableSorting: false,
         cell: ({ row }) => {
           const count = commentCounts[row.original.id] ?? 0;
           return (
             <div className="flex justify-end">
-              <Button size="sm" variant="outline" onClick={() => onReview(row.original)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onReview(row.original)}
+                className="whitespace-nowrap"
+              >
                 <MessageSquare className="h-3.5 w-3.5" />
                 Đánh giá
                 {count > 0 && (

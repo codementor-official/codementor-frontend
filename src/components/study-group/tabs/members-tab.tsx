@@ -2,14 +2,12 @@
 
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Award, Mail, ShieldCheck, Trophy, User, UserMinus } from "lucide-react";
+import { Award, Mail, ShieldCheck, User, UserMinus } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InviteMemberModal } from "@/components/study-group/invite-member-modal";
-import { XpRankingCard } from "@/components/study-group/xp-ranking-card";
+import { MemberAchievementsModal } from "@/components/study-group/member-achievements-modal";
 import { RowActionMenu } from "@/components/ui/row-action-menu";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import {
   DataTable,
@@ -22,63 +20,6 @@ import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-st
 import { initialsFromName } from "@/lib/study-group/study-group-service";
 import { rankMembers } from "@/lib/study-group/group-detail-meta";
 import type { GroupMember } from "@/types/study-group-detail";
-
-/** Order is 2nd, 1st, 3rd so the winner stands in the middle, on the tallest step. */
-const PODIUM_LAYOUT = [
-  { rank: 2, height: "h-12", step: "border-border bg-bg" },
-  { rank: 1, height: "h-20", step: "border-primary bg-primary-tint" },
-  { rank: 3, height: "h-8", step: "border-border bg-bg" },
-] as const;
-
-function Podium({ ranked, onOpen }: { ranked: GroupMember[]; onOpen: (m: GroupMember) => void }) {
-  const top = PODIUM_LAYOUT.map((step) => ({ ...step, member: ranked[step.rank - 1] })).filter(
-    (s) => s.member,
-  );
-  if (top.length === 0) return null;
-
-  return (
-    <Card className="px-5 pt-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Trophy className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-bold text-navy">Bảng xếp hạng</h3>
-        <span className="text-xs text-text-faint">Theo XP tích lũy trong nhóm</span>
-      </div>
-
-      <div className="flex items-end justify-center gap-2 sm:gap-4">
-        {top.map(({ rank, height, step, member }) => (
-          <div key={rank} className="flex w-full max-w-40 flex-col items-center">
-            <span
-              className={`mb-1.5 flex items-center justify-center rounded-full bg-navy font-semibold text-white ${
-                rank === 1 ? "h-12 w-12 text-sm" : "h-10 w-10 text-xs"
-              }`}
-            >
-              {member.initials}
-            </span>
-            <span className="line-clamp-2 text-center text-xs font-semibold text-navy">{member.name}</span>
-            <span className="mt-0.5 text-center text-2xs text-text-faint">
-              {member.xp.toLocaleString("vi-VN")} XP · {member.solvedCount} bài
-            </span>
-            <button
-              type="button"
-              onClick={() => onOpen(member)}
-              className="mt-1 mb-2 text-2xs font-semibold text-primary hover:underline"
-            >
-              Thành tích
-            </button>
-            {/* The step itself carries the rank, so the podium reads as a podium. */}
-            <div
-              className={`flex w-full items-start justify-center rounded-t-md border border-b-0 pt-1.5 ${height} ${step}`}
-            >
-              <span className={`text-sm font-bold ${rank === 1 ? "text-primary" : "text-text-faint"}`}>
-                {rank}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
 
 export function MembersTab({
   members: initialMembers,
@@ -258,11 +199,6 @@ export function MembersTab({
 
   return (
     <div>
-      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Podium ranked={ranked} onOpen={setDetailMember} />
-        <XpRankingCard ranked={ranked} />
-      </div>
-
       <TableToolbar
         searchValue={globalFilter}
         onSearchChange={(v) => table.setGlobalFilter(v)}
@@ -307,40 +243,7 @@ export function MembersTab({
       <DataTable table={table} emptyMessage="Không có thành viên nào khớp bộ lọc." />
       <TablePagination table={table} />
 
-      <Modal
-        open={detailMember !== null}
-        onClose={() => setDetailMember(null)}
-        title={detailMember ? `Thành tích của ${detailMember.name}` : ""}
-        description="Số liệu tổng hợp trên toàn bộ nền tảng, không chỉ trong nhóm này."
-      >
-        {detailMember && (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "XP", value: detailMember.xp.toLocaleString("vi-VN") },
-                { label: "Bài đã làm", value: String(detailMember.solvedCount) },
-                { label: "Chuỗi ngày", value: `${detailMember.streakDays}` },
-              ].map((s) => (
-                <div key={s.label} className="rounded-md bg-bg p-3 text-center">
-                  <div className="text-lg font-bold text-navy">{s.value}</div>
-                  <div className="text-2xs text-text-faint">{s.label}</div>
-                </div>
-              ))}
-            </div>
-            <dl className="flex flex-col divide-y divide-border-soft">
-              {detailMember.achievements.map((a) => (
-                <div key={a.label} className="flex items-start justify-between gap-4 py-2.5">
-                  <div className="min-w-0">
-                    <dt className="text-sm font-medium text-navy">{a.label}</dt>
-                    <dd className="text-xs text-text-faint">{a.hint}</dd>
-                  </div>
-                  <span className="shrink-0 text-sm font-bold text-navy">{a.value}</span>
-                </div>
-              ))}
-            </dl>
-          </div>
-        )}
-      </Modal>
+      <MemberAchievementsModal member={detailMember} onClose={() => setDetailMember(null)} />
 
       <InviteMemberModal
         open={inviteOpen}
