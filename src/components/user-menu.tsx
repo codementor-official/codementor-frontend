@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LogOut, UserRound } from "lucide-react";
+import { ThemePicker } from "@/components/theme-picker";
 
 export function UserMenu({ collapsed }: { collapsed: boolean }) {
   const [open, setOpen] = useState(false);
@@ -21,11 +22,13 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
     // Expanded: take the leftover row width so the collapse toggle sits flush right.
     <div ref={ref} className={`relative ${collapsed ? "" : "min-w-0 flex-1"}`}>
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-48 rounded-md border border-border bg-surface py-1 shadow-dropdown">
+        <div className="absolute bottom-full left-0 mb-2 w-64 rounded-md border border-border bg-surface py-1 shadow-dropdown">
           <div className="border-b border-border-soft px-3 py-2">
             <div className="text-sm font-semibold text-navy">Gia Sĩ</div>
             <div className="truncate text-xs text-text-faint">giasi.nguyen@student.iuh.edu.vn</div>
           </div>
+          <ThemePicker />
+          <div className="my-1 border-t border-border-soft" />
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
@@ -50,7 +53,7 @@ export function UserMenu({ collapsed }: { collapsed: boolean }) {
           collapsed ? "justify-center" : "px-1"
         }`}
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-white">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-on-ink">
           GS
         </span>
         {!collapsed && <span className="min-w-0 truncate text-sm font-medium text-navy">Gia Sĩ</span>}

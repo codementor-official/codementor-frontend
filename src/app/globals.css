@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Class-based, not `prefers-color-scheme`: the theme picker offers an explicit
+ * light/dark override, which a media query alone can't express. `useThemeStore`
+ * stamps `.dark` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-bg: #ffffff;
   --color-surface: #ffffff;
@@ -9,6 +14,10 @@
   /* true neutral ink — no blue undertone, satisfies orange/black/white/gray-only palette */
   --color-ink: #18181b;
   --color-navy: var(--color-ink); /* legacy alias — kept so existing bg-navy/text-navy usages don't break */
+  /* Text that sits *on* an ink-filled surface (avatars, badges, filled tabs). Its
+   * whole job is to stay readable when --color-ink inverts in dark mode, which a
+   * hardcoded text-white cannot do. */
+  --color-on-ink: #ffffff;
 
   --color-text: #374151;
   --color-text-muted: #6b7280;
@@ -109,6 +118,52 @@
 html {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
+}
+
+/* Dark theme.
+ *
+ * Deliberately *not* inside `@theme`: Tailwind puts theme variables in a layer, and
+ * unlayered rules outrank layered ones, so these overrides win without !important.
+ *
+ * Because ~1850 of the ~2000 colour usages in the app go through these tokens, flipping
+ * the values here is what makes dark mode work — components mostly need no change at all.
+ *
+ * Two rules the values follow:
+ *   1. Elevation inverts. In light mode a card is white on a grey page; in dark mode the
+ *      card is *lighter* than the page. So surface must stay a step above bg.
+ *   2. Orange lightens. #ea580c on near-black is ~3.5:1 — under AA for text. The dark steps
+ *      move up the same hue ramp rather than introducing a second hue. */
+.dark {
+  --color-bg: #0f0f11;
+  --color-surface: #18181b;
+  --color-border: #2e2e33;
+  --color-border-soft: #232327;
+
+  /* Ink inverts: it is the foreground, used by 400+ `text-navy` sites. Anything filled
+   * with `bg-navy` pairs it with `text-on-ink`, which inverts in the opposite direction. */
+  --color-ink: #f4f4f5;
+  --color-on-ink: #18181b;
+
+  --color-text: #d4d4d8;
+  --color-text-muted: #a1a1aa;
+  --color-text-faint: #71717a;
+
+  --color-primary: #fb923c;
+  --color-primary-hover: #fdba74;
+  --color-primary-active: #f97316;
+  /* A tint has to be a *dark* wash of the hue here, not a pale one. */
+  --color-primary-tint: #2a1a0e;
+
+  --color-brown: #fcd9b6;
+  --color-brown-tint: #2e2015;
+
+  /* Borders alone stop reading as separation on dark surfaces, so the card shadow
+   * carries more weight and the overlay shadows go deeper. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.7);
+
+  color-scheme: dark;
 }
 
 body {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeScript } from "@/components/theme-script";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,7 +29,11 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${robotoMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="h-full flex flex-col">{children}</body>
     </html>
   );
