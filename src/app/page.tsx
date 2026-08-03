@@ -121,7 +121,7 @@ export default function LandingPage() {
         <Button href="/signup">Đăng ký miễn phí</Button>
       </header>
 
-      <section className="bg-navy px-6 py-12 text-white sm:px-10 lg:py-16">
+      <section className="bg-navy px-6 py-12 text-on-ink sm:px-10 lg:py-16">
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2 lg:items-center">
           <div>
             <span className="mb-5 inline-flex rounded-md border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-primary">
@@ -269,7 +269,7 @@ if (delta > 0) {
               </ul>
             </div>
             <Card className="p-3">
-              <div className="rounded-md bg-navy p-4 font-mono text-xs leading-loose text-zinc-300">
+              <div className="rounded-md bg-ink-fixed p-4 font-mono text-xs leading-loose text-zinc-300">
                 <div className="text-blue-300">if (delta &gt; 0) {"{"}</div>
                 <div className="pl-4 text-zinc-400">x1 = (-b + sqrt(delta)) / (2*a);</div>
                 <div className="text-blue-300">{"}"}</div>
@@ -285,7 +285,7 @@ if (delta > 0) {
                     key={g}
                     className="flex items-center gap-3 rounded-md border border-border-soft bg-bg p-3"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-navy font-mono text-xs font-bold text-white">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-navy font-mono text-xs font-bold text-on-ink">
                       {g[0]}
                     </span>
                     <span className="text-sm font-medium text-navy">{g}</span>
@@ -339,7 +339,7 @@ if (delta > 0) {
         <Faq />
       </section>
 
-      <section className="bg-navy px-6 py-12 text-center text-white sm:px-10">
+      <section className="bg-navy px-6 py-12 text-center text-on-ink sm:px-10">
         <h2 className="mb-3 text-3xl font-bold">Sẵn sàng rèn kỹ năng lập trình?</h2>
         <p className="mb-5 text-sm text-zinc-300">
           Đăng ký bằng email và bắt đầu bài luyện tập đầu tiên ngay hôm nay.

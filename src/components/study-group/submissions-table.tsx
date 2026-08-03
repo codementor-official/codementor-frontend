@@ -33,7 +33,7 @@ export function SubmissionsTable({
           const member = memberById.get(row.original.memberId);
           return (
             <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">{member?.initials ?? "?"}</span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-on-ink">{member?.initials ?? "?"}</span>
               <span className="min-w-0 truncate font-medium text-navy">{member?.name ?? "Thành viên đã rời nhóm"}</span>
             </div>
           );

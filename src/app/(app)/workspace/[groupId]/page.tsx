@@ -52,7 +52,7 @@ export default async function WorkspaceGroupPage({
       </Link>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-navy font-mono text-sm font-bold text-white">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-navy font-mono text-sm font-bold text-on-ink">
           {group.tile}
         </span>
         <div className="min-w-0 flex-1">

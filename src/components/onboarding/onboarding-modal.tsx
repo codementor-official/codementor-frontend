@@ -101,7 +101,7 @@ export function OnboardingModal() {
             type="button"
             disabled={!isStepValid}
             onClick={isLastStep ? completeOnboarding : goNext}
-            className="rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-on-ink hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLastStep ? "Hoàn tất & xem lộ trình →" : "Tiếp tục →"}
           </button>

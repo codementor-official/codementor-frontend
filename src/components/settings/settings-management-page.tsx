@@ -121,7 +121,7 @@ function ChoicePill({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${active ? "border-navy bg-navy text-white" : "border-border bg-surface text-text-muted hover:bg-bg"}`}
+      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${active ? "border-navy bg-navy text-on-ink" : "border-border bg-surface text-text-muted hover:bg-bg"}`}
     >
       {children}
     </button>

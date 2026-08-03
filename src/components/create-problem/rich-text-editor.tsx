@@ -83,7 +83,7 @@ function ToolbarButton({
       aria-pressed={active}
       title={label}
       className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-        active ? "bg-navy text-white" : "text-text-muted hover:bg-bg hover:text-navy"
+        active ? "bg-navy text-on-ink" : "text-text-muted hover:bg-bg hover:text-navy"
       }`}
     >
       {children}

@@ -209,7 +209,7 @@ export function PersonalizationSettingsModal({ open, onClose }: { open: boolean;
             type="button"
             disabled={!isStepValid}
             onClick={isScheduleStep ? finish : () => setCurrentStep((step) => step + 1)}
-            className="rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-on-ink hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isScheduleStep ? "Lưu thiết lập →" : "Tiếp tục →"}
           </button>

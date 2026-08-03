@@ -18,6 +18,11 @@
    * whole job is to stay readable when --color-ink inverts in dark mode, which a
    * hardcoded text-white cannot do. */
   --color-on-ink: #ffffff;
+  /* Decorative brand fills (the practice collection tiles) that must stay dark in BOTH
+   * themes — inverting them would turn a dark tile with white text into a light tile with
+   * white text. Deliberately absent from the `.dark` block: not flipping is the point. */
+  --color-ink-fixed: #18181b;
+  --color-primary-fixed: #ea580c;
 
   --color-text: #374151;
   --color-text-muted: #6b7280;
@@ -249,7 +254,9 @@ body {
 .rich-text pre {
   overflow-x: auto;
   border-radius: var(--radius-md);
-  background: var(--color-navy);
+  /* ink-fixed, not ink: code is always read on a dark surface here, matching the Monaco
+   * panes. Letting this invert would put light text on a light block. */
+  background: var(--color-ink-fixed);
   padding: 0.875rem 1rem;
   color: #f4f4f5;
 }

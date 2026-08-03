@@ -25,7 +25,7 @@ export default async function RoadmapDetailPage({
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
-          <div className="mb-5 rounded-lg bg-navy p-6 text-white">
+          <div className="mb-5 rounded-lg bg-navy p-6 text-on-ink">
             <div className="mb-2 text-[10.5px] font-bold tracking-wide text-primary uppercase">Lộ trình học</div>
             <h1 className="mb-2 text-2xl font-bold">{roadmap.title}</h1>
             <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-zinc-300">{roadmap.description}</p>
@@ -133,7 +133,7 @@ export default async function RoadmapDetailPage({
             )}
             <Link
               href="#curriculum"
-              className="mt-1 block w-full rounded-md bg-primary py-2.5 text-center text-sm font-semibold text-white hover:bg-primary-hover"
+              className="mt-1 block w-full rounded-md bg-primary py-2.5 text-center text-sm font-semibold text-on-ink hover:bg-primary-hover"
             >
               {started ? "Học tiếp bài đang dở →" : "Bắt đầu học ngay →"}
             </Link>

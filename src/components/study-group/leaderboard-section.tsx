@@ -33,7 +33,7 @@ function Podium({ ranked, onOpen }: { ranked: GroupMember[]; onOpen: (m: GroupMe
         {top.map(({ rank, height, step, member }) => (
           <div key={rank} className="flex w-full max-w-40 flex-col items-center">
             <span
-              className={`mb-1.5 flex items-center justify-center rounded-full bg-navy font-semibold text-white ${
+              className={`mb-1.5 flex items-center justify-center rounded-full bg-navy font-semibold text-on-ink ${
                 rank === 1 ? "h-12 w-12 text-sm" : "h-10 w-10 text-xs"
               }`}
             >

@@ -4,8 +4,8 @@ type Tone = "neutral" | "navy" | "primary" | "accent" | "success" | "danger" | "
 
 const toneClasses: Record<Tone, string> = {
   neutral: "bg-border-soft text-text",
-  navy: "bg-navy text-white",
-  primary: "bg-primary text-white",
+  navy: "bg-navy text-on-ink",
+  primary: "bg-primary text-on-ink",
   accent: "bg-accent-tint text-accent",
   success: "bg-success-tint text-success",
   danger: "bg-danger-tint text-danger",

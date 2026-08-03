@@ -184,7 +184,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
                 <div key={i} className={`mb-2.5 flex ${m.from === "user" ? "justify-end" : "justify-start"}`}>
                   <div
                     className={`max-w-[85%] rounded-md px-3 py-2 text-xs leading-relaxed ${
-                      m.from === "user" ? "bg-navy text-white" : "bg-ai-tint text-navy"
+                      m.from === "user" ? "bg-navy text-on-ink" : "bg-ai-tint text-navy"
                     }`}
                   >
                     {m.text}
@@ -278,7 +278,7 @@ function WorkspaceBody({
           >
             {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />} Chạy
           </button>
-          <button className="rounded-md bg-navy px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-navy/90">
+          <button className="rounded-md bg-navy px-3.5 py-1.5 text-xs font-semibold text-on-ink hover:bg-navy/90">
             Nộp bài
           </button>
           <button

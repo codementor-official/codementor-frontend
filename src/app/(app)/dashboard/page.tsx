@@ -81,7 +81,7 @@ export default function DashboardPage() {
 
       <Link
         href="/paths"
-        className="mb-5 flex flex-wrap items-center gap-5 rounded-lg bg-navy p-5 text-white"
+        className="mb-5 flex flex-wrap items-center gap-5 rounded-lg bg-navy p-5 text-on-ink"
       >
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10">
           <Bot className="h-5 w-5" />
@@ -129,7 +129,7 @@ export default function DashboardPage() {
                         </span>
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-md bg-navy px-3.5 py-2 text-xs font-semibold text-white">
+                    <span className="shrink-0 rounded-md bg-navy px-3.5 py-2 text-xs font-semibold text-on-ink">
                       Tiếp tục
                     </span>
                   </Card>
@@ -231,7 +231,7 @@ export default function DashboardPage() {
                 <div key={c.label} className="flex-1 text-center">
                   <div
                     className={`mb-1 flex h-8 items-center justify-center rounded-md ${
-                      c.active ? "bg-primary text-white" : "bg-border-soft"
+                      c.active ? "bg-primary text-on-ink" : "bg-border-soft"
                     }`}
                   >
                     {c.active && <Flame className="h-4 w-4" />}
@@ -292,7 +292,7 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-3">
               {recentlyViewed.map((r) => (
                 <Link key={r.title} href={r.href} className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy font-mono text-xs font-bold text-white">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy font-mono text-xs font-bold text-on-ink">
                     {r.tile}
                   </span>
                   <div className="min-w-0 flex-1">

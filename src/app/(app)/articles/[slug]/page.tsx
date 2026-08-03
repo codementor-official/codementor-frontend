@@ -38,7 +38,7 @@ export default async function ArticleDetailPage({
                 {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
               </div>
               {section.code && (
-                <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-navy p-4 text-xs leading-6 text-white">
+                <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-ink-fixed p-4 text-xs leading-6 text-zinc-100">
                   <code>{section.code}</code>
                 </pre>
               )}

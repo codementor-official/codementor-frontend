@@ -41,7 +41,7 @@ export function AvatarGroup({
         <span
           key={item.id}
           title={item.name}
-          className={`flex shrink-0 items-center justify-center rounded-full bg-navy font-semibold text-white ring-2 ${sizeClasses[size]} ${ringClassName}`}
+          className={`flex shrink-0 items-center justify-center rounded-full bg-navy font-semibold text-on-ink ring-2 ${sizeClasses[size]} ${ringClassName}`}
         >
           {item.initials}
         </span>

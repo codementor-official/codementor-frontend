@@ -32,14 +32,14 @@ export function SegmentedTabs({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={`inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors ${
-              active ? "bg-navy text-white" : "text-text-muted hover:bg-bg hover:text-navy"
+              active ? "bg-navy text-on-ink" : "text-text-muted hover:bg-bg hover:text-navy"
             }`}
           >
             {opt.label}
             {typeof opt.count === "number" && (
               <span
                 className={`rounded-full px-1.5 text-[10px] ${
-                  active ? "bg-white/20" : "bg-border-soft text-text-faint"
+                  active ? "bg-on-ink/20 text-on-ink" : "bg-border-soft text-text-faint"
                 }`}
               >
                 {opt.count}

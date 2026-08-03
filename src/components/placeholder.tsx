@@ -7,7 +7,7 @@ export function Placeholder({
 }) {
   return (
     <div
-      className={`rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-400 ${className}`}
+      className={`rounded-xl border border-dashed border-border bg-bg p-4 text-sm text-text-faint ${className}`}
     >
       {label}
     </div>

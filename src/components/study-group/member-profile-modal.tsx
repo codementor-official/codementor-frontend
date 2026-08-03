@@ -107,7 +107,7 @@ export function MemberProfileModal({
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border-soft bg-bg p-4">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-sm font-bold text-white">{member.initials}</span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-sm font-bold text-on-ink">{member.initials}</span>
           <div className="min-w-36 flex-1">
             <div className="font-bold text-navy">{member.name}</div>
             <div className="mt-0.5 text-xs text-text-faint">Tham gia {member.joinedAt} · hoạt động {member.lastActiveMinutesAgo < 60 ? `${member.lastActiveMinutesAgo} phút trước` : "gần đây"}</div>

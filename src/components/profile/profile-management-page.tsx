@@ -55,7 +55,7 @@ export function ProfileManagementPage() {
         <aside className="space-y-4">
           <Card className="overflow-hidden p-5">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-navy text-base font-bold text-white">GS</div>
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-navy text-base font-bold text-on-ink">GS</div>
               <div className="min-w-0">
                 <h2 className="truncate font-bold text-navy">{profile.name}</h2>
                 <p className="text-xs text-text-muted">@{profile.handle}</p>

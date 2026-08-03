@@ -28,7 +28,7 @@ export function XpRankingCard({ ranked }: { ranked: GroupMember[] }) {
             >
               {index + 1}
             </span>
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-on-ink">
               {member.initials}
             </span>
             <span className="min-w-0 flex-1">

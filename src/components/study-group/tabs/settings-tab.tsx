@@ -120,7 +120,7 @@ export function SettingsTab({
           />
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
-              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-navy font-mono text-xl font-bold text-white">
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-navy font-mono text-xl font-bold text-on-ink">
                 {group.tile}
               </span>
               <div>

@@ -249,7 +249,7 @@ function SubmissionDrawer({
 
         <section>
           <h2 className="mb-2 text-sm font-bold text-navy">Mã nguồn đã nộp</h2>
-          <pre className="overflow-x-auto rounded-lg bg-navy p-5 text-xs leading-6 text-zinc-100">
+          <pre className="overflow-x-auto rounded-lg bg-ink-fixed p-5 text-xs leading-6 text-zinc-100">
             <code>{item.sourceCode}</code>
           </pre>
         </section>

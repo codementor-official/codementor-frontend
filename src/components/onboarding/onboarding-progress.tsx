@@ -12,7 +12,7 @@ export function OnboardingProgress({ current, total }: { current: number; total:
             <div key={n} className="flex flex-1 items-center last:flex-none">
               <div
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                  done || active ? "bg-primary text-white" : "bg-border-soft text-text-faint"
+                  done || active ? "bg-primary text-on-ink" : "bg-border-soft text-text-faint"
                 }`}
               >
                 {done ? <Check className="h-3.5 w-3.5" /> : n}

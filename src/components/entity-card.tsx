@@ -136,7 +136,7 @@ export function EntityCard({
         {cta && (
           <Link
             href={cta.href}
-            className="mt-auto rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-white hover:bg-navy/90"
+            className="mt-auto rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-on-ink hover:bg-navy/90"
           >
             {cta.label}
           </Link>

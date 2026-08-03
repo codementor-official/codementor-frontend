@@ -112,7 +112,7 @@ export function AssignExerciseModal({
                   onChange={() => toggle(member.id)}
                   className="h-4 w-4 shrink-0 accent-primary"
                 />
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-on-ink">
                   {member.initials}
                 </span>
                 <span className="min-w-0 flex-1">

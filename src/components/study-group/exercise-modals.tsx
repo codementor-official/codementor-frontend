@@ -215,7 +215,7 @@ export function ExerciseEditModal({
                 onClick={() => set("difficulty", d)}
                 className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${
                   form.difficulty === d
-                    ? "border-navy bg-navy text-white"
+                    ? "border-navy bg-navy text-on-ink"
                     : "border-border text-text-muted hover:bg-bg"
                 }`}
               >

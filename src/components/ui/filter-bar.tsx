@@ -52,7 +52,7 @@ export function FilterBar({
       <SlidersHorizontal className="h-3.5 w-3.5" />
       {sheetTitle}
       {activeFilterCount > 0 && (
-        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-on-ink">
           {activeFilterCount}
         </span>
       )}

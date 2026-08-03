@@ -85,7 +85,7 @@ export function MembersTab({
         header: "Thành viên",
         cell: ({ row }) => (
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-white">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-semibold text-on-ink">
               {row.original.initials}
             </span>
             <div className="min-w-0">

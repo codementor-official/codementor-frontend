@@ -67,7 +67,7 @@ export function AssignmentMemberList({ assignments, exercises }: { assignments: 
         {[
           ["all", "Tất cả"], ["need", "Cần làm"], ["done", "Đã hoàn thành"],
           ["failed", "Chưa đạt"], ["retry", "Làm lại"], ["late", "Quá hạn"],
-        ].map(([value, label]) => <button key={value} type="button" onClick={() => setQuickFilter(value)} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${quickFilter === value ? "border-navy bg-navy text-white" : "border-border bg-surface text-text-muted hover:bg-bg"}`}>{label}</button>)}
+        ].map(([value, label]) => <button key={value} type="button" onClick={() => setQuickFilter(value)} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${quickFilter === value ? "border-navy bg-navy text-on-ink" : "border-border bg-surface text-text-muted hover:bg-bg"}`}>{label}</button>)}
       </div>
       <Card className="mb-4 flex flex-col gap-2 p-3 sm:flex-row">
         <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border px-3"><Search className="h-4 w-4 text-text-faint" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm bài tập..." className="min-w-0 flex-1 bg-transparent text-sm text-navy outline-none placeholder:text-text-faint" /></label>

@@ -55,7 +55,7 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-surface">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-navy px-4 py-3 text-white sm:px-5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-navy px-4 py-3 text-on-ink sm:px-5">
         <Link href={`/paths/${roadmapSlug}/courses/${course.slug}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-300 hover:text-white">
           <ChevronLeft className="h-4 w-4" /> Quay lại khóa học
         </Link>
@@ -81,10 +81,10 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
           ) : (
             <div className="flex min-h-70 items-center justify-center bg-linear-to-br from-primary-tint via-surface to-bg p-8 text-center">
               <div>
-                <div className="mx-auto mb-3 flex h-13 w-13 items-center justify-center rounded-full bg-primary text-white"><FileText className="h-6 w-6" /></div>
+                <div className="mx-auto mb-3 flex h-13 w-13 items-center justify-center rounded-full bg-primary text-on-ink"><FileText className="h-6 w-6" /></div>
                 <p className="text-sm font-bold text-navy">{isPractice ? "Không gian thực hành" : "Bài đọc có hướng dẫn"}</p>
                 <p className="mt-1 text-xs text-text-muted">Đọc yêu cầu và theo dõi checklist bên dưới.</p>
-                {isPractice && <Link href={lessonTargetHref(roadmapSlug, course, lesson)} className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover">Mở khung làm bài <ChevronRight className="h-4 w-4" /></Link>}
+                {isPractice && <Link href={lessonTargetHref(roadmapSlug, course, lesson)} className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-on-ink hover:bg-primary-hover">Mở khung làm bài <ChevronRight className="h-4 w-4" /></Link>}
               </div>
             </div>
           )}
@@ -123,14 +123,14 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
               <section className="mb-6 rounded-lg border border-border bg-bg p-4">
                 <h2 className="mb-3 text-lg font-bold text-navy">Yêu cầu thực hành</h2>
                 <ol className="space-y-2 text-sm leading-relaxed text-text-muted">
-                  {content.exerciseBrief.map((item, index) => <li key={item} className="flex gap-2"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-bold text-white">{index + 1}</span>{item}</li>)}
+                  {content.exerciseBrief.map((item, index) => <li key={item} className="flex gap-2"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-bold text-on-ink">{index + 1}</span>{item}</li>)}
                 </ol>
               </section>
             )}
 
             <nav className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
               {previous && !previous.isLocked ? <Link href={lessonTargetHref(roadmapSlug, course, previous)} className="inline-flex items-center gap-1.5 rounded-md border border-border px-4 py-2.5 text-sm font-semibold text-navy hover:bg-bg"><ChevronLeft className="h-4 w-4" /> Bài trước</Link> : <span />}
-              {next && !next.isLocked ? <Link href={lessonTargetHref(roadmapSlug, course, next)} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover">Bài tiếp theo <ChevronRight className="h-4 w-4" /></Link> : <span className="text-xs font-medium text-text-faint">Bạn đã xem hết các bài đang mở.</span>}
+              {next && !next.isLocked ? <Link href={lessonTargetHref(roadmapSlug, course, next)} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-on-ink hover:bg-primary-hover">Bài tiếp theo <ChevronRight className="h-4 w-4" /></Link> : <span className="text-xs font-medium text-text-faint">Bạn đã xem hết các bài đang mở.</span>}
             </nav>
           </div>
         </article>

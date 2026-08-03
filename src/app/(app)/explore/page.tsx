@@ -286,7 +286,7 @@ export default function ExplorePage() {
                 <div key={l.name} className="flex items-center gap-2.5">
                   <span
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                      l.rank <= 3 ? "bg-primary text-white" : "bg-border-soft text-navy"
+                      l.rank <= 3 ? "bg-primary text-on-ink" : "bg-border-soft text-navy"
                     }`}
                   >
                     {l.rank}

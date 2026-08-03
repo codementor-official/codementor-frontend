@@ -49,7 +49,7 @@ export function RoadmapList({
               type="button"
               onClick={() => onPageChange(page)}
               aria-current={page === currentPage ? "page" : undefined}
-              className={`h-9 min-w-9 rounded-md px-2 text-xs font-semibold ${page === currentPage ? "bg-navy text-white" : "border border-border bg-surface text-navy hover:bg-bg"}`}
+              className={`h-9 min-w-9 rounded-md px-2 text-xs font-semibold ${page === currentPage ? "bg-navy text-on-ink" : "border border-border bg-surface text-navy hover:bg-bg"}`}
             >
               {page}
             </button>
