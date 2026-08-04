@@ -85,7 +85,7 @@ export function ProfileManagementPage() {
         <main className="min-w-0 space-y-5">
           <Card className="grid divide-y divide-border-soft sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[["2.450", "Tổng XP", "Hạng #1 trong nhóm"], ["5 ngày", "Chuỗi hoạt động", "Kỷ lục 12 ngày"], ["47", "Bài đã giải", "68% tỷ lệ hoàn thành"]].map(([value, label, detail]) => (
-              <div key={label} className="px-4 py-3.5"><div className="flex items-baseline justify-between gap-2"><p className="text-xs text-text-muted">{label}</p><p className="text-xl font-bold text-navy">{value}</p></div><p className="mt-1 text-xs text-text-faint">{detail}</p></div>
+              <div key={label} className="px-3.5 py-2.5"><div className="flex items-baseline justify-between gap-2"><p className="text-xs text-text-muted">{label}</p><p className="text-base font-bold text-navy">{value}</p></div><p className="mt-0.5 text-2xs text-text-faint">{detail}</p></div>
             ))}
           </Card>
 
