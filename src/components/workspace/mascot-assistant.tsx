@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Lightbulb, Send, Sparkles, X } from "lucide-react";
+import { Bot, Lightbulb, Send, X } from "lucide-react";
 
 export type MascotState = "idle" | "thinking" | "typing" | "loading" | "success" | "error";
 
@@ -67,7 +67,7 @@ export function MascotAssistant({ state }: { state: MascotState }) {
       <header className="flex items-start gap-3 border-b border-border-soft p-4">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-tint text-primary"><Bot className="h-4.5 w-4.5" /></span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2"><h2 className="text-sm font-bold text-navy">Codey</h2><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold tracking-wide text-emerald-700 uppercase">Phản hồi nhanh</span></div>
+          <div className="flex flex-wrap items-center gap-2"><h2 className="text-sm font-bold text-navy">Codey</h2><span className="rounded-full bg-primary-tint px-2 py-0.5 text-[9px] font-bold tracking-wide text-primary uppercase">Phản hồi nhanh</span></div>
           <p className="mt-1 text-xs leading-5 text-text-muted">{stateCopy[visualState]}</p>
         </div>
         <button type="button" aria-label="Đóng Codey" onClick={() => setOpen(false)} className="rounded-md p-1.5 text-text-faint hover:bg-bg hover:text-navy"><X className="h-4 w-4" /></button>
@@ -86,12 +86,11 @@ export function MascotAssistant({ state }: { state: MascotState }) {
 
       <div className="border-t border-border-soft p-3">
         <div className="mb-2 flex flex-wrap gap-1.5">{Object.keys(quickReplies).map((prompt) => <button key={prompt} type="button" onClick={() => submit(prompt)} disabled={replying} className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1.5 text-[10px] font-medium text-text-muted hover:border-primary hover:text-primary disabled:opacity-50"><Lightbulb className="h-3 w-3" />{prompt}</button>)}</div>
-        <div className="flex gap-2"><input value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => event.key === "Enter" && submit()} placeholder="Hỏi nhanh Codey..." className="h-9 min-w-0 flex-1 rounded-md border border-border bg-bg px-3 text-xs text-navy outline-none focus:border-primary" /><button type="button" aria-label="Gửi câu hỏi cho Codey" onClick={() => submit()} disabled={!question.trim() || replying} className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-white disabled:opacity-40"><Send className="h-3.5 w-3.5" /></button></div>
+        <div className="flex gap-2"><input value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => event.key === "Enter" && submit()} placeholder="Hỏi nhanh Codey..." className="h-9 min-w-0 flex-1 rounded-md border border-border bg-bg px-3 text-xs text-navy outline-none focus:border-primary" /><button type="button" aria-label="Gửi câu hỏi cho Codey" onClick={() => submit()} disabled={!question.trim() || replying} className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-on-ink disabled:opacity-40"><Send className="h-3.5 w-3.5" /></button></div>
       </div>
     </section>}
-    <button type="button" aria-label="Mở Codey" onClick={() => setOpen((value) => !value)} className="group relative flex h-20 w-20 items-center justify-center rounded-full border border-border bg-surface shadow-dropdown transition-transform hover:-translate-y-1 sm:h-24 sm:w-24">
-      <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-surface bg-primary px-1 text-[8px] font-bold text-white"><Sparkles className="h-2.5 w-2.5" /></span>
-      <span className={`mascot-sprite h-[74px] w-[74px] sm:h-[88px] sm:w-[88px] ${visualState === "idle" ? "mascot-sprite-idle" : ""}`} style={visualState === "idle" ? undefined : { backgroundPosition: spritePosition[visualState] }} />
+    <button type="button" aria-label="Mở Codey" onClick={() => setOpen((value) => !value)} className="group relative flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface shadow-dropdown transition-transform hover:-translate-y-0.5 sm:h-14 sm:w-14">
+      <span className={`mascot-sprite h-11 w-11 sm:h-13 sm:w-13 ${visualState === "idle" ? "mascot-sprite-idle" : ""}`} style={visualState === "idle" ? undefined : { backgroundPosition: spritePosition[visualState] }} />
     </button>
   </div>;
 }

@@ -6,7 +6,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
-import { ArrowLeft, Braces, Loader2, Play, RotateCcw, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Bot, Braces, Loader2, Play, RotateCcw, Send, Sparkles } from "lucide-react";
 import { Pane } from "@/components/workspace/pane";
 import { ResizeHandle } from "@/components/workspace/resize-handle";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
@@ -53,6 +53,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<{ input: string; expected: string; pass: boolean }[] | null>(null);
   const [mascotState, setMascotState] = useState<MascotState>("idle");
+  const [codeyVisible, setCodeyVisible] = useState(true);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<{ from: "user" | "ai"; text: string }[]>([
@@ -250,7 +251,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
 
   return (
     <WorkspaceProvider initialPanes={initialPanes}>
-      <WorkspaceBody problem={problem} backHref={backHref} runCode={runCode} running={running} mascotState={mascotState} renderTabContent={renderTabContent} />
+      <WorkspaceBody problem={problem} backHref={backHref} runCode={runCode} running={running} mascotState={mascotState} codeyVisible={codeyVisible} onToggleCodey={() => setCodeyVisible((v) => !v)} renderTabContent={renderTabContent} />
     </WorkspaceProvider>
   );
 }
@@ -261,6 +262,8 @@ function WorkspaceBody({
   runCode,
   running,
   mascotState,
+  codeyVisible,
+  onToggleCodey,
   renderTabContent,
 }: {
   problem: Problem;
@@ -268,6 +271,8 @@ function WorkspaceBody({
   runCode: () => void;
   running: boolean;
   mascotState: MascotState;
+  codeyVisible: boolean;
+  onToggleCodey: () => void;
   renderTabContent: (kind: TabKind) => ReactNode;
 }) {
   const { panes, openTab, closeTab, maximized } = useWorkspace();
@@ -323,6 +328,17 @@ function WorkspaceBody({
             Nộp bài · +{xpByDifficulty[problem.difficulty]} XP
           </button>
           <button
+            onClick={onToggleCodey}
+            title={codeyVisible ? "Ẩn Codey" : "Hiện Codey"}
+            aria-label={codeyVisible ? "Ẩn Codey" : "Hiện Codey"}
+            aria-pressed={codeyVisible}
+            className={`flex h-8 w-8 items-center justify-center rounded-md ${
+              codeyVisible ? "bg-primary-tint text-primary" : "text-text-muted hover:bg-bg hover:text-navy"
+            }`}
+          >
+            <Bot className="h-4.5 w-4.5" />
+          </button>
+          <button
             onClick={toggleAi}
             title="Trợ lý AI"
             className={`flex h-8 w-8 items-center justify-center rounded-md ${
@@ -372,7 +388,7 @@ function WorkspaceBody({
           </Group>
         )}
       </div>
-      <MascotAssistant state={mascotState} />
+      {codeyVisible && <MascotAssistant state={mascotState} />}
     </div>
   );
 }
