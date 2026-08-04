@@ -6,7 +6,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
-import { ArrowLeft, Braces, Loader2, MessageSquareText, Play, RotateCcw, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Braces, Loader2, Play, RotateCcw, Send, Sparkles } from "lucide-react";
 import { Pane } from "@/components/workspace/pane";
 import { ResizeHandle } from "@/components/workspace/resize-handle";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
@@ -273,7 +273,6 @@ function WorkspaceBody({
   const { panes, openTab, closeTab, maximized } = useWorkspace();
   const aiVisible = panes.ai.tabs.length > 0;
   const toggleAi = () => (aiVisible ? closeTab("ai", "ai") : openTab("ai", "ai"));
-  const openDiscussion = () => openTab("left", "discussion");
 
   const leftPane = (
     <Pane id="left" className="min-h-0">
@@ -310,7 +309,6 @@ function WorkspaceBody({
             <ArrowLeft className="h-4.5 w-4.5" />
           </Link>
           <ProblemPicker current={problem} />
-          <span className="hidden rounded-full bg-border-soft px-2 py-1 text-[10px] font-semibold text-text-muted lg:inline">{problem.difficulty}</span>
         </div>
 
         <div className="flex items-center gap-2 justify-self-center">
@@ -336,10 +334,6 @@ function WorkspaceBody({
         </div>
 
         <div className="flex items-center justify-end gap-1">
-          <button type="button" onClick={openDiscussion} title="Mở thảo luận" className="relative flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy">
-            <MessageSquareText className="h-4 w-4" />
-            <span className="absolute -top-0.5 -right-0.5 rounded-full bg-primary px-1 text-[8px] font-bold text-white">4</span>
-          </button>
           <UserMenu collapsed placement="down" />
         </div>
       </div>
