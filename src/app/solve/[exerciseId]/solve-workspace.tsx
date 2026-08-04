@@ -6,7 +6,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
-import { ArrowLeft, Braces, Loader2, Play, RotateCcw, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Braces, Loader2, MessageSquareText, Play, RotateCcw, Send, Sparkles } from "lucide-react";
 import { Pane } from "@/components/workspace/pane";
 import { ResizeHandle } from "@/components/workspace/resize-handle";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
@@ -16,6 +16,8 @@ import { useWorkspace, WorkspaceProvider } from "@/components/workspace/workspac
 import type { PanesState, TabKind } from "@/components/workspace/types";
 import { type Problem } from "@/data/sample-problem";
 import { useResolvedTheme } from "@/lib/store/use-resolved-theme";
+import { DiscussionPanel } from "@/components/workspace/discussion-panel";
+import { MascotAssistant, type MascotState } from "@/components/workspace/mascot-assistant";
 import "highlight.js/styles/github-dark.css";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -29,6 +31,8 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 
 const languages = ["C", "C++", "Python", "Java", "JavaScript"];
 const monacoLang: Record<string, string> = { C: "c", "C++": "cpp", Python: "python", Java: "java", JavaScript: "javascript" };
+const fileExtension: Record<string, string> = { C: "c", "C++": "cpp", Python: "py", Java: "java", JavaScript: "js" };
+const xpByDifficulty = { "Cơ bản": 25, "Trung bình": 50, "Nâng cao": 80 } as const;
 
 const initialPanes: PanesState = {
   left: { tabs: ["description", "discussion"], active: "description" },
@@ -48,6 +52,8 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
   const editorRef = useRef<MonacoEditorHandle | null>(null);
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<{ input: string; expected: string; pass: boolean }[] | null>(null);
+  const [mascotState, setMascotState] = useState<MascotState>("idle");
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<{ from: "user" | "ai"; text: string }[]>([
     {
@@ -59,11 +65,22 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
   const resetCode = () => setCode((c) => ({ ...c, [language]: problem.starter[language] ?? "" }));
   const formatCode = () => editorRef.current?.getAction("editor.action.formatDocument")?.run();
 
+  const handleCodeChange = (value: string) => {
+    setCode((current) => ({ ...current, [language]: value }));
+    setMascotState("typing");
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(() => setMascotState("idle"), 900);
+  };
+
   const runCode = () => {
     setRunning(true);
+    setMascotState("loading");
     setTimeout(() => {
-      setResults(problem.testCases.map((tc) => ({ input: tc.input, expected: tc.expected, pass: Math.random() > 0.3 })));
+      const hasMeaningfulChange = (code[language] ?? "").trim() !== (problem.starter[language] ?? "").trim();
+      const nextResults = problem.testCases.map((tc, index) => ({ input: tc.input, expected: tc.expected, pass: hasMeaningfulChange || index !== problem.testCases.length - 1 }));
+      setResults(nextResults);
       setRunning(false);
+      setMascotState(nextResults.every((result) => result.pass) ? "success" : "error");
     }, 700);
   };
 
@@ -85,6 +102,16 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
       case "description":
         return (
           <div className="h-full overflow-y-auto p-4">
+            <div className="mb-4 border-b border-border-soft pb-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="mb-1 text-[11px] font-semibold tracking-wide text-text-faint uppercase">Bài luyện tập</div>
+                  <h1 className="text-xl font-bold text-navy">{problem.title}</h1>
+                </div>
+                <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">+{xpByDifficulty[problem.difficulty]} XP</span>
+              </div>
+              <p className="mt-2 text-xs text-text-muted">Độ khó: <b className="text-navy">{problem.difficulty}</b> · Giới hạn 1 giây · 128 MB</p>
+            </div>
             <div className="mb-3 flex flex-wrap gap-1.5">
               {problem.tags.map((tag) => (
                 <span key={tag} className="rounded-sm bg-border-soft px-2 py-0.5 text-[11px] font-medium text-text">
@@ -104,15 +131,16 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
           </div>
         );
       case "discussion":
-        return (
-          <div className="p-4 text-sm text-text-faint">Chưa có bình luận nào cho bài này.</div>
-        );
+        return <DiscussionPanel problemTitle={problem.title} />;
       case "code":
         return (
           <div className="flex h-full flex-col">
-            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-2 py-1">
-              <LanguageDropdown language={language} onChange={setLanguage} languages={languages} />
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-bg px-3 py-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="truncate rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-xs font-semibold text-navy">solution.{fileExtension[language]}</span>
+              </div>
               <div className="flex items-center gap-0.5">
+                <LanguageDropdown language={language} onChange={setLanguage} languages={languages} />
                 <button
                   onClick={resetCode}
                   title="Khôi phục code mẫu"
@@ -137,9 +165,9 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
                 }}
                 language={monacoLang[language]}
                 value={code[language] ?? ""}
-                onChange={(v) => setCode((c) => ({ ...c, [language]: v ?? "" }))}
+                onChange={(v) => handleCodeChange(v ?? "")}
                 theme={editorTheme === "dark" ? "vs-dark" : "vs"}
-                options={{ fontSize: 13, minimap: { enabled: false }, automaticLayout: true, padding: { top: 12 } }}
+                options={{ fontSize: 13, lineHeight: 21, minimap: { enabled: true, scale: 0.7, showSlider: "mouseover" }, automaticLayout: true, padding: { top: 14 }, fontLigatures: true, smoothScrolling: true, cursorBlinking: "smooth", renderLineHighlight: "all", bracketPairColorization: { enabled: true } }}
               />
             </div>
           </div>
@@ -164,6 +192,10 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
               </div>
             ) : results ? (
               <div className="flex flex-col gap-2">
+                <div className={`mb-1 flex items-center justify-between rounded-md px-3 py-2 text-xs font-semibold ${results.every((result) => result.pass) ? "bg-success-tint text-success" : "bg-danger-tint text-danger"}`}>
+                  <span>{results.every((result) => result.pass) ? "Tất cả test case đã đạt" : "Có test case cần xem lại"}</span>
+                  <span>{results.filter((result) => result.pass).length}/{results.length}</span>
+                </div>
                 {results.map((r, i) => (
                   <div key={i} className={`rounded-md p-2.5 font-mono text-xs ${r.pass ? "bg-success-tint" : "bg-danger-tint"}`}>
                     <div className={`mb-1 font-sans font-semibold ${r.pass ? "text-success" : "text-danger"}`}>
@@ -182,6 +214,10 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
       case "ai":
         return (
           <div className="flex h-full flex-col">
+            <div className="border-b border-border-soft bg-ai-tint/60 p-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-ai"><Sparkles className="h-3.5 w-3.5" /> Trợ lý AI chuyên sâu</div>
+              <p className="mt-1 text-[10px] leading-4 text-text-muted">Phân tích toàn bộ hướng giải, độ phức tạp và code hiện tại. Hoạt động độc lập với chat nhanh Codey.</p>
+            </div>
             <div className="flex-1 overflow-y-auto p-3">
               {aiMessages.map((m, i) => (
                 <div key={i} className={`mb-2.5 flex ${m.from === "user" ? "justify-end" : "justify-start"}`}>
@@ -214,7 +250,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
 
   return (
     <WorkspaceProvider initialPanes={initialPanes}>
-      <WorkspaceBody problem={problem} backHref={backHref} runCode={runCode} running={running} renderTabContent={renderTabContent} />
+      <WorkspaceBody problem={problem} backHref={backHref} runCode={runCode} running={running} mascotState={mascotState} renderTabContent={renderTabContent} />
     </WorkspaceProvider>
   );
 }
@@ -224,17 +260,20 @@ function WorkspaceBody({
   backHref,
   runCode,
   running,
+  mascotState,
   renderTabContent,
 }: {
   problem: Problem;
   backHref: string;
   runCode: () => void;
   running: boolean;
+  mascotState: MascotState;
   renderTabContent: (kind: TabKind) => ReactNode;
 }) {
   const { panes, openTab, closeTab, maximized } = useWorkspace();
   const aiVisible = panes.ai.tabs.length > 0;
   const toggleAi = () => (aiVisible ? closeTab("ai", "ai") : openTab("ai", "ai"));
+  const openDiscussion = () => openTab("left", "discussion");
 
   const leftPane = (
     <Pane id="left" className="min-h-0">
@@ -261,7 +300,7 @@ function WorkspaceBody({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-surface px-3">
+      <div className="grid min-h-14 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-surface px-3">
         <div className="flex min-w-0 items-center gap-1">
           <Link
             href={backHref}
@@ -271,6 +310,7 @@ function WorkspaceBody({
             <ArrowLeft className="h-4.5 w-4.5" />
           </Link>
           <ProblemPicker current={problem} />
+          <span className="hidden rounded-full bg-border-soft px-2 py-1 text-[10px] font-semibold text-text-muted lg:inline">{problem.difficulty}</span>
         </div>
 
         <div className="flex items-center gap-2 justify-self-center">
@@ -281,8 +321,8 @@ function WorkspaceBody({
           >
             {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />} Chạy
           </button>
-          <button className="rounded-md bg-navy px-3.5 py-1.5 text-xs font-semibold text-on-ink hover:bg-navy/90">
-            Nộp bài
+          <button onClick={runCode} disabled={running} className="rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50">
+            Nộp bài · +{xpByDifficulty[problem.difficulty]} XP
           </button>
           <button
             onClick={toggleAi}
@@ -295,7 +335,11 @@ function WorkspaceBody({
           </button>
         </div>
 
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-1">
+          <button type="button" onClick={openDiscussion} title="Mở thảo luận" className="relative flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy">
+            <MessageSquareText className="h-4 w-4" />
+            <span className="absolute -top-0.5 -right-0.5 rounded-full bg-primary px-1 text-[8px] font-bold text-white">4</span>
+          </button>
           <UserMenu collapsed placement="down" />
         </div>
       </div>
@@ -334,6 +378,7 @@ function WorkspaceBody({
           </Group>
         )}
       </div>
+      <MascotAssistant state={mascotState} />
     </div>
   );
 }

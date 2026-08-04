@@ -255,6 +255,24 @@ html {
   }
 }
 
+@keyframes mascot-idle-frames {
+  0%, 44% { background-position: 0% 0%; }
+  50%, 88% { background-position: 33.333% 0%; }
+  100% { background-position: 0% 0%; }
+}
+
+.mascot-sprite {
+  display: block;
+  background-image: url("/mascot-sprite.png");
+  background-repeat: no-repeat;
+  background-size: 400% 300%;
+  image-rendering: pixelated;
+}
+
+.mascot-sprite-idle {
+  animation: mascot-idle-frames 3.2s steps(1, end) infinite;
+}
+
 @utility animate-menu-in {
   animation: menu-in var(--duration-fast) var(--ease-standard);
 }
@@ -283,6 +301,9 @@ html {
   .animate-modal-in,
   .animate-drawer-in,
   .animate-menu-in {
+    animation: none;
+  }
+  .mascot-sprite-idle {
     animation: none;
   }
 }
