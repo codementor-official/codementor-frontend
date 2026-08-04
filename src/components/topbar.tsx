@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function Topbar() {
   return (
@@ -8,7 +8,7 @@ export function Topbar() {
       {/* Sidebar (and its logo) is hidden below md — show the logo here instead so mobile
        * always has one. */}
       <Link href="/dashboard" className="shrink-0 md:hidden">
-        <Image src="/logo.png" alt="CodeMentor" width={460} height={159} className="h-8 w-auto" priority />
+        <BrandLogo size="sm" priority />
       </Link>
       <div className="relative mx-auto w-full max-w-3xl">
         <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-text-faint" />

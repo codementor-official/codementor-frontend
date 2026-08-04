@@ -1,365 +1,172 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Award,
   ArrowRight,
+  Award,
+  BarChart3,
   BookOpen,
   Bot,
-  Check,
+  CheckCircle2,
   Code2,
-  FilePlus2,
+  Flame,
   GraduationCap,
-  Share2,
+  Lightbulb,
+  MessageSquareText,
+  Play,
+  Search,
+  Sparkles,
+  Target,
   Trophy,
-  Users,
+  UsersRound,
+  Zap,
 } from "lucide-react";
-import { Testimonials } from "@/components/landing/testimonials";
-import { Faq } from "@/components/landing/faq";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { StatBlock } from "@/components/ui/stat-block";
+import { BrandLogo } from "@/components/brand-logo";
 
-const navLinks = [
-  { label: "Tính năng", href: "#features" },
-  { label: "Lộ trình học", href: "#" },
-  { label: "Nhóm học tập", href: "#groups" },
-  { label: "Trợ lý AI", href: "#" },
-];
-
-const stats = [
-  { value: "1.200+", label: "học viên đang học" },
-  { value: "300+", label: "bài tập & thử thách" },
-  { value: "2", label: "lộ trình học có cấu trúc" },
-  { value: "24/7", label: "AI đồng hành" },
-];
-
-const personas = [
+const audiences = [
   {
-    title: "Người học",
-    desc: "Luyện kỹ năng lập trình cùng cộng đồng người học trên khắp cả nước. Học theo lộ trình, thực hành và xây dựng portfolio của riêng bạn.",
-    features: [
-      { icon: Trophy, label: "Bài luyện tập & lộ trình học có cấu trúc" },
-      { icon: Code2, label: "Nhóm làm việc trực quan, chấm bài tự động" },
-      { icon: GraduationCap, label: "Theo dõi tiến độ và tích lũy XP" },
-    ],
+    icon: Code2,
+    title: "Người học lập trình",
+    description: "Xây năng lực bằng lộ trình có cấu trúc, bài luyện tập sát thực tế và hồ sơ kỹ năng có thể chứng minh.",
+    features: ["IDE và chấm bài trực tuyến", "Ngân hàng bài theo kỹ năng", "XP, chuỗi học và thành tích"],
   },
   {
-    title: "Giảng viên & Tổ chức",
-    desc: "Đưa bài toán và tài liệu giảng dạy của bạn đến hàng nghìn người học, đo lường năng lực thực tế thay vì chỉ lý thuyết.",
-    features: [
-      { icon: FilePlus2, label: "Tạo bài luyện tập và bộ đề riêng" },
-      { icon: Users, label: "Tổ chức nhóm học tập, theo dõi từng thành viên" },
-      { icon: Award, label: "Sàng lọc và đánh giá năng lực lập trình" },
-    ],
-  },
-  {
+    icon: UsersRound,
     title: "Nhóm học tập",
-    desc: "Xây dựng, chia sẻ và duy trì tài liệu học tập trên một nền tảng chung — cả nhóm cùng luyện một bộ đề, cùng tiến bộ.",
-    features: [
-      { icon: Share2, label: "Chia sẻ tài liệu và giáo trình trong nhóm" },
-      { icon: Bot, label: "AI soạn bài luyện tập từ chính tài liệu của nhóm" },
-      { icon: BookOpen, label: "Bảng xếp hạng XP và tiến độ từng thành viên" },
-    ],
+    description: "Cùng học trên một không gian chung, giao bài, thảo luận hướng giải và theo dõi sự tiến bộ của từng thành viên.",
+    features: ["Tài liệu và bài tập dùng chung", "Bảng xếp hạng theo XP", "Theo dõi bài nộp của nhóm"],
+  },
+  {
+    icon: GraduationCap,
+    title: "Mentor & tổ chức",
+    description: "Tạo nội dung, đánh giá kỹ năng thực hành và xây cộng đồng học tập dựa trên dữ liệu thật.",
+    features: ["Tạo bộ đề và lộ trình riêng", "Phân quyền quản lý nhóm", "Dữ liệu tiến độ minh bạch"],
   },
 ];
 
-const steps = [
-  {
-    n: "01",
-    bg: "bg-navy",
-    title: "Đăng ký bằng email trường",
-    desc: "Dùng email trường hoặc Google để tạo tài khoản trong 30 giây.",
-  },
-  {
-    n: "02",
-    bg: "bg-primary",
-    title: "Chọn lộ trình hoặc tham gia nhóm học",
-    desc: "Chọn lộ trình theo mục tiêu của bạn, hoặc nhập mã mời để tham gia nhóm học tập.",
-  },
-  {
-    n: "03",
-    bg: "bg-accent",
-    title: "Luyện tập cùng AI",
-    desc: "Viết code, chạy kiểm thử và nhận gợi ý theo mức mỗi khi bế tắc.",
-  },
+const highlights = [
+  { type: "Bộ luyện tập", title: "Top 100 câu hỏi phỏng vấn Backend", description: "API, SQL, Java và các tình huống hệ thống thường gặp.", meta: "100 bài · 4 cấp độ", icon: Trophy, href: "/practice" },
+  { type: "Lộ trình mới", title: "Backend Java từ nền tảng đến dự án", description: "Java Core, Spring Boot, database và dự án cuối lộ trình.", meta: "7 khóa học · 42 giờ", icon: BookOpen, href: "/paths/backend-java" },
+  { type: "Cộng đồng", title: "Thảo luận hướng giải ngay trong IDE", description: "Hỏi đáp, vote và chia sẻ test case mà không rời màn hình code.", meta: "1.280 thảo luận", icon: MessageSquareText, href: "/solve/giai-phuong-trinh-bac-hai" },
+  { type: "AI học tập", title: "Codey đồng hành theo trạng thái làm bài", description: "Gợi ý ngắn khi bế tắc và phản hồi theo kết quả test case.", meta: "Hỗ trợ 24/7", icon: Bot, href: "/ai-tutor" },
 ];
 
-const workspaceChecklist = [
-  "Chạy kiểm thử Public, Hidden và Custom",
-  "Phân tích lỗi và độ phức tạp sau mỗi lần chạy",
-  "Thảo luận với người hướng dẫn ngay dưới đề bài",
+const learningSteps = [
+  { number: "01", icon: Target, title: "Chọn mục tiêu", description: "Cá nhân hóa lĩnh vực, trình độ và thời gian học mỗi tuần." },
+  { number: "02", icon: BookOpen, title: "Theo lộ trình", description: "Học theo chương, bài học và cột mốc được sắp xếp rõ ràng." },
+  { number: "03", icon: Code2, title: "Luyện tập thật", description: "Viết code, chạy test và trao đổi hướng giải cùng cộng đồng." },
+  { number: "04", icon: BarChart3, title: "Chứng minh tiến bộ", description: "Tích lũy XP, duy trì chuỗi học và hoàn thiện hồ sơ kỹ năng." },
 ];
 
-const groupChecklist = [
-  "Soạn bài tập, quiz và flashcard từ tài liệu môn học",
-  "Mời thành viên bằng mã hoặc liên kết",
-  "Bảng xếp hạng XP và tiến độ từng thành viên",
+const stories = [
+  { initials: "TN", name: "Trung Nguyên", role: "Backend Developer", quote: "Lộ trình Java giúp mình biết chính xác nên học gì tiếp theo, còn workspace khiến việc luyện bài liền mạch hơn hẳn.", result: "+1.890 XP trong 8 tuần" },
+  { initials: "HY", name: "Hải Yến", role: "Sinh viên năm 3", quote: "Mình thích nhất phần thảo luận trong bài. Có thể đọc nhiều góc tiếp cận mà không bị lộ đáp án hoàn chỉnh.", result: "Chuỗi học 21 ngày" },
+  { initials: "MK", name: "Minh Khoa", role: "Mentor nhóm Java", quote: "Bảng theo dõi bài nộp và tiến độ giúp mình biết thành viên nào đang cần hỗ trợ trước mỗi buổi học.", result: "Quản lý 36 thành viên" },
 ];
+
+const activity = [0, 1, 2, 0, 3, 2, 1, 0, 2, 4, 3, 1, 0, 1, 3, 4, 2, 1, 0, 2, 3, 1, 4, 2, 0, 1, 2, 3, 4, 3, 1, 0, 2, 4, 2, 3, 1, 0, 1, 3, 4, 2];
 
 export default function LandingPage() {
-  return (
-    <div className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-20 flex h-16 items-center gap-6 border-b border-border bg-surface px-6 sm:px-10">
-        <Link href="/" className="shrink-0">
-          <Image src="/logo.png" alt="CodeMentor" width={460} height={159} className="h-9 w-auto" priority />
-        </Link>
-        <nav className="hidden gap-6 md:flex">
-          {navLinks.map((n) => (
-            <Link
-              key={n.label}
-              href={n.href}
-              className="text-sm font-medium text-text hover:text-primary"
-            >
-              {n.label}
-            </Link>
-          ))}
+  return <div className="min-h-full bg-white text-zinc-900">
+    <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-5 sm:px-8">
+        <Link href="/" className="shrink-0"><BrandLogo size="sm" priority /></Link>
+        <nav className="hidden items-center gap-5 lg:flex">
+          {[["Khám phá", "/explore"], ["Luyện tập", "/practice"], ["Lộ trình", "/paths"], ["Nhóm học", "/workspace"]].map(([label, href]) => <Link key={label} href={href} className="text-xs font-medium text-zinc-600 hover:text-zinc-950">{label}</Link>)}
         </nav>
         <div className="flex-1" />
-        <Link href="/login" className="text-sm font-semibold text-navy">
-          Đăng nhập
-        </Link>
-        <Button href="/signup">Đăng ký miễn phí</Button>
-      </header>
+        <label className="hidden h-9 w-56 items-center gap-2 rounded-full border border-zinc-300 px-3 xl:flex"><Search className="h-3.5 w-3.5 text-zinc-400" /><span className="text-xs text-zinc-400">Tìm bài tập, lộ trình...</span></label>
+        <Link href="/login" className="text-xs font-semibold text-zinc-700 hover:text-zinc-950">Đăng nhập</Link>
+        <Button href="/signup" size="sm">Đăng ký</Button>
+      </div>
+    </header>
 
-      <section className="bg-navy px-6 py-12 text-on-ink sm:px-10 lg:py-16">
-        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2 lg:items-center">
+    <main>
+      <section className="relative overflow-hidden px-5 py-16 sm:px-8 lg:py-22">
+        <div className="pointer-events-none absolute -top-20 left-1/2 h-72 w-72 rounded-full bg-orange-100/50 blur-3xl" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_0.92fr]">
           <div>
-            <span className="mb-5 inline-flex rounded-md border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-primary">
-              AI Agent đồng hành, không làm thay
-            </span>
-            <h1 className="mb-4 text-4xl leading-tight font-bold tracking-tight sm:text-5xl">
-              Học tốt hơn,
-              <br />
-              lập trình tự tin hơn
-            </h1>
-            <p className="mb-6 max-w-lg text-base leading-relaxed text-zinc-300">
-              Nền tảng tự học và luyện tập lập trình cho tất cả mọi người — lộ
-              trình theo mục tiêu, chấm bài tự động trong sandbox, gợi ý AI
-              theo 3 mức và Nhóm học nhóm.
-            </p>
-            <div className="mb-8 flex flex-wrap gap-3">
-              <Button href="/signup">
-                Bắt đầu miễn phí <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 rounded-md border border-white/25 px-4 py-2.5 text-sm font-semibold hover:bg-white/10"
-              >
-                Tôi đã có tài khoản
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-8">
-              {stats.map((s) => (
-                <StatBlock key={s.label} value={s.value} label={s.label} tone="onDark" />
-              ))}
+            <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold tracking-[0.15em] text-primary uppercase"><Sparkles className="h-4 w-4" /> Nền tảng chứng minh năng lực</div>
+            <h1 className="max-w-2xl text-4xl leading-[1.08] font-extrabold tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl">Nơi kỹ năng lập trình được rèn luyện và ghi nhận.</h1>
+            <p className="mt-6 max-w-xl text-base leading-7 text-zinc-600">Học theo lộ trình, giải bài trong workspace chuyên nghiệp, thảo luận cùng cộng đồng và xây hồ sơ năng lực dựa trên kết quả thật.</p>
+            <div className="mt-7 flex flex-wrap gap-3"><Button href="/signup">Bắt đầu miễn phí <ArrowRight className="h-4 w-4" /></Button><Button href="/practice" variant="outline">Xem bài luyện tập</Button></div>
+            <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3 border-t border-zinc-200 pt-6">
+              {[["1.200+", "người học"], ["300+", "bài luyện tập"], ["24/7", "AI đồng hành"]].map(([value, label]) => <div key={label}><b className="text-lg text-zinc-950">{value}</b><span className="ml-2 text-xs text-zinc-500">{label}</span></div>)}
             </div>
           </div>
-
-          <div className="relative">
-            <div className="overflow-hidden rounded-xl bg-zinc-900 shadow-modal">
-              <div className="flex items-center gap-1.5 border-b border-zinc-800 px-3.5 py-2.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-                <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-                <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                <span className="ml-2 font-mono text-xs text-zinc-500">
-                  phuong_trinh_bac_hai.c
-                </span>
-                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-1 text-xs font-semibold text-primary">
-                  <Check className="h-3 w-3" /> 3/3 kiểm thử
-                </span>
-              </div>
-              <pre className="overflow-x-auto px-4 py-4 font-mono text-xs leading-loose text-zinc-200 sm:text-sm">
-{`double delta = b*b - 4*a*c;
-if (delta > 0) {
-  x1 = (-b + sqrt(delta)) / (2*a);
-  x2 = (-b - sqrt(delta)) / (2*a);
-} else if (delta == 0) {
-  // nghiệm kép x = -b/(2a)
-} else {
-  printf("Vô nghiệm thực");
-}`}
-              </pre>
-            </div>
-            <div className="mt-[-1.5rem] ml-10 max-w-xs rounded-xl border border-ai bg-surface p-3.5 shadow-modal">
-              <div className="mb-1.5 text-[10px] font-bold tracking-wide text-ai uppercase">
-                Gợi ý Mức 1 — Hướng tiếp cận
-              </div>
-              <div className="text-xs leading-relaxed text-text">
-                Xét dấu của delta trước khi tính căn bậc hai — có ba trường
-                hợp cần xử lý riêng.
-              </div>
-            </div>
+          <div className="relative mx-auto w-full max-w-lg">
+            <div className="absolute inset-x-10 bottom-5 h-10 rounded-full bg-zinc-100 blur-xl" />
+            <Image src="/anh10.PNG" alt="Người học chinh phục hành trình lập trình" width={626} height={441} className="relative h-auto w-full object-contain" priority />
+            <div className="absolute right-0 bottom-3 rounded-xl border border-zinc-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:right-4"><div className="flex items-center gap-2"><Flame className="h-4 w-4 text-primary" /><div><b className="block text-xs">Chuỗi học 12 ngày</b><span className="text-[10px] text-zinc-500">Tiếp tục giữ nhịp nhé!</span></div></div></div>
           </div>
         </div>
       </section>
 
-      <section id="features" className="px-6 py-12 sm:px-10">
+      <section className="border-y border-zinc-200 bg-white px-5 py-6 sm:px-8">
+        <div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {[{ icon: Zap, value: "48.000+", label: "lượt chạy code" }, { icon: CheckCircle2, value: "72%", label: "bài được hoàn thành" }, { icon: MessageSquareText, value: "6.400+", label: "lượt trao đổi" }, { icon: Trophy, value: "2,8 triệu", label: "XP đã tích lũy" }].map((stat) => <div key={stat.label} className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 px-4 py-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50"><stat.icon className="h-4.5 w-4.5 text-primary" /></span><div><b className="block text-lg text-zinc-950">{stat.value}</b><span className="text-xs text-zinc-500">{stat.label}</span></div></div>)}
+        </div>
+      </section>
+
+      <section className="px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-10">
-            <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
-              Dành cho ai
-            </div>
-            <h2 className="text-3xl font-bold text-navy">Ai đang dùng CodeMentor?</h2>
-          </div>
-          <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
-            {personas.map((p) => (
-              <div key={p.title}>
-                <h3 className="mb-2 text-xl font-bold text-navy">{p.title}</h3>
-                <p className="mb-5 text-sm leading-relaxed text-text-muted">{p.desc}</p>
-                <div className="mb-3 text-xs font-bold tracking-widest text-text-faint uppercase">
-                  Tính năng nổi bật
-                </div>
-                <ul className="flex flex-col gap-3">
-                  {p.features.map((f) => (
-                    <li key={f.label} className="flex items-start gap-2.5 text-sm text-text">
-                      <f.icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                      {f.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <div className="max-w-2xl"><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Hành trình rõ ràng</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950">Từ mục tiêu học tập đến năng lực có thể <br />chứng minh</h2><p className="mt-3 text-sm leading-6 text-zinc-600">Mọi hoạt động trong hệ thống đều nối tiếp nhau, giúp bạn luôn biết mình đang ở đâu và bước tiếp theo là gì.</p></div>
+          <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {learningSteps.map((step, index) => <article key={step.number} className="relative rounded-xl border border-zinc-200 p-5 transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"><span className="absolute top-4 right-4 font-mono text-xs text-zinc-300">{step.number}</span><span className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50 text-primary"><step.icon className="h-5 w-5" /></span><h3 className="mt-5 text-sm font-bold text-zinc-950">{step.title}</h3><p className="mt-2 text-xs leading-5 text-zinc-500">{step.description}</p>{index < learningSteps.length - 1 && <ArrowRight className="absolute -right-3 top-1/2 z-10 hidden h-5 w-5 rounded-full bg-white text-zinc-300 lg:block" />}</article>)}
           </div>
         </div>
       </section>
 
-      <section className="border-y border-border bg-bg px-6 py-12 sm:px-10">
+      <section className="border-y border-zinc-200 bg-zinc-50 px-5 py-14 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-6 text-center">
-            <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
-              Cách hoạt động
-            </div>
-            <h2 className="text-3xl font-bold text-navy">Bắt đầu trong 3 bước</h2>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {steps.map((s) => (
-              <Card key={s.n} className="p-5">
-                <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full font-mono text-sm font-bold text-white ${s.bg}`}>
-                  {s.n}
-                </div>
-                <div className="mb-1.5 text-base font-semibold text-navy">{s.title}</div>
-                <div className="text-sm leading-relaxed text-text-muted">{s.desc}</div>
-              </Card>
-            ))}
+          <div className="mb-8"><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Ai đang ở CodeMentor?</p><h2 className="mt-2 text-2xl font-bold text-zinc-950">Một không gian chung cho người học và người hướng dẫn</h2></div>
+          <div className="grid gap-8 lg:grid-cols-3">
+            {audiences.map((audience) => <article key={audience.title} className="grid grid-cols-[1fr_auto] gap-5"><div><audience.icon className="mb-4 h-7 w-7 text-primary" /><h3 className="text-lg font-bold text-zinc-950">{audience.title}</h3><p className="mt-2 text-sm leading-6 text-zinc-600">{audience.description}</p><p className="mt-5 text-[10px] font-bold tracking-widest text-zinc-400 uppercase">Tính năng chính</p><ul className="mt-3 space-y-2">{audience.features.map((feature) => <li key={feature} className="flex items-center gap-2 text-xs text-zinc-700"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{feature}</li>)}</ul></div><div className="mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm"><audience.icon className="h-7 w-7 text-zinc-900" /></div></article>)}
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-12 sm:px-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-10">
-          <div className="grid items-center gap-8 lg:grid-cols-2">
-            <div>
-              <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
-                Nhóm làm việc
-              </div>
-              <h3 className="mb-3 text-2xl font-bold text-navy">
-                Đề bài, IDE và gợi ý — trong cùng một màn hình
-              </h3>
-              <p className="mb-5 text-sm leading-relaxed text-text-muted">
-                Đọc đề, viết code, chạy kiểm thử và nhận gợi ý theo mức mà
-                không phải chuyển cửa sổ.
-              </p>
-              <ul className="flex flex-col gap-2.5">
-                {workspaceChecklist.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-text">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <Card className="p-3">
-              <div className="rounded-md bg-ink-fixed p-4 font-mono text-xs leading-loose text-zinc-300">
-                <div className="text-blue-300">if (delta &gt; 0) {"{"}</div>
-                <div className="pl-4 text-zinc-400">x1 = (-b + sqrt(delta)) / (2*a);</div>
-                <div className="text-blue-300">{"}"}</div>
-              </div>
-            </Card>
-          </div>
-
-          <div id="groups" className="grid items-center gap-8 lg:grid-cols-2">
-            <Card className="order-2 p-5 lg:order-1">
-              <div className="flex flex-col gap-3">
-                {["Nhóm Nhập môn Lập trình", "Ôn tập Cấu trúc Dữ liệu"].map((g) => (
-                  <div
-                    key={g}
-                    className="flex items-center gap-3 rounded-md border border-border-soft bg-bg p-3"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-navy font-mono text-xs font-bold text-on-ink">
-                      {g[0]}
-                    </span>
-                    <span className="text-sm font-medium text-navy">{g}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-            <div className="order-1 lg:order-2">
-              <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
-                Nhóm học tập
-              </div>
-              <h3 className="mb-3 text-2xl font-bold text-navy">
-                Cả nhóm luyện chung một bộ đề
-              </h3>
-              <p className="mb-5 text-sm leading-relaxed text-text-muted">
-                Chủ nhóm tải tài liệu lên và hệ thống soạn bài luyện tập cho
-                cả nhóm. Ai học tới đâu, mạnh yếu chỗ nào — nhìn là thấy.
-              </p>
-              <ul className="flex flex-col gap-2.5">
-                {groupChecklist.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-text">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+      <section className="px-5 py-14 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-7 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Mới & đáng chú ý</p><h2 className="mt-2 text-2xl font-bold text-zinc-950">Bắt đầu từ điều phù hợp với bạn</h2><p className="mt-1 text-sm text-zinc-500">Lộ trình, bài luyện tập và hoạt động nổi bật trên hệ thống.</p></div><Link href="/explore" className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-primary">Xem toàn bộ <ArrowRight className="h-3.5 w-3.5" /></Link></div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{highlights.map((item) => <Link key={item.title} href={item.href} className="group rounded-xl border border-zinc-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-sm"><div className="flex items-start justify-between gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-primary"><item.icon className="h-4.5 w-4.5" /></span><ArrowRight className="h-4 w-4 text-zinc-300 transition group-hover:text-primary" /></div><p className="mt-5 text-[10px] font-bold tracking-wider text-primary uppercase">{item.type}</p><h3 className="mt-1.5 text-sm font-bold leading-5 text-zinc-950">{item.title}</h3><p className="mt-2 text-xs leading-5 text-zinc-500">{item.description}</p><p className="mt-4 border-t border-zinc-100 pt-3 text-[11px] font-medium text-zinc-400">{item.meta}</p></Link>)}</div>
         </div>
       </section>
 
-      <section className="border-y border-border bg-bg px-6 py-12 sm:px-10">
-        <div className="mb-8 text-center">
-          <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
-            Sinh viên nói gì
+      <section className="border-y border-zinc-200 bg-zinc-50 px-5 py-16 sm:px-8">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.78fr_1.22fr]">
+          <div><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Workspace luyện tập</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950">Đề bài, code, test và cộng đồng trong cùng một màn hình.</h2><p className="mt-4 text-sm leading-6 text-zinc-600">Một trải nghiệm giống công cụ làm việc thật: quản lý file, viết code với Monaco, chạy test và thảo luận mà không rời phiên làm bài.</p><ul className="mt-5 space-y-2">{["Editor nhiều ngôn ngữ và tự động lưu", "Public test, hidden test và kết quả chi tiết", "Thảo luận hướng giải theo từng bài"].map((item) => <li key={item} className="flex items-center gap-2 text-xs text-zinc-700"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />{item}</li>)}</ul><Button href="/solve/giai-phuong-trinh-bac-hai" variant="outline" className="mt-6">Thử workspace <Play className="h-3.5 w-3.5" /></Button></div>
+          <div className="overflow-hidden rounded-xl border border-zinc-300 bg-white shadow-lg"><div className="flex h-10 items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-3"><span className="h-2.5 w-2.5 rounded-full bg-zinc-300" /><span className="h-2.5 w-2.5 rounded-full bg-zinc-300" /><span className="h-2.5 w-2.5 rounded-full bg-primary" /><span className="ml-2 font-mono text-[10px] text-zinc-500">solution.cpp</span><span className="ml-auto rounded bg-zinc-200 px-2 py-1 text-[9px] font-semibold text-zinc-600">C++</span></div><div className="grid min-h-72 grid-cols-[0.8fr_1.2fr]"><div className="border-r border-zinc-200 p-4"><div className="text-xs font-bold text-zinc-950">Giải phương trình bậc hai</div><div className="mt-3 space-y-2 text-[10px] leading-5 text-zinc-500"><p>Cho ba hệ số a, b, c.</p><p>Tính delta và in nghiệm thực.</p><span className="inline-flex rounded bg-orange-50 px-2 py-1 font-semibold text-primary">+25 XP</span></div><div className="mt-6 rounded-lg border border-zinc-200 p-3"><p className="font-mono text-[9px] text-zinc-400">TEST RESULT</p><p className="mt-2 text-xs font-semibold text-emerald-700">✓ 3/3 test case đạt</p></div></div><pre className="overflow-hidden bg-zinc-950 p-4 font-mono text-[10px] leading-5 text-zinc-300"><span className="text-orange-300">double</span>{` delta = b*b - 4*a*c;\n`}<span className="text-orange-300">if</span>{` (delta > 0) {\n  // two roots\n}\n`}</pre></div></div>
+        </div>
+      </section>
+
+      <section className="px-5 py-16 sm:px-8">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-2 lg:items-center">
+          <div className="relative overflow-hidden rounded-2xl border border-orange-200 bg-orange-50/40 p-6 shadow-sm">
+            <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-orange-200/40 blur-3xl" />
+            <div className="relative flex items-start gap-4"><span className="mascot-sprite mascot-sprite-idle h-24 w-24 shrink-0" /><div><span className="inline-flex rounded-full border border-orange-200 bg-white px-2 py-1 text-[9px] font-bold tracking-wide text-primary uppercase">Codey · phản hồi nhanh</span><h3 className="mt-3 text-xl font-bold text-zinc-950">Một người bạn nhỏ trong lúc code</h3><p className="mt-2 text-xs leading-5 text-zinc-600">Codey đọc trạng thái chạy bài, nhắc test case biên và đưa gợi ý ngắn ngay trong popup để bạn không mất tập trung.</p></div></div>
+            <div className="relative mt-5 ml-16 rounded-xl border border-orange-200 bg-white p-3 text-xs leading-5 text-zinc-700"><Lightbulb className="mr-2 inline h-3.5 w-3.5 text-primary" />Thử tách ba trường hợp theo dấu của delta trước nhé.</div>
           </div>
-          <h2 className="text-3xl font-bold text-navy">
-            Được tin dùng bởi cộng đồng lập trình
-          </h2>
+          <div><p className="text-xs font-bold tracking-[0.15em] text-ai uppercase">Hai cấp độ hỗ trợ</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950">Hỏi nhanh Codey, phân tích sâu với Trợ lý AI</h2><p className="mt-4 text-sm leading-6 text-zinc-600">Hai công cụ có nhiệm vụ riêng để bạn chọn đúng mức hỗ trợ, từ một lời nhắc nhỏ đến phân tích toàn bộ chiến lược giải.</p><div className="mt-6 grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-orange-200 bg-orange-50/50 p-4"><Bot className="h-5 w-5 text-primary" /><b className="mt-3 block text-sm">Codey</b><p className="mt-1 text-xs leading-5 text-zinc-600">Gợi ý nhanh, đọc trạng thái test và giữ bạn trong luồng làm bài.</p></div><div className="rounded-xl border border-violet-200 bg-violet-50/50 p-4"><Sparkles className="h-5 w-5 text-ai" /><b className="mt-3 block text-sm">Trợ lý AI</b><p className="mt-1 text-xs leading-5 text-zinc-600">Phân tích code, độ phức tạp và phương án cải thiện chuyên sâu.</p></div></div></div>
         </div>
-        <Testimonials />
       </section>
 
-      <section className="px-6 py-12 sm:px-10">
-        <div className="mb-8 text-center">
-          <div className="mb-3 text-xs font-bold tracking-widest text-primary uppercase">
-            Câu hỏi thường gặp
-          </div>
-          <h2 className="text-3xl font-bold text-navy">Giải đáp trước khi bắt đầu</h2>
+      <section className="border-y border-zinc-200 bg-zinc-50 px-5 py-16 sm:px-8">
+        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+          <div><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Tiến bộ nhìn thấy được</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950">Mỗi ngày học đều góp vào hồ sơ của bạn</h2><p className="mt-3 text-sm leading-6 text-zinc-600">XP, chuỗi hoạt động, kỹ năng và bài đã giải được tổng hợp thành một bức tranh năng lực rõ ràng.</p><div className="mt-6 grid grid-cols-3 gap-3">{[["2.450", "Tổng XP"], ["47", "Bài đã giải"], ["12 ngày", "Chuỗi dài nhất"]].map(([value, label]) => <div key={label} className="rounded-xl border border-zinc-200 bg-white p-4"><b className="block text-lg text-zinc-950">{value}</b><span className="mt-1 block text-[10px] text-zinc-500">{label}</span></div>)}</div></div>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><div><b className="text-sm">Hoạt động 6 tuần gần nhất</b><p className="mt-1 text-[10px] text-zinc-500">36 bài nộp · 9 ngày hoạt động</p></div><span className="flex items-center gap-1 text-xs font-semibold text-primary"><Flame className="h-4 w-4" /> 5 ngày</span></div><div className="mt-5 grid grid-flow-col grid-rows-6 gap-1.5">{activity.map((level, index) => <span key={index} className={`aspect-square min-h-3 rounded-sm ${level === 0 ? "bg-zinc-100" : level === 1 ? "bg-orange-100" : level === 2 ? "bg-orange-200" : level === 3 ? "bg-orange-400" : "bg-orange-600"}`} />)}</div><div className="mt-5 flex items-center justify-between border-t border-zinc-100 pt-4 text-[10px] text-zinc-500"><span>Kỹ năng nổi bật</span><span className="font-semibold text-zinc-800">Java · SQL · API Design</span></div></div>
         </div>
-        <Faq />
       </section>
 
-      <section className="bg-navy px-6 py-12 text-center text-on-ink sm:px-10">
-        <h2 className="mb-3 text-3xl font-bold">Sẵn sàng rèn kỹ năng lập trình?</h2>
-        <p className="mb-5 text-sm text-zinc-300">
-          Đăng ký bằng email và bắt đầu bài luyện tập đầu tiên ngay hôm nay.
-        </p>
-        <Button href="/signup">
-          Tạo tài khoản miễn phí <ArrowRight className="h-4 w-4" />
-        </Button>
+      <section className="px-5 py-16 sm:px-8">
+        <div className="mx-auto max-w-6xl"><div className="text-center"><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Câu chuyện người học</p><h2 className="mt-2 text-3xl font-bold text-zinc-950">Tiến bộ tốt hơn khi không học một mình</h2></div><div className="mt-9 grid gap-4 lg:grid-cols-3">{stories.map((story) => <article key={story.name} className="rounded-xl border border-zinc-200 p-5"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-xs font-bold text-primary">{story.initials}</span><div><b className="block text-sm">{story.name}</b><span className="text-[10px] text-zinc-500">{story.role}</span></div></div><p className="mt-5 text-sm leading-6 text-zinc-600">“{story.quote}”</p><p className="mt-5 border-t border-zinc-100 pt-4 text-xs font-semibold text-primary">{story.result}</p></article>)}</div></div>
       </section>
 
-      <footer className="flex flex-col items-center justify-between gap-4 border-t border-border px-6 py-6 text-xs text-text-faint sm:flex-row sm:px-10">
-        <span>© 2026 CodeMentor</span>
-        <div className="flex gap-5">
-          <Link href="#" className="hover:text-navy">
-            Giới thiệu
-          </Link>
-          <Link href="#" className="hover:text-navy">
-            Hỗ trợ
-          </Link>
-        </div>
-      </footer>
-    </div>
-  );
+      <section className="px-5 pb-16 sm:px-8">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-orange-200 bg-orange-50/50 px-6 py-10 text-center sm:px-10"><Award className="mx-auto h-8 w-8 text-primary" /><h2 className="mt-4 text-3xl font-bold text-zinc-950">Sẵn sàng chinh phục cột mốc tiếp theo?</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-600">Tạo hồ sơ miễn phí, chọn mục tiêu và bắt đầu tích lũy XP từ bài luyện tập đầu tiên.</p><div className="mt-6 flex flex-wrap justify-center gap-3"><Button href="/signup">Tạo tài khoản miễn phí <ArrowRight className="h-4 w-4" /></Button><Button href="/paths" variant="outline">Xem lộ trình học</Button></div></div>
+      </section>
+    </main>
+
+    <footer className="border-t border-zinc-200 px-5 py-7 sm:px-8"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-xs text-zinc-500 sm:flex-row"><BrandLogo size="sm" /><span>© 2026 CodeMentor · Học, luyện tập và chứng minh năng lực.</span><div className="flex gap-4"><Link href="/practice" className="hover:text-zinc-950">Luyện tập</Link><Link href="/login" className="hover:text-zinc-950">Đăng nhập</Link></div></div></footer>
+  </div>;
 }

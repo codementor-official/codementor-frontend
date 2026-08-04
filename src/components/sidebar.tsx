@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
 import { createAction, navItems } from "./nav-items";
 import { UserMenu } from "./user-menu";
 import { useSidebarStore } from "@/lib/store/sidebar-store";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -19,19 +19,9 @@ export function Sidebar() {
         collapsed ? "w-16" : "w-60"
       }`}
     >
-      {/* Fixed height so collapsing (wordmark -> icon mark) doesn't shift the nav below. */}
-      <div className={`mb-3 flex h-9 shrink-0 items-center ${collapsed ? "justify-center" : ""}`}>
-        <Link href="/dashboard" className="min-w-0" title="CodeMentor">
-          <Image
-            src="/logo.png"
-            alt="CodeMentor"
-            width={460}
-            height={159}
-            priority
-            /* Collapsed: crop to the leftmost square of the asset, which is the icon mark
-             * (the wordmark starts past it) — avoids shipping a second logo file. */
-            className={collapsed ? "h-8 w-8 object-cover object-left" : "h-7 w-auto"}
-          />
+      <div className={`mb-4 flex h-12 shrink-0 items-center ${collapsed ? "justify-center" : "px-1"}`}>
+        <Link href="/dashboard" className="block min-w-0" title="CodeMentor">
+          <BrandLogo compact={collapsed} priority />
         </Link>
       </div>
 
