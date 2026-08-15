@@ -36,68 +36,20 @@ interface Props {
   slugLocked?: boolean;
   theme?: "light" | "dark";
 }
-
 /**
- * Bản có kiểm soát của form soạn bài bên apps/web.
+ * Soạn bài code, chia làm hai nửa vì studio đặt chúng vào hai pane kéo được: bên trái là
+ * bài đọc thế nào, bên phải là bài chạy và chấm ra sao.
  *
- * Bản gốc giữ toàn bộ trạng thái bên trong và không có `onSave`, nên nó chỉ dựng được
- * giao diện chứ không nối được vào API. Ở đây state nằm ở trang, form chỉ nhận `value`
- * và phát `onChange` — đó là điểm khác duy nhất về kiến trúc, phần trình bày giữ nguyên.
+ * Cả hai đều là component có kiểm soát — state nằm ở trang, form chỉ nhận `value` và phát
+ * `onChange`. Đó là điểm khác duy nhất so với bản trong apps/web, vốn giữ state bên trong
+ * nên chỉ dựng được giao diện chứ không nối được API.
  */
-export function CodeProblemForm({
-  value,
-  onChange,
-  readOnly = false,
-  slugLocked = false,
-  theme = "light",
-}: Props) {
+export function ExerciseBriefForm({ value, onChange, readOnly = false, slugLocked = false }: Props) {
   const [previewStatement, setPreviewStatement] = useState(false);
 
   const patch = (partial: Partial<ExerciseDraft>) => onChange({ ...value, ...partial });
   const patchContent = (partial: Partial<ExerciseContent>) =>
     onChange({ ...value, content: { ...value.content, ...partial } });
-
-  const languages = value.content.languages ?? [];
-  const testCases = value.content.testCases ?? [];
-  const selectedIds = new Set(languages.map((language) => language.id));
-
-  const toggleLanguage = (option: LanguageConfig) => {
-    if (selectedIds.has(option.id)) {
-      patchContent({ languages: languages.filter((language) => language.id !== option.id) });
-      return;
-    }
-    patchContent({ languages: [...languages, { ...option }] });
-  };
-
-  const patchLanguage = (id: string, partial: Partial<LanguageConfig>) =>
-    patchContent({
-      languages: languages.map((language) =>
-        language.id === id ? { ...language, ...partial } : language,
-      ),
-    });
-
-  const patchTestCase = (index: number, partial: Partial<TestCase>) =>
-    patchContent({
-      testCases: testCases.map((testCase, position) =>
-        position === index ? { ...testCase, ...partial } : testCase,
-      ),
-    });
-
-  const addTestCase = () =>
-    patchContent({
-      testCases: [
-        ...testCases,
-        // `order` là int trong validator Mongo và phải bắt đầu từ 1, không phải 0.
-        { order: testCases.length + 1, input: "", expected: "", visibility: "hidden" },
-      ],
-    });
-
-  const removeTestCase = (index: number) =>
-    patchContent({
-      testCases: testCases
-        .filter((_, position) => position !== index)
-        .map((testCase, position) => ({ ...testCase, order: position + 1 })),
-    });
 
   return (
     <fieldset className="grid gap-4" disabled={readOnly}>
@@ -222,7 +174,59 @@ export function CodeProblemForm({
           />
         )}
       </Card>
+    </fieldset>
+  );
+}
 
+/** Nửa còn lại: ngôn ngữ kèm mã mẫu, test case, và cách so khớp đầu ra. */
+export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "light" }: Props) {
+  const patchContent = (partial: Partial<ExerciseContent>) =>
+    onChange({ ...value, content: { ...value.content, ...partial } });
+
+  const languages = value.content.languages ?? [];
+  const testCases = value.content.testCases ?? [];
+  const selectedIds = new Set(languages.map((language) => language.id));
+
+  const toggleLanguage = (option: LanguageConfig) => {
+    if (selectedIds.has(option.id)) {
+      patchContent({ languages: languages.filter((language) => language.id !== option.id) });
+      return;
+    }
+    patchContent({ languages: [...languages, { ...option }] });
+  };
+
+  const patchLanguage = (id: string, partial: Partial<LanguageConfig>) =>
+    patchContent({
+      languages: languages.map((language) =>
+        language.id === id ? { ...language, ...partial } : language,
+      ),
+    });
+
+  const patchTestCase = (index: number, partial: Partial<TestCase>) =>
+    patchContent({
+      testCases: testCases.map((testCase, position) =>
+        position === index ? { ...testCase, ...partial } : testCase,
+      ),
+    });
+
+  const addTestCase = () =>
+    patchContent({
+      testCases: [
+        ...testCases,
+        // `order` là int trong validator Mongo và phải bắt đầu từ 1, không phải 0.
+        { order: testCases.length + 1, input: "", expected: "", visibility: "hidden" },
+      ],
+    });
+
+  const removeTestCase = (index: number) =>
+    patchContent({
+      testCases: testCases
+        .filter((_, position) => position !== index)
+        .map((testCase, position) => ({ ...testCase, order: position + 1 })),
+    });
+
+  return (
+    <fieldset className="grid gap-4" disabled={readOnly}>
       <Card className="p-5">
         <h2 className="mb-1 text-sm font-semibold">Ngôn ngữ hỗ trợ</h2>
         <p className="mb-3 text-sm text-muted-foreground">

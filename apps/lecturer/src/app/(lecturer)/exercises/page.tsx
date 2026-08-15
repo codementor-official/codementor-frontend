@@ -245,7 +245,7 @@ export default function ExercisesPage() {
 
 function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
   return (
-    <DrawerDetail dependency={row.id} load={() => api.exercises.get(row.id)}>
+    <DrawerDetail key={row.id} load={() => api.exercises.get(row.id)}>
       {(exercise) => {
         const languages = exercise.content?.languages ?? [];
         const publicCases = (exercise.content?.testCases ?? []).filter(

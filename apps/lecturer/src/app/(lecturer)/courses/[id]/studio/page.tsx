@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Save, Send, Undo2 } from "lucide-react";
+import { Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, Card, PageHeader, SegmentedTabs, StatusBadge } from "@codementor/ui";
+import { Group, Panel } from "react-resizable-panels";
+import { Button, Card, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
 import { CurriculumTree, type Selection } from "@/features/courses/curriculum-tree";
 import { Inspector } from "@/features/courses/inspector";
@@ -128,32 +129,25 @@ export default function CourseStudioPage() {
 
   if (error && !course) {
     return (
-      <>
+      <div className="px-4 py-4 sm:px-5">
         <PageHeader title="Studio khóa học" />
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
-      </>
+      </div>
     );
   }
 
-  if (!course || !meta) return <p className="text-sm text-muted-foreground">Đang tải…</p>;
+  if (!course || !meta) {
+    return <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">Đang tải…</p>;
+  }
 
   const locked = course.status === "pending_review";
   const patchMeta = (partial: Partial<Meta>) => setMeta({ ...meta, ...partial });
 
   return (
-    <>
-      <Link
-        className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        href="/courses"
-      >
-        <ArrowLeft aria-hidden="true" className="size-4" />
-        Khóa học
-      </Link>
-
-      <PageHeader
-        action={
+    <StudioShell
+      actions={
           <div className="flex flex-wrap items-center gap-2">
             {locked ? (
               <Button
@@ -202,80 +196,66 @@ export default function CourseStudioPage() {
               </>
             )}
           </div>
-        }
-        description={course.slug}
-        title={meta.title || "Khóa học chưa đặt tên"}
-      />
-
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      }
+      backHref="/courses"
+      backLabel="Khóa học"
+      error={error}
+      meta={`${course.totalChapters} chương · ${course.totalLessons} bài · ${
+        course.durationHours ? `${course.durationHours} giờ` : "chưa có thời lượng"
+      }`}
+      notice={notice}
+      rejectionReason={course.rejectionReason}
+      slug={course.slug}
+      status={
         <StatusBadge tone={CONTENT_STATUS_TONES[course.status]}>
           {CONTENT_STATUS_LABELS[course.status]}
         </StatusBadge>
-        <span className="text-sm text-muted-foreground">
-          {course.totalChapters} chương · {course.totalLessons} bài ·{" "}
-          {course.durationHours ? `${course.durationHours} giờ` : "chưa có thời lượng"}
-        </span>
-        {locked && (
-          <span className="text-sm text-muted-foreground">Đang chờ duyệt nên không sửa được.</span>
-        )}
-      </div>
-
-      {course.rejectionReason && (
-        <p className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          Lý do bị trả về: {course.rejectionReason}
-        </p>
-      )}
-      {error && (
-        <p
-          className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p className="mb-4 text-sm text-muted-foreground" role="status">
-          {notice}
-        </p>
-      )}
-
-      <div className="mb-4">
-        <SegmentedTabs
-          onChange={(value) => setTab(value as "curriculum" | "metadata")}
-          options={[
-            { value: "curriculum", label: "Nội dung" },
-            { value: "metadata", label: "Thông tin khóa học" },
-          ]}
-          value={tab}
-        />
-      </div>
-
+      }
+      tabs={{
+        options: [
+          { value: "curriculum", label: "Nội dung" },
+          { value: "metadata", label: "Thông tin khóa học" },
+        ],
+        value: tab,
+        onChange: (value) => setTab(value as "curriculum" | "metadata"),
+      }}
+      title={meta.title || "Khóa học chưa đặt tên"}
+    >
       {tab === "curriculum" ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <Card className="p-4">
-            <CurriculumTree
-              chapters={chapters}
-              disabled={locked}
-              onChange={setChapters}
-              onSelect={setSelection}
-              selection={selection}
-            />
-          </Card>
+        // Two panes rather than a fixed 380px column: how much room the inspector needs
+        // depends on whether the selected lesson is a one-field chapter or a rich-text
+        // body, and only the person editing knows which.
+        <Group orientation="horizontal" className="h-full">
+          <Panel id="tree" defaultSize="55%" minSize="25%" className="min-h-0">
+            <div className="h-full overflow-y-auto p-3">
+              <CurriculumTree
+                chapters={chapters}
+                disabled={locked}
+                onChange={setChapters}
+                onSelect={setSelection}
+                selection={selection}
+              />
+            </div>
+          </Panel>
 
-          {/* Sidebar cố định: cuộn theo trang nhưng luôn ở trong tầm mắt trên màn rộng. */}
-          <Card className="h-fit p-5 lg:sticky lg:top-20">
-            <Inspector
-              chapters={chapters}
-              disabled={locked}
-              exercises={exercises}
-              loadContent={loadContent}
-              onChange={setChapters}
-              saveContent={saveContent}
-              selection={selection}
-            />
-          </Card>
-        </div>
+          <ResizeHandle orientation="horizontal" />
+
+          <Panel id="inspector" defaultSize="45%" minSize="20%" className="min-h-0">
+            <div className="h-full overflow-y-auto p-3">
+              <Inspector
+                chapters={chapters}
+                disabled={locked}
+                exercises={exercises}
+                loadContent={loadContent}
+                onChange={setChapters}
+                saveContent={saveContent}
+                selection={selection}
+              />
+            </div>
+          </Panel>
+        </Group>
       ) : (
+        <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
           <Card className="p-5 lg:col-span-2">
             <h2 className="mb-4 text-sm font-semibold">Thông tin khóa học</h2>
@@ -369,26 +349,27 @@ export default function CourseStudioPage() {
               </select>
             </Field>
           </Card>
-        </fieldset>
-      )}
 
-      <div className="mt-6 flex justify-end">
-        <Button
-          disabled={saving || course.status === "published"}
-          onClick={() =>
-            run(async () => {
-              await api.courses.remove(id);
-              router.push("/courses");
-              return course;
-            }, "Đã xoá")
-          }
-          type="button"
-          variant="ghost"
-        >
-          Xoá khóa học này
-        </Button>
-      </div>
-    </>
+          <div className="lg:col-span-3">
+            <Button
+              disabled={saving || course.status === "published"}
+              onClick={() =>
+                run(async () => {
+                  await api.courses.remove(id);
+                  router.push("/courses");
+                  return course;
+                }, "Đã xoá")
+              }
+              type="button"
+              variant="ghost"
+            >
+              Xoá khóa học này
+            </Button>
+          </div>
+          </fieldset>
+        </StudioScroll>
+      )}
+    </StudioShell>
   );
 }
 

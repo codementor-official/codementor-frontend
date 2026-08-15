@@ -25,7 +25,8 @@ export function CodeEditor({
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  height?: number;
+  /** Any CSS length. `"100%"` lets the editor fill a resizable pane. */
+  height?: number | string;
   /**
    * Monaco ships its own themes, and "vs-dark" in a light UI was the original
    * mismatch. Passed in rather than read from a store, so this package does not

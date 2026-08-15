@@ -41,19 +41,19 @@ interface Props {
 }
 
 /**
- * Hai cột: danh sách đã chọn (kéo để sắp thứ tự) và kho khóa học để thêm vào.
+ * Danh sách khóa học đã chọn, kéo để sắp thứ tự.
  *
  * Thứ tự trong lộ trình là thứ tự mảng — backend không nhận `position` từ client, vì
  * client gửi vị trí lệch nhau là đụng `UNIQUE(roadmap_id, position)`.
+ *
+ * Tách khỏi kho khóa học (`CourseLibrary` bên dưới) thay vì hai cột trong cùng một lưới:
+ * studio đặt mỗi bên vào một pane kéo được, mà một lưới cố định thì không chia được.
  */
-export function CoursePicker({ picked, available, onChange, disabled }: Props) {
+export function PickedCourses({ picked, onChange, disabled }: Omit<Props, "available">) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
-  const chosen = new Set(picked.map((course) => course.courseId));
-  const rest = available.filter((course) => !chosen.has(course.id));
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
@@ -63,24 +63,11 @@ export function CoursePicker({ picked, available, onChange, disabled }: Props) {
     onChange(arrayMove(picked, from, to));
   };
 
-  const add = (course: CourseListItem) =>
-    onChange([
-      ...picked,
-      {
-        courseId: course.id,
-        title: course.title,
-        status: course.status,
-        durationHours: course.durationHours,
-        isOptional: false,
-      },
-    ]);
-
   const total = picked.reduce((sum, course) => sum + (course.durationHours ?? 0), 0);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div>
-        <div className="mb-3 flex items-baseline justify-between gap-2">
+    <div>
+      <div className="mb-3 flex items-baseline justify-between gap-2">
           <h2 className="text-sm font-semibold">Khóa học trong lộ trình</h2>
           <span className="text-xs text-muted-foreground">
             {picked.length} khóa · {total > 0 ? `${total} giờ` : "chưa có thời lượng"}
@@ -130,17 +117,42 @@ export function CoursePicker({ picked, available, onChange, disabled }: Props) {
               }}
             </SortableOverlay>
           </DndContext>
-        )}
-      </div>
+      )}
+    </div>
+  );
+}
 
-      <div>
-        <h2 className="mb-3 text-sm font-semibold">Kho khóa học</h2>
-        {rest.length === 0 ? (
+/** The other half: everything not yet in the roadmap, one click away from being added. */
+export function CourseLibrary({
+  picked,
+  available,
+  onChange,
+  disabled,
+}: Props) {
+  const chosen = new Set(picked.map((course) => course.courseId));
+  const rest = available.filter((course) => !chosen.has(course.id));
+
+  const add = (course: CourseListItem) =>
+    onChange([
+      ...picked,
+      {
+        courseId: course.id,
+        title: course.title,
+        status: course.status,
+        durationHours: course.durationHours,
+        isOptional: false,
+      },
+    ]);
+
+  return (
+    <div>
+      <h2 className="mb-3 text-sm font-semibold">Kho khóa học</h2>
+      {rest.length === 0 ? (
           <p className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-            Không còn khóa học nào để thêm.
-          </p>
-        ) : (
-          <ul className="grid max-h-[32rem] gap-2 overflow-y-auto pr-1">
+          Không còn khóa học nào để thêm.
+        </p>
+      ) : (
+        <ul className="grid gap-2">
             {rest.map((course) => (
               <li
                 className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
@@ -165,9 +177,8 @@ export function CoursePicker({ picked, available, onChange, disabled }: Props) {
                 </Button>
               </li>
             ))}
-          </ul>
-        )}
-      </div>
+        </ul>
+      )}
     </div>
   );
 }
@@ -185,20 +196,23 @@ function SortablePicked({
   onRemove: () => void;
   onToggleOptional: () => void;
 }) {
-  const row = useSortableRow({ id: course.courseId, disabled });
+  const { setNodeRef, style, handleProps, className, dropEdge } = useSortableRow({
+    id: course.courseId,
+    disabled,
+  });
 
   return (
     <li
-      className={`relative flex items-center gap-2 rounded-lg border bg-card px-3 py-2 ${row.className}`}
-      ref={row.ref}
-      style={row.style}
+      className={`relative flex items-center gap-2 rounded-lg border bg-card px-3 py-2 ${className}`}
+      ref={setNodeRef}
+      style={style}
     >
-      <DropIndicator edge={row.dropEdge} />
+      <DropIndicator edge={dropEdge} />
       <button
         aria-label="Kéo để đổi thứ tự khóa học"
         className="cursor-grab text-muted-foreground hover:text-foreground"
         type="button"
-        {...row.handleProps}
+        {...handleProps}
       >
         <GripVertical aria-hidden="true" className="size-4" />
       </button>

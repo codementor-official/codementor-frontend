@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -9,6 +9,7 @@ import {
   useDndContext,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
@@ -58,6 +59,36 @@ interface Props {
 export function CurriculumTree({ chapters, onChange, selection, onSelect, disabled }: Props) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState<{ x: number; y: number; chapterKey?: string } | null>(null);
+
+  /**
+   * While a lesson is in flight, chapters are only candidates when they are empty.
+   *
+   * A chapter's sortable node spans its whole card, lesson rows included, so plain
+   * `closestCenter` kept picking the chapter over the lesson the cursor was actually on —
+   * the drop line then appeared at the top of the chapter instead of between two lessons.
+   * An empty chapter has no lesson to hit, so it stays eligible; that is the case
+   * `onDragEnd` handles by reading the chapter key off `over.id`.
+   */
+  const collisionDetection = useCallback(
+    (args: Parameters<CollisionDetection>[0]) => {
+      const draggingLesson = args.active.data.current?.chapterKey !== undefined;
+      if (!draggingLesson) return closestCenter(args);
+
+      const emptyChapterKeys = new Set(
+        chapters.filter((chapter) => chapter.lessons.length === 0).map((chapter) => chapter.key),
+      );
+      const chapterKeys = new Set(chapters.map((chapter) => chapter.key));
+
+      return closestCenter({
+        ...args,
+        droppableContainers: args.droppableContainers.filter(
+          (container) =>
+            !chapterKeys.has(String(container.id)) || emptyChapterKeys.has(String(container.id)),
+        ),
+      });
+    },
+    [chapters],
+  );
 
   const sensors = useSensors(
     // Ngưỡng 6px: không có nó thì mỗi cú click để chọn mục đều bị hiểu là bắt đầu kéo.
@@ -203,7 +234,7 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
           Chưa có chương nào. Bấm “Chương”, hoặc chuột phải để mở menu.
         </p>
       ) : (
-        <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd} sensors={sensors}>
+        <DndContext collisionDetection={collisionDetection} onDragEnd={onDragEnd} sensors={sensors}>
           <SortableContext
             items={chapters.map((chapter) => chapter.key)}
             strategy={verticalListSortingStrategy}
@@ -328,27 +359,30 @@ function SortableChapter({
   onRemoveLesson: (chapterKey: string, lessonKey: string) => void;
   onContextMenu: (x: number, y: number) => void;
 }) {
-  const row = useSortableRow({ id: chapter.key, disabled });
+  const { setNodeRef, style, handleProps, className, dropEdge } = useSortableRow({
+    id: chapter.key,
+    disabled,
+  });
   const active = selection?.kind === "chapter" && selection.chapterKey === chapter.key;
 
   return (
     <li
-      className={`relative rounded-lg border bg-card ${row.className}`}
+      className={`relative rounded-lg border bg-card ${className}`}
       onContextMenu={(event) => {
         event.preventDefault();
         event.stopPropagation();
         if (!disabled) onContextMenu(event.clientX, event.clientY);
       }}
-      ref={row.ref}
-      style={row.style}
+      ref={setNodeRef}
+      style={style}
     >
-      <DropIndicator edge={row.dropEdge} />
+      <DropIndicator edge={dropEdge} />
       <div className={`flex items-center gap-1.5 px-2 py-2 ${active ? "bg-muted" : ""}`}>
         <button
           aria-label="Kéo để đổi thứ tự chương"
           className="cursor-grab text-muted-foreground hover:text-foreground"
           type="button"
-          {...row.handleProps}
+          {...handleProps}
         >
           <GripVertical aria-hidden="true" className="size-4" />
         </button>
@@ -470,7 +504,11 @@ function SortableLesson({
   onRemove: (chapterKey: string, lessonKey: string) => void;
 }) {
   // Chương của bài đi kèm theo `data` để lúc thả biết nguồn và đích.
-  const row = useSortableRow({ id: lesson.key, data: { chapterKey }, disabled });
+  const { setNodeRef, style, handleProps, className, dropEdge } = useSortableRow({
+    id: lesson.key,
+    data: { chapterKey },
+    disabled,
+  });
   const active =
     selection?.kind === "lesson" &&
     selection.lessonKey === lesson.key &&
@@ -481,16 +519,16 @@ function SortableLesson({
     <li
       className={`relative flex items-center gap-1.5 rounded-md px-1 py-1 ${
         active ? "bg-muted" : ""
-      } ${row.className}`}
-      ref={row.ref}
-      style={row.style}
+      } ${className}`}
+      ref={setNodeRef}
+      style={style}
     >
-      <DropIndicator edge={row.dropEdge} />
+      <DropIndicator edge={dropEdge} />
       <button
         aria-label="Kéo để đổi thứ tự bài"
         className="cursor-grab text-muted-foreground hover:text-foreground"
         type="button"
-        {...row.handleProps}
+        {...handleProps}
       >
         <GripVertical aria-hidden="true" className="size-3.5" />
       </button>

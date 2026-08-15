@@ -53,7 +53,7 @@ export function useSortableRow({
       : "bottom";
 
   return {
-    ref: setNodeRef,
+    setNodeRef,
     style: { transform: CSS.Transform.toString(transform), transition } as CSSProperties,
     handleProps: { ...attributes, ...listeners },
     isDragging,

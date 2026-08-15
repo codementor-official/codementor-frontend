@@ -13,12 +13,9 @@ import { useEffect, useState, type ReactNode } from "react";
 export function DrawerDetail<T>({
   load,
   children,
-  /** Identifies the record. Changing it refetches — the drawer is reused between rows. */
-  dependency,
 }: {
   load: () => Promise<T>;
   children: (data: T) => ReactNode;
-  dependency: string;
 }) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +24,6 @@ export function DrawerDetail<T>({
     // Closing the drawer mid-flight must not write into an unmounted component, and
     // clicking a second row before the first resolves must not show the first row's data.
     let cancelled = false;
-    setData(null);
-    setError(null);
     load()
       .then((loaded) => {
         if (!cancelled) setData(loaded);
@@ -43,9 +38,11 @@ export function DrawerDetail<T>({
     return () => {
       cancelled = true;
     };
-    // `load` is a fresh closure every render; `dependency` is what actually identifies it.
+    // Fetch once per mount. Callers key this on the record id, so selecting another row
+    // remounts rather than refetching in place — which is also why there is no state reset
+    // here: a fresh mount starts empty on its own.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dependency]);
+  }, []);
 
   if (error) {
     return (
