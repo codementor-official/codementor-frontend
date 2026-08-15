@@ -39,7 +39,7 @@ export function SegmentedTabs({
             {typeof opt.count === "number" && (
               <span
                 className={`rounded-full px-1.5 text-[10px] ${
-                  active ? "bg-on-ink/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                  active ? "bg-background/20 text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}
               >
                 {opt.count}

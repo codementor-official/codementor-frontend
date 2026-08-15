@@ -9,6 +9,7 @@ import type {
   Page,
 } from "@/features/exercises/types";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
+import type { Course, CourseListItem, LessonContent } from "@/features/courses/types";
 
 /**
  * The single place that knows a backend URL. Everything below calls the gateway, so
@@ -98,5 +99,30 @@ export const api = {
     submit: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/withdraw`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/roadmaps/${id}`, { method: "DELETE" }),
+  },
+
+  courses: {
+    catalogue: (params: ListExercisesParams = {}) =>
+      unwrap<Page<CourseListItem>>(`/courses${query({ ...params })}`),
+    mine: (params: ListExercisesParams = {}) =>
+      unwrap<Page<CourseListItem>>(`/courses/mine${query({ ...params })}`),
+    get: (id: string) => unwrap<Course>(`/courses/${id}`),
+    create: (body: { title: string; level: string }) =>
+      unwrap<Course>("/courses", { method: "POST", body }),
+    update: (id: string, body: Record<string, unknown>) =>
+      unwrap<Course>(`/courses/${id}`, { method: "PATCH", body }),
+    /** Ghi cả cây; thứ tự lấy theo thứ tự mảng, id giữ nguyên để không mất tiến độ. */
+    saveCurriculum: (id: string, chapters: unknown[]) =>
+      unwrap<Course>(`/courses/${id}/curriculum`, { method: "PUT", body: { chapters } }),
+    lessonContent: (id: string, lessonId: string) =>
+      unwrap<LessonContent | null>(`/courses/${id}/lessons/${lessonId}/content`),
+    saveLessonContent: (id: string, lessonId: string, content: LessonContent) =>
+      unwrap<LessonContent>(`/courses/${id}/lessons/${lessonId}/content`, {
+        method: "PUT",
+        body: content as Record<string, unknown>,
+      }),
+    submit: (id: string) => unwrap<Course>(`/courses/${id}/submit`, { method: "POST" }),
+    withdraw: (id: string) => unwrap<Course>(`/courses/${id}/withdraw`, { method: "POST" }),
+    remove: (id: string) => unwrap<void>(`/courses/${id}`, { method: "DELETE" }),
   },
 };

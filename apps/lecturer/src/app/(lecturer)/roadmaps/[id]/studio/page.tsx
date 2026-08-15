@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, Card, StatusBadge } from "@codementor/ui";
+import { Button, Card, SegmentedTabs, StatusBadge } from "@codementor/ui";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
 import { PageHeader } from "@/components/page/page-header";
+import { CoursePicker, type PickedCourse } from "@/features/roadmaps/course-picker";
+import type { CourseListItem } from "@/features/courses/types";
 import { api } from "@/lib/api";
 import {
   CONTENT_STATUS_LABELS,
@@ -51,11 +53,28 @@ export default function RoadmapStudioPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
+  const [tab, setTab] = useState<"courses" | "metadata">("courses");
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [picked, setPicked] = useState<PickedCourse[]>([]);
+  const [available, setAvailable] = useState<CourseListItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const apply = useCallback((loaded: Roadmap) => {
+    setRoadmap(loaded);
+    setDraft(toDraft(loaded));
+    setPicked(
+      (loaded.courses ?? []).map((course) => ({
+        courseId: course.courseId,
+        title: course.title,
+        status: course.status,
+        durationHours: course.durationHours,
+        isOptional: course.isOptional,
+      })),
+    );
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,8 +82,7 @@ export default function RoadmapStudioPage() {
       .get(id)
       .then((loaded) => {
         if (cancelled) return;
-        setRoadmap(loaded);
-        setDraft(toDraft(loaded));
+        apply(loaded);
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(describe(cause));
@@ -72,16 +90,31 @@ export default function RoadmapStudioPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, apply]);
+
+  // Kho khóa học để kéo vào: khóa đã công khai của mọi người, cộng khóa của chính mình
+  // (dùng được trong lộ trình của mình dù chưa công khai — nhưng sẽ chặn lúc gửi duyệt).
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([api.courses.catalogue({ limit: 100 }), api.courses.mine({ limit: 100 })])
+      .then(([catalogue, mine]) => {
+        if (cancelled) return;
+        const seen = new Map<string, CourseListItem>();
+        for (const course of [...mine.items, ...catalogue.items]) seen.set(course.id, course);
+        setAvailable([...seen.values()]);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const run = async (action: () => Promise<Roadmap>, done: string) => {
     setSaving(true);
     setError(null);
     setNotice(null);
     try {
-      const updated = await action();
-      setRoadmap(updated);
-      setDraft(toDraft(updated));
+      apply(await action());
       setNotice(done);
     } catch (cause) {
       setError(describe(cause));
@@ -135,8 +168,8 @@ export default function RoadmapStudioPage() {
                   disabled={saving}
                   onClick={() =>
                     run(
-                      () =>
-                        api.roadmaps.update(id, {
+                      async () => {
+                        await api.roadmaps.update(id, {
                           // Chỉ gửi slug khi thực sự đổi: backend từ chối đổi slug của
                           // lộ trình đã công khai, gửi thừa là ăn 422 vô cớ.
                           ...(draft.slug !== roadmap.slug ? { slug: draft.slug } : {}),
@@ -148,7 +181,17 @@ export default function RoadmapStudioPage() {
                           coverImageUrl: draft.coverImageUrl || null,
                           progressionMode: draft.progressionMode,
                           prerequisiteNote: draft.prerequisiteNote || null,
-                        }),
+                        });
+                        // Danh sách sau cùng: câu trả lời của nó đã kèm `estimatedHours`
+                        // vừa được backend tính lại.
+                        return api.roadmaps.replaceCourses(
+                          id,
+                          picked.map((course) => ({
+                            courseId: course.courseId,
+                            isOptional: course.isOptional,
+                          })),
+                        );
+                      },
                       "Đã lưu",
                     )
                   }
@@ -208,7 +251,28 @@ export default function RoadmapStudioPage() {
         </p>
       )}
 
-      <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
+      <div className="mb-4">
+        <SegmentedTabs
+          onChange={(value) => setTab(value as "courses" | "metadata")}
+          options={[
+            { value: "courses", label: "Khóa học" },
+            { value: "metadata", label: "Thông tin lộ trình" },
+          ]}
+          value={tab}
+        />
+      </div>
+
+      {tab === "courses" ? (
+        <Card className="p-5">
+          <CoursePicker
+            available={available}
+            disabled={locked}
+            onChange={setPicked}
+            picked={picked}
+          />
+        </Card>
+      ) : (
+        <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
         <Card className="p-5 lg:col-span-2">
           <h2 className="mb-4 text-sm font-semibold">Thông tin lộ trình</h2>
 
@@ -327,41 +391,7 @@ export default function RoadmapStudioPage() {
         </Card>
       </fieldset>
 
-      <Card className="mt-4 p-5">
-        <h2 className="mb-1 text-sm font-semibold">Khóa học trong lộ trình</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Thời lượng lộ trình là tổng thời lượng các khóa học ở đây, hệ thống tự tính sau mỗi
-          lần lưu.
-        </p>
-
-        {(roadmap.courses?.length ?? 0) === 0 ? (
-          <p className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-            Chưa có khóa học nào. Phần kéo thả sẽ mở khi màn quản lý khóa học hoàn thiện.
-          </p>
-        ) : (
-          <ol className="grid gap-2">
-            {roadmap.courses?.map((course) => (
-              <li
-                className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3"
-                key={course.courseId}
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {course.position}. {course.title}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {course.durationHours ? `${course.durationHours} giờ` : "chưa có thời lượng"}
-                    {course.isOptional && " · tùy chọn"}
-                  </p>
-                </div>
-                <StatusBadge tone={CONTENT_STATUS_TONES[course.status]}>
-                  {CONTENT_STATUS_LABELS[course.status]}
-                </StatusBadge>
-              </li>
-            ))}
-          </ol>
-        )}
-      </Card>
+      )}
 
       <div className="mt-6 flex justify-end">
         <Button
