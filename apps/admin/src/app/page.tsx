@@ -1,11 +1,5 @@
-import { DashboardShell } from "@codementor/ui";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return (
-    <DashboardShell
-      eyebrow="CodeMentor"
-      title="CodeMentor Admin Dashboard"
-      description="The administration application foundation is ready for future platform operations."
-    />
-  );
+  redirect("/dashboard");
 }
