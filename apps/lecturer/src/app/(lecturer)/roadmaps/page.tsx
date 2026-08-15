@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ManagePage, SegmentedTabs, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { PageBody } from "@/components/page/page-body";
+import {
+  DetailRow,
+  DetailSection,
+  DrawerDetail,
+} from "@/components/page/drawer-detail";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
 import {
@@ -145,21 +151,7 @@ export default function RoadmapsPage() {
   };
 
   return (
-    <>
-      <div className="mb-4">
-        <SegmentedTabs
-          onChange={(value) => {
-            setTab(value as Tab);
-            setStatus("");
-          }}
-          options={[
-            { value: "mine", label: "Lộ trình của tôi" },
-            { value: "catalogue", label: "Danh mục công khai" },
-          ]}
-          value={tab}
-        />
-      </div>
-
+    <PageBody>
       <ManagePage
         action={
           <Button onClick={() => void create()} type="button">
@@ -169,27 +161,11 @@ export default function RoadmapsPage() {
         }
         activeFilterCount={[field, status].filter(Boolean).length}
         columns={columns}
-        description={
-          tab === "mine"
-            ? "Lộ trình bạn tạo. Thời lượng là tổng của các khóa học thành phần."
-            : "Lộ trình đã công khai của mọi giảng viên."
-        }
         drawer={{
           title: (row) => row.title,
           description: (row) =>
             `${FIELD_LABELS[row.field]} · ${LEVEL_LABELS[row.level]} · ${CONTENT_STATUS_LABELS[row.status]}`,
-          body: (row) => (
-            <dl className="grid gap-3 text-sm">
-              <Row label="Slug" value={row.slug} />
-              <Row label="Số khóa học" value={`${row.courseCount}`} />
-              <Row
-                label="Thời lượng"
-                value={row.estimatedHours ? `${row.estimatedHours} giờ` : "Chưa có"}
-              />
-              <Row label="Tác giả" value={row.authorName ?? "—"} />
-              <Row label="Cập nhật" value={dateFormat.format(new Date(row.updatedAt))} />
-            </dl>
-          ),
+          body: (row) => <RoadmapDrawerBody row={row} />,
           footer: (row) =>
             row.createdBy === user?.id ? (
               <>
@@ -272,18 +248,90 @@ export default function RoadmapsPage() {
         rows={rows}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
+        tabs={{
+          options: [
+            { value: "mine", label: "Lộ trình của tôi" },
+            { value: "catalogue", label: "Danh mục công khai" },
+          ],
+          value: tab,
+          onChange: (value) => {
+            setTab(value as Tab);
+            setStatus("");
+          },
+        }}
         title="Lộ trình"
       />
-    </>
+    </PageBody>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function RoadmapDrawerBody({ row }: { row: RoadmapListItem }) {
   return (
-    <div className="flex gap-3">
-      <dt className="w-28 shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 flex-1 break-words">{value}</dd>
-    </div>
+    <DrawerDetail dependency={row.id} load={() => api.roadmaps.get(row.id)}>
+      {(roadmap) => {
+        const courses = roadmap.courses ?? [];
+        // Submission is refused while any component course is unpublished, so the blocker
+        // belongs on screen next to the courses causing it.
+        const blocking = courses.filter((course) => course.status !== "published").length;
+
+        return (
+          <>
+            <dl className="grid gap-3 text-sm">
+              <DetailRow label="Slug" value={roadmap.slug} />
+              <DetailRow label="Lĩnh vực" value={FIELD_LABELS[roadmap.field]} />
+              <DetailRow label="Trình độ" value={LEVEL_LABELS[roadmap.level]} />
+              <DetailRow
+                label="Thời lượng"
+                value={roadmap.estimatedHours ? `${roadmap.estimatedHours} giờ` : "Chưa có"}
+              />
+              <DetailRow label="Tác giả" value={row.authorName ?? "—"} />
+              <DetailRow label="Cập nhật" value={dateFormat.format(new Date(roadmap.updatedAt))} />
+            </dl>
+
+            {roadmap.description && (
+              <DetailSection title="Mô tả">
+                <p className="text-sm leading-relaxed">{roadmap.description}</p>
+              </DetailSection>
+            )}
+
+            <DetailSection title={`Khóa học (${courses.length})`}>
+              {courses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Lộ trình này chưa có khóa học nào.</p>
+              ) : (
+                <>
+                  <ol className="grid gap-2">
+                    {courses.map((course, index) => (
+                      <li
+                        className="flex items-center gap-2 rounded-md border px-3 py-2"
+                        key={course.courseId}
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">
+                            {index + 1}. {course.title}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {course.durationHours ? `${course.durationHours} giờ` : "chưa có thời lượng"}
+                            {course.isOptional ? " · tùy chọn" : ""}
+                          </span>
+                        </span>
+                        <StatusBadge tone={CONTENT_STATUS_TONES[course.status]}>
+                          {CONTENT_STATUS_LABELS[course.status]}
+                        </StatusBadge>
+                      </li>
+                    ))}
+                  </ol>
+                  {blocking > 0 && (
+                    <p className="mt-2 text-xs text-warning">
+                      {blocking} khóa học chưa công khai — gửi duyệt lộ trình sẽ bị từ chối.
+                    </p>
+                  )}
+                </>
+              )}
+            </DetailSection>
+          </>
+        );
+      }}
+    </DrawerDetail>
   );
 }
 

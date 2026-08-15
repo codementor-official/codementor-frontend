@@ -126,6 +126,7 @@ export function StudyGroupBoard({
       />
 
       <FilterBar
+        className="mb-5"
         searchValue={filters.search}
         onSearchChange={(search) => setFilters((f) => ({ ...f, search }))}
         searchPlaceholder="Tìm nhóm theo tên, chủ đề, mã mời..."

@@ -20,7 +20,10 @@
   --border: #e4e4e7;
   --input: #e4e4e7;
   --ring: #a1a1aa;
-  --radius: 0.75rem;
+  /* Surface radius. Controls step down to --radius-md (6px); see the radius scale each
+   * application declares in its @theme block. Two steps, not four: a button and a card
+   * reading as the same tier is what made the old xl/lg/md/full mix look accidental. */
+  --radius: 10px;
   --chart-1: #18181b;
   --chart-2: #a1a1aa;
   --chart-3: #ea580c;

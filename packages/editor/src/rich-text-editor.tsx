@@ -155,7 +155,6 @@ function Toolbar({
       {inCodeBlock && (
         <Select
           label="Ngôn ngữ tô màu"
-          shape="box"
           className="h-8"
           value={(editor.getAttributes("codeBlock").language as string) || "plaintext"}
           onChange={(language) =>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
   closestCenter,
+  useDndContext,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -14,12 +15,16 @@ import {
   SortableContext,
   arrayMove,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Braces, ChevronDown, ChevronRight, FileText, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@codementor/ui";
+import {
+  DropIndicator,
+  SortableOverlay,
+  dropZoneClasses,
+  useSortableRow,
+} from "@/components/sortable";
 import {
   LESSON_TYPE_LABELS,
   bearsExercise,
@@ -222,6 +227,8 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
               ))}
             </ul>
           </SortableContext>
+
+          <SortableOverlay>{(activeId) => <DragPreview activeId={activeId} chapters={chapters} />}</SortableOverlay>
         </DndContext>
       )}
 
@@ -255,6 +262,32 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
       )}
     </div>
   );
+}
+
+/** What rides under the cursor: the title of whichever chapter or lesson is in flight. */
+function DragPreview({ activeId, chapters }: { activeId: string; chapters: DraftChapter[] }) {
+  const chapter = chapters.find((candidate) => candidate.key === activeId);
+  if (chapter) {
+    return (
+      <p className="px-3 py-2 text-sm font-medium">
+        {chapter.title || "Chương chưa đặt tên"}
+        <span className="ml-2 text-xs text-muted-foreground">{chapter.lessons.length} bài</span>
+      </p>
+    );
+  }
+
+  for (const candidate of chapters) {
+    const lesson = candidate.lessons.find((item) => item.key === activeId);
+    if (!lesson) continue;
+    const Icon = bearsExercise(lesson.type) ? Braces : FileText;
+    return (
+      <p className="flex items-center gap-1.5 px-3 py-2 text-sm">
+        <Icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+        {lesson.title || "Bài chưa đặt tên"}
+      </p>
+    );
+  }
+  return null;
 }
 
 function MenuItem({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
@@ -295,30 +328,27 @@ function SortableChapter({
   onRemoveLesson: (chapterKey: string, lessonKey: string) => void;
   onContextMenu: (x: number, y: number) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: chapter.key,
-    disabled,
-  });
+  const row = useSortableRow({ id: chapter.key, disabled });
   const active = selection?.kind === "chapter" && selection.chapterKey === chapter.key;
 
   return (
     <li
-      className={`rounded-lg border bg-card ${isDragging ? "opacity-50" : ""}`}
+      className={`relative rounded-lg border bg-card ${row.className}`}
       onContextMenu={(event) => {
         event.preventDefault();
         event.stopPropagation();
         if (!disabled) onContextMenu(event.clientX, event.clientY);
       }}
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      ref={row.ref}
+      style={row.style}
     >
+      <DropIndicator edge={row.dropEdge} />
       <div className={`flex items-center gap-1.5 px-2 py-2 ${active ? "bg-muted" : ""}`}>
         <button
           aria-label="Kéo để đổi thứ tự chương"
           className="cursor-grab text-muted-foreground hover:text-foreground"
           type="button"
-          {...attributes}
-          {...listeners}
+          {...row.handleProps}
         >
           <GripVertical aria-hidden="true" className="size-4" />
         </button>
@@ -358,12 +388,7 @@ function SortableChapter({
           items={chapter.lessons.map((lesson) => lesson.key)}
           strategy={verticalListSortingStrategy}
         >
-          <ul className="min-h-10 border-t px-2 py-1.5">
-            {chapter.lessons.length === 0 && (
-              <li className="px-6 py-2 text-xs text-muted-foreground">
-                Chương rỗng — kéo bài vào đây, hoặc chuột phải để thêm.
-              </li>
-            )}
+          <ChapterDropZone chapterKey={chapter.key} empty={chapter.lessons.length === 0}>
             {chapter.lessons.map((lesson) => (
               <SortableLesson
                 chapterKey={chapter.key}
@@ -385,10 +410,47 @@ function SortableChapter({
                 + Thêm bài
               </button>
             </li>
-          </ul>
+          </ChapterDropZone>
         </SortableContext>
       )}
     </li>
+  );
+}
+
+/**
+ * The lesson list of one chapter, highlighted while a lesson could land in it.
+ *
+ * No droppable of its own: the chapter's own sortable node already covers this area and
+ * already answers to `chapter.key`, which is what `onDragEnd` falls back to reading off
+ * `over.id` when a lesson is dropped on an empty chapter. Registering a second node under
+ * the same id would put two entries in the collision map for one rectangle.
+ *
+ * Reading the context directly is what keeps the highlight honest: `over.id` alone lights
+ * up while a *chapter* is being reordered over this one, which has nothing to do with
+ * dropping a lesson inside. A lesson is the drag whose data carries a `chapterKey`.
+ */
+function ChapterDropZone({
+  chapterKey,
+  empty,
+  children,
+}: {
+  chapterKey: string;
+  empty: boolean;
+  children: ReactNode;
+}) {
+  const { active, over } = useDndContext();
+  const lessonIncoming = active?.data.current?.chapterKey !== undefined;
+  const isOver = lessonIncoming && over?.id === chapterKey;
+
+  return (
+    <ul className={`min-h-10 border-x-0 border-b-0 border-t px-2 py-1.5 ${dropZoneClasses(isOver)}`}>
+      {empty && (
+        <li className="px-6 py-2 text-xs text-muted-foreground">
+          Chương rỗng — kéo bài vào đây, hoặc chuột phải để thêm.
+        </li>
+      )}
+      {children}
+    </ul>
   );
 }
 
@@ -407,12 +469,8 @@ function SortableLesson({
   onSelect: (selection: Selection) => void;
   onRemove: (chapterKey: string, lessonKey: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: lesson.key,
-    // Chương của bài đi kèm theo `data` để lúc thả biết nguồn và đích.
-    data: { chapterKey },
-    disabled,
-  });
+  // Chương của bài đi kèm theo `data` để lúc thả biết nguồn và đích.
+  const row = useSortableRow({ id: lesson.key, data: { chapterKey }, disabled });
   const active =
     selection?.kind === "lesson" &&
     selection.lessonKey === lesson.key &&
@@ -421,18 +479,18 @@ function SortableLesson({
 
   return (
     <li
-      className={`flex items-center gap-1.5 rounded-md px-1 py-1 ${active ? "bg-muted" : ""} ${
-        isDragging ? "opacity-50" : ""
-      }`}
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`relative flex items-center gap-1.5 rounded-md px-1 py-1 ${
+        active ? "bg-muted" : ""
+      } ${row.className}`}
+      ref={row.ref}
+      style={row.style}
     >
+      <DropIndicator edge={row.dropEdge} />
       <button
         aria-label="Kéo để đổi thứ tự bài"
         className="cursor-grab text-muted-foreground hover:text-foreground"
         type="button"
-        {...attributes}
-        {...listeners}
+        {...row.handleProps}
       >
         <GripVertical aria-hidden="true" className="size-3.5" />
       </button>

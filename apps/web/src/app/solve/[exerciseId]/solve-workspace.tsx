@@ -7,13 +7,11 @@ import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
 import { ArrowLeft, Bot, Braces, Loader2, Play, RotateCcw, Send, Sparkles } from "lucide-react";
-import { Pane } from "@/components/workspace/pane";
-import { ResizeHandle } from "@/components/workspace/resize-handle";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
 import { UserMenu } from "@/components/user-menu";
 import { LanguageDropdown } from "@/components/workspace/language-dropdown";
-import { useWorkspace, WorkspaceProvider } from "@/components/workspace/workspace-context";
-import type { PanesState, TabKind } from "@/components/workspace/types";
+import { TAB_META, type PaneId, type PanesState, type TabKind } from "@/components/workspace/types";
+import { Pane, ResizeHandle, useWorkspace, WorkspaceProvider } from "@codementor/ui";
 import { type Problem } from "@/data/sample-problem";
 import { useResolvedTheme } from "@/lib/store/use-resolved-theme";
 import { DiscussionPanel } from "@/components/workspace/discussion-panel";
@@ -250,7 +248,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
   }
 
   return (
-    <WorkspaceProvider initialPanes={initialPanes}>
+    <WorkspaceProvider initialPanes={initialPanes} tabMeta={TAB_META}>
       <WorkspaceBody problem={problem} backHref={backHref} runCode={runCode} running={running} mascotState={mascotState} codeyVisible={codeyVisible} onToggleCodey={() => setCodeyVisible((v) => !v)} renderTabContent={renderTabContent} />
     </WorkspaceProvider>
   );
@@ -280,22 +278,22 @@ function WorkspaceBody({
   const toggleAi = () => (aiVisible ? closeTab("ai", "ai") : openTab("ai", "ai"));
 
   const leftPane = (
-    <Pane id="left" className="min-h-0">
+    <Pane<TabKind> id="left" className="min-h-0">
       {renderTabContent}
     </Pane>
   );
   const editorPane = (
-    <Pane id="editor" className="min-h-0">
+    <Pane<TabKind> id="editor" className="min-h-0">
       {renderTabContent}
     </Pane>
   );
   const consolePane = (
-    <Pane id="console" className="min-h-0">
+    <Pane<TabKind> id="console" className="min-h-0">
       {renderTabContent}
     </Pane>
   );
   const aiPane = (
-    <Pane id="ai" className="min-h-0">
+    <Pane<TabKind> id="ai" className="min-h-0">
       {renderTabContent}
     </Pane>
   );
@@ -356,7 +354,7 @@ function WorkspaceBody({
 
       <div className="min-h-0 flex-1">
         {maximized ? (
-          <div className="h-full">{panesById[maximized]}</div>
+          <div className="h-full">{panesById[maximized as PaneId]}</div>
         ) : (
           <Group key={aiVisible ? "3col" : "2col"} orientation="horizontal" className="h-full">
             <Panel id="left" defaultSize={aiVisible ? "33%" : "50%"} minSize="18%" className="min-h-0">

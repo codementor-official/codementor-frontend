@@ -47,7 +47,7 @@ export function FilterBar({
       type="button"
       onClick={() => setOpen((v) => !v)}
       aria-expanded={open}
-      className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+      className="flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-foreground hover:bg-muted"
     >
       <SlidersHorizontal className="h-3.5 w-3.5" />
       {sheetTitle}
@@ -60,8 +60,11 @@ export function FilterBar({
   );
 
   return (
-    <div ref={wrapRef} className={`relative mb-5 ${className}`}>
-      <div className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pr-2 pl-4 focus-within:border-foreground">
+    // No bottom margin of its own: the caller is the only thing that knows what sits
+    // underneath. It used to carry `mb-5` while ManagePage wrapped it in `mb-4`, and the
+    // two silently added up.
+    <div ref={wrapRef} className={`relative ${className}`}>
+      <div className="flex items-center gap-2 rounded-md border border-border bg-card py-1.5 pr-2 pl-3 focus-within:border-foreground">
         <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
         <input
           value={searchValue}
@@ -74,7 +77,7 @@ export function FilterBar({
           <button
             type="button"
             onClick={onClearFilters}
-            className="shrink-0 rounded-full px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+            className="h-8 shrink-0 rounded-md px-2 text-xs font-semibold text-primary hover:bg-primary/10"
           >
             Xóa lọc
           </button>

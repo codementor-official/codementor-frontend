@@ -13,12 +13,11 @@ import {
   SortableContext,
   arrayMove,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button, StatusBadge } from "@codementor/ui";
+import { DropIndicator, SortableOverlay, useSortableRow } from "@/components/sortable";
 import type { CourseListItem } from "@/features/courses/types";
 import {
   CONTENT_STATUS_LABELS,
@@ -121,6 +120,15 @@ export function CoursePicker({ picked, available, onChange, disabled }: Props) {
                 ))}
               </ol>
             </SortableContext>
+
+            <SortableOverlay>
+              {(activeId) => {
+                const course = picked.find((item) => item.courseId === activeId);
+                return course ? (
+                  <p className="px-3 py-2 text-sm font-medium">{course.title}</p>
+                ) : null;
+              }}
+            </SortableOverlay>
           </DndContext>
         )}
       </div>
@@ -177,25 +185,20 @@ function SortablePicked({
   onRemove: () => void;
   onToggleOptional: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: course.courseId,
-    disabled,
-  });
+  const row = useSortableRow({ id: course.courseId, disabled });
 
   return (
     <li
-      className={`flex items-center gap-2 rounded-lg border bg-card px-3 py-2 ${
-        isDragging ? "opacity-50" : ""
-      }`}
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`relative flex items-center gap-2 rounded-lg border bg-card px-3 py-2 ${row.className}`}
+      ref={row.ref}
+      style={row.style}
     >
+      <DropIndicator edge={row.dropEdge} />
       <button
         aria-label="Kéo để đổi thứ tự khóa học"
         className="cursor-grab text-muted-foreground hover:text-foreground"
         type="button"
-        {...attributes}
-        {...listeners}
+        {...row.handleProps}
       >
         <GripVertical aria-hidden="true" className="size-4" />
       </button>

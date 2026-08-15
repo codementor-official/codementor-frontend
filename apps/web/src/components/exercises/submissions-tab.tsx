@@ -152,7 +152,6 @@ export function SubmissionsTab() {
           <>
             <Select
               label="Kết quả"
-              shape="box"
               value={result}
               onChange={setResult}
               options={[
@@ -164,7 +163,6 @@ export function SubmissionsTab() {
             />
             <Select
               label="Nguồn bài"
-              shape="box"
               value={origin}
               onChange={setOrigin}
               options={[

@@ -10,6 +10,33 @@
  * stamps `.dark` on <html>. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Aliases for the token names @codementor/ui components are written in.
+ *
+ * Importing theme.css above brings in `--card`, `--muted-foreground` and friends as plain
+ * custom properties, but Tailwind v4 only emits a utility when the name exists as
+ * `--color-*` in a theme block. Without these nine lines `bg-card` and
+ * `text-muted-foreground` generated no CSS at all here, so every Modal and SideDrawer in
+ * this application rendered with no background over its own dark overlay.
+ *
+ * `inline` matters: the utilities resolve to web's own palette variables, which the
+ * `.dark` block below reassigns — so the shared components follow this application's
+ * theme rather than pinning themselves to theme.css's light values.
+ *
+ * Only the nine names that packages/ui actually uses and web does not already define.
+ * `--color-border`, `--color-primary` and `--color-success` are declared in web's own
+ * @theme block and are deliberately not repeated. */
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-muted: var(--color-border-soft);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-primary-foreground: var(--color-on-ink);
+  --color-destructive: var(--color-danger);
+  --color-warning: var(--color-primary);
+}
+
 @theme {
   --color-bg: #ffffff;
   --color-surface: #ffffff;

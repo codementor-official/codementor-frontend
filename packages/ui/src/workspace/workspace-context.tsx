@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, type ReactNode } from "react";
-import type { PaneId, PanesState, TabKind } from "./types";
+import type { PaneId, PanesState, TabKind, TabMetaMap } from "./types";
 
 interface DragInfo {
   tab: TabKind;
@@ -15,6 +15,8 @@ interface DropTarget {
 }
 
 interface WorkspaceCtx {
+  /** What each tab is called and how it is drawn. Supplied per screen, not global. */
+  tabMeta: TabMetaMap;
   panes: PanesState;
   setActive: (pane: PaneId, tab: TabKind) => void;
   moveTab: (tab: TabKind, from: PaneId, to: PaneId, index?: number) => void;
@@ -34,9 +36,11 @@ const Ctx = createContext<WorkspaceCtx | null>(null);
 
 export function WorkspaceProvider({
   initialPanes,
+  tabMeta,
   children,
 }: {
   initialPanes: PanesState;
+  tabMeta: TabMetaMap;
   children: ReactNode;
 }) {
   const [panes, setPanes] = useState<PanesState>(initialPanes);
@@ -91,6 +95,7 @@ export function WorkspaceProvider({
   return (
     <Ctx.Provider
       value={{
+        tabMeta,
         panes,
         setActive,
         moveTab,

@@ -9,8 +9,12 @@ export function LecturerShell({ children }: Readonly<{ children: ReactNode }>) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Fixed viewport height rather than `min-h-screen`, because the studio and solve screens
+  // are split panes: a pane can only size itself against a parent whose height is known,
+  // and a page that grows with its content never gives it one. List screens get their
+  // scrolling back below, on `main`.
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex h-screen flex-col bg-background">
       <LecturerSidebar collapsed={collapsed} mobile={false} />
 
       {mobileOpen && (
@@ -27,12 +31,16 @@ export function LecturerShell({ children }: Readonly<{ children: ReactNode }>) {
         </div>
       )}
 
-      <div className={collapsed ? "min-h-screen md:pl-[72px]" : "min-h-screen md:pl-64"}>
+      <div
+        className={`flex min-h-0 flex-1 flex-col ${collapsed ? "md:pl-18" : "md:pl-64"}`}
+      >
         <LecturerTopbar
           onDesktopToggle={() => setCollapsed((value) => !value)}
           onMobileToggle={() => setMobileOpen(true)}
         />
-        <main className="p-4 sm:p-6">{children}</main>
+        {/* No padding here: a split-pane screen needs to reach the edges. Pages that want
+            breathing room wrap themselves in <PageBody>. */}
+        <main className="min-h-0 flex-1">{children}</main>
       </div>
     </div>
   );

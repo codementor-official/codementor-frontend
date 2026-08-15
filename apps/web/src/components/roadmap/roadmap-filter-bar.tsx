@@ -78,6 +78,7 @@ export function RoadmapFilterBar({
 
   return (
     <FilterBar
+      className="mb-5"
       searchValue={filters.search}
       onSearchChange={(v) => onChange({ search: v })}
       searchPlaceholder="Tìm lộ trình theo tên, công nghệ..."

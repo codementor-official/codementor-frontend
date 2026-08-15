@@ -6,10 +6,16 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ManagePage, SegmentedTabs, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { PageBody } from "@/components/page/page-body";
+import {
+  DetailRow,
+  DetailSection,
+  DrawerDetail,
+} from "@/components/page/drawer-detail";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
-import type { CourseListItem } from "@/features/courses/types";
+import { LESSON_TYPE_LABELS, type CourseListItem } from "@/features/courses/types";
 import {
   CONTENT_STATUSES,
   CONTENT_STATUS_LABELS,
@@ -137,21 +143,7 @@ export default function CoursesPage() {
   };
 
   return (
-    <>
-      <div className="mb-4">
-        <SegmentedTabs
-          onChange={(value) => {
-            setTab(value as Tab);
-            setStatus("");
-          }}
-          options={[
-            { value: "mine", label: "Khóa học của tôi" },
-            { value: "catalogue", label: "Danh mục công khai" },
-          ]}
-          value={tab}
-        />
-      </div>
-
+    <PageBody>
       <ManagePage
         action={
           <Button onClick={() => void create()} type="button">
@@ -161,27 +153,11 @@ export default function CoursesPage() {
         }
         activeFilterCount={[level, status].filter(Boolean).length}
         columns={columns}
-        description={
-          tab === "mine"
-            ? "Khóa học bạn soạn. Thời lượng là tổng thời lượng các bài."
-            : "Khóa học đã công khai của mọi giảng viên."
-        }
         drawer={{
           title: (row) => row.title,
           description: (row) =>
             `${LEVEL_LABELS[row.level]} · ${CONTENT_STATUS_LABELS[row.status]}`,
-          body: (row) => (
-            <dl className="grid gap-3 text-sm">
-              <Row label="Slug" value={row.slug} />
-              <Row label="Nội dung" value={`${row.totalChapters} chương · ${row.totalLessons} bài`} />
-              <Row
-                label="Thời lượng"
-                value={row.durationHours ? `${row.durationHours} giờ` : "Chưa có"}
-              />
-              <Row label="Tác giả" value={row.authorName ?? "—"} />
-              <Row label="Cập nhật" value={dateFormat.format(new Date(row.updatedAt))} />
-            </dl>
-          ),
+          body: (row) => <CourseDrawerBody row={row} />,
           footer: (row) =>
             row.createdBy === user?.id ? (
               <>
@@ -264,18 +240,91 @@ export default function CoursesPage() {
         rows={rows}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
+        tabs={{
+          options: [
+            { value: "mine", label: "Khóa học của tôi" },
+            { value: "catalogue", label: "Danh mục công khai" },
+          ],
+          value: tab,
+          onChange: (value) => {
+            setTab(value as Tab);
+            setStatus("");
+          },
+        }}
         title="Khóa học"
       />
-    </>
+    </PageBody>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function CourseDrawerBody({ row }: { row: CourseListItem }) {
   return (
-    <div className="flex gap-3">
-      <dt className="w-28 shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 flex-1 break-words">{value}</dd>
-    </div>
+    <DrawerDetail dependency={row.id} load={() => api.courses.get(row.id)}>
+      {(course) => {
+        const chapters = course.chapters ?? [];
+        return (
+          <>
+            <dl className="grid gap-3 text-sm">
+              <DetailRow label="Slug" value={course.slug} />
+              <DetailRow label="Trình độ" value={LEVEL_LABELS[course.level]} />
+              <DetailRow
+                label="Nội dung"
+                value={`${course.totalChapters} chương · ${course.totalLessons} bài`}
+              />
+              <DetailRow
+                label="Thời lượng"
+                value={course.durationHours ? `${course.durationHours} giờ` : "Chưa có"}
+              />
+              <DetailRow label="Tác giả" value={row.authorName ?? "—"} />
+              <DetailRow label="Cập nhật" value={dateFormat.format(new Date(course.updatedAt))} />
+            </dl>
+
+            {course.description && (
+              <DetailSection title="Mô tả">
+                <p className="text-sm leading-relaxed">{course.description}</p>
+              </DetailSection>
+            )}
+
+            <DetailSection title="Chương trình học">
+              {chapters.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Khóa học này chưa có chương nào.</p>
+              ) : (
+                <ol className="grid gap-2">
+                  {chapters.map((chapter, index) => (
+                    <li className="rounded-md border" key={chapter.id ?? index}>
+                      <div className="flex items-baseline gap-2 border-b px-3 py-2">
+                        <span className="text-sm font-medium">
+                          {index + 1}. {chapter.title}
+                        </span>
+                        <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                          {chapter.lessons?.length ?? 0} bài
+                        </span>
+                      </div>
+                      {(chapter.lessons?.length ?? 0) > 0 && (
+                        <ul className="grid gap-1 px-3 py-2">
+                          {chapter.lessons?.map((lesson) => (
+                            <li
+                              className="flex items-baseline gap-2 text-xs"
+                              key={lesson.id ?? lesson.title}
+                            >
+                              <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
+                              <span className="shrink-0 text-muted-foreground">
+                                {LESSON_TYPE_LABELS[lesson.type]}
+                                {lesson.durationMinutes ? ` · ${lesson.durationMinutes}′` : ""}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </DetailSection>
+          </>
+        );
+      }}
+    </DrawerDetail>
   );
 }
 

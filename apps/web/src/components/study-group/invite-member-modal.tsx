@@ -79,7 +79,6 @@ export function InviteMemberModal({
           />
           <Select
             label="Vai trò"
-            shape="box"
             value={role}
             onChange={(v) => setRole(v as StudyGroupRole)}
             className="h-10"

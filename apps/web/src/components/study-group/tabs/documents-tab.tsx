@@ -243,7 +243,6 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
           <>
             <Select
               label="Trạng thái"
-              shape="box"
               value={status}
               onChange={setStatus}
               options={
@@ -259,7 +258,7 @@ export function DocumentsTab({ documents, canManage }: { documents: GroupDocumen
                   : [{ value: "all", label: "Mọi trạng thái" }]
               }
             />
-            <Select label="Định dạng" shape="box" value={type} onChange={setType} options={typeOptions} />
+            <Select label="Định dạng" value={type} onChange={setType} options={typeOptions} />
           </>
         }
         primaryAction={

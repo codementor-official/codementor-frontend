@@ -57,9 +57,9 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`animate-modal-in my-auto w-full rounded-xl bg-card shadow-[0_24px_60px_rgba(0,0,0,0.3)] ${widthClasses[width]}`}
+        className={`animate-modal-in my-auto w-full rounded-lg bg-card shadow-[0_24px_60px_rgba(0,0,0,0.3)] ${widthClasses[width]}`}
       >
-        <div className="flex items-start gap-4 border-b border-border px-5 py-4">
+        <div className="flex items-start gap-4 border-b border-border px-4 py-3">
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-foreground">{title}</h2>
             {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
@@ -73,9 +73,9 @@ export function Modal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="px-5 py-4">{children}</div>
+        <div className="px-4 py-4">{children}</div>
         {footer && (
-          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-3">{footer}</div>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3">{footer}</div>
         )}
       </div>
     </div>

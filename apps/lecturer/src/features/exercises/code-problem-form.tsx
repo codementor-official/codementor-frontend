@@ -302,7 +302,6 @@ export function CodeProblemForm({
                     { value: "public", label: "Công khai" },
                     { value: "hidden", label: "Ẩn" },
                   ]}
-                  shape="box"
                   value={testCase.visibility}
                 />
                 <button

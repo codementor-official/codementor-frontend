@@ -311,7 +311,6 @@ export function ExercisesTab({
           <>
             <Select
               label="Trạng thái"
-              shape="box"
               value={status}
               onChange={setStatus}
               options={[
@@ -328,7 +327,6 @@ export function ExercisesTab({
             />
             <Select
               label="Độ khó"
-              shape="box"
               value={difficulty}
               onChange={setDifficulty}
               options={[

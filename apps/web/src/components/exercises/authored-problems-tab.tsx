@@ -203,7 +203,6 @@ export function AuthoredProblemsTab() {
           <>
             <Select
               label="Loại bài"
-              shape="box"
               value={kind}
               onChange={setKind}
               options={[
@@ -214,7 +213,6 @@ export function AuthoredProblemsTab() {
             />
             <Select
               label="Trạng thái"
-              shape="box"
               value={status}
               onChange={setStatus}
               options={[

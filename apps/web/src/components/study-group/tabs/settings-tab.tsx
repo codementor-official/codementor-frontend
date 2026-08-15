@@ -242,7 +242,6 @@ export function SettingsTab({
               <div className="flex flex-wrap items-center gap-2">
                 <Select
                   label="Chọn thành viên nhận quyền"
-                  shape="box"
                   value={transferTo}
                   onChange={setTransferTo}
                   options={[

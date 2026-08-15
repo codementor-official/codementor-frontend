@@ -45,7 +45,7 @@ export function TabBar({ pane, trailing }: { pane: PaneId; trailing?: ReactNode 
     <div
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="flex min-h-9.25 shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border bg-surface px-1"
+      className="flex min-h-9.25 shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border bg-card px-1"
     >
       <div ref={containerRef} className="relative flex items-center">
         {tabs.map((k) => (
@@ -58,7 +58,7 @@ export function TabBar({ pane, trailing }: { pane: PaneId; trailing?: ReactNode 
           />
         )}
       </div>
-      {tabs.length === 0 && <div className="px-3 py-2 text-xs text-text-faint">Kéo tab vào đây</div>}
+      {tabs.length === 0 && <div className="px-3 py-2 text-xs text-muted-foreground">Kéo tab vào đây</div>}
       <div className="flex-1" />
       {trailing}
     </div>

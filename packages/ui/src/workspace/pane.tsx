@@ -6,7 +6,12 @@ import type { PaneId, TabKind } from "./types";
 import { TabBar } from "./tab-bar";
 import { useWorkspace } from "./workspace-context";
 
-export function Pane({
+/**
+ * `TTab` lets the calling screen keep its own closed union of tab ids: the render callback
+ * receives that union rather than a bare string, so a `switch` over it still fails to
+ * compile when a tab is added and left unhandled.
+ */
+export function Pane<TTab extends TabKind = TabKind>({
   id,
   trailing,
   className = "",
@@ -15,7 +20,7 @@ export function Pane({
   id: PaneId;
   trailing?: ReactNode;
   className?: string;
-  children: (activeTab: TabKind) => ReactNode;
+  children: (activeTab: TTab) => ReactNode;
 }) {
   const { panes, maximized, toggleMaximize, dragging, moveTab, contentDropTarget, setContentDropTarget } =
     useWorkspace();
@@ -38,7 +43,7 @@ export function Pane({
     <button
       onClick={() => toggleMaximize(id)}
       title={maximized === id ? "Thu nhỏ pane" : "Phóng to pane"}
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-faint opacity-0 transition-opacity duration-150 group-hover/pane:opacity-100 hover:bg-bg hover:text-navy"
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/pane:opacity-100 hover:bg-muted hover:text-foreground"
     >
       {maximized === id ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
     </button>
@@ -61,7 +66,7 @@ export function Pane({
         onDrop={handleDrop}
         className="relative min-h-0 flex-1 overflow-hidden"
       >
-        {pane.active ? children(pane.active) : <EmptyDropHint />}
+        {pane.active ? children(pane.active as TTab) : <EmptyDropHint />}
         {isContentDropTarget && (
           <div className="pointer-events-none absolute inset-2 z-20">
             <span className="absolute top-0 right-0 left-0 h-1 rounded-full bg-primary" />
@@ -77,6 +82,6 @@ export function Pane({
 
 function EmptyDropHint() {
   return (
-    <div className="flex h-full items-center justify-center text-xs text-text-faint">Kéo tab vào đây</div>
+    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">Kéo tab vào đây</div>
   );
 }

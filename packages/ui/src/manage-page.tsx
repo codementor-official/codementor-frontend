@@ -5,6 +5,7 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable, TablePagination, useDataTable } from "./data-table";
 import { FilterBar } from "./filter-bar";
 import { PageHeader } from "./page-header";
+import { SegmentedTabs, type SegmentedTabOption } from "./segmented-tabs";
 import { SideDrawer } from "./side-drawer";
 
 export interface ManagePageProps<TData> {
@@ -12,6 +13,13 @@ export interface ManagePageProps<TData> {
   description?: string;
   /** The one primary action for this screen, rendered beside the title. */
   action?: ReactNode;
+  /** Scope switch for the screen — "mine" versus the shared catalogue. Rendered inside the
+   * header row rather than above it, so a screen with tabs is not three stacked blocks. */
+  tabs?: {
+    options: SegmentedTabOption[];
+    value: string;
+    onChange: (value: string) => void;
+  };
 
   rows: TData[];
   // TanStack's own public shape for a heterogeneous column list.
@@ -56,6 +64,7 @@ export function ManagePage<TData>({
   title,
   description,
   action,
+  tabs,
   rows,
   columns,
   getRowId,
@@ -80,10 +89,19 @@ export function ManagePage<TData>({
 
   return (
     <>
-      <PageHeader action={action} description={description} title={title} />
+      <PageHeader
+        action={action}
+        center={
+          tabs && (
+            <SegmentedTabs onChange={tabs.onChange} options={tabs.options} value={tabs.value} />
+          )
+        }
+        description={description}
+        title={title}
+      />
 
       {filters !== undefined || search !== undefined ? (
-        <div className="mb-4">
+        <div className="mb-3">
           <FilterBar
             activeFilterCount={activeFilterCount}
             controls={filters}

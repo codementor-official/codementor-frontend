@@ -205,6 +205,7 @@ export default function PracticePage() {
           </div>
 
           <FilterBar
+            className="mb-5"
             searchValue={search}
             onSearchChange={(value) => { setSearch(value); setPage(1); }}
             searchPlaceholder="Tìm theo tên bài, keyword, chủ đề..."

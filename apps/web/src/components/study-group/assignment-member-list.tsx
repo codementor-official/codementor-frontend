@@ -70,8 +70,8 @@ export function AssignmentMemberList({ assignments, exercises }: { assignments: 
       </div>
       <Card className="mb-4 flex flex-col gap-2 p-3 sm:flex-row">
         <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border px-3"><Search className="h-4 w-4 text-text-faint" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm bài tập..." className="min-w-0 flex-1 bg-transparent text-sm text-navy outline-none placeholder:text-text-faint" /></label>
-        <Select label="Độ khó" shape="box" value={difficulty} onChange={setDifficulty} options={[{ value: "all", label: "Mọi độ khó" }, { value: "Cơ bản", label: "Cơ bản" }, { value: "Trung bình", label: "Trung bình" }, { value: "Nâng cao", label: "Nâng cao" }]} />
-        <Select label="Sắp xếp" shape="box" value={sort} onChange={setSort} options={[{ value: "due", label: "Hạn gần nhất" }, { value: "created", label: "Ngày tạo mới" }, { value: "score", label: "Điểm cao nhất" }, { value: "recent", label: "Lần làm gần nhất" }]} />
+        <Select label="Độ khó" value={difficulty} onChange={setDifficulty} options={[{ value: "all", label: "Mọi độ khó" }, { value: "Cơ bản", label: "Cơ bản" }, { value: "Trung bình", label: "Trung bình" }, { value: "Nâng cao", label: "Nâng cao" }]} />
+        <Select label="Sắp xếp" value={sort} onChange={setSort} options={[{ value: "due", label: "Hạn gần nhất" }, { value: "created", label: "Ngày tạo mới" }, { value: "score", label: "Điểm cao nhất" }, { value: "recent", label: "Lần làm gần nhất" }]} />
       </Card>
 
       {filtered.length === 0 ? <Card className="border-dashed p-10 text-center"><p className="font-semibold text-navy">Không có bài tập phù hợp</p><p className="mt-1 text-xs text-text-faint">Đổi bộ lọc hoặc từ khóa để xem các bài khác.</p></Card> : <div className="grid gap-3 lg:grid-cols-2">

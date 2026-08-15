@@ -501,7 +501,6 @@ export function CodeProblemForm() {
                 <div className="flex items-center gap-2">
                   <Select
                     label="Hiển thị"
-                    shape="box"
                     value={testCase.visibility}
                     onChange={(v) =>
                       updateTestCase(testCase.id, {

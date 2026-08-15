@@ -5,8 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Button, ManagePage, SegmentedTabs, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
 import { ApiClientError } from "@codementor/api-client";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import {
+  DetailRow,
+  DetailSection,
+  DrawerDetail,
+} from "@/components/page/drawer-detail";
+import { PageBody } from "@/components/page/page-body";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
 import {
@@ -150,21 +158,7 @@ export default function ExercisesPage() {
   };
 
   return (
-    <>
-      <div className="mb-4">
-        <SegmentedTabs
-          onChange={(value) => {
-            setTab(value as Tab);
-            setStatus("");
-          }}
-          options={[
-            { value: "mine", label: "Bài của tôi" },
-            { value: "bank", label: "Kho bài chung" },
-          ]}
-          value={tab}
-        />
-      </div>
-
+    <PageBody>
       <ManagePage
         action={
           <Button onClick={() => void create()} type="button">
@@ -174,11 +168,6 @@ export default function ExercisesPage() {
         }
         activeFilterCount={[difficulty, status].filter(Boolean).length}
         columns={columns}
-        description={
-          tab === "mine"
-            ? "Bài code bạn là tác giả, mọi trạng thái."
-            : "Bài đã công khai của mọi giảng viên. Dùng nguyên bản hoặc fork để sửa."
-        }
         drawer={{
           title: (row) => row.title,
           description: (row) =>
@@ -237,36 +226,117 @@ export default function ExercisesPage() {
         rows={rows}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
+        tabs={{
+          options: [
+            { value: "mine", label: "Bài của tôi" },
+            { value: "bank", label: "Kho bài chung" },
+          ],
+          value: tab,
+          onChange: (value) => {
+            setTab(value as Tab);
+            setStatus("");
+          },
+        }}
         title="Bài code"
       />
-    </>
+    </PageBody>
   );
 }
 
 function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
   return (
-    <dl className="grid gap-3 text-sm">
-      <Row label="Slug" value={row.slug} />
-      <Row label="Độ khó" value={DIFFICULTY_LABELS[row.difficulty]} />
-      <Row label="Trạng thái" value={STATUS_LABELS[row.status]} />
-      <Row label="Tác giả" value={row.authorName ?? "—"} />
-      <Row
-        label="Cập nhật"
-        value={dateFormat.format(new Date(row.updatedAt))}
-      />
-      {row.forkedFromId && <Row label="Nguồn gốc" value="Fork từ một bài khác" />}
-    </dl>
+    <DrawerDetail dependency={row.id} load={() => api.exercises.get(row.id)}>
+      {(exercise) => {
+        const languages = exercise.content?.languages ?? [];
+        const publicCases = (exercise.content?.testCases ?? []).filter(
+          (testCase) => testCase.visibility === "public",
+        );
+        const hiddenCount = (exercise.content?.testCases ?? []).length - publicCases.length;
+
+        return (
+          <>
+            <dl className="grid gap-3 text-sm">
+              <DetailRow label="Slug" value={exercise.slug} />
+              <DetailRow label="Độ khó" value={DIFFICULTY_LABELS[exercise.difficulty]} />
+              <DetailRow label="Trạng thái" value={STATUS_LABELS[exercise.status]} />
+              <DetailRow label="Tác giả" value={row.authorName ?? "—"} />
+              <DetailRow
+                label="Giới hạn"
+                value={`${exercise.timeLimitMs} ms · ${Math.round(exercise.memoryLimitKb / 1024)} MB`}
+              />
+              <DetailRow
+                label="Cập nhật"
+                value={dateFormat.format(new Date(exercise.updatedAt))}
+              />
+              {exercise.forkedFromId && (
+                <DetailRow label="Nguồn gốc" value="Fork từ một bài khác" />
+              )}
+            </dl>
+
+            <DetailSection title="Đề bài">
+              {exercise.content?.statement ? (
+                <div className="prose prose-sm max-w-none text-sm">
+                  <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
+                    {exercise.content.statement}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Bài này chưa có đề.</p>
+              )}
+            </DetailSection>
+
+            <DetailSection title="Ngôn ngữ hỗ trợ">
+              {languages.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chưa khai báo ngôn ngữ nào.</p>
+              ) : (
+                <ul className="flex flex-wrap gap-1.5">
+                  {languages.map((language) => (
+                    <li
+                      className="rounded-md border px-2 py-1 text-xs font-medium"
+                      key={language.id}
+                    >
+                      {language.label}
+                      {/* Missing a reference solution is what blocks submission, so it is
+                          worth seeing here rather than only on the submit error. */}
+                      {!language.referenceSolution && (
+                        <span className="ml-1.5 text-warning">chưa có lời giải</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </DetailSection>
+
+            <DetailSection title={`Test case công khai (${publicCases.length})`}>
+              {publicCases.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Chưa có case công khai nào — học viên sẽ không thấy ví dụ.
+                </p>
+              ) : (
+                <ul className="grid gap-2">
+                  {publicCases.map((testCase) => (
+                    <li className="rounded-md border p-3 font-mono text-xs" key={testCase.order}>
+                      <p className="font-sans text-muted-foreground">Đầu vào</p>
+                      <pre className="mt-1 whitespace-pre-wrap">{testCase.input || "(rỗng)"}</pre>
+                      <p className="mt-2 font-sans text-muted-foreground">Đầu ra</p>
+                      <pre className="mt-1 whitespace-pre-wrap">{testCase.expected || "(rỗng)"}</pre>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {hiddenCount > 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Thêm {hiddenCount} case ẩn không hiện ở đây.
+                </p>
+              )}
+            </DetailSection>
+          </>
+        );
+      }}
+    </DrawerDetail>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-3">
-      <dt className="w-28 shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 flex-1 break-words">{value}</dd>
-    </div>
-  );
-}
 
 function ExerciseDrawerActions({
   row,

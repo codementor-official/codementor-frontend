@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookOpen, Braces, Route } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { PageHeader } from "@codementor/ui";
+import { PageBody } from "@/components/page/page-body";
 
 /**
  * Deliberately not a metrics wall. There is nothing to count until a lecturer owns
@@ -19,7 +20,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
 
   return (
-    <>
+    <PageBody>
       <PageHeader
         description={`Đăng nhập với ${user?.email ?? ""}.`}
         title={`Chào ${user?.displayName ?? ""}`}
@@ -38,6 +39,6 @@ export default function DashboardPage() {
           </li>
         ))}
       </ul>
-    </>
+    </PageBody>
   );
 }

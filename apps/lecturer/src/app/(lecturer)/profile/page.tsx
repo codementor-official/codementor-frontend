@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { keycloakConfig } from "@/lib/env";
 import { useAuth } from "@/providers/auth-provider";
 import { PageHeader } from "@codementor/ui";
+import { PageBody } from "@/components/page/page-body";
 
 export default function ProfilePage() {
   const { refreshUser } = useAuth();
@@ -26,7 +27,7 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <>
+    <PageBody>
       <PageHeader
         description="Email, mật khẩu và đăng nhập do CodeMentor ID quản lý."
         title="Hồ sơ"
@@ -69,6 +70,6 @@ export default function ProfilePage() {
           </p>
         </>
       )}
-    </>
+    </PageBody>
   );
 }

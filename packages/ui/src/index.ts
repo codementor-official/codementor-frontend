@@ -14,3 +14,8 @@ export { StatusBadge } from "./status-badge";
 export type { DashboardShellProps } from "./dashboard-shell";
 export type { ManagePageProps } from "./manage-page";
 export type { SegmentedTabOption } from "./segmented-tabs";
+export { Pane } from "./workspace/pane";
+export { ResizeHandle } from "./workspace/resize-handle";
+export { TabBar } from "./workspace/tab-bar";
+export { useWorkspace, WorkspaceProvider } from "./workspace/workspace-context";
+export type { PaneId, PanesState, PaneState, TabKind, TabMeta, TabMetaMap } from "./workspace/types";

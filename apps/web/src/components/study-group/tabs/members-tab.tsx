@@ -217,7 +217,6 @@ export function MembersTab({
         filters={
           <Select
             label="Vai trò"
-            shape="box"
             value={role}
             onChange={setRole}
             options={[

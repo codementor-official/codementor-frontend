@@ -118,6 +118,7 @@ export default function ExplorePage() {
       />
 
       <FilterBar
+        className="mb-5"
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Tìm khóa học, bài luyện tập, chủ đề..."
