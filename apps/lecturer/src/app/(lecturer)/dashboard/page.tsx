@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Braces, GraduationCap, Route } from "lucide-react";
+import { BookOpen, Braces, Route } from "lucide-react";
 import { PageHeader } from "@/components/page/page-header";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -10,10 +10,9 @@ import { useAuth } from "@/providers/auth-provider";
  * content, and a dashboard full of zeroes teaches people to skip the page.
  */
 const shortcuts = [
-  { href: "/courses", icon: BookOpen, label: "Khóa học" },
-  { href: "/lessons", icon: GraduationCap, label: "Bài học" },
-  { href: "/exercises", icon: Braces, label: "Bài code" },
   { href: "/roadmaps", icon: Route, label: "Lộ trình" },
+  { href: "/courses", icon: BookOpen, label: "Khóa học" },
+  { href: "/exercises", icon: Braces, label: "Bài code" },
 ];
 
 export default function DashboardPage() {
@@ -26,7 +25,7 @@ export default function DashboardPage() {
         title={`Chào ${user?.displayName ?? ""}`}
       />
 
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {shortcuts.map(({ href, icon: Icon, label }) => (
           <li key={href}>
             <Link

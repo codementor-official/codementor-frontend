@@ -1,4 +1,4 @@
-import { BookOpen, Braces, GraduationCap, LayoutDashboard, Route, User } from "lucide-react";
+import { BookOpen, Braces, LayoutDashboard, Route, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface LecturerNavItem {
@@ -23,10 +23,12 @@ export const lecturerNavigation: LecturerNavGroup[] = [
     label: "Giảng dạy",
     items: [
       { href: "/dashboard", icon: LayoutDashboard, label: "Bảng điều khiển" },
-      { href: "/courses", icon: BookOpen, label: "Khóa học" },
-      { href: "/lessons", icon: GraduationCap, label: "Bài học" },
-      { href: "/exercises", icon: Braces, label: "Bài code" },
+      // Thứ tự đi từ ngoài vào trong: lộ trình chứa khóa học, khóa học chứa bài.
+      // Không có mục "Bài học" — `lessons` bắt buộc thuộc một chương nên không tồn tại
+      // ngoài khóa học; nó được soạn trong studio khóa học, không phải một màn riêng.
       { href: "/roadmaps", icon: Route, label: "Lộ trình" },
+      { href: "/courses", icon: BookOpen, label: "Khóa học" },
+      { href: "/exercises", icon: Braces, label: "Bài code" },
     ],
   },
   {
