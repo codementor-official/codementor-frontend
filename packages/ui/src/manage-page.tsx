@@ -2,14 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
-import {
-  DataTable,
-  FilterBar,
-  SideDrawer,
-  TablePagination,
-  useDataTable,
-} from "@codementor/ui";
-import { PageHeader } from "@/components/page/page-header";
+import { DataTable, TablePagination, useDataTable } from "./data-table";
+import { FilterBar } from "./filter-bar";
+import { PageHeader } from "./page-header";
+import { SideDrawer } from "./side-drawer";
 
 export interface ManagePageProps<TData> {
   title: string;

@@ -5,9 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Button, SegmentedTabs, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, SegmentedTabs, Select, StatusBadge } from "@codementor/ui";
 import { ApiClientError } from "@codementor/api-client";
-import { ManagePage } from "@/components/manage/manage-page";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
 import {

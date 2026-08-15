@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Play, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, StatusBadge } from "@codementor/ui";
-import { PageHeader } from "@/components/page/page-header";
+import { Button, PageHeader, StatusBadge } from "@codementor/ui";
 import { CodeProblemForm, type ExerciseDraft } from "@/features/exercises/code-problem-form";
 import {
   STATUS_LABELS,

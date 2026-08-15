@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@codementor/ui"],
+  // Workspace packages ship raw TypeScript from src/index.ts.
+  transpilePackages: [
+    "@codementor/ui",
+    "@codementor/auth",
+    "@codementor/api-client",
+    "@codementor/types",
+    "@codementor/utils",
+  ],
 };
 
 export default nextConfig;

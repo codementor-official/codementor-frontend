@@ -69,9 +69,24 @@ importers:
 
   apps/admin:
     dependencies:
+      '@codementor/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@codementor/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@codementor/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@codementor/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@codementor/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@tanstack/react-table':
+        specifier: ^8.21.3
+        version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       lucide-react:
         specifier: ^1.28.0
         version: 1.28.0(react@19.2.4)

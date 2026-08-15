@@ -5,9 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, Card, SegmentedTabs, StatusBadge } from "@codementor/ui";
+import { Button, Card, PageHeader, SegmentedTabs, StatusBadge } from "@codementor/ui";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
-import { PageHeader } from "@/components/page/page-header";
 import { CurriculumTree, type Selection } from "@/features/courses/curriculum-tree";
 import { Inspector } from "@/features/courses/inspector";
 import {

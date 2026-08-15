@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { BookOpen, Braces, Route } from "lucide-react";
-import { PageHeader } from "@/components/page/page-header";
 import { useAuth } from "@/providers/auth-provider";
+import { PageHeader } from "@codementor/ui";
 
 /**
  * Deliberately not a metrics wall. There is nothing to count until a lecturer owns

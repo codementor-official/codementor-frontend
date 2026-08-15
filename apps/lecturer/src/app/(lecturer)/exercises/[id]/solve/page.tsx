@@ -6,9 +6,8 @@ import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import { Button, SegmentedTabs, StatusBadge } from "@codementor/ui";
+import { Button, PageHeader, SegmentedTabs, StatusBadge } from "@codementor/ui";
 import { CodeEditor } from "@codementor/editor";
-import { PageHeader } from "@/components/page/page-header";
 import {
   DIFFICULTY_LABELS,
   STATUS_LABELS,

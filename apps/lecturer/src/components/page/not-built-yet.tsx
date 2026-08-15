@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/page/empty-state";
-import { PageHeader } from "@/components/page/page-header";
+import { PageHeader } from "@codementor/ui";
 
 interface NotBuiltYetProps {
   title: string;
