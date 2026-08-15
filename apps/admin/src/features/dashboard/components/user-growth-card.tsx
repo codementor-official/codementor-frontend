@@ -11,7 +11,7 @@ import {
   YAxis,
   ComposedChart,
 } from "recharts";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@codementor/ui";
 import { userGrowthData } from "@/features/dashboard/data/dashboard.mock";
 
 const tooltipStyle = {

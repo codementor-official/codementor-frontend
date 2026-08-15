@@ -1,6 +1,5 @@
 import { ArrowUpRight, Database, Filter, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Button, Card } from "@codementor/ui";
 import type { AdminSectionDefinition } from "@/features/admin-section/data/admin-sections";
 
 export function AdminSectionPage({ section }: { section: AdminSectionDefinition }) {

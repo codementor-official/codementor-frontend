@@ -1,6 +1,5 @@
 import { Activity, ArrowUpRight, Server } from "lucide-react";
-import { Card, CardHeader } from "@/components/ui/card";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { Card, CardHeader, StatusBadge } from "@codementor/ui";
 import { recentActivity, systemHealth } from "@/features/dashboard/data/dashboard.mock";
 
 const activityTones = {

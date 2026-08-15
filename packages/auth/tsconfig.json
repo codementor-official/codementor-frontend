@@ -1,7 +1,10 @@
 {
   "extends": "../typescript-config/base.json",
   "compilerOptions": {
-    "lib": ["esnext"],
+    // Browser lib is required, not incidental: the OIDC authorization code flow with
+    // PKCE runs in the browser, and the code verifier has to survive a redirect in
+    // sessionStorage. There is no server-side variant of this package.
+    "lib": ["dom", "esnext"],
     "rootDir": "src"
   },
   "include": ["src/**/*.ts"]
