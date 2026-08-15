@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { Flame, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
 import { PERMISSION_LABELS } from "@/lib/study-group/group-detail-meta";
 import { ROLE_LABEL } from "@/lib/study-group/study-group-stats";
 import {
@@ -15,6 +14,7 @@ import {
   type PermissionKey,
   type RolePermissions,
 } from "@/types/study-group-detail";
+import { Modal } from "@codementor/ui";
 
 function PermissionToggle({ on, onToggle, label, disabled }: { on: boolean; onToggle: () => void; label: string; disabled: boolean }) {
   return (

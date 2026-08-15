@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
 import { ROLE_LABEL } from "@/lib/study-group/study-group-stats";
 import type { GroupExercise, GroupMember } from "@/types/study-group-detail";
+import { Modal } from "@codementor/ui";
 
 const MEMBERS_PER_PAGE = 5;
 

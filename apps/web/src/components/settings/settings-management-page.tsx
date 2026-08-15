@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
 import {
@@ -21,6 +20,7 @@ import {
   type LearningPreference,
   type StudyDay,
 } from "@/types/learning-preference";
+import { Input } from "@codementor/ui";
 
 const FIELDS = [
   ["frontend", "Frontend"],

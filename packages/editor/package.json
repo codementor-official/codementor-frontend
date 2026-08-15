@@ -1,0 +1,36 @@
+{
+  "name": "@codementor/editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@codementor/ui": "workspace:*",
+    "@monaco-editor/react": "^4.7.0",
+    "@tiptap/core": "3.29.2",
+    "@tiptap/extension-code-block-lowlight": "^3.29.2",
+    "@tiptap/extension-image": "^3.29.2",
+    "@tiptap/extension-text-align": "^3.29.2",
+    "@tiptap/extension-youtube": "^3.29.2",
+    "@tiptap/extensions": "^3.29.2",
+    "@tiptap/pm": "3.29.2",
+    "@tiptap/react": "^3.29.2",
+    "@tiptap/starter-kit": "^3.29.2",
+    "lowlight": "^3.3.0",
+    "lucide-react": "^1.28.0",
+    "react-dropzone": "^19.1.1"
+  },
+  "peerDependencies": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "next": "16.2.12"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}

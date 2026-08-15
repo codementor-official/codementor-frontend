@@ -5,10 +5,9 @@ import { ArrowRight, CheckCircle2, Clock3, RotateCcw, Search, XCircle } from "lu
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
-import { SideDrawer } from "@/components/ui/side-drawer";
 import { formatDueDate, isOverdue } from "@/lib/study-group/group-detail-meta";
 import type { Assignment, GroupExercise } from "@/types/study-group-detail";
+import { Select, SideDrawer } from "@codementor/ui";
 
 type MemberAssignmentState = "todo" | "inprogress" | "passed" | "failed" | "late" | "retry" | "locked";
 

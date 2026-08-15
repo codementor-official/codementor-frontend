@@ -4,7 +4,7 @@ import { useState } from "react";
 import { KeyRound, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Input } from "@codementor/ui";
 
 type Panel = "join" | "create";
 

@@ -2,8 +2,8 @@
 
 import { BookOpen, CircleCheck, Clock, Play, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
 import type { AuthoredProblem } from "@/types/authored-problem";
+import { Modal } from "@codementor/ui";
 
 const DIFFICULTY_LABEL = { easy: "Cơ bản", medium: "Trung bình", hard: "Nâng cao" } as const;
 

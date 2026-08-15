@@ -5,12 +5,11 @@ import Link from "next/link";
 import { Bookmark, CalendarDays, Check, CheckCircle2, ChevronRight, Circle, Flame, Layers3, Search, Sparkles, Target, Trophy } from "lucide-react";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import { Card } from "@/components/ui/card";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { Select } from "@/components/ui/select";
 import { practiceItems, type PracticeItem, type PracticeStatus, type PracticeTopic } from "@/data/practice-items";
 import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
 import { personalizedPractice, practiceRecommendationReason } from "@/lib/practice/practice-recommendation";
 import type { Difficulty } from "@/components/ui/badge";
+import { FilterBar, Select } from "@codementor/ui";
 
 type DifficultyFilter = Difficulty | "all";
 type TopicFilter = PracticeTopic | "all";

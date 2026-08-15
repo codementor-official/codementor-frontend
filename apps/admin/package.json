@@ -13,6 +13,8 @@
     "@codementor/auth": "workspace:*",
     "@codementor/types": "workspace:*",
     "@codementor/ui": "workspace:*",
+    "@codementor/utils": "workspace:*",
+    "@tanstack/react-table": "^8.21.3",
     "jose": "^6.2.8",
     "lucide-react": "^1.28.0",
     "next": "16.2.12",

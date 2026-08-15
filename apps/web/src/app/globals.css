@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Shared tokens and overlay motion for the components that live in @codementor/ui.
+ * Web keeps its own palette below; this only adds the names those components use. */
+@import "@codementor/ui/theme.css";
+@source "../../../../packages/ui/src";
+@source "../../../../packages/editor/src";
 
 /* Class-based, not `prefers-color-scheme`: the theme picker offers an explicit
  * light/dark override, which a media query alone can't express. `useThemeStore`
@@ -231,22 +236,6 @@ html {
 
 /* Overlay motion. Modals and drawers were mounting at full opacity with no movement,
  * which reads as a flicker rather than something arriving. */
-@keyframes overlay-in {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes modal-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-}
-@keyframes drawer-in-right {
-  from {
-    transform: translateX(100%);
-  }
-}
 
 @keyframes menu-in {
   from {
@@ -276,15 +265,6 @@ html {
 @utility animate-menu-in {
   animation: menu-in var(--duration-fast) var(--ease-standard);
 }
-@utility animate-overlay-in {
-  animation: overlay-in var(--duration-base) var(--ease-standard);
-}
-@utility animate-modal-in {
-  animation: modal-in var(--duration-base) var(--ease-standard);
-}
-@utility animate-drawer-in {
-  animation: drawer-in-right var(--duration-base) var(--ease-standard);
-}
 
 /* Motion is decoration here — every one of these animations is safe to drop entirely. */
 @media (prefers-reduced-motion: reduce) {
@@ -297,9 +277,6 @@ html {
   .theme-transition *::after {
     transition: none !important;
   }
-  .animate-overlay-in,
-  .animate-modal-in,
-  .animate-drawer-in,
   .animate-menu-in {
     animation: none;
   }

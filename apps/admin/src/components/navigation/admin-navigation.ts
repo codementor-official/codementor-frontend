@@ -11,6 +11,7 @@ import {
   Route,
   ScrollText,
   Settings,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -30,6 +31,10 @@ export const adminNavigation: AdminNavGroup[] = [
   {
     label: "General",
     items: [{ href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }],
+  },
+  {
+    label: "Moderation",
+    items: [{ href: "/moderation", icon: ShieldCheck, label: "Kiểm duyệt" }],
   },
   {
     label: "Management",

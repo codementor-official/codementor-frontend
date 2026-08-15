@@ -5,9 +5,9 @@ import ReactMarkdown from "react-markdown";
 import { ExternalLink, FileText, Play, Table2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
 import { DOCUMENT_STATUS_META, DOCUMENT_VERDICT_META } from "@/lib/study-group/group-detail-meta";
 import type { GroupDocument } from "@/types/study-group-detail";
+import { Modal } from "@codementor/ui";
 
 /** Formats that carry readable text we can actually render. */
 const TEXT_FORMATS = new Set(["Markdown", "PDF", "Slide", "DOCX"]);

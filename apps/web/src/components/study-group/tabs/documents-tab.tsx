@@ -5,25 +5,16 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Check, Download, Eye, EyeOff, Pencil, Sparkles, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Select } from "@/components/ui/select";
-import {
-  DataTable,
-  TableCheckbox,
-  TablePagination,
-  TableToolbar,
-  useDataTable,
-} from "@/components/ui/data-table";
 import { DocumentPreviewModal } from "@/components/study-group/document-preview-modal";
 import { UploadDocumentsModal } from "@/components/study-group/upload-documents-modal";
 import { RowActionMenu } from "@/components/ui/row-action-menu";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
 import {
   DOCUMENT_STATUS_META,
   DOCUMENT_VERDICT_META,
   visibleDocuments,
 } from "@/lib/study-group/group-detail-meta";
 import type { GroupDocument } from "@/types/study-group-detail";
+import { DataTable, Input, Modal, Select, TableCheckbox, TablePagination, TableToolbar, useDataTable } from "@codementor/ui";
 
 /** Which bulk action the confirm dialog is currently gating. */
 type PendingAction = { kind: "delete" | "hide"; docs: GroupDocument[] } | null;

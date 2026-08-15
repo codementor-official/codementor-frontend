@@ -35,7 +35,7 @@ export function Select({
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full appearance-none border border-border bg-surface pr-8 text-xs font-semibold text-navy outline-none focus:border-navy sm:w-auto ${shapeClasses} ${className}`}
+        className={`w-full appearance-none border border-border bg-card pr-8 text-xs font-semibold text-foreground outline-none focus:border-foreground sm:w-auto ${shapeClasses} ${className}`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -43,7 +43,7 @@ export function Select({
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-text-faint" />
+      <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
     </div>
   );
 }

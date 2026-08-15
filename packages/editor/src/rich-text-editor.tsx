@@ -32,13 +32,10 @@ import {
   // lucide-react v1 dropped brand marks, so the YouTube action wears a generic video icon.
   Video,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
-import { Select } from "@/components/ui/select";
 import { MediaInsertModal, type MediaKind } from "./media-insert-modal";
 import { FileVideo } from "./video-node";
 import "highlight.js/styles/github-dark.css";
+import { Button, Input, Modal, Select } from "@codementor/ui";
 
 /** `common` is lowlight's ~37-language bundle; these are the ones this platform teaches,
  * surfaced in the picker so the list stays readable. Anything else still highlights if
@@ -83,7 +80,7 @@ function ToolbarButton({
       aria-pressed={active}
       title={label}
       className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-        active ? "bg-navy text-on-ink" : "text-text-muted hover:bg-bg hover:text-navy"
+        active ? "bg-foreground text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
       }`}
     >
       {children}
@@ -108,7 +105,7 @@ function Toolbar({
   const inCodeBlock = editor.isActive("codeBlock");
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-surface p-1.5">
+    <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-card p-1.5">
       {([1, 2, 3] as const).map((level) => {
         const Icon = { 1: Heading1, 2: Heading2, 3: Heading3 }[level];
         return (
@@ -330,7 +327,7 @@ export function RichTextEditor({
 
   if (!editor) {
     return (
-      <div className="flex h-96 items-center justify-center rounded-md border border-border text-xs text-text-faint">
+      <div className="flex h-96 items-center justify-center rounded-md border border-border text-xs text-muted-foreground">
         Đang tải trình soạn thảo...
       </div>
     );
@@ -340,13 +337,13 @@ export function RichTextEditor({
     <>
       <div className="overflow-hidden rounded-md border border-border">
         <Toolbar editor={editor} onInsertLink={openLink} onInsertMedia={setMediaKind} />
-        <div className="bg-surface">
+        <div className="bg-card">
           <EditorContent editor={editor} />
         </div>
       </div>
 
       {localMediaWarning && (
-        <p className="mt-2 rounded-md border border-border bg-bg px-3 py-2 text-xs text-navy">
+        <p className="mt-2 rounded-md border border-border bg-muted px-3 py-2 text-xs text-foreground">
           Tệp từ máy chỉ hiển thị tạm trong phiên soạn thảo này — chưa có kho lưu trữ nên nội
           dung sẽ mất khi tải lại trang.
         </p>

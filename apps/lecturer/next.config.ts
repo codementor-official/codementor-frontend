@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     "@codementor/api-client",
     "@codementor/types",
     "@codementor/utils",
+    "@codementor/editor",
   ],
 };
 

@@ -3,7 +3,7 @@
 import { type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
+import { Modal } from "@codementor/ui";
 
 /**
  * Yes/no gate for a destructive or hard-to-undo action. The message must name the

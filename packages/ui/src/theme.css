@@ -67,3 +67,43 @@
   --sidebar-border: #2e2e33;
   color-scheme: dark;
 }
+
+/* Motion for the overlay surfaces in this package (Modal, SideDrawer). Defined here
+ * rather than per application, because a component that animates only in the app that
+ * happened to declare the keyframes is a component that breaks on its second consumer.
+ * Values match apps/web, which is where these surfaces came from. */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes drawer-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@utility animate-overlay-in {
+  animation: overlay-in var(--duration-base, 180ms) var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+@utility animate-modal-in {
+  animation: modal-in var(--duration-base, 180ms) var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+@utility animate-drawer-in {
+  animation: drawer-in-right var(--duration-base, 180ms) var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Motion here is decoration; dropping it entirely is safe. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-overlay-in,
+  .animate-modal-in,
+  .animate-drawer-in {
+    animation: none;
+  }
+}

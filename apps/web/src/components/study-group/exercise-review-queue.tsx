@@ -5,9 +5,9 @@ import { Check, ChevronDown, ChevronUp, ClipboardCheck, FileWarning, Play, Send,
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SideDrawer } from "@/components/ui/side-drawer";
 import { EXERCISE_STATUS_META } from "@/lib/study-group/group-detail-meta";
 import type { GroupExercise } from "@/types/study-group-detail";
+import { SideDrawer } from "@codementor/ui";
 
 type ReviewDecision = "published" | "changes_requested" | "rejected";
 

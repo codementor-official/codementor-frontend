@@ -6,16 +6,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Code2, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
-import { SideDrawer } from "@/components/ui/side-drawer";
-import {
-  DataTable,
-  TablePagination,
-  TableToolbar,
-  useDataTable,
-} from "@/components/ui/data-table";
 import { submissionHistory } from "@/data/submission-history";
 import type { SubmissionHistoryItem } from "@/types/submission";
+import { DataTable, Select, SideDrawer, TablePagination, TableToolbar, useDataTable } from "@codementor/ui";
 
 const RESULT_LABEL: Record<SubmissionHistoryItem["result"], string> = {
   "Đạt": "Đạt",

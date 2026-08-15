@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RowActionMenu } from "@/components/ui/row-action-menu";
-import { SideDrawer } from "@/components/ui/side-drawer";
 import { EXERCISE_STATUS_META, formatDueDate } from "@/lib/study-group/group-detail-meta";
 import { downloadCsv } from "@/lib/download-csv";
 import type { Assignment, GroupExercise, GroupMember } from "@/types/study-group-detail";
+import { SideDrawer } from "@codementor/ui";
 
 type ExerciseWithAssignments = { exercise: GroupExercise; assignments: Assignment[] };
 

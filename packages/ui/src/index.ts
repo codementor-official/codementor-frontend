@@ -1,5 +1,16 @@
 export { Button } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
 export { DashboardShell } from "./dashboard-shell";
+export { DataTable, TableCheckbox, TablePagination, TableToolbar, useDataTable } from "./data-table";
+export { FilterBar } from "./filter-bar";
+export { Input } from "./input";
+export { ManagePage } from "./manage-page";
+export { Modal } from "./modal";
+export { PageHeader } from "./page-header";
+export { SegmentedTabs } from "./segmented-tabs";
+export { Select } from "./select";
+export { SideDrawer } from "./side-drawer";
 export { StatusBadge } from "./status-badge";
 export type { DashboardShellProps } from "./dashboard-shell";
+export type { ManagePageProps } from "./manage-page";
+export type { SegmentedTabOption } from "./segmented-tabs";

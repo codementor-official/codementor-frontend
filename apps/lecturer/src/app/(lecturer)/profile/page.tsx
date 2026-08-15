@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { accountConsoleUrl } from "@codementor/auth";
-import { PageHeader } from "@/components/page/page-header";
 import { ProfileForm } from "@/features/profile/profile-form";
 import type { UserProfile } from "@/features/profile/types";
 import { api } from "@/lib/api";
 import { keycloakConfig } from "@/lib/env";
 import { useAuth } from "@/providers/auth-provider";
+import { PageHeader } from "@codementor/ui";
 
 export default function ProfilePage() {
   const { refreshUser } = useAuth();

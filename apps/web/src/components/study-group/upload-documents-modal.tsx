@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { useDropzone, type FileRejection } from "react-dropzone";
 import { FileText, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
+import { Modal } from "@codementor/ui";
 
 export const MAX_FILES = 5;
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;

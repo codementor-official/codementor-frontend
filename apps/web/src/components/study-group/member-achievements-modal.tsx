@@ -1,7 +1,7 @@
 "use client";
 
-import { Modal } from "@/components/ui/modal";
 import type { GroupMember } from "@/types/study-group-detail";
+import { Modal } from "@codementor/ui";
 
 export function MemberAchievementsModal({
   member,

@@ -3,10 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone, type FileRejection } from "react-dropzone";
 import { Clipboard, FolderOpen, Link2, UploadCloud } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
-import { SegmentedTabs } from "@/components/ui/segmented-tabs";
+import { Button, Input, Modal, SegmentedTabs } from "@codementor/ui";
 
 export type MediaKind = "image" | "video";
 
@@ -170,22 +167,22 @@ export function MediaInsertModal({
             <div
               {...getRootProps()}
               className={`flex flex-col items-center gap-2 rounded-md border border-dashed px-4 py-8 text-center transition-colors ${
-                isDragActive ? "border-primary bg-primary-tint" : "border-border bg-bg"
+                isDragActive ? "border-primary bg-primary/10" : "border-border bg-muted"
               }`}
             >
               <input {...getInputProps()} />
-              <UploadCloud className="h-6 w-6 text-text-faint" />
-              <p className="text-sm font-semibold text-navy">
+              <UploadCloud className="h-6 w-6 text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground">
                 {file ? file.name : "Kéo thả tệp vào đây"}
               </p>
-              <p className="text-xs text-text-muted">
+              <p className="text-xs text-muted-foreground">
                 {file ? formatSize(file.size) : "hoặc dán bằng Ctrl+V · tối đa 20 MB"}
               </p>
               <Button size="sm" variant="outline" onClick={openPicker} className="mt-1">
                 <FolderOpen className="h-3.5 w-3.5" /> Chọn tệp từ máy
               </Button>
             </div>
-            <p className="flex items-start gap-1.5 text-xs text-text-faint">
+            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
               <Clipboard className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Chưa có kho lưu trữ tệp — tệp chỉ hiển thị tạm trong phiên soạn thảo này. Dùng
               liên kết ngoài nếu cần lưu lại.
@@ -201,7 +198,7 @@ export function MediaInsertModal({
               onKeyDown={(e) => e.key === "Enter" && confirm()}
               placeholder={kind ? COPY[kind].placeholder : ""}
             />
-            <p className="text-xs text-text-faint">{kind ? COPY[kind].urlLabel : ""}</p>
+            <p className="text-xs text-muted-foreground">{kind ? COPY[kind].urlLabel : ""}</p>
           </>
         )}
 

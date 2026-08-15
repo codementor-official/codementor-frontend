@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Crown, SearchX, UsersRound, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { Select } from "@/components/ui/select";
 import { createGroupDraft, findGroupByCode } from "@/lib/study-group/study-group-service";
 import {
   DEFAULT_STUDY_GROUP_FILTERS,
@@ -21,6 +19,7 @@ import { isOwned, summarizeGroups } from "@/lib/study-group/study-group-stats";
 import { StudyGroupActions } from "./study-group-actions";
 import { StudyGroupCard } from "./study-group-card";
 import type { StudyGroup } from "@/types/study-group";
+import { FilterBar, Select } from "@codementor/ui";
 
 function GroupSection({
   icon: Icon,
