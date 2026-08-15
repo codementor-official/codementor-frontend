@@ -25,14 +25,14 @@ export function LecturerShell({ children }: Readonly<{ children: ReactNode }>) {
             onClick={() => setMobileOpen(false)}
             type="button"
           />
-          <div className="relative h-full w-64 shadow-[8px_0_30px_rgba(0,0,0,0.2)]">
+          <div className="relative h-full w-56 shadow-[8px_0_30px_rgba(0,0,0,0.2)]">
             <LecturerSidebar collapsed={false} mobile onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
       <div
-        className={`flex min-h-0 flex-1 flex-col ${collapsed ? "md:pl-18" : "md:pl-64"}`}
+        className={`flex min-h-0 flex-1 flex-col ${collapsed ? "md:pl-14" : "md:pl-56"}`}
       >
         <LecturerTopbar
           onDesktopToggle={() => setCollapsed((value) => !value)}

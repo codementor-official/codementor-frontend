@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Save, Send, Undo2 } from "lucide-react";
+import { Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, Card, PageHeader, SegmentedTabs, StatusBadge } from "@codementor/ui";
+import { Group, Panel } from "react-resizable-panels";
+import { Button, Card, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
-import { CoursePicker, type PickedCourse } from "@/features/roadmaps/course-picker";
+import { CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
 import type { CourseListItem } from "@/features/courses/types";
 import { api } from "@/lib/api";
 import {
@@ -124,32 +125,25 @@ export default function RoadmapStudioPage() {
 
   if (error && !roadmap) {
     return (
-      <>
+      <div className="px-4 py-4 sm:px-5">
         <PageHeader title="Studio lộ trình" />
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
-      </>
+      </div>
     );
   }
 
-  if (!roadmap || !draft) return <p className="text-sm text-muted-foreground">Đang tải…</p>;
+  if (!roadmap || !draft) {
+    return <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">Đang tải…</p>;
+  }
 
   const locked = roadmap.status === "pending_review";
   const patch = (partial: Partial<Draft>) => setDraft({ ...draft, ...partial });
 
   return (
-    <>
-      <Link
-        className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        href="/roadmaps"
-      >
-        <ArrowLeft aria-hidden="true" className="size-4" />
-        Lộ trình
-      </Link>
-
-      <PageHeader
-        action={
+    <StudioShell
+      actions={
           <div className="flex flex-wrap items-center gap-2">
             {locked ? (
               <Button
@@ -211,66 +205,54 @@ export default function RoadmapStudioPage() {
               </>
             )}
           </div>
-        }
-        description={roadmap.slug}
-        title={draft.title || "Lộ trình chưa đặt tên"}
-      />
-
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      }
+      backHref="/roadmaps"
+      backLabel="Lộ trình"
+      error={error}
+      meta={`${roadmap.courses?.length ?? 0} khóa học · ${
+        roadmap.estimatedHours ? `${roadmap.estimatedHours} giờ` : "chưa có thời lượng"
+      }`}
+      notice={notice}
+      rejectionReason={roadmap.rejectionReason}
+      slug={roadmap.slug}
+      status={
         <StatusBadge tone={CONTENT_STATUS_TONES[roadmap.status]}>
           {CONTENT_STATUS_LABELS[roadmap.status]}
         </StatusBadge>
-        <span className="text-sm text-muted-foreground">
-          {roadmap.courses?.length ?? 0} khóa học ·{" "}
-          {roadmap.estimatedHours ? `${roadmap.estimatedHours} giờ` : "chưa có thời lượng"}
-        </span>
-        {locked && (
-          <span className="text-sm text-muted-foreground">
-            Đang chờ duyệt nên không sửa được.
-          </span>
-        )}
-      </div>
-
-      {roadmap.rejectionReason && (
-        <p className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          Lý do bị trả về: {roadmap.rejectionReason}
-        </p>
-      )}
-      {error && (
-        <p
-          className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p className="mb-4 text-sm text-muted-foreground" role="status">
-          {notice}
-        </p>
-      )}
-
-      <div className="mb-4">
-        <SegmentedTabs
-          onChange={(value) => setTab(value as "courses" | "metadata")}
-          options={[
-            { value: "courses", label: "Khóa học" },
-            { value: "metadata", label: "Thông tin lộ trình" },
-          ]}
-          value={tab}
-        />
-      </div>
-
+      }
+      tabs={{
+        options: [
+          { value: "courses", label: "Khóa học" },
+          { value: "metadata", label: "Thông tin lộ trình" },
+        ],
+        value: tab,
+        onChange: (value) => setTab(value as "courses" | "metadata"),
+      }}
+      title={draft.title || "Lộ trình chưa đặt tên"}
+    >
       {tab === "courses" ? (
-        <Card className="p-5">
-          <CoursePicker
-            available={available}
-            disabled={locked}
-            onChange={setPicked}
-            picked={picked}
-          />
-        </Card>
+        <Group orientation="horizontal" className="h-full">
+          <Panel id="picked" defaultSize="55%" minSize="25%" className="min-h-0">
+            <div className="h-full overflow-y-auto p-3">
+              <PickedCourses disabled={locked} onChange={setPicked} picked={picked} />
+            </div>
+          </Panel>
+
+          <ResizeHandle orientation="horizontal" />
+
+          <Panel id="library" defaultSize="45%" minSize="20%" className="min-h-0">
+            <div className="h-full overflow-y-auto p-3">
+              <CourseLibrary
+                available={available}
+                disabled={locked}
+                onChange={setPicked}
+                picked={picked}
+              />
+            </div>
+          </Panel>
+        </Group>
       ) : (
+        <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
         <Card className="p-5 lg:col-span-2">
           <h2 className="mb-4 text-sm font-semibold">Thông tin lộ trình</h2>
@@ -388,27 +370,27 @@ export default function RoadmapStudioPage() {
             </select>
           </Field>
         </Card>
-      </fieldset>
 
+          <div className="lg:col-span-3">
+            <Button
+              disabled={saving || roadmap.status === "published"}
+              onClick={() =>
+                run(async () => {
+                  await api.roadmaps.remove(id);
+                  router.push("/roadmaps");
+                  return roadmap;
+                }, "Đã xoá")
+              }
+              type="button"
+              variant="ghost"
+            >
+              Xoá lộ trình này
+            </Button>
+          </div>
+        </fieldset>
+        </StudioScroll>
       )}
-
-      <div className="mt-6 flex justify-end">
-        <Button
-          disabled={saving || roadmap.status === "published"}
-          onClick={() =>
-            run(async () => {
-              await api.roadmaps.remove(id);
-              router.push("/roadmaps");
-              return roadmap;
-            }, "Đã xoá")
-          }
-          type="button"
-          variant="ghost"
-        >
-          Xoá lộ trình này
-        </Button>
-      </div>
-    </>
+    </StudioShell>
   );
 }
 

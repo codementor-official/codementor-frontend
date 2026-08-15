@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Play, Save, Send, Undo2 } from "lucide-react";
+import Link from "next/link";
+import { Play, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, PageHeader, StatusBadge } from "@codementor/ui";
-import { CodeProblemForm, type ExerciseDraft } from "@/features/exercises/code-problem-form";
+import { Group, Panel } from "react-resizable-panels";
+import { Button, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { StudioShell } from "@/components/page/studio-shell";
+import { useResolvedTheme } from "@/lib/use-resolved-theme";
+import {
+  ExerciseBriefForm,
+  ExerciseCodeForm,
+  type ExerciseDraft,
+} from "@/features/exercises/code-problem-form";
 import {
   STATUS_LABELS,
   STATUS_TONES,
@@ -45,6 +52,7 @@ export default function ExerciseStudioPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const theme = useResolvedTheme();
 
   useEffect(() => {
     // Cờ hủy: rời trang trước khi request về thì response cũ không được ghi đè state
@@ -104,34 +112,27 @@ export default function ExerciseStudioPage() {
 
   if (error && !exercise) {
     return (
-      <>
+      <div className="px-4 py-4 sm:px-5">
         <PageHeader title="Studio bài code" />
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
-      </>
+      </div>
     );
   }
 
-  if (!exercise || !draft) return <p className="text-sm text-muted-foreground">Đang tải…</p>;
+  if (!exercise || !draft) {
+    return <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">Đang tải…</p>;
+  }
 
   const locked = exercise.status === "pending_review";
 
   return (
-    <>
-      <Link
-        className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        href="/exercises"
-      >
-        <ArrowLeft aria-hidden="true" className="size-4" />
-        Bài code
-      </Link>
-
-      <PageHeader
-        action={
+    <StudioShell
+      actions={
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium"
+              className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-muted"
               href={`/exercises/${id}/solve`}
             >
               <Play aria-hidden="true" className="size-4" />
@@ -164,67 +165,69 @@ export default function ExerciseStudioPage() {
               </>
             )}
           </div>
-        }
-        description={exercise.slug}
-        title={draft.title || "Bài tập chưa đặt tên"}
-      />
-
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      }
+      backHref="/exercises"
+      backLabel="Bài code"
+      error={error}
+      meta={`${exercise.timeLimitMs} ms · ${Math.round(exercise.memoryLimitKb / 1024)} MB${
+        locked ? " · đang chờ duyệt nên không sửa được" : ""
+      }`}
+      notice={notice}
+      rejectionReason={exercise.rejectionReason}
+      slug={exercise.slug}
+      status={
         <StatusBadge tone={STATUS_TONES[exercise.status as ExerciseStatus]}>
           {STATUS_LABELS[exercise.status as ExerciseStatus]}
         </StatusBadge>
-        {locked && (
-          <span className="text-sm text-muted-foreground">
-            Đang chờ duyệt nên không sửa được. Hủy gửi duyệt để sửa tiếp.
-          </span>
-        )}
-      </div>
+      }
+      title={draft.title || "Bài tập chưa đặt tên"}
+    >
+      {/* Bên trái là bài đọc ra sao, bên phải là bài chạy và chấm ra sao. Hai nửa dài
+          gần bằng nhau và người soạn đi lại giữa chúng liên tục, nên chúng là hai pane
+          cuộn độc lập chứ không phải một cột dài. */}
+      <Group orientation="horizontal" className="h-full">
+        <Panel id="brief" defaultSize="50%" minSize="25%" className="min-h-0">
+          <div className="h-full overflow-y-auto p-3">
+            <ExerciseBriefForm
+              onChange={setDraft}
+              readOnly={locked}
+              slugLocked={exercise.status === "published"}
+              value={draft}
+            />
 
-      {exercise.rejectionReason && (
-        <p className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          Lý do bị trả về: {exercise.rejectionReason}
-        </p>
-      )}
+            <div className="mt-4 flex justify-end">
+              <Button
+                disabled={saving}
+                onClick={() =>
+                  run(async () => {
+                    await api.exercises.remove(id);
+                    router.push("/exercises");
+                    return exercise;
+                  }, "Đã xoá")
+                }
+                type="button"
+                variant="ghost"
+              >
+                Xoá bài này
+              </Button>
+            </div>
+          </div>
+        </Panel>
 
-      {error && (
-        <p
-          className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
+        <ResizeHandle orientation="horizontal" />
 
-      {notice && (
-        <p className="mb-4 text-sm text-muted-foreground" role="status">
-          {notice}
-        </p>
-      )}
-
-      <CodeProblemForm
-        onChange={setDraft}
-        readOnly={locked}
-        slugLocked={exercise.status === "published"}
-        value={draft}
-      />
-
-      <div className="mt-6 flex justify-end">
-        <Button
-          disabled={saving}
-          onClick={() =>
-            run(async () => {
-              await api.exercises.remove(id);
-              router.push("/exercises");
-              return exercise;
-            }, "Đã xoá")
-          }
-          type="button"
-          variant="ghost"
-        >
-          Xoá bài này
-        </Button>
-      </div>
-    </>
+        <Panel id="code" defaultSize="50%" minSize="25%" className="min-h-0">
+          <div className="h-full overflow-y-auto p-3">
+            <ExerciseCodeForm
+              onChange={setDraft}
+              readOnly={locked}
+              theme={theme}
+              value={draft}
+            />
+          </div>
+        </Panel>
+      </Group>
+    </StudioShell>
   );
 }
 

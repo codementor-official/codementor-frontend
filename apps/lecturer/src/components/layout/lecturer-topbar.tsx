@@ -53,7 +53,7 @@ export function LecturerTopbar({ onDesktopToggle, onMobileToggle }: LecturerTopb
   const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
+    <header className="sticky top-0 z-20 flex h-11 shrink-0 items-center gap-1 border-b bg-background/95 px-2 backdrop-blur-sm sm:px-3">
       <button
         aria-label="Thu gọn menu"
         className="hidden size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex"
@@ -78,7 +78,7 @@ export function LecturerTopbar({ onDesktopToggle, onMobileToggle }: LecturerTopb
           aria-expanded={themeOpen}
           aria-haspopup="menu"
           aria-label="Chọn giao diện"
-          className="flex size-9 items-center justify-center rounded-lg border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           onClick={toggleThemeMenu}
           type="button"
         >
@@ -86,7 +86,7 @@ export function LecturerTopbar({ onDesktopToggle, onMobileToggle }: LecturerTopb
         </button>
         {themeOpen && (
           <div
-            className="absolute right-0 top-11 w-36 rounded-lg border bg-popover p-1 text-popover-foreground shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+            className="absolute top-10 right-0 w-36 rounded-lg border bg-popover p-1 text-popover-foreground shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
             role="menu"
           >
             {(
@@ -117,7 +117,7 @@ export function LecturerTopbar({ onDesktopToggle, onMobileToggle }: LecturerTopb
 
       <button
         aria-label="Đăng xuất"
-        className="flex size-9 items-center justify-center rounded-lg border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         onClick={signOut}
         type="button"
       >

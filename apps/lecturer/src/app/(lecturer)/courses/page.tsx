@@ -259,7 +259,7 @@ export default function CoursesPage() {
 
 function CourseDrawerBody({ row }: { row: CourseListItem }) {
   return (
-    <DrawerDetail dependency={row.id} load={() => api.courses.get(row.id)}>
+    <DrawerDetail key={row.id} load={() => api.courses.get(row.id)}>
       {(course) => {
         const chapters = course.chapters ?? [];
         return (

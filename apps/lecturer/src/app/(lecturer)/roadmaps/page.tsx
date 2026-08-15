@@ -267,7 +267,7 @@ export default function RoadmapsPage() {
 
 function RoadmapDrawerBody({ row }: { row: RoadmapListItem }) {
   return (
-    <DrawerDetail dependency={row.id} load={() => api.roadmaps.get(row.id)}>
+    <DrawerDetail key={row.id} load={() => api.roadmaps.get(row.id)}>
       {(roadmap) => {
         const courses = roadmap.courses ?? [];
         // Submission is refused while any component course is unpublished, so the blocker
