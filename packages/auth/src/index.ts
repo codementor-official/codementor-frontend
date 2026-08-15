@@ -13,6 +13,61 @@ export interface AuthSession {
   expiresAt: number;
 }
 
+/**
+ * Danh tính suy ra từ claim của token Keycloak.
+ *
+ * Dùng ở BFF của apps/admin, nơi token được đọc phía server và không bao giờ ra tới
+ * trình duyệt. Trả về đúng hình dạng `User` mà backend trả từ `GET /api/v1/me`, để cả
+ * hệ thống chỉ có một khái niệm "người dùng đang đăng nhập".
+ *
+ * `id` ở đây là `sub` của Keycloak, KHÔNG phải `users.id` nội bộ — chỉ đủ để hiển thị
+ * và kiểm vai trò. Chỗ nào cần so quyền sở hữu thì phải lấy hồ sơ từ `/api/v1/me`.
+ */
+export function userFromToken(token: KeycloakTokenClaims | undefined): User | null {
+  if (!token?.sub) return null;
+  return {
+    id: token.sub,
+    email: token.email ?? "",
+    displayName: token.name ?? token.preferred_username ?? token.email ?? token.sub,
+    role: platformRoleOf(token.realm_access?.roles ?? []),
+  };
+}
+
+export interface KeycloakTokenClaims {
+  sub?: string;
+  preferred_username?: string;
+  email?: string;
+  name?: string;
+  realm_access?: { roles?: string[] };
+}
+
+/** Xếp từ quyền cao xuống thấp. Ai có nhiều vai trò thì lấy cái cao nhất. */
+const ROLE_PRECEDENCE: readonly Role[] = ["admin", "lecturer", "learner"];
+
+/**
+ * Tên realm role → vai trò nền tảng, đúng bảng ánh xạ mà backend dùng ở
+ * `libs/platform/src/auth/jwt-payload.ts`.
+ *
+ * Realm mang hai cách đặt tên song song: `learner`/`lecturer`/`admin` từ bản import đầu
+ * và `STUDENT`/`LECTURER`/`ADMIN` từ đợt cấu hình sau. Từ vựng nội bộ giữ chữ thường vì
+ * đó là giá trị của enum `platform_role` trong PostgreSQL.
+ */
+const ROLE_ALIASES: Record<string, Role> = {
+  admin: "admin",
+  lecturer: "lecturer",
+  learner: "learner",
+  student: "learner",
+};
+
+export function platformRoleOf(realmRoles: readonly string[]): Role {
+  const granted = new Set<Role>();
+  for (const name of realmRoles) {
+    const mapped = ROLE_ALIASES[name.toLowerCase()];
+    if (mapped) granted.add(mapped);
+  }
+  return ROLE_PRECEDENCE.find((role) => granted.has(role)) ?? "learner";
+}
+
 export function hasRole(user: Pick<User, "role"> | null | undefined, role: Role): boolean {
   return user?.role === role;
 }

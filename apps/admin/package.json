@@ -9,7 +9,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@codementor/api-client": "workspace:*",
+    "@codementor/auth": "workspace:*",
+    "@codementor/types": "workspace:*",
     "@codementor/ui": "workspace:*",
+    "jose": "^6.2.8",
     "lucide-react": "^1.28.0",
     "next": "16.2.12",
     "react": "19.2.4",

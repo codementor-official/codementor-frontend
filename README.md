@@ -62,9 +62,9 @@ apps/
   admin/        Administration product
 packages/
   ui/           UI shared by multiple applications (DashboardShell)
-  api-client/   Shared HTTP transport — no consumer yet
-  auth/         Shared Keycloak-facing auth primitives — no consumer yet
-  types/        Cross-application contracts — no consumer yet
+  api-client/   Shared HTTP transport used by application API adapters
+  auth/         Shared Keycloak-facing role and authentication primitives
+  types/        Cross-application contracts
   utils/        Framework-independent shared utilities
   eslint-config/
   typescript-config/

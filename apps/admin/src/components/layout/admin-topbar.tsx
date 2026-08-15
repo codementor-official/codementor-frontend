@@ -7,11 +7,13 @@ import {
   Menu,
   Monitor,
   Moon,
+  LogOut,
   PanelLeft,
   Search,
   Sun,
   X,
 } from "lucide-react";
+import { useAdminAuth } from "@/features/auth/auth-provider";
 
 type ThemePreference = "light" | "dark" | "system";
 
@@ -29,6 +31,7 @@ function applyTheme(preference: ThemePreference) {
 }
 
 export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProps) {
+  const { logout, user } = useAdminAuth();
   const [commandOpen, setCommandOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [theme, setTheme] = useState<ThemePreference>("system");
@@ -146,6 +149,18 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
             </div>
           )}
         </div>
+
+        <button
+          aria-label={`Sign out ${user?.displayName ?? user?.email ?? "administrator"}`}
+          className="flex h-9 items-center gap-2 rounded-lg border bg-background px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          onClick={() => void logout()}
+          type="button"
+        >
+          <span className="hidden max-w-28 truncate lg:inline">
+            {user?.displayName ?? user?.email}
+          </span>
+          <LogOut aria-hidden="true" className="size-4" />
+        </button>
       </header>
 
       {commandOpen && (
