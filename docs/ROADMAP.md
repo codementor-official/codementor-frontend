@@ -3,7 +3,7 @@
 Priority-ordered checklist view of `IMPLEMENTATION_PLAN.md`. Use this file to track progress;
 use the plan doc for the *why* behind each item.
 
-## Already done (verify with `git status`, don't redo)
+## Already done (committed; verify in `apps/web/src`, don't redo)
 
 - [x] `--color-ink` true-neutral correction + `navy` alias
 - [x] `--color-primary-active` state token

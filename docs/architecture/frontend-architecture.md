@@ -29,6 +29,22 @@ Each application owns its routes, layouts, features, application-level component
 
 The backend is outside this repository. Frontend refactors must not change backend API contracts.
 
+### Current state
+
+The split is structural; the product is not evenly distributed across it yet.
+
+- `apps/web` holds every migrated route (`(app)` route group, `login`, `signup`, `solve`) and all
+  real UI. It consumes no workspace package today.
+- `apps/lecturer` and `apps/admin` are scaffolds: `src/app/layout.tsx`, one `src/app/page.tsx`
+  rendering `DashboardShell` from `@codementor/ui`, and empty `components/`, `features/`, `hooks/`,
+  `lib/`, `providers/` folders.
+- `packages/ui` is consumed only by those two placeholder pages. `packages/api-client`,
+  `packages/auth`, and `packages/types` have no consumer yet; `packages/utils` is used by
+  `api-client` alone.
+
+Those packages are prepared seams for the lecturer/admin build-out. Use them when an app needs
+them; do not add new packages in their place, and do not delete them as dead code.
+
 ## Dependency rules
 
 Allowed dependencies flow from applications into packages:
@@ -47,6 +63,16 @@ Forbidden dependencies:
 - A shared package importing from any app.
 - A path alias that bypasses these boundaries.
 - Copying authentication or transport infrastructure into each app when one safe shared abstraction is sufficient.
+
+No lint rule enforces this. The only mechanical guardrail is that each app's `@/*` alias resolves
+to its own `src/*` and nothing else, so a cross-app import would have to be written as a relative
+path escaping the app directory. Reject that in review.
+
+Consuming a workspace package from a Next.js app takes two steps, because packages are published
+as raw TypeScript from `src/index.ts`:
+
+1. `"@codementor/<name>": "workspace:*"` in the app's `dependencies`.
+2. The same name in `transpilePackages` in the app's `next.config.ts` (see `apps/admin/next.config.ts`).
 
 Applications remain independently buildable and deployable. Production domains are deployment concerns and must not be hardcoded into feature logic.
 
@@ -74,17 +100,38 @@ apps/web/src/features/exercises/
   constants/
 ```
 
-Create only the folders a feature needs and avoid deep nesting. Existing web code may be migrated toward this organization incrementally; architecture work must not force a risky bulk rewrite.
+Create only the folders a feature needs and avoid deep nesting.
+
+`apps/web/src/features` is empty today. Migrated web code is organized by domain one level up:
+
+```text
+apps/web/src/
+  app/          Routes: (app) group, login, signup, solve
+  components/   ui/ primitives + domain folders (study-group, workspace, exercises, roadmap, …)
+  lib/          Domain logic and stores (store/, practice/, roadmap/, study-group/, …)
+  data/         Mock content standing in for backend responses
+  types/        App-level TypeScript contracts
+  hooks/        Cross-feature hooks
+  providers/    Empty placeholder
+```
+
+New capabilities go in `features/`. Existing domains move there only when they are being reworked
+for another reason; architecture work must not force a risky bulk rewrite.
 
 `src/app` is for App Router concerns: routing, layouts, route groups, loading/error boundaries, metadata, and page composition. Prefer a thin page:
 
 ```tsx
-import { WorkspacePage } from "@/features/workspace";
+import { StudyGroupBoard } from "@/components/study-group/study-group-board";
+import { studyGroupService } from "@/lib/study-group/study-group-service";
 
-export default function Page() {
-  return <WorkspacePage />;
+export default async function Page() {
+  const groups = await studyGroupService.getAll();
+  return <StudyGroupBoard groups={groups} currentUserName={CURRENT_USER_NAME} />;
 }
 ```
+
+Most web pages already look like this. `dashboard`, `explore`, and `practice` still inline 245–345
+lines of composition; pull that into components when you next touch those routes.
 
 ## Authentication
 
@@ -121,13 +168,19 @@ pnpm dev:admin
 | lecturer | 3001 |
 | admin | 3002 |
 
+Any single script can also be targeted with `pnpm --filter @codementor/<name> <script>`.
+
 Repository checks:
 
 ```bash
-pnpm lint
-pnpm typecheck
-pnpm build
+pnpm lint       # root: eslint over the workspace, reading packages/eslint-config
+pnpm typecheck  # turbo: tsc --noEmit per app and package
+pnpm build      # turbo: next build per app
 ```
+
+`pnpm lint` is a plain root script rather than a Turborepo task, so it is neither cached nor
+parallelized per package. `pnpm install` at the workspace root is required before any of the three
+will run — a pre-migration single-app `node_modules` does not contain the `@codementor/*` links.
 
 ## Adding a feature
 

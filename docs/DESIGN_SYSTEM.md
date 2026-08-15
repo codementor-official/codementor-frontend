@@ -11,8 +11,8 @@
 > **Codebase baseline.** CodeMentor already has a working design token system
 > (`apps/web/src/app/globals.css`) and a primitive library (`apps/web/src/components/ui/*`, `EntityCard`,
 > `ProblemRow`, `PageHeader`, `FilterBar`). Large parts of what this document recommends are
-> **already implemented** (currently uncommitted on the working tree — see
-> `IMPLEMENTATION_PLAN.md` for exact status). This document explains *why* those choices are
+> **already implemented** and committed — see
+> `IMPLEMENTATION_PLAN.md` for exact status. This document explains *why* those choices are
 > correct and what's left to apply them consistently at the page level.
 
 ---

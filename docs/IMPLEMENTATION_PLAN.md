@@ -2,7 +2,7 @@
 
 ## Important status note before reading this plan
 
-**Phases 1 and 2 below are largely already implemented on the working tree, uncommitted.** A
+**Phases 1 and 2 below are largely already implemented and committed.** A
 prior pass (captured in the now-superseded `DESIGN-LANGUAGE.md` at the repo root) already:
 
 - Added `--color-ink`, `--color-primary-active`, the full `--space-*`/`--text-*`
@@ -13,7 +13,8 @@ prior pass (captured in the now-superseded `DESIGN-LANGUAGE.md` at the repo root
 - Extended `PageHeader` with `actions` and `ProblemRow` with `stats`.
 - Fixed `Topbar`'s hardcoded `zinc-*` classes to use design tokens.
 
-Run `git status` before starting any phase below — do not redo work that's already there. This
+Read the current source under `apps/web/src` before starting any phase below — do not redo work
+that's already there. This
 plan's phase numbers below are kept aligned with that prior pass's own stated order so the two
 documents don't disagree.
 
