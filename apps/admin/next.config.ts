@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@codementor/ui"],
+  transpilePackages: [
+    "@codementor/api-client",
+    "@codementor/auth",
+    "@codementor/types",
+    "@codementor/ui",
+  ],
 };
 
 export default nextConfig;
