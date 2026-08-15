@@ -10,3 +10,4 @@ export { Select } from "./select";
 export { SideDrawer } from "./side-drawer";
 export { StatusBadge } from "./status-badge";
 export type { DashboardShellProps } from "./dashboard-shell";
+export type { SegmentedTabOption } from "./segmented-tabs";

@@ -2,6 +2,12 @@ import { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
 import { apiBaseUrl } from "@/lib/env";
 import type { UpdateProfileInput, UserProfile } from "@/features/profile/types";
+import type {
+  Exercise,
+  ExerciseContent,
+  ExerciseListItem,
+  Page,
+} from "@/features/exercises/types";
 
 /**
  * The single place that knows a backend URL. Everything below calls the gateway, so
@@ -26,8 +32,49 @@ async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]):
   return response.data;
 }
 
+function query(params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") search.set(key, String(value));
+  }
+  const encoded = search.toString();
+  return encoded ? `?${encoded}` : "";
+}
+
+export interface ListExercisesParams {
+  q?: string;
+  difficulty?: string;
+  status?: string;
+  kind?: string;
+  cursor?: string;
+  limit?: number;
+}
+
 export const api = {
   me: () => unwrap<UserProfile>("/me"),
   updateProfile: (input: UpdateProfileInput) =>
     unwrap<UserProfile>("/me", { method: "PATCH", body: { ...input } }),
+
+  exercises: {
+    /** Kho bài chung: chỉ bài public đã công khai, mọi tác giả. */
+    bank: (params: ListExercisesParams = {}) =>
+      unwrap<Page<ExerciseListItem>>(`/exercises${query({ ...params })}`),
+    /** Bài của tôi, mọi trạng thái. Hai phạm vi là hai đường dẫn, không phải một cờ. */
+    mine: (params: ListExercisesParams = {}) =>
+      unwrap<Page<ExerciseListItem>>(`/exercises/mine${query({ ...params })}`),
+    get: (id: string) => unwrap<Exercise>(`/exercises/${id}`),
+    create: (body: { title: string; kind: string; difficulty: string; summary?: string | null }) =>
+      unwrap<Exercise>("/exercises", { method: "POST", body }),
+    update: (id: string, body: Record<string, unknown>) =>
+      unwrap<Exercise>(`/exercises/${id}`, { method: "PATCH", body }),
+    saveContent: (id: string, content: ExerciseContent) =>
+      unwrap<Exercise>(`/exercises/${id}/content`, {
+        method: "PUT",
+        body: content as Record<string, unknown>,
+      }),
+    remove: (id: string) => unwrap<void>(`/exercises/${id}`, { method: "DELETE" }),
+    fork: (id: string) => unwrap<Exercise>(`/exercises/${id}/fork`, { method: "POST" }),
+    submit: (id: string) => unwrap<Exercise>(`/exercises/${id}/submit`, { method: "POST" }),
+    withdraw: (id: string) => unwrap<Exercise>(`/exercises/${id}/withdraw`, { method: "POST" }),
+  },
 };
