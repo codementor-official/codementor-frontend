@@ -20,7 +20,7 @@ export function SegmentedTabs({
   return (
     <div
       role="tablist"
-      className={`inline-flex items-center gap-1 rounded-md border border-border bg-surface p-1 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-md border border-border bg-card p-1 ${className}`}
     >
       {options.map((opt) => {
         const active = opt.value === value;
@@ -32,14 +32,14 @@ export function SegmentedTabs({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={`inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors ${
-              active ? "bg-navy text-on-ink" : "text-text-muted hover:bg-bg hover:text-navy"
+              active ? "bg-foreground text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
             {opt.label}
             {typeof opt.count === "number" && (
               <span
                 className={`rounded-full px-1.5 text-[10px] ${
-                  active ? "bg-on-ink/20 text-on-ink" : "bg-border-soft text-text-faint"
+                  active ? "bg-on-ink/20 text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}
               >
                 {opt.count}

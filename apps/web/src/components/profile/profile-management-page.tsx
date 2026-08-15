@@ -4,9 +4,8 @@ import { useMemo, useState } from "react";
 import { Award, CalendarDays, Code2, ExternalLink, GitBranch, Globe2, MapPin, Pencil, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
 import { submissionHistory } from "@/data/submission-history";
+import { Input, Modal } from "@codementor/ui";
 
 const heatLevels = Array.from({ length: 91 }, (_, index) => {
   const value = Math.abs(Math.sin(index * 7.321 + 0.8));

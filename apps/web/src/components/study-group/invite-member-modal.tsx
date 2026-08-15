@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { Check, Copy, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
-import { Select } from "@/components/ui/select";
 import type { StudyGroupRole } from "@/types/study-group";
+import { Input, Modal, Select } from "@codementor/ui";
 
 /** Two ways in: share the link/code, or invite by username. Both in one dialog. */
 export function InviteMemberModal({

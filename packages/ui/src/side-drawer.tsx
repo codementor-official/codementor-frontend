@@ -30,25 +30,25 @@ export function SideDrawer({
 
   if (!open) return null;
   return (
-    <div className="animate-overlay-in fixed inset-0 z-150 flex justify-end bg-ink-fixed/50" onClick={onClose}>
+    <div className="animate-overlay-in fixed inset-0 z-50 flex justify-end bg-black/50" onClick={onClose}>
       <aside
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
-        className={`animate-drawer-in flex h-full w-full flex-col bg-surface shadow-modal ${width === "wide" ? "max-w-6xl" : "max-w-2xl"}`}
+        className={`animate-drawer-in flex h-full w-full flex-col bg-card shadow-[0_24px_60px_rgba(0,0,0,0.3)] ${width === "wide" ? "max-w-6xl" : "max-w-2xl"}`}
       >
-        <header className="flex items-start gap-4 border-b border-border-soft px-5 py-4 sm:px-6">
+        <header className="flex items-start gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-bold text-navy">{title}</h2>
-            {description && <p className="mt-1 text-xs leading-relaxed text-text-muted">{description}</p>}
+            <h2 className="text-base font-bold text-foreground">{title}</h2>
+            {description && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>}
           </div>
-          <button type="button" aria-label="Đóng" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy">
+          <button type="button" aria-label="Đóng" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
-        {footer && <footer className="flex flex-wrap justify-end gap-2 border-t border-border-soft px-5 py-3 sm:px-6">{footer}</footer>}
+        {footer && <footer className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-3 sm:px-6">{footer}</footer>}
       </aside>
     </div>
   );

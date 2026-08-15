@@ -59,7 +59,7 @@ export function DataTable<TData>({
 }) {
   const rows = table.getRowModel().rows;
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+    <div className="overflow-x-auto rounded-lg border border-border bg-card">
       <table className="w-full min-w-3xl border-collapse text-sm">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -71,13 +71,13 @@ export function DataTable<TData>({
                   <th
                     key={header.id}
                     style={{ width: header.getSize() === 150 ? undefined : header.getSize() }}
-                    className="px-3 py-2.5 text-left text-2xs font-bold tracking-wide text-text-faint uppercase"
+                    className="px-3 py-2.5 text-left text-2xs font-bold tracking-wide text-muted-foreground uppercase"
                   >
                     {header.isPlaceholder ? null : sortable ? (
                       <button
                         type="button"
                         onClick={header.column.getToggleSortingHandler()}
-                        className="flex items-center gap-1 rounded-sm text-2xs font-bold tracking-wide uppercase hover:text-navy"
+                        className="flex items-center gap-1 rounded-sm text-2xs font-bold tracking-wide uppercase hover:text-foreground"
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {sorted === "asc" ? (
@@ -101,8 +101,8 @@ export function DataTable<TData>({
           {rows.length === 0 ? (
             <tr>
               <td colSpan={table.getAllLeafColumns().length} className="px-3 py-12 text-center">
-                <Inbox className="mx-auto mb-2 h-5 w-5 text-text-faint" />
-                <p className="text-sm text-text-muted">{emptyMessage}</p>
+                <Inbox className="mx-auto mb-2 h-5 w-5 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{emptyMessage}</p>
               </td>
             </tr>
           ) : (
@@ -110,12 +110,12 @@ export function DataTable<TData>({
               <tr
                 key={row.id}
                 onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                className={`border-t border-border-soft ${
-                  row.getIsSelected() ? "bg-primary-tint" : "hover:bg-bg"
+                className={`border-t border-border ${
+                  row.getIsSelected() ? "bg-primary/10" : "hover:bg-muted"
                 } ${onRowClick ? "cursor-pointer" : ""}`}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-3 py-2.5 align-middle text-text">
+                  <td key={cell.id} className="px-3 py-2.5 align-middle text-foreground">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -181,7 +181,7 @@ export function TablePagination<TData>({ table }: { table: TanstackTable<TData> 
 
   return (
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-      <span className="text-xs text-text-muted">
+      <span className="text-xs text-muted-foreground">
         {first}–{last} trên {total}
       </span>
       <div className="flex items-center gap-1">
@@ -190,11 +190,11 @@ export function TablePagination<TData>({ table }: { table: TanstackTable<TData> 
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
           aria-label="Trang trước"
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-muted hover:bg-bg hover:text-navy disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="px-2 text-xs font-medium text-navy">
+        <span className="px-2 text-xs font-medium text-foreground">
           Trang {pageIndex + 1}/{table.getPageCount()}
         </span>
         <button
@@ -202,7 +202,7 @@ export function TablePagination<TData>({ table }: { table: TanstackTable<TData> 
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
           aria-label="Trang sau"
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-muted hover:bg-bg hover:text-navy disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -240,18 +240,18 @@ export function TableToolbar({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="h-9 min-w-48 flex-1 rounded-md border border-border bg-surface px-3 text-sm text-navy outline-none placeholder:text-text-faint focus:border-navy"
+          className="h-9 min-w-48 flex-1 rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-foreground"
         />
         {filters}
         {primaryAction}
       </div>
       {selectedCount > 0 && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-primary bg-primary-tint px-3 py-2">
-          <span className="text-xs font-semibold text-navy">Đã chọn {selectedCount} mục</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-primary bg-primary/10 px-3 py-2">
+          <span className="text-xs font-semibold text-foreground">Đã chọn {selectedCount} mục</span>
           <button
             type="button"
             onClick={onClearSelection}
-            className="text-xs font-medium text-text-muted underline-offset-2 hover:text-navy hover:underline"
+            className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             Bỏ chọn
           </button>

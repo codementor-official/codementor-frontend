@@ -4,10 +4,10 @@ import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DataTable, TablePagination, useDataTable } from "@/components/ui/data-table";
 import { SplitStatusPill } from "@/components/study-group/status-pill";
 import { REVIEW_STATUS_META, SUBMISSION_STATUS_META } from "@/lib/study-group/group-detail-meta";
 import type { Assignment, GroupMember } from "@/types/study-group-detail";
+import { DataTable, TablePagination, useDataTable } from "@codementor/ui";
 
 /** One exercise's assignees. Members see their own record; reviewers see the full cohort. */
 export function SubmissionsTable({

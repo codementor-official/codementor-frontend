@@ -4,9 +4,9 @@ import { useState } from "react";
 import { CircleCheck, Clock, Eye, Pencil, Plus, Save, Trophy, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { RichTextEditor } from "./rich-text-editor";
 import type { TheoryLessonDraft } from "@/types/problem-draft";
+import { Input } from "@codementor/ui";
+import { RichTextEditor } from "@codementor/editor";
 
 const EMPTY_DRAFT: TheoryLessonDraft = {
   title: "",

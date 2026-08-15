@@ -1,7 +1,5 @@
 "use client";
 
-import { FilterBar } from "@/components/ui/filter-bar";
-import { Select } from "@/components/ui/select";
 import {
   DEFAULT_ROADMAP_FILTERS,
   DURATION_FILTER_OPTIONS,
@@ -13,6 +11,7 @@ import {
 } from "@/lib/roadmap/roadmap-filter";
 import type { CurrentLevel } from "@/types/learning-preference";
 import type { RoadmapField } from "@/types/roadmap";
+import { FilterBar, Select } from "@codementor/ui";
 
 export function RoadmapFilterBar({
   filters,

@@ -6,15 +6,15 @@ import rehypeHighlight from "rehype-highlight";
 import { Eye, Pencil, Play, Plus, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { CodeEditor } from "./code-editor";
 import type {
   CodeProblemDraft,
   ProblemExample,
   ProblemLanguage,
   ProblemTestCase,
 } from "@/types/problem-draft";
+import { Input, Select } from "@codementor/ui";
+import { CodeEditor } from "@codementor/editor";
+import { useResolvedTheme } from "@/lib/store/use-resolved-theme";
 
 const LANGUAGES: ProblemLanguage[] = [
   { id: "c", label: "C", monaco: "c" },
@@ -41,7 +41,15 @@ const EMPTY_DRAFT: CodeProblemDraft = {
   languageIds: ["c"],
   starter: {},
   solution: {},
-  testCases: [{ id: "tc-1", input: "", expected: "", visibility: "public", generated: false }],
+  testCases: [
+    {
+      id: "tc-1",
+      input: "",
+      expected: "",
+      visibility: "public",
+      generated: false,
+    },
+  ],
 };
 
 let nextId = 0;
@@ -65,14 +73,22 @@ function Section({
         <h2 className="text-sm font-bold text-navy">{title}</h2>
         {action}
       </div>
-      {hint && <p className="mb-3 text-xs leading-relaxed text-text-muted">{hint}</p>}
+      {hint && (
+        <p className="mb-3 text-xs leading-relaxed text-text-muted">{hint}</p>
+      )}
       <div className={hint ? "" : "mt-3"}>{children}</div>
     </Card>
   );
 }
 
 /** The ✕ that removes one row of a repeatable list. */
-function RemoveButton({ onClick, label }: { onClick: () => void; label: string }) {
+function RemoveButton({
+  onClick,
+  label,
+}: {
+  onClick: () => void;
+  label: string;
+}) {
   return (
     <button
       type="button"
@@ -89,13 +105,17 @@ const fieldClasses =
   "w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs text-navy outline-none placeholder:text-text-faint focus:border-navy";
 
 export function CodeProblemForm() {
+  // CodeEditor moved to @codementor/editor and takes the theme as a prop, so the
+  // package does not depend on this application's store.
+  const editorTheme = useResolvedTheme();
   const [draft, setDraft] = useState<CodeProblemDraft>(EMPTY_DRAFT);
   const [showPreview, setShowPreview] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [activeLanguage, setActiveLanguage] = useState("c");
   const [notice, setNotice] = useState("");
 
-  const patch = (values: Partial<CodeProblemDraft>) => setDraft((d) => ({ ...d, ...values }));
+  const patch = (values: Partial<CodeProblemDraft>) =>
+    setDraft((d) => ({ ...d, ...values }));
 
   const selected = LANGUAGES.filter((l) => draft.languageIds.includes(l.id));
   // The per-language editor tabs follow the checkboxes, so unchecking the active one
@@ -117,20 +137,33 @@ export function CodeProblemForm() {
   };
 
   const updateExample = (id: string, values: Partial<ProblemExample>) =>
-    patch({ examples: draft.examples.map((e) => (e.id === id ? { ...e, ...values } : e)) });
+    patch({
+      examples: draft.examples.map((e) =>
+        e.id === id ? { ...e, ...values } : e,
+      ),
+    });
 
   const updateTestCase = (id: string, values: Partial<ProblemTestCase>) =>
-    patch({ testCases: draft.testCases.map((t) => (t.id === id ? { ...t, ...values } : t)) });
+    patch({
+      testCases: draft.testCases.map((t) =>
+        t.id === id ? { ...t, ...values } : t,
+      ),
+    });
 
   /** Stands in for the judge: the real thing compiles the reference solution and captures
    * stdout. Until that exists, mark the row generated so the UI flow is honest about which
    * outputs came from a run. */
   const runSolution = (id: string) => {
     if (!editing || !draft.solution[editing.id]?.trim()) {
-      setNotice(`Chưa có đáp án tham khảo cho ${editing?.label ?? "ngôn ngữ này"} để chạy sinh output.`);
+      setNotice(
+        `Chưa có đáp án tham khảo cho ${editing?.label ?? "ngôn ngữ này"} để chạy sinh output.`,
+      );
       return;
     }
-    updateTestCase(id, { expected: "(output do hệ thống sinh)", generated: true });
+    updateTestCase(id, {
+      expected: "(output do hệ thống sinh)",
+      generated: true,
+    });
     setNotice("");
   };
 
@@ -156,7 +189,9 @@ export function CodeProblemForm() {
                 label="Độ khó"
                 className="h-10.5 rounded-md py-0 pl-3.5 text-sm"
                 value={draft.difficulty}
-                onChange={(v) => patch({ difficulty: v as CodeProblemDraft["difficulty"] })}
+                onChange={(v) =>
+                  patch({ difficulty: v as CodeProblemDraft["difficulty"] })
+                }
                 options={DIFFICULTIES}
               />
             </div>
@@ -174,7 +209,9 @@ export function CodeProblemForm() {
                 {tag}
                 <button
                   type="button"
-                  onClick={() => patch({ tags: draft.tags.filter((t) => t !== tag) })}
+                  onClick={() =>
+                    patch({ tags: draft.tags.filter((t) => t !== tag) })
+                  }
                   aria-label={`Bỏ thẻ ${tag}`}
                   className="text-text-faint hover:text-navy"
                 >
@@ -203,8 +240,16 @@ export function CodeProblemForm() {
         title="Đề bài"
         hint="Hỗ trợ Markdown — dùng ``` để chèn khối code, ** ** để in đậm."
         action={
-          <Button size="sm" variant="outline" onClick={() => setShowPreview((v) => !v)}>
-            {showPreview ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowPreview((v) => !v)}
+          >
+            {showPreview ? (
+              <Pencil className="h-3.5 w-3.5" />
+            ) : (
+              <Eye className="h-3.5 w-3.5" />
+            )}
             {showPreview ? "Soạn thảo" : "Xem trước"}
           </Button>
         }
@@ -212,13 +257,18 @@ export function CodeProblemForm() {
         {showPreview ? (
           <div className="prose-sm min-h-40 rounded-md border border-border bg-bg p-4 text-sm leading-relaxed text-text">
             {draft.statement.trim() ? (
-              <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{draft.statement}</ReactMarkdown>
+              <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
+                {draft.statement}
+              </ReactMarkdown>
             ) : (
-              <span className="text-text-faint">Chưa có nội dung để xem trước.</span>
+              <span className="text-text-faint">
+                Chưa có nội dung để xem trước.
+              </span>
             )}
           </div>
         ) : (
           <CodeEditor
+            theme={editorTheme}
             language="markdown"
             value={draft.statement}
             onChange={(statement) => patch({ statement })}
@@ -236,7 +286,12 @@ export function CodeProblemForm() {
             size="sm"
             variant="outline"
             onClick={() =>
-              patch({ examples: [...draft.examples, { id: makeId("ex"), input: "", output: "" }] })
+              patch({
+                examples: [
+                  ...draft.examples,
+                  { id: makeId("ex"), input: "", output: "" },
+                ],
+              })
             }
           >
             <Plus className="h-3.5 w-3.5" /> Thêm ví dụ
@@ -248,20 +303,26 @@ export function CodeProblemForm() {
             <div key={example.id} className="flex items-center gap-2">
               <input
                 value={example.input}
-                onChange={(e) => updateExample(example.id, { input: e.target.value })}
+                onChange={(e) =>
+                  updateExample(example.id, { input: e.target.value })
+                }
                 placeholder="Input"
                 className={`${fieldClasses} h-9 flex-1`}
               />
               <input
                 value={example.output}
-                onChange={(e) => updateExample(example.id, { output: e.target.value })}
+                onChange={(e) =>
+                  updateExample(example.id, { output: e.target.value })
+                }
                 placeholder="Output"
                 className={`${fieldClasses} h-9 flex-1`}
               />
               <RemoveButton
                 label="Xóa ví dụ"
                 onClick={() =>
-                  patch({ examples: draft.examples.filter((e) => e.id !== example.id) })
+                  patch({
+                    examples: draft.examples.filter((e) => e.id !== example.id),
+                  })
                 }
               />
             </div>
@@ -288,7 +349,9 @@ export function CodeProblemForm() {
                 value={constraint}
                 onChange={(e) =>
                   patch({
-                    constraints: draft.constraints.map((c, i) => (i === index ? e.target.value : c)),
+                    constraints: draft.constraints.map((c, i) =>
+                      i === index ? e.target.value : c,
+                    ),
                   })
                 }
                 placeholder="Ví dụ: 1 ≤ n ≤ 10^9"
@@ -297,7 +360,11 @@ export function CodeProblemForm() {
               <RemoveButton
                 label="Xóa ràng buộc"
                 onClick={() =>
-                  patch({ constraints: draft.constraints.filter((_, i) => i !== index) })
+                  patch({
+                    constraints: draft.constraints.filter(
+                      (_, i) => i !== index,
+                    ),
+                  })
                 }
               />
             </div>
@@ -311,7 +378,10 @@ export function CodeProblemForm() {
       >
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {LANGUAGES.map((language) => (
-            <label key={language.id} className="flex items-center gap-2 text-sm text-navy">
+            <label
+              key={language.id}
+              className="flex items-center gap-2 text-sm text-navy"
+            >
               <input
                 type="checkbox"
                 checked={draft.languageIds.includes(language.id)}
@@ -347,9 +417,12 @@ export function CodeProblemForm() {
                   Code mẫu (starter)
                 </p>
                 <CodeEditor
+                  theme={editorTheme}
                   language={editing.monaco}
                   value={draft.starter[editing.id] ?? ""}
-                  onChange={(code) => patch({ starter: { ...draft.starter, [editing.id]: code } })}
+                  onChange={(code) =>
+                    patch({ starter: { ...draft.starter, [editing.id]: code } })
+                  }
                   placeholder="Khung code người học bắt đầu từ..."
                 />
               </div>
@@ -358,9 +431,14 @@ export function CodeProblemForm() {
                   Đáp án tham khảo (dùng để chạy sinh output)
                 </p>
                 <CodeEditor
+                  theme={editorTheme}
                   language={editing.monaco}
                   value={draft.solution[editing.id] ?? ""}
-                  onChange={(code) => patch({ solution: { ...draft.solution, [editing.id]: code } })}
+                  onChange={(code) =>
+                    patch({
+                      solution: { ...draft.solution, [editing.id]: code },
+                    })
+                  }
                   placeholder="Code đáp án đúng cho ngôn ngữ này..."
                 />
               </div>
@@ -412,9 +490,14 @@ export function CodeProblemForm() {
         )}
         <div className="flex flex-col gap-3">
           {draft.testCases.map((testCase, index) => (
-            <div key={testCase.id} className="rounded-md border border-border bg-bg p-3">
+            <div
+              key={testCase.id}
+              className="rounded-md border border-border bg-bg p-3"
+            >
               <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-navy">Test {index + 1}</span>
+                <span className="text-xs font-semibold text-navy">
+                  Test {index + 1}
+                </span>
                 <div className="flex items-center gap-2">
                   <Select
                     label="Hiển thị"
@@ -441,7 +524,11 @@ export function CodeProblemForm() {
                   <RemoveButton
                     label={`Xóa test ${index + 1}`}
                     onClick={() =>
-                      patch({ testCases: draft.testCases.filter((t) => t.id !== testCase.id) })
+                      patch({
+                        testCases: draft.testCases.filter(
+                          (t) => t.id !== testCase.id,
+                        ),
+                      })
                     }
                   />
                 </div>
@@ -451,7 +538,9 @@ export function CodeProblemForm() {
                   Input
                   <textarea
                     value={testCase.input}
-                    onChange={(e) => updateTestCase(testCase.id, { input: e.target.value })}
+                    onChange={(e) =>
+                      updateTestCase(testCase.id, { input: e.target.value })
+                    }
                     rows={3}
                     className={`${fieldClasses} mt-1 resize-y`}
                   />
@@ -461,7 +550,10 @@ export function CodeProblemForm() {
                   <textarea
                     value={testCase.expected}
                     onChange={(e) =>
-                      updateTestCase(testCase.id, { expected: e.target.value, generated: false })
+                      updateTestCase(testCase.id, {
+                        expected: e.target.value,
+                        generated: false,
+                      })
                     }
                     rows={3}
                     placeholder="Để trống rồi bấm Chạy đáp án để tự điền"

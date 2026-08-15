@@ -7,17 +7,11 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { BookOpen, Code2, Eye, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
-import {
-  DataTable,
-  TablePagination,
-  TableToolbar,
-  useDataTable,
-} from "@/components/ui/data-table";
 import { RowActionMenu } from "@/components/ui/row-action-menu";
 import { AuthoredPreviewModal } from "@/components/exercises/authored-preview-modal";
 import { authoredProblems } from "@/data/authored-problems";
 import type { AuthoredProblem } from "@/types/authored-problem";
+import { DataTable, Select, TablePagination, TableToolbar, useDataTable } from "@codementor/ui";
 
 const KIND_META = {
   code: { label: "Bài code", icon: Code2, tab: "code" },

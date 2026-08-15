@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
 import { REVIEW_STATUS_META } from "@/lib/study-group/group-detail-meta";
 import type { Assignment, GroupExercise, GroupMember, ReviewStatus } from "@/types/study-group-detail";
+import { Modal } from "@codementor/ui";
 
 export interface ReviewComment {
   id: string;

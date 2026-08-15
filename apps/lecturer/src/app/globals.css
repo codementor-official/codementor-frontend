@@ -2,6 +2,7 @@
 @import "@codementor/ui/theme.css";
 
 @source "../../../../packages/ui/src";
+@source "../../../../packages/editor/src";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

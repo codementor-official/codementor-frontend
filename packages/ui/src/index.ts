@@ -1,5 +1,12 @@
 export { Button } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
 export { DashboardShell } from "./dashboard-shell";
+export { DataTable, TableCheckbox, TablePagination, TableToolbar, useDataTable } from "./data-table";
+export { FilterBar } from "./filter-bar";
+export { Input } from "./input";
+export { Modal } from "./modal";
+export { SegmentedTabs } from "./segmented-tabs";
+export { Select } from "./select";
+export { SideDrawer } from "./side-drawer";
 export { StatusBadge } from "./status-badge";
 export type { DashboardShellProps } from "./dashboard-shell";

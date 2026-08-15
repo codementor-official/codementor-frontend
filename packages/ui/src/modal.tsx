@@ -45,11 +45,11 @@ export function Modal({
 
   if (!open) return null;
 
-  // z-150 matches --z-modal. The --z-* tokens are documentation only — Tailwind doesn't
+  // z-50 matches --z-modal. The --z-* tokens are documentation only — Tailwind doesn't
   // generate z utilities from them (onboarding-modal hardcodes the same value).
   return (
     <div
-      className="animate-overlay-in fixed inset-0 z-150 flex items-start justify-center overflow-y-auto bg-ink-fixed/55 p-4 sm:p-6"
+      className="animate-overlay-in fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/55 p-4 sm:p-6"
       onClick={onClose}
     >
       <div
@@ -57,25 +57,25 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`animate-modal-in my-auto w-full rounded-xl bg-surface shadow-modal ${widthClasses[width]}`}
+        className={`animate-modal-in my-auto w-full rounded-xl bg-card shadow-[0_24px_60px_rgba(0,0,0,0.3)] ${widthClasses[width]}`}
       >
-        <div className="flex items-start gap-4 border-b border-border-soft px-5 py-4">
+        <div className="flex items-start gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-bold text-navy">{title}</h2>
-            {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
+            <h2 className="text-base font-bold text-foreground">{title}</h2>
+            {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="px-5 py-4">{children}</div>
         {footer && (
-          <div className="flex flex-wrap justify-end gap-2 border-t border-border-soft px-5 py-3">{footer}</div>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-3">{footer}</div>
         )}
       </div>
     </div>

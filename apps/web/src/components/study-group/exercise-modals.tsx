@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, FileCode2, Lightbulb, ListChecks, Play, Sparkles, Upload, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
 import { EXERCISE_STATUS_META, formatDueDate } from "@/lib/study-group/group-detail-meta";
 import type { ExerciseDifficulty, GroupDocument, GroupExercise } from "@/types/study-group-detail";
+import { Input, Modal } from "@codementor/ui";
 
 const DIFFICULTIES: ExerciseDifficulty[] = ["Cơ bản", "Trung bình", "Nâng cao"];
 

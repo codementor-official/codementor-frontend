@@ -9,19 +9,12 @@ import { MemberProfileModal } from "@/components/study-group/member-profile-moda
 import { LeaderboardSection } from "@/components/study-group/leaderboard-section";
 import { RowActionMenu } from "@/components/ui/row-action-menu";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
-import {
-  DataTable,
-  TableCheckbox,
-  TablePagination,
-  TableToolbar,
-  useDataTable,
-} from "@/components/ui/data-table";
 import { ROLE_LABEL, formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import { initialsFromName } from "@/lib/study-group/study-group-service";
 import { rankMembers } from "@/lib/study-group/group-detail-meta";
 import { downloadCsv } from "@/lib/download-csv";
 import type { Assignment, GroupExercise, GroupMember, PermissionKey, RolePermissions } from "@/types/study-group-detail";
+import { DataTable, Select, TableCheckbox, TablePagination, TableToolbar, useDataTable } from "@codementor/ui";
 
 export function MembersTab({
   members: initialMembers,

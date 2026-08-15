@@ -5,9 +5,6 @@ import { Info, ShieldAlert, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
-import { Select } from "@/components/ui/select";
 import { PERMISSION_LABELS } from "@/lib/study-group/group-detail-meta";
 import { ROLE_LABEL } from "@/lib/study-group/study-group-stats";
 import type { StudyGroup } from "@/types/study-group";
@@ -17,6 +14,7 @@ import type {
   PermissionKey,
   RolePermissions,
 } from "@/types/study-group-detail";
+import { Input, Modal, Select } from "@codementor/ui";
 
 const SECTIONS = [
   { id: "general", label: "Tổng quan", icon: Info },

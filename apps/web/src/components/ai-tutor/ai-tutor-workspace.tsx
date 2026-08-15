@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Bot, BookOpen, Bug, ChevronRight, Code2, Lightbulb, Send, Sparkles, Target, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
+import { Select } from "@codementor/ui";
 
 type ChatMessage = { id: number; role: "assistant" | "user"; content: string };
 

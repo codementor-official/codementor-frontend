@@ -4,14 +4,6 @@ import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Download, Eye, Globe, Lock, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
-import {
-  DataTable,
-  TableCheckbox,
-  TablePagination,
-  TableToolbar,
-  useDataTable,
-} from "@/components/ui/data-table";
 import {
   EXERCISE_STATUS_META,
   exerciseCompletionPercent,
@@ -34,6 +26,7 @@ import type {
   GroupExercise,
   GroupMember,
 } from "@/types/study-group-detail";
+import { DataTable, Select, TableCheckbox, TablePagination, TableToolbar, useDataTable } from "@codementor/ui";
 
 /** ponytail: stands in for the signed-in user's own problem library until there's an API. */
 const PERSONAL_EXERCISES = [

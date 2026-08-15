@@ -20,8 +20,6 @@ import { courseDifficulty, courseHref, featuredCourses } from "@/lib/roadmap/cou
 import { PageBanner } from "@/components/page-banner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { Select } from "@/components/ui/select";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
 import { EntityCard } from "@/components/entity-card";
 import { ProblemRow } from "@/components/problem-row";
@@ -34,6 +32,7 @@ import {
   topLearners,
 } from "@/data/sample-explore";
 import type { Difficulty } from "@/components/ui/badge";
+import { FilterBar, Select } from "@codementor/ui";
 
 type DifficultyFilter = Difficulty | "all";
 type Category = "all" | "courses" | "problems" | "articles" | "community";
