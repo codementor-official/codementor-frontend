@@ -135,7 +135,9 @@ lines of composition; pull that into components when you next touch those routes
 
 ## Authentication
 
-Keycloak is the identity and authorization provider. Shared browser-safe configuration types, session abstractions, token attachment hooks, and role helpers belong in `packages/auth`. Shared HTTP token attachment belongs in `packages/api-client`.
+Keycloak is the identity and authorization provider. Shared role helpers belong in `packages/auth`, and shared HTTP transport belongs in `packages/api-client`.
+
+The Admin application uses a Backend-for-Frontend (BFF) authorization-code flow with PKCE. Keycloak is proxied through the Admin host under `/auth`; the BFF validates state, nonce, issuer, audience, and signatures before creating an encrypted `HttpOnly` session cookie. Browser JavaScript never receives access or refresh tokens. Admin API calls go through `/api/backend`, where the BFF refreshes the session and attaches the bearer token server-side.
 
 Each application owns its own route guards, allowed navigation, and required roles:
 
@@ -147,7 +149,7 @@ Hiding a control or redirecting in the frontend improves UX but does not enforce
 
 ## Environment variables
 
-Each app documents browser-safe variables in its own `.env.example`. Developers should create an untracked `.env.local` beside the relevant app.
+Each app documents its variables in its own `.env.example`. Developers should create an untracked `.env.local` beside the relevant app. The Admin BFF variables are server-only and must not use the `NEXT_PUBLIC_*` prefix.
 
 Keep server-only values unprefixed. Use `NEXT_PUBLIC_*` only when the value is safe to include in browser JavaScript. Shared packages receive configuration from the consuming application rather than reading unrelated app environment files.
 
