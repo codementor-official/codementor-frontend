@@ -18,6 +18,7 @@ import { api } from "@/lib/api";
 
 function toDraft(exercise: Exercise): ExerciseDraft {
   return {
+    slug: exercise.slug,
     title: exercise.title,
     summary: exercise.summary ?? "",
     difficulty: exercise.difficulty,
@@ -87,8 +88,11 @@ export default function ExerciseStudioPage() {
    */
   const save = () =>
     draft &&
+    exercise &&
     run(async () => {
       await api.exercises.update(id, {
+        // Chỉ gửi khi thực sự đổi: backend từ chối đổi slug của bài đã công khai.
+        ...(draft.slug !== exercise.slug ? { slug: draft.slug } : {}),
         title: draft.title,
         summary: draft.summary || null,
         difficulty: draft.difficulty,
@@ -198,7 +202,12 @@ export default function ExerciseStudioPage() {
         </p>
       )}
 
-      <CodeProblemForm onChange={setDraft} readOnly={locked} value={draft} />
+      <CodeProblemForm
+        onChange={setDraft}
+        readOnly={locked}
+        slugLocked={exercise.status === "published"}
+        value={draft}
+      />
 
       <div className="mt-6 flex justify-end">
         <Button

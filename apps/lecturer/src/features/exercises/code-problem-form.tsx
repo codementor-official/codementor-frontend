@@ -17,6 +17,7 @@ import {
 } from "@/features/exercises/types";
 
 export interface ExerciseDraft {
+  slug: string;
   title: string;
   summary: string;
   difficulty: string;
@@ -31,6 +32,8 @@ interface Props {
   onChange: (next: ExerciseDraft) => void;
   /** Đang chờ duyệt thì backend từ chối mọi lệnh ghi; khoá ở đây để không gọi vô ích. */
   readOnly?: boolean;
+  /** Slug của bài đã công khai không đổi được — đường dẫn đã phát ra ngoài. */
+  slugLocked?: boolean;
   theme?: "light" | "dark";
 }
 
@@ -41,7 +44,13 @@ interface Props {
  * giao diện chứ không nối được vào API. Ở đây state nằm ở trang, form chỉ nhận `value`
  * và phát `onChange` — đó là điểm khác duy nhất về kiến trúc, phần trình bày giữ nguyên.
  */
-export function CodeProblemForm({ value, onChange, readOnly = false, theme = "light" }: Props) {
+export function CodeProblemForm({
+  value,
+  onChange,
+  readOnly = false,
+  slugLocked = false,
+  theme = "light",
+}: Props) {
   const [previewStatement, setPreviewStatement] = useState(false);
 
   const patch = (partial: Partial<ExerciseDraft>) => onChange({ ...value, ...partial });
@@ -101,6 +110,24 @@ export function CodeProblemForm({ value, onChange, readOnly = false, theme = "li
             id="title"
             onChange={(event) => patch({ title: event.target.value })}
             value={value.title}
+          />
+        </Field>
+
+        <Field
+          hint={
+            slugLocked
+              ? "Đã công khai nên không đổi được — đường dẫn đã phát ra ngoài."
+              : "Phần định danh trong đường dẫn. Chỉ đổi được khi chưa công khai."
+          }
+          htmlFor="slug"
+          label="Slug"
+        >
+          <input
+            className={inputClassName}
+            disabled={slugLocked}
+            id="slug"
+            onChange={(event) => patch({ slug: event.target.value })}
+            value={value.slug}
           />
         </Field>
 

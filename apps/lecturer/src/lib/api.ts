@@ -8,6 +8,7 @@ import type {
   ExerciseListItem,
   Page,
 } from "@/features/exercises/types";
+import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
 
 /**
  * The single place that knows a backend URL. Everything below calls the gateway, so
@@ -41,11 +42,14 @@ function query(params: Record<string, string | number | undefined>): string {
   return encoded ? `?${encoded}` : "";
 }
 
+/** Tham số danh sách dùng chung; mỗi domain chỉ đọc những khoá nó hiểu. */
 export interface ListExercisesParams {
   q?: string;
   difficulty?: string;
   status?: string;
   kind?: string;
+  field?: string;
+  level?: string;
   cursor?: string;
   limit?: number;
 }
@@ -76,5 +80,23 @@ export const api = {
     fork: (id: string) => unwrap<Exercise>(`/exercises/${id}/fork`, { method: "POST" }),
     submit: (id: string) => unwrap<Exercise>(`/exercises/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Exercise>(`/exercises/${id}/withdraw`, { method: "POST" }),
+  },
+
+  roadmaps: {
+    catalogue: (params: ListExercisesParams = {}) =>
+      unwrap<Page<RoadmapListItem>>(`/roadmaps${query({ ...params })}`),
+    mine: (params: ListExercisesParams = {}) =>
+      unwrap<Page<RoadmapListItem>>(`/roadmaps/mine${query({ ...params })}`),
+    get: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}`),
+    create: (body: { title: string; field: string; level: string }) =>
+      unwrap<Roadmap>("/roadmaps", { method: "POST", body }),
+    update: (id: string, body: Record<string, unknown>) =>
+      unwrap<Roadmap>(`/roadmaps/${id}`, { method: "PATCH", body }),
+    /** Ghi cả danh sách; thứ tự lấy theo thứ tự mảng, backend tự tính lại tổng giờ. */
+    replaceCourses: (id: string, courses: { courseId: string; isOptional: boolean }[]) =>
+      unwrap<Roadmap>(`/roadmaps/${id}/courses`, { method: "PUT", body: { courses } }),
+    submit: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/submit`, { method: "POST" }),
+    withdraw: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/withdraw`, { method: "POST" }),
+    remove: (id: string) => unwrap<void>(`/roadmaps/${id}`, { method: "DELETE" }),
   },
 };
