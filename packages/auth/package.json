@@ -8,8 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@codementor/types": "workspace:*",
-    "keycloak-js": "^26.2.4"
+    "@codementor/types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5"
