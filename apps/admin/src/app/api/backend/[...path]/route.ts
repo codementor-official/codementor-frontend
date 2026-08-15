@@ -20,8 +20,10 @@ async function proxyBackend(
   let session = await readSession(request);
   if (!session) return NextResponse.json({ message: "Authentication required" }, { status: 401 });
 
+  let refreshed = false;
   try {
-    if (sessionNeedsRefresh(session)) session = await refreshAdminSession(session);
+    refreshed = sessionNeedsRefresh(session);
+    if (refreshed) session = await refreshAdminSession(session);
   } catch {
     const response = NextResponse.json({ message: "Session expired" }, { status: 401 });
     clearSessionCookies(response);
@@ -61,7 +63,7 @@ async function proxyBackend(
     status: upstream.status,
     statusText: upstream.statusText,
   });
-  await setSessionCookies(response, session);
+  if (refreshed) await setSessionCookies(response, session);
   return response;
 }
 
