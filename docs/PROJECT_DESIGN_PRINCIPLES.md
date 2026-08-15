@@ -102,7 +102,7 @@ a text label).
 
 ## 15. Reuse before creating
 
-Before writing a new component, check `src/components/ui/` and `src/components/` for something
+Before writing a new web component, check `apps/web/src/components/ui/` and `apps/web/src/components/` for something
 that already does 80% of the job. `EntityCard`, `FilterBar`, `ProgressBar`, `SegmentedTabs`,
 `StatBlock`, `ProblemRow`, `PageHeader`, `Card`, `Badge`, `Button`, `Input` already exist and cover
 most "browse a list of things" and "show a stat" needs — extend their props before writing a
@@ -111,8 +111,8 @@ gap.
 
 ## 16. Business logic stays out of UI components
 
-Data fetching, scoring/ranking, filtering, and formatting live in `src/lib/`, `src/hooks/`, and
-`src/data/` — components receive already-shaped props and render them. This is already how the
+Data fetching, scoring/ranking, filtering, and formatting live in `apps/web/src/lib/`, `apps/web/src/hooks/`, and
+`apps/web/src/data/` — components receive already-shaped props and render them. This is already how the
 roadmap feature (`lib/roadmap/*`, `hooks/use-roadmap-*`) is built; the refactor keeps that
 boundary everywhere, including the pages that currently inline logic (e.g. `explore/page.tsx`'s
 inline `matches()` filter is acceptable at its current size but shouldn't grow without moving to

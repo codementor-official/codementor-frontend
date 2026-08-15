@@ -1,6 +1,6 @@
 # CodeMentor Design Tokens
 
-Source of truth: `src/app/globals.css` (Tailwind v4 CSS-first `@theme` block). The tables below
+Source of truth: `apps/web/src/app/globals.css` (Tailwind v4 CSS-first `@theme` block). The tables below
 document what's **already defined and in use**, then list the small number of **genuine
 additions** this refactor needs (marked NEW). Nothing here proposes a rewrite — this is additive,
 matching principle #15 (reuse before creating).
@@ -192,7 +192,7 @@ sidebar width) are ever animated — never `box-shadow`, `scale`, or opacity-bas
 ## Adding the new tokens
 
 The additions above (`--radius-2xl`, `--z-*`, `--duration-*`, `--ease-standard`) are a handful of
-new lines inside the existing `@theme` block in `src/app/globals.css` — no restructuring, no
+new lines inside the existing `@theme` block in `apps/web/src/app/globals.css` — no restructuring, no
 component API changes. Everything else in this document already exists in the codebase today.
 
 ## Dark mode

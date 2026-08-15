@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CodeMentor Frontend
 
-## Getting Started
+CodeMentor's frontend is a pnpm/Turborepo monorepo with three independently deployable Next.js applications:
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```text
+apps/web       Main member and student application
+apps/lecturer  Lecturer dashboard
+apps/admin     Administration dashboard
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The backend and Keycloak deployment are maintained independently.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Requirements
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 20 or newer
+- pnpm 11 (the exact version is declared in `package.json`)
 
-## Learn More
+## Install
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Copy the relevant `apps/<app>/.env.example` to `.env.local` when an application needs environment configuration. Only browser-safe values may use the `NEXT_PUBLIC_*` prefix.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development
 
-## Deploy on Vercel
+Start all applications:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Or start one application:
+
+```bash
+pnpm dev:web
+pnpm dev:lecturer
+pnpm dev:admin
+```
+
+| Application | Local URL |
+| --- | --- |
+| Web | http://localhost:3000 |
+| Lecturer | http://localhost:3001 |
+| Admin | http://localhost:3002 |
+
+## Quality checks
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm build
+```
+
+## Project structure
+
+```text
+apps/
+  web/          Existing member/student product
+  lecturer/     Lecturer product
+  admin/        Administration product
+packages/
+  ui/           UI shared by multiple applications
+  api-client/   Shared HTTP transport
+  auth/         Shared Keycloak-facing auth primitives
+  types/        Cross-application contracts
+  utils/        Framework-independent shared utilities
+  eslint-config/
+  typescript-config/
+docs/
+  architecture/frontend-architecture.md
+```
+
+See [Frontend architecture](docs/architecture/frontend-architecture.md) for ownership rules, dependency boundaries, authentication guidance, and feature placement.

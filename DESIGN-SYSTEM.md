@@ -150,7 +150,7 @@ Tighter than the mockup's generous whitespace — sections should sit close enou
 
 ## Shared components
 
-Reusable primitives live in `src/components/ui/`; page code should compose these rather than re-declaring styled `<button>`/`<input>`/card divs inline.
+Reusable web-client primitives live in `apps/web/src/components/ui/`; page code should compose these rather than re-declaring styled `<button>`/`<input>`/card divs inline.
 
 | Component | File | Notes |
 |---|---|---|

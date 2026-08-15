@@ -1,6 +1,6 @@
 > **Methodology note:** Live browser rendering of kaggle.com wasn't available in this session (Claude in Chrome extension not connected), so this analysis is built from Kaggle's long-stable, well-documented public interface architecture (competition listing, card system, nav, filter patterns), cross-checked against the site's current live metadata (brand color `#008ABC`, "AI Proving Ground" positioning, competitions/hackathons focus, fetched 2026-08-01). It focuses on structural and systemic design decisions — grid, spacing, hierarchy, component anatomy — which is what transfers to another product; it does not claim pixel-exact current values.
 >
-> **Codebase note:** CodeMentor's existing stack is Next.js 16 + Tailwind v4 (CSS-first `@theme` tokens in `src/app/globals.css`) with a primitive library already in `src/components/ui/` (`Button`, `Card`, `Badge`/`DifficultyBadge`, `Input`) and composed components (`CourseCard`, `ProblemRow`, `RoadmapCard`, `RoadmapFilterBar`, `Sidebar`, `Topbar`, `PageHeader`). Everything below is written to **extend** that system, not replace it — existing token names and component APIs are kept wherever possible.
+> **Codebase note:** CodeMentor's existing stack is Next.js 16 + Tailwind v4 (CSS-first `@theme` tokens in `apps/web/src/app/globals.css`) with a primitive library already in `apps/web/src/components/ui/` (`Button`, `Card`, `Badge`/`DifficultyBadge`, `Input`) and composed components (`CourseCard`, `ProblemRow`, `RoadmapCard`, `RoadmapFilterBar`, `Sidebar`, `Topbar`, `PageHeader`). Everything below is written to **extend** that system, not replace it — existing token names and component APIs are kept wherever possible.
 
 # CodeMentor Design Language — Kaggle-Inspired Analysis & System
 
@@ -84,7 +84,7 @@ The existing `--color-navy: #1F2937` has a faint blue undertone (it's a "slate,"
 
 # Design Tokens
 
-All values below extend the existing `@theme` block in `src/app/globals.css` — additive, not a rewrite. New/changed lines are marked.
+All values below extend the existing `@theme` block in `apps/web/src/app/globals.css` — additive, not a rewrite. New/changed lines are marked.
 
 ```css
 @import "tailwindcss";
@@ -292,7 +292,7 @@ changing any of its conclusions, because the constraint that makes this system w
 two hues, colour spent on state and action rather than decoration** — is what makes the theme
 flip cheap.
 
-The measurement that drove the approach: **1,846 of ~2,000 colour usages in `src/` already go
+The measurement that drove the approach: **1,846 of ~2,000 colour usages in `apps/web/src/` already go
 through semantic tokens.** So dark mode is a token problem, not a component problem.
 Redefining the tokens under `.dark` converts the UI wholesale; only ~180 hardcoded usages
 needed touching, and most of those sat on surfaces that are dark in both themes anyway and

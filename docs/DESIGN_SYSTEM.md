@@ -9,7 +9,7 @@
 > measurement and notes the correction.
 >
 > **Codebase baseline.** CodeMentor already has a working design token system
-> (`src/app/globals.css`) and a primitive library (`src/components/ui/*`, `EntityCard`,
+> (`apps/web/src/app/globals.css`) and a primitive library (`apps/web/src/components/ui/*`, `EntityCard`,
 > `ProblemRow`, `PageHeader`, `FilterBar`). Large parts of what this document recommends are
 > **already implemented** (currently uncommitted on the working tree — see
 > `IMPLEMENTATION_PLAN.md` for exact status). This document explains *why* those choices are

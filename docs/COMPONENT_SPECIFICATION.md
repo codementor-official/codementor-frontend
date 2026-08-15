@@ -10,7 +10,7 @@ Per principle #15, this ordering matters: read Part A fully before touching Part
 
 # Part A — Existing components
 
-## Primitives (`src/components/ui/`)
+## Web primitives (`apps/web/src/components/ui/`)
 
 ### `Button` — `ui/button.tsx`
 - **Purpose:** every clickable action except an inline text link.
