@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Card } from "@/components/ui/card";
+import { Card } from "@codementor/ui";
 import {
   dailyActiveUsersData,
   judgeExecutionsData,

@@ -42,8 +42,8 @@ pnpm dev:admin
 | Application | Local URL |
 | --- | --- |
 | Web | http://localhost:3000 |
-| Lecturer | http://localhost:3001 |
-| Admin | http://localhost:3002 |
+| Lecturer | http://localhost:3010 |
+| Admin | http://localhost:3011 |
 
 ## Quality checks
 

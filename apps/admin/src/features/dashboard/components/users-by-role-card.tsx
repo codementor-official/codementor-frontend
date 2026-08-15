@@ -2,7 +2,7 @@
 
 import { UsersRound } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@codementor/ui";
 import { usersByRoleData } from "@/features/dashboard/data/dashboard.mock";
 
 export function UsersByRoleCard() {

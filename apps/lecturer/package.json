@@ -3,21 +3,33 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001",
+    "dev": "next dev --port 3010",
     "build": "next build",
-    "start": "next start --port 3001",
+    "start": "next start --port 3010",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@codementor/api-client": "workspace:*",
+    "@codementor/auth": "workspace:*",
+    "@codementor/types": "workspace:*",
     "@codementor/ui": "workspace:*",
+    "@codementor/utils": "workspace:*",
+    "@hookform/resolvers": "^5.5.7",
+    "lucide-react": "^1.28.0",
     "next": "16.2.12",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.83.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.12",
+    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }

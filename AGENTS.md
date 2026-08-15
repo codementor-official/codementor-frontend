@@ -9,8 +9,8 @@ pnpm workspace (`apps/*`, `packages/*`) orchestrated by Turborepo.
 | Path | Package name | Port | State |
 | --- | --- | ---: | --- |
 | `apps/web` | `@codementor/web` | 3000 | The real product: member/student app, all migrated routes and UI |
-| `apps/lecturer` | `@codementor/lecturer` | 3001 | Scaffold: one placeholder page, empty `src/*` folders |
-| `apps/admin` | `@codementor/admin` | 3002 | Scaffold: one placeholder page, empty `src/*` folders |
+| `apps/lecturer` | `@codementor/lecturer` | 3010 | Scaffold: one placeholder page, empty `src/*` folders |
+| `apps/admin` | `@codementor/admin` | 3011 | Scaffold: one placeholder page, empty `src/*` folders |
 | `packages/ui` | `@codementor/ui` | — | `DashboardShell` + `styles.css`, used only by the two scaffolds |
 | `packages/api-client` | `@codementor/api-client` | — | `createApiClient`, `ApiClientError`. No consumer yet |
 | `packages/auth` | `@codementor/auth` | — | Keycloak config types, `hasRole`/`hasAnyRole`. No consumer yet |

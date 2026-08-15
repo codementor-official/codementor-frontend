@@ -1,5 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, BookOpen, Code2, GraduationCap, Users } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Card } from "@codementor/ui";
 import { dashboardMetrics } from "@/features/dashboard/data/dashboard.mock";
 import type { DashboardMetric } from "@/features/dashboard/types/dashboard";
 
