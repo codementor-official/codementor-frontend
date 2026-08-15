@@ -1,6 +1,7 @@
 import { createApiClient } from "@codementor/api-client";
-import type { ApiResponse, User } from "@codementor/types";
+import type { ApiResponse } from "@codementor/types";
 import { apiBaseUrl } from "@/lib/env";
+import type { UpdateProfileInput, UserProfile } from "@/features/profile/types";
 
 /**
  * The single place that knows a backend URL. Everything below calls the gateway, so
@@ -25,12 +26,8 @@ async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]):
   return response.data;
 }
 
-export interface UpdateProfileInput {
-  displayName: string;
-}
-
 export const api = {
-  me: () => unwrap<User>("/me"),
+  me: () => unwrap<UserProfile>("/me"),
   updateProfile: (input: UpdateProfileInput) =>
-    unwrap<User>("/me", { method: "PATCH", body: { ...input } }),
+    unwrap<UserProfile>("/me", { method: "PATCH", body: { ...input } }),
 };
