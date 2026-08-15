@@ -1,0 +1,16 @@
+{
+  "name": "@codementor/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@codementor/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

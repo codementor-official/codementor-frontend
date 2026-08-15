@@ -1,0 +1,11 @@
+{
+  "name": "@codementor/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./index.mjs",
+  "peerDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.12"
+  }
+}
