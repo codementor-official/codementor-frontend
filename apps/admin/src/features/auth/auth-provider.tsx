@@ -1,6 +1,5 @@
 "use client";
 
-import { userFromToken } from "@codementor/auth";
 import type { User } from "@codementor/types";
 import {
   createContext,
@@ -11,7 +10,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { getKeycloakClient, initializeKeycloak } from "./keycloak-client";
 
 interface AdminAuthContextValue {
   initialized: boolean;
@@ -19,7 +17,6 @@ interface AdminAuthContextValue {
   user: User | null;
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  getAccessToken: () => Promise<string | null>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
@@ -29,21 +26,21 @@ export function AdminAuthProvider({ children }: Readonly<{ children: ReactNode }
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  const syncState = useCallback(() => {
-    const keycloak = getKeycloakClient();
-    setAuthenticated(Boolean(keycloak.authenticated));
-    setUser(keycloak.authenticated ? userFromToken(keycloak.tokenParsed) : null);
-  }, []);
-
   useEffect(() => {
     let active = true;
-    const keycloak = getKeycloakClient();
-    keycloak.onTokenExpired = () => {
-      void keycloak.updateToken(30).then(syncState).catch(() => keycloak.clearToken());
-    };
-    void initializeKeycloak()
-      .then(() => {
-        if (active) syncState();
+    void fetch("/api/auth/session", { cache: "no-store" })
+      .then(async (response) => {
+        const session = (await response.json()) as { authenticated: boolean; user: User | null };
+        if (active) {
+          setAuthenticated(session.authenticated);
+          setUser(session.user);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setAuthenticated(false);
+          setUser(null);
+        }
       })
       .finally(() => {
         if (active) setInitialized(true);
@@ -51,26 +48,19 @@ export function AdminAuthProvider({ children }: Readonly<{ children: ReactNode }
     return () => {
       active = false;
     };
-  }, [syncState]);
+  }, []);
 
   const login = useCallback(async () => {
-    await getKeycloakClient().login({ redirectUri: `${window.location.origin}/dashboard` });
+    window.location.assign("/api/auth/login");
   }, []);
 
   const logout = useCallback(async () => {
-    await getKeycloakClient().logout({ redirectUri: `${window.location.origin}/login` });
-  }, []);
-
-  const getAccessToken = useCallback(async () => {
-    const keycloak = getKeycloakClient();
-    if (!keycloak.authenticated) return null;
-    await keycloak.updateToken(30);
-    return keycloak.token ?? null;
+    window.location.assign("/api/auth/logout");
   }, []);
 
   const value = useMemo(
-    () => ({ initialized, authenticated, user, login, logout, getAccessToken }),
-    [authenticated, getAccessToken, initialized, login, logout, user],
+    () => ({ initialized, authenticated, user, login, logout }),
+    [authenticated, initialized, login, logout, user],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
