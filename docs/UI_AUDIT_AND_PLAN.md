@@ -291,26 +291,53 @@ StatStrip?          at most one, ≤64px tall               ← see R5
   fold into the `StatStrip` or are deleted (F10).
 - The streak widget is extracted once and reused — never re-marked-up per page.
 
-### R6 — One component library
+### R6 — Two libraries, no ambiguity
 
-- `packages/ui` is the **only** home for primitives. `apps/web/src/components/ui/*` moves
-  there (`Badge`, `ProgressBar`, `StatBlock`, `ConfirmDialog`, `RowActionMenu`) or is
-  deleted where `packages/ui` already has an equivalent (`Button`, `Card`).
-- **No two exported components may share a name.** Web-local `Button`/`Card`/`PageHeader`
-  are deleted, not aliased.
-- `apps/web/src/components/*` keeps only *composed, domain-aware* components
-  (`EntityCard`, `ProblemRow`, `Sidebar`, roadmap/*, study-group/*).
-- Three paginations (F15) collapse to `packages/ui`'s.
+> **Revised during Stage 4.** This rule originally read "`packages/ui` is the only home for
+> primitives; web-local `Button`/`Card`/`PageHeader` are deleted, not aliased." Implementing
+> it showed the rule was wrong, and the record is kept rather than quietly rewritten.
+
+Two facts killed the merge:
+
+1. **They do not share a palette.** Web's primitives are built on `navy`, `surface`,
+   `on-ink`, and `border-soft`. `apps/lecturer` and `apps/admin` define none of those —
+   they use the shadcn-style names in `packages/ui/src/theme.css`. Moving web's `Badge` or
+   `ProgressBar` into `packages/ui` would produce a shared package with exactly one
+   consumer, which `AGENTS.md` explicitly forbids: *"Extract to packages only when a
+   concrete cross-application abstraction exists."*
+2. **The same-named components are different on purpose.** Web's `Button` is a 40px CTA
+   that renders as a `Link` when given `href`; the shared one is a 36px control for dense
+   tables with no link mode. Merging them means a union API and a compromise height that
+   suits neither surface.
+
+The actual risk was never "two implementations exist" — it was **a file reaching for the
+wrong one**. That is now an eslint error (`no-restricted-imports`), which costs no files
+and closes the hole completely. So:
+
+- `packages/ui` holds primitives **used by more than one app**, on the shared token names.
+- `apps/web/src/components/ui` holds the student product's own primitives.
+- Where a name exists in both, lint blocks the wrong import. **Never add a third copy of a
+  name, and never re-export one library through the other.**
+- `apps/web/src/components/*` (outside `ui/`) keeps only *composed, domain-aware*
+  components (`EntityCard`, `ProblemRow`, `Sidebar`, `roadmap/*`, `study-group/*`).
+- Genuine duplicates still go: `StatBlock` had zero importers and is deleted; the second
+  and third numbered paginations collapse into one. `TablePagination` cannot absorb them —
+  it is bound to a TanStack table instance and neither list is one.
 
 ### R7 — Tokens only
 
 - Zero `zinc-*` / `gray-*` / `slate-*` / `orange-*` / `bg-white` / `text-white` in
   `apps/web/src`. Use `border-border`, `bg-surface`, `text-navy`, `bg-primary-tint`,
-  `text-on-ink`, `bg-ink-fixed`.
+  `text-on-ink`, `bg-ink-fixed`. A third hue is never the answer — the landing page had
+  picked up `violet-200`/`violet-50`, which is how a two-hue system stops being one.
+- **`on-ink` vs `on-ink-fixed`.** `on-ink` inverts with the theme, which is correct on
+  `bg-navy` and wrong on `bg-ink-fixed`: that surface deliberately stays dark, so an
+  inverting foreground renders near-black on near-black. `--color-on-ink-fixed` was added
+  for that pairing; three code blocks needed it.
 - Zero arbitrary type sizes (`text-[10px]`, `text-[10.5px]`, `text-[9px]`). The scale is
-  `text-2xs` … `text-5xl`; if a size isn't on it, either use the nearest or add it to the
-  scale.
-- Enforced by an eslint rule in `packages/eslint-config` (see Stage 5).
+  `text-2xs` … `text-5xl`; if a size isn't on it, use the nearest. 9px, 10px, 10.5px and
+  11px were four sizes doing one job and all collapsed to `text-2xs`.
+- Enforced by eslint in `packages/eslint-config` (see Stage 5).
 
 ### R8 — One interaction language
 
@@ -437,33 +464,42 @@ under the breadcrumb is `PageHeader`; no page has more than one `StatStrip`.
 **Done when:** no `overflow-x-auto` on a card list in `(app)`; `/courses` is reachable from
 nav and from `/explore`.
 
-## Stage 4 — Component-library unification
+## Stage 4 — Remove the real duplicates *(done — scope revised, see R6)*
 
-16. Move `Badge`/`DifficultyBadge`, `ProgressBar`, `StatBlock`, `ConfirmDialog`,
-    `RowActionMenu` from `apps/web/src/components/ui/` → `packages/ui/src/` (R6).
-17. Delete web-local `Button`, `Card`, `Input`; repoint all imports to `@codementor/ui`.
-18. Delete `Pagination` inline in `/practice`; use `packages/ui`'s (F15).
-19. `apps/web/src/components/ui/` ends up empty → delete the directory.
-20. Verify `transpilePackages` in `apps/web/next.config.ts` still lists `@codementor/ui`.
+16. ~~Move web primitives into `packages/ui`~~ — **not done, deliberately.** They are built
+    on tokens lecturer and admin do not define, so the move would create a shared package
+    with one consumer. See R6 for the full reasoning.
+17. Delete `StatBlock` — zero importers.
+18. Collapse the second and third numbered paginations into
+    `apps/web/src/components/ui/pagination.tsx`, used by `/practice` and `RoadmapList`.
+    `TablePagination` cannot serve them: it takes a TanStack table instance.
+19. Add `no-restricted-imports` blocking `Button`/`Card`/`CardHeader`/`CardContent`/
+    `PageHeader` from `@codementor/ui` inside `apps/web` — this, not a merge, is what
+    removes the risk of a file picking the wrong primitive.
 
-**Done when:** `grep -rn "@/components/ui" apps/web/src` is empty; no exported component
-name exists in two places.
+**Done when:** no component name has three copies, and importing the wrong `Button` in
+`apps/web` fails lint.
 
-## Stage 5 — Token & interaction cleanup, enforced
+## Stage 5 — Token & interaction cleanup, enforced *(done)*
 
-21. Replace every hardcoded color with a token (R7/F11) — start with `/dashboard`'s
-    `border-orange-200 bg-orange-50/50` → `border-primary/20 bg-primary-tint`.
-22. Replace every arbitrary type size with a scale token (R7/F12).
-23. Normalize every hover to border/background delta; delete `-translate-y-*` and
-    `hover:shadow-*` (R8/F13).
-24. Add `focus-visible` rings to `ProblemRow`, `EntityCard`, breadcrumb links, topic chips
-    (F16).
-25. Add an eslint rule in `packages/eslint-config` banning
-    `/\b(?:bg|text|border)-(?:zinc|gray|slate|orange|white)-/` and `text-\[\d` in
-    `apps/*/src/**/*.tsx`. **This is the rule that keeps the audit from repeating.**
+21. Every hardcoded color replaced with a token (R7/F11), including a third hue (`violet`)
+    that had appeared on the landing page.
+22. Added `--color-on-ink-fixed` and repointed the three code blocks that paired an
+    inverting foreground with a surface that never inverts.
+23. Arbitrary type sizes collapsed onto the scale (R7/F12): 9/10/10.5/11px → `text-2xs`,
+    13px → `text-xs`, 15px → `text-base`.
+24. Every hover normalized to a border/background delta; `-translate-y-*`, `scale-*`, and
+    `hover:shadow-*` are gone (R8/F13).
+25. **The rule that keeps this audit from repeating** — `packages/eslint-config` enforces
+    hardcoded palette colors, hardcoded white/black, arbitrary font sizes, and hover
+    translate/scale/shadow. `error` in `apps/web`; `warn` in `apps/lecturer`, `apps/admin`,
+    and `packages/ui`, which have not had their audits. Promote an app to `error` in the
+    change that cleans it up. Never silence a rule to land a change.
 
-**Done when:** `pnpm lint` passes with the new rule enabled; dark mode has no light-on-light
-block.
+**Still open:** `focus-visible` rings on `ProblemRow`, `EntityCard`, and the topic chips
+(F16) — the breadcrumb has one. Not lint-enforceable as cheaply; needs a pass by hand.
+
+**Done when:** `pnpm lint` passes with the rules on. It does — 0 errors.
 
 ## Stage 6 — Docs consolidation
 

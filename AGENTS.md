@@ -70,14 +70,26 @@ Token/component detail: `DESIGN-SYSTEM.md`.
    data *and* actionable — hardcoded marketing figures are deleted, not styled. Per-entity
    metadata belongs on the entity's card, not in a page-level tile. Right rails cap at 2 cards,
    each carrying an action or a deadline.
-6. **One component library.** `packages/ui` is the only home for primitives. No two exported
-   components may share a name. `apps/<app>/src/components/*` holds only composed, domain-aware
-   components.
+6. **Two libraries, no ambiguity.** `packages/ui` holds primitives that more than one app uses
+   and that are built on the shared token names. `apps/web/src/components/ui` holds the student
+   product's own primitives — they are built on `navy`/`surface`/`on-ink`/`border-soft`, which
+   lecturer and admin do not define, so moving them would create a shared package with one
+   consumer. Where both libraries export the same name (`Button`, `Card`, `PageHeader`), eslint
+   blocks the wrong import rather than one being deleted; they differ on purpose (web's `Button`
+   is a 40px CTA that can render as a Link, the shared one is a 36px control for dense tables).
+   Never add a third copy of a name, and never re-export one library through the other.
 7. **Tokens only.** No `zinc-*` / `gray-*` / `slate-*` / `orange-*` / `bg-white` / `text-white`,
-   no arbitrary type sizes (`text-[10px]`). Hardcoded colors are holes in dark mode.
+   no arbitrary type sizes (`text-[10px]`). Hardcoded colors are holes in dark mode. On a surface
+   that stays dark in both themes (`bg-ink-fixed`) the foreground is `text-on-ink-fixed`, not
+   `text-on-ink` — the latter inverts and would render near-black on near-black.
 8. **One interaction language.** Hover and focus are a border or background delta —
    `transition-colors duration-150`. No `translate`, no `scale`, no hover shadow. Every
    interactive element has a visible `focus-visible` ring.
+
+Rules 6–8 are enforced by eslint (`packages/eslint-config`), as errors in `apps/web` and as
+warnings in `apps/lecturer`, `apps/admin`, and `packages/ui` until those get their own audit.
+Promote an app to `error` in the same change that cleans it up. **Do not silence a rule to land
+a change** — the whole point is that the convention runs rather than being remembered.
 9. **Ship it or delete it.** No nav-reachable route may render a placeholder. Mock data is
    allowed only where the shape and interaction are the real ones and a backend is planned; a
    mock that exists to fill a grid gets deleted, along with its data file and components.
