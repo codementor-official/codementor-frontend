@@ -12,6 +12,8 @@ export { PageHeader } from "./page-header";
 export { SegmentedTabs } from "./segmented-tabs";
 export { Select } from "./select";
 export { SideDrawer } from "./side-drawer";
+export { StatStrip } from "./stat-strip";
+export type { Stat } from "./stat-strip";
 export { StatusBadge } from "./status-badge";
 export type { DashboardShellProps } from "./dashboard-shell";
 export type { ManagePageProps } from "./manage-page";

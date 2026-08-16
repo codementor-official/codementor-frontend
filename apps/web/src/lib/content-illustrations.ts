@@ -11,14 +11,6 @@ const COVER_IMAGES = [
   "/anh9.svg",
 ];
 
-export const PAGE_ILLUSTRATIONS = {
-  dashboard: "/anh1.jfif",
-  explore: "/anh2.svg",
-  paths: "/anh3.svg",
-  practice: "/anh4.svg",
-  workspace: "/anh8.svg",
-} as const;
-
 export function contentIllustration(seed: string) {
   let hash = 0;
   for (let index = 0; index < seed.length; index += 1) {

@@ -15,7 +15,7 @@ import {
   type StudyGroupFilterState,
   type StudyGroupSort,
 } from "@/lib/study-group/study-group-filter";
-import { isOwned, summarizeGroups } from "@/lib/study-group/study-group-stats";
+import { isOwned } from "@/lib/study-group/study-group-stats";
 import { StudyGroupActions } from "./study-group-actions";
 import { StudyGroupCard } from "./study-group-card";
 import type { StudyGroup } from "@/types/study-group";
@@ -78,7 +78,6 @@ export function StudyGroupBoard({
   const [filters, setFilters] = useState<StudyGroupFilterState>(DEFAULT_STUDY_GROUP_FILTERS);
 
   const groups = useMemo(() => [...createdGroups, ...initialGroups], [createdGroups, initialGroups]);
-  const summary = useMemo(() => summarizeGroups(groups), [groups]);
   const topicOptions = useMemo(
     () => [
       { value: "all", label: "Mọi chủ đề" },
@@ -111,14 +110,9 @@ export function StudyGroupBoard({
 
   return (
     <div>
+      {/* The counts moved to the page's StatStrip — they were rendered here and in the
+        * banner's highlights, in different words, from the same summary. */}
       <StudyGroupActions
-        leading={
-          <p className="text-xs text-text-muted">
-            <span className="font-semibold text-navy">{summary.totalGroups} nhóm</span> ·{" "}
-            {summary.ownedCount} bạn quản lý · {summary.joinedCount} đã tham gia ·{" "}
-            <span className="font-semibold text-navy">{summary.openTaskCount}</span> bài tập đang mở
-          </p>
-        }
         onJoin={handleJoin}
         onCreate={handleCreate}
         joinError={joinError}

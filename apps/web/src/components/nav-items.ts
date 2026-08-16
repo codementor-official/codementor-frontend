@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Bot,
   Compass,
   Dumbbell,
@@ -16,6 +17,7 @@ export const createAction = { href: "/create-problem", label: "Tạo bài tập"
 export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutGrid },
   { href: "/explore", label: "Khám phá", icon: Compass },
+  { href: "/courses", label: "Khóa học", icon: BookOpen },
   { href: "/paths", label: "Lộ trình", icon: Map },
   { href: "/practice", label: "Luyện tập", icon: Dumbbell },
   { href: "/workspace", label: "Nhóm học tập", icon: Users },

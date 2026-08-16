@@ -13,14 +13,11 @@ type Panel = "join" | "create";
  * join/create forms only take up space once you ask for them. One panel at a time.
  */
 export function StudyGroupActions({
-  leading,
   onJoin,
   onCreate,
   joinError,
   onClearJoinError,
 }: {
-  /** Sits opposite the buttons on the same row — used for the page's one-line summary. */
-  leading?: React.ReactNode;
   /** Returns nothing on success (the caller navigates); the error surfaces via `joinError`. */
   onJoin: (code: string) => void;
   onCreate: (name: string, description: string) => void;
@@ -48,8 +45,7 @@ export function StudyGroupActions({
 
   return (
     <div className="mb-5">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        {leading}
+      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
         <div className="flex flex-wrap gap-2">
           <Button type="button" size="sm" onClick={() => toggle("create")} aria-expanded={panel === "create"}>
             {panel === "create" ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}

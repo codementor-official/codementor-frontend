@@ -1,30 +1,18 @@
 import Link from "next/link";
-import { ArrowRight, FileText } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { articles } from "@/data/articles";
-import { PageBanner } from "@/components/page-banner";
+import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
-import { PAGE_ILLUSTRATIONS } from "@/lib/content-illustrations";
 
 export default function ArticlesPage() {
   return (
     <div>
-      <PageBanner
-        eyebrow="Thư viện kiến thức"
-        title="Bài viết từ mentor CodeMentor"
-        description="Kiến thức nền, kinh nghiệm triển khai và các mẹo thực chiến để bạn học nhanh hơn và làm bài chắc hơn."
-        illustrationSrc={PAGE_ILLUSTRATIONS.explore}
-        highlights={[
-          { value: String(articles.length), label: "bài viết" },
-          { value: "4", label: "chủ đề" },
-          { value: "100%", label: "đọc miễn phí" },
-        ]}
+      <PageHeader
+        title="Bài viết"
+        subtitle={`${articles.length} bài kiến thức nền, kinh nghiệm triển khai và mẹo thực chiến từ mentor CodeMentor.`}
       />
 
-      <div className="mb-4 flex items-center gap-2 text-sm text-text-muted">
-        <FileText className="h-4 w-4 text-primary" />
-        <span>{articles.length} bài viết mới nhất</span>
-      </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {articles.map((article) => (
           <Link
             key={article.slug}

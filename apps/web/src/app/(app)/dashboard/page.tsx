@@ -1,63 +1,31 @@
 import Link from "next/link";
-import {
-  Activity,
-  Award,
-  BarChart3,
-  Bot,
-  BookOpen,
-  Calendar,
-  CheckCircle2,
-  Eye,
-  Flame,
-  Pencil,
-  PlayCircle,
-  type LucideIcon,
-} from "lucide-react";
-import { PageBanner } from "@/components/page-banner";
+import { BarChart3, BookOpen, Calendar, Pencil } from "lucide-react";
+import { StatStrip } from "@codementor/ui";
+import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EntityCard } from "@/components/entity-card";
 import { ProblemRow } from "@/components/problem-row";
-import { StatBlock } from "@/components/ui/stat-block";
 import { WeeklyGoalCard } from "@/components/personalization/weekly-goal-card";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
-import { PAGE_ILLUSTRATIONS } from "@/lib/content-illustrations";
 import { courseDifficulty, courseHref, featuredCourses } from "@/lib/roadmap/course-catalog";
 import {
   continueLearning,
   dashDeadlines,
   dashStats,
   popularTopics,
-  recentActivity,
-  recentlyViewed,
   recommendedProblems,
   skillProgress,
-  streakCells,
   weeklyGoal,
 } from "@/data/sample-dashboard";
-
-const ACTIVITY_ICON: Record<(typeof recentActivity)[number]["kind"], LucideIcon> = {
-  solved: CheckCircle2,
-  lesson: PlayCircle,
-  streak: Flame,
-  badge: Award,
-};
 
 export default function DashboardPage() {
   return (
     <div>
-      <PageBanner
-        illustrationSrc={PAGE_ILLUSTRATIONS.dashboard}
-        variant="dashboard"
-        highlights={[
-          { value: "14%", label: "lộ trình hoàn thành" },
-          { value: "5 giờ", label: "mục tiêu tuần này" },
-          { value: "5 ngày", label: "chuỗi học hiện tại" },
-        ]}
-        eyebrow="Chào mừng trở lại, Gia Sĩ"
-        title="Lộ trình Frontend Developer của bạn đang chờ"
-        description="Bạn đang ở 14% chặng đường — còn 2 bài nữa là xong chương CSS layout. Giữ nhịp 5 giờ/tuần thì khoảng 7 tháng nữa bạn hoàn thành toàn bộ lộ trình."
+      <PageHeader
+        title="Chào mừng trở lại, Gia Sĩ"
+        subtitle="Lộ trình Frontend Developer của bạn đang ở 14% — còn 2 bài nữa là xong chương CSS layout."
         actions={
           <>
             <Button href="/paths/frontend-developer" size="sm">
@@ -70,35 +38,9 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-        {dashStats.map((w) => (
-          <Card key={w.label} className="p-4">
-            <StatBlock value={w.value} label={w.label} />
-            <div className="mt-1 text-xs text-text-faint">{w.sub}</div>
-          </Card>
-        ))}
-      </div>
-
-      <Link
-        href="/paths"
-        className="mb-5 flex flex-wrap items-center gap-5 rounded-lg border border-orange-200 bg-orange-50/50 p-5 transition hover:border-primary/50 hover:bg-orange-50"
-      >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-orange-200 bg-white text-primary">
-          <Bot className="h-5 w-5" />
-        </div>
-        <div className="min-w-[260px] flex-1">
-          <div className="mb-1.5 text-[10.5px] font-bold tracking-wide text-primary uppercase">
-            Đề xuất từ AI
-          </div>
-          <div className="mb-1 text-base font-bold text-navy">Frontend Developer Roadmap</div>
-          <div className="text-sm text-text-muted">
-            Dựa trên mục tiêu &ldquo;Học để đi làm&rdquo; và trình độ Beginner bạn chọn khi đăng ký.
-          </div>
-        </div>
-        <span className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-ink">
-          Xem lộ trình →
-        </span>
-      </Link>
+      {/* The four numbers that were a grid of cards, and the three the banner repeated in
+        * different words. One row, one set. */}
+      <StatStrip className="mb-5" stats={dashStats.map(({ label, value }) => ({ label, value }))} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex min-w-0 flex-col gap-6">
@@ -186,14 +128,16 @@ export default function DashboardPage() {
 
           <section>
             <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-base font-bold text-navy">Đề xuất lộ trình cho bạn</h2>
-              <Link href="/paths" className="text-xs font-semibold text-primary">
+              <h2 className="text-base font-bold text-navy">Khóa học đề xuất cho bạn</h2>
+              <Link href="/courses" className="text-xs font-semibold text-primary">
                 Xem tất cả →
               </Link>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-1">
-              {featuredCourses.map((course, i) => (
-                <div key={course.id} className="w-64 shrink-0">
+            {/* Was a fixed-width horizontal strip that clipped cards on the very screens
+              * with room to show them. A grid uses the width the shell now hands over. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {featuredCourses.slice(0, 6).map((course, i) => (
+                <div key={course.id}>
                   <EntityCard
                     tile={course.thumbnail}
                     tileVariant={i % 2 === 0 ? "ink" : "primary"}
@@ -216,31 +160,11 @@ export default function DashboardPage() {
           </section>
         </div>
 
+        {/* Two cards, both carrying an action or a deadline. The rail used to stack five —
+          * streak, activity, recently-viewed — none of which the user could act on, and the
+          * streak duplicated /practice's copy of the same widget in different markup. */}
         <div className="flex min-w-0 flex-col gap-4">
           <WeeklyGoalCard completedHours={weeklyGoal.doneH} />
-
-          <Card className="p-4">
-            <div className="mb-3.5 flex items-baseline justify-between">
-              <span className="flex items-center gap-1.5 text-sm font-bold text-navy">
-                <Flame className="h-4 w-4 text-primary" /> Chuỗi ngày
-              </span>
-              <span className="text-base font-bold text-primary">5 ngày</span>
-            </div>
-            <div className="flex justify-between gap-1.5">
-              {streakCells.map((c) => (
-                <div key={c.label} className="flex-1 text-center">
-                  <div
-                    className={`mb-1 flex h-8 items-center justify-center rounded-md ${
-                      c.active ? "bg-primary text-on-ink" : "bg-border-soft"
-                    }`}
-                  >
-                    {c.active && <Flame className="h-4 w-4" />}
-                  </div>
-                  <div className="text-[10px] font-medium text-text-faint">{c.label}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
 
           <Card className="p-4">
             <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
@@ -251,7 +175,7 @@ export default function DashboardPage() {
                 <div key={d.title} className="flex items-center gap-2.5">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs font-semibold text-navy">{d.title}</div>
-                    <div className="text-[11px] text-text-faint">
+                    <div className="text-2xs text-text-faint">
                       {d.deadline} · {d.group}
                     </div>
                   </div>
@@ -259,47 +183,6 @@ export default function DashboardPage() {
                     {d.overdue ? "Quá hạn" : "Sắp tới"}
                   </Badge>
                 </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
-              <Activity className="h-4 w-4 text-primary" /> Hoạt động gần đây
-            </div>
-            <div className="flex flex-col gap-3.5">
-              {recentActivity.map((a) => {
-                const Icon = ACTIVITY_ICON[a.kind];
-                return (
-                  <div key={a.text} className="flex items-start gap-2.5">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-border-soft text-navy">
-                      <Icon className="h-3 w-3" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs leading-relaxed text-navy">{a.text}</div>
-                      <div className="text-[11px] text-text-faint">{a.time}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy">
-              <Eye className="h-4 w-4 text-primary" /> Xem gần đây
-            </div>
-            <div className="flex flex-col gap-3">
-              {recentlyViewed.map((r) => (
-                <Link key={r.title} href={r.href} className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy font-mono text-xs font-bold text-on-ink">
-                    {r.tile}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-semibold text-navy">{r.title}</div>
-                    <div className="text-[11px] text-text-faint">{r.meta}</div>
-                  </div>
-                </Link>
               ))}
             </div>
           </Card>
