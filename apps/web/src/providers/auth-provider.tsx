@@ -10,12 +10,22 @@ import { api, setAccessTokenReader } from "@/lib/api";
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
 
+/** Keycloak identity provider alias, provisioned in the realm — see configure-codementor-realm.sh. */
+export type SocialProvider = "google" | "facebook";
+
 interface AuthContextValue {
   status: AuthStatus;
   /** The CodeMentor profile from GET /api/v1/me, not the raw Keycloak token. */
   user: User | null;
   error: string | null;
+  /** Full-page redirect to Keycloak — used for deep-link "you must log in" prompts, not the /login form. */
   signIn: () => void;
+  /**
+   * Opens Keycloak in a popup so /login never navigates away. No `provider` shows
+   * the plain username/password form; a provider skips straight to that IdP via
+   * `kc_idp_hint`. Rejects on cancel/error.
+   */
+  signInWithPopup: (provider?: SocialProvider) => Promise<void>;
   signUp: () => void;
   signOut: () => void;
   /** Re-reads the profile after the user edits it. */
@@ -105,7 +115,34 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       status,
       user,
       error,
-      signIn: () => void manager().signinRedirect(),
+      // `prompt: login` forces Keycloak to re-authenticate even if its own SSO
+      // session (a separate cookie from ours) is still alive from a prior login —
+      // without it, "Login" after "Logout" can silently resume the last identity
+      // (including a linked Google/Facebook broker session) instead of asking again.
+      signIn: () => void manager().signinRedirect({ extraQueryParams: { prompt: "login" } }),
+      signInWithPopup: async (provider) => {
+        setError(null);
+        try {
+          // signinPopup resolves once the popup's callback (this same /auth/callback,
+          // run inside the popup) posts the result back — see CallbackPage. Its
+          // `userLoaded` event fires on this manager instance just like a redirect
+          // would, so the effect above picks the session up the same way.
+          await manager().signinPopup({
+            // No provider → plain login form. `prompt: login` there for the same
+            // reason `signIn` needs it: an alive Keycloak SSO session would otherwise
+            // skip the form and silently resume whoever was last signed in.
+            extraQueryParams: provider ? { kc_idp_hint: provider } : { prompt: "login" },
+            popupWindowFeatures: { width: 480, height: 640, popup: true },
+          });
+        } catch (cause) {
+          // The user closing the popup themselves surfaces as a plain rejection —
+          // not worth alarming them with an "error".
+          const message = cause instanceof Error ? cause.message : String(cause);
+          if (!/popup closed/i.test(message)) {
+            setError("Không thể đăng nhập. Vui lòng thử lại.");
+          }
+        }
+      },
       signUp: () => {
         window.location.href = registrationUrl(keycloakConfig, window.location.origin);
       },

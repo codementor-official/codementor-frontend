@@ -1,3 +1,4 @@
+import Script from "next/script";
 import { THEME_STORAGE_KEY } from "@/lib/store/theme-store";
 
 /**
@@ -14,5 +15,9 @@ var d=p==="dark"||(p==="system"&&matchMedia("(prefers-color-scheme: dark)").matc
 if(d)document.documentElement.classList.add("dark");
 }catch(e){}})();`;
 
-  return <script dangerouslySetInnerHTML={{ __html: script }} />;
+  return (
+    <Script id="theme-script" strategy="beforeInteractive">
+      {script}
+    </Script>
+  );
 }

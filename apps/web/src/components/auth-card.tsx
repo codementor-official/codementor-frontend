@@ -15,7 +15,7 @@ import { useAuth } from "@/providers/auth-provider";
  * còn tệ hơn không có form: nó dạy người dùng gõ mật khẩu thật vào chỗ không xác thực.
  */
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
-  const { status, error, signIn, signUp } = useAuth();
+  const { status, error, signIn, signInWithPopup, signUp } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -50,12 +50,33 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           onClick={isSignup ? signUp : signIn}
         >
           <LogIn className="h-4 w-4" />
-          {status === "loading"
-            ? "Đang kiểm tra phiên…"
-            : isSignup
-              ? "Đăng ký với CodeMentor ID"
-              : "Tiếp tục với CodeMentor ID"}
+          {status === "loading" ? "Đang kiểm tra phiên…" : isSignup ? "Đăng ký" : "Đăng nhập"}
         </Button>
+
+        <div className="my-4 flex items-center gap-3 text-xs text-text-muted">
+          <span className="h-px flex-1 bg-border" />
+          hoặc
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Button
+            className="w-full"
+            disabled={status === "loading"}
+            onClick={() => void signInWithPopup("google")}
+            variant="outline"
+          >
+            Tiếp tục với Google
+          </Button>
+          <Button
+            className="w-full"
+            disabled={status === "loading"}
+            onClick={() => void signInWithPopup("facebook")}
+            variant="outline"
+          >
+            Tiếp tục với Facebook
+          </Button>
+        </div>
 
         <p className="mt-4 text-center text-xs text-text-muted">
           {isSignup ? "Đã có tài khoản? " : "Chưa có tài khoản? "}

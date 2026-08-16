@@ -147,6 +147,9 @@ export function registrationUrl(config: KeycloakPublicConfig, redirectOrigin: st
     response_type: "code",
     scope: "openid profile email",
     redirect_uri: redirectOrigin + "/auth/callback",
+    // Same reasoning as `signIn`'s prompt=login: without it, a still-alive Keycloak
+    // SSO session skips straight past the registration form as an existing user.
+    prompt: "login",
   });
   return realmUrl(config) + "/protocol/openid-connect/registrations?" + params.toString();
 }

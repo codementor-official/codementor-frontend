@@ -22,7 +22,15 @@ export default function CallbackPage() {
     if (started.current) return;
     started.current = true;
 
-    getUserManager(keycloakConfig, window.location.origin)
+    const manager = getUserManager(keycloakConfig, window.location.origin);
+    if (window.opener && window.opener !== window) {
+      void manager.signinPopupCallback().catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : "Đăng nhập thất bại");
+      });
+      return;
+    }
+
+    manager
       .signinRedirectCallback()
       .then(() => router.replace("/practice"))
       .catch((cause: unknown) => {
