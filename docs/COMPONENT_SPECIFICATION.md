@@ -1,9 +1,8 @@
-> **Superseded in part (2026-08-16).** `DESIGN-SYSTEM.md` is the single source of truth for the
-> design system, and `docs/UI_AUDIT_AND_PLAN.md` is the current audit and rebuild plan. Where this
-> document disagrees with either, they win. In particular this document predates the page-shell
-> rule (`Breadcrumb -> PageHeader -> StatStrip? -> content`), the removal of `PageBanner`, the
-> fluid-width rule, the ban on horizontal scroll strips, and the consolidation of all primitives
-> into `packages/ui`.
+> **Partly historical (2026-08-16).** `DESIGN-SYSTEM.md` is the single source of truth for the
+> design system and `docs/UI_AUDIT_AND_PLAN.md` for the rules; where this document disagrees with
+> either, they win. Part B in particular is a snapshot of a gap list that has since been worked
+> through — `Breadcrumb`, `StatStrip`, `SegmentedTabs`, and `Pagination` all exist now, and
+> `StatBlock` and `PageBanner` were deleted rather than adopted.
 
 # CodeMentor Component Specification
 
@@ -27,7 +26,7 @@ Per principle #15, this ordering matters: read Part A fully before touching Part
 - **States:** default, `hover` (`primary-hover` / `bg` tint), `active` (`primary-active` /
   `border-soft`), `focus-visible` (2px `ring-navy` with offset), `disabled` (50% opacity,
   `cursor-not-allowed`, `aria-disabled` set automatically).
-- **Spacing:** `gap-2` icon-to-label; `sm` = 12px×32px, `md` = 16px×40px (see `DESIGN_TOKENS.md`).
+- **Spacing:** `gap-2` icon-to-label; `sm` = 12px×32px, `md` = 16px×40px (see `DESIGN-SYSTEM.md`).
 - **Accessibility:** icon-only usage must pass `aria-label` explicitly — the component does not
   infer one.
 - **Usage:** `<Button href="/paths">Xem lộ trình</Button>`, `<Button variant="outline" size="sm">…</Button>`.
@@ -88,13 +87,6 @@ Per principle #15, this ordering matters: read Part A fully before touching Part
 - **Used by:** Practice (difficulty filter). Not yet used by Explore or Submissions, which currently
   render their own unstyled tab row — see Part B / `PAGE_GUIDELINES.md`.
 
-### `StatBlock` — `ui/stat-block.tsx`
-- **Purpose:** large bold number + small gray caption — hero stat rows, dashboard/progress
-  summaries.
-- **Props:** `value: string`, `label: string`, `tone?: "default" | "onDark"` (for use inside a
-  dark/`ink` hero band vs. a light surface), `className?: string`.
-- **Gap:** not yet adopted on the landing page's inline `stats` row or the dashboard's `dashStats`
-  card row — both still render the same shape by hand. See `IMPLEMENTATION_PLAN.md` Phase 4.
 
 ## Composed components
 
@@ -147,7 +139,7 @@ Per principle #15, this ordering matters: read Part A fully before touching Part
 - **Purpose:** app-shell header — logo + search input.
 - **Gap:** the landing page (`app/page.tsx`) renders its own separate `<header>` rather than a
   `variant` of this component; both now use the correct `border-border`/`bg-surface` tokens (no
-  more hardcoded `zinc-*`), but they're still two implementations. See `IMPLEMENTATION_PLAN.md`.
+  more hardcoded `zinc-*`), but they're still two implementations. See `docs/UI_AUDIT_AND_PLAN.md` → R6.
 
 ### `UserMenu` — `user-menu.tsx`
 - **Purpose:** avatar button + click-outside dropdown (profile link, logout).
@@ -182,21 +174,14 @@ Per principle #15, this ordering matters: read Part A fully before touching Part
 - `RoadmapLoadingState` — roadmap-page-specific skeleton (hero + card grid pulse blocks).
   **Candidate to generalize as the Part B `Skeleton` primitive.**
 
-### `Placeholder` — `placeholder.tsx`
-- **Purpose:** dashed-border stand-in for a section that isn't built yet (used throughout
-  Settings/Submissions/Progress).
-- **⚠️ Token drift:** hardcodes `border-zinc-300 bg-zinc-50 text-zinc-400` instead of
-  `border-border`/`bg-bg`/`text-text-faint`. Low-risk (it's explicitly a temporary stand-in that
-  gets deleted as each section is built) but should be fixed if it survives past the next round of
-  page work — see `IMPLEMENTATION_PLAN.md`.
 
 ---
 
-# Part B — Gap analysis: components that don't exist yet
+# Part B — Gap analysis
 
-These are needed to reach Kaggle-level polish and are **not** satisfied by anything in Part A.
-Build them in this order (see `IMPLEMENTATION_PLAN.md` Phase 2) — each unblocks page-level work
-that currently either duplicates markup or is simply missing.
+The four entries marked **built** landed during the UI rebuild and are kept here with their
+original reasoning, because *why* a component was needed is the part that stops the next person
+re-deriving it. Everything else is still a genuine gap; build in the order listed.
 
 ### `Modal` / `Dialog` — new, `ui/modal.tsx`
 - **Purpose:** generic centered overlay — currently duplicated by hand in `OnboardingModal` and
@@ -218,7 +203,7 @@ that currently either duplicates markup or is simply missing.
   building if a page needs custom-styled option rendering (icons/descriptions in the dropdown)
   that native `<select>` can't do.
 
-### `Breadcrumb` — new, `packages/ui/src/breadcrumb.tsx` — **HIGHEST PRIORITY, blocks the shell**
+### `Breadcrumb` — `packages/ui/src/breadcrumb.tsx` — **built**
 - **Purpose:** there is currently **no breadcrumb anywhere in the repo** (`grep -rn "readcrumb"`
   → 0 hits). Detail pages improvise: `/paths/[pathId]` has a text link hardcoded to `/paths`,
   `/workspace/[groupId]` has an `ArrowLeft` icon with different markup, and course detail, lesson,
@@ -233,7 +218,7 @@ that currently either duplicates markup or is simply missing.
   segments resolve their label from the loaded entity, falling back to the slug.
 - **Replaces:** every hand-rolled back link. Delete them; "back" is the previous crumb.
 
-### `StatStrip` — new, `packages/ui/src/stat-strip.tsx` — **HIGH PRIORITY**
+### `StatStrip` — `packages/ui/src/stat-strip.tsx` — **built**
 - **Purpose:** page-level stats currently consume ~530px above the fold on `/dashboard`
   (`PageBanner` highlights + 4 `StatBlock` cards + an AI banner) before the first piece of real
   content, and most of the numbers are hardcoded strings, not data. `StatStrip` replaces all of
@@ -246,7 +231,7 @@ that currently either duplicates markup or is simply missing.
 - **Replaces:** `PageBanner`'s `highlights` prop (and `PageBanner` itself — see below) and the
   grid-of-`StatBlock`-cards pattern on `/dashboard`.
 
-### `PageBanner` — `page-banner.tsx` — **DELETE**
+### `PageBanner` — **deleted**
 Not a gap; a mistake to remove. It is one of three competing page-header patterns (`PageBanner`
 on 5 pages, `PageHeader` on 3, inline `<header>` on 2), and `/paths` uses **both** — switching
 header component between its loading and loaded states, so the page visibly changes shape when
@@ -261,12 +246,13 @@ are real**, and its illustration is dropped.
   "bottom" | "left"`.
 - **Priority:** low — nice-to-have accessibility/discoverability polish, not blocking any page.
 
-### `Pagination` — new, `ui/pagination.tsx`
-- **Purpose:** `RoadmapList` only has a "load more" button today. Kaggle favors simple numbered
-  pagination for long, stable lists (predictable scroll position) over infinite scroll. Worth
-  adding once any list (Practice, Submissions) grows past a few dozen items — not urgent at
-  current mock-data scale.
-- **Proposed props:** `page: number`, `pageCount: number`, `onPageChange: (page: number) => void`.
+### `Pagination` — `apps/web/src/components/ui/pagination.tsx` — **built**
+- **Purpose:** numbered pagination for plain lists — predictable scroll position, unlike infinite
+  scroll. Three hand-rolled copies existed (inline in `/practice`, inside `RoadmapList`, and
+  `/courses` shipped with none at all over 84 cards).
+- **Props:** `page`, `pageCount`, `onChange`, `label` (names the list for screen readers),
+  `className`.
+- **Not `TablePagination`:** that one takes a TanStack table instance; none of these lists is one.
 
 ### `Accordion` — new, `ui/accordion.tsx` (formalizes an existing pattern)
 - **Purpose:** `CourseCurriculumOutline` already implements the right visual/interaction pattern

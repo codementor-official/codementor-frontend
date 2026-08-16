@@ -3,10 +3,13 @@
 **Scope:** `apps/web` (member/student app). Audited 2026-08-16 against the current
 `src/` tree, not against the older Kaggle-analysis docs.
 
-**Status of those older docs:** `DESIGN-LANGUAGE.md`, `docs/DESIGN_SYSTEM.md`,
-`docs/PAGE_GUIDELINES.md`, `docs/IMPLEMENTATION_PLAN.md` describe an *intended* system.
-The code diverged from it. This document is the corrective pass and supersedes their
-page-level guidance where they conflict.
+**Status:** all six stages have shipped. Findings are kept in the past tense they were
+written in; each stage below records what actually landed, including the two places the plan
+turned out to be wrong (R6, and three layout misses only a rendered page revealed).
+
+The documents this one replaced — `DESIGN-LANGUAGE.md`, `docs/DESIGN_SYSTEM.md`,
+`docs/DESIGN_TOKENS.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/ROADMAP.md` — described an
+*intended* system the code had diverged from, and were deleted in Stage 6.
 
 ---
 
@@ -157,8 +160,8 @@ hand-write `text-[9px]`, `text-[10px]`, `text-[10.5px]`, `text-[11px]`. Column w
 similarly hand-tuned per table (`w-15`, `w-14`, `w-12`, `w-7`) rather than shared.
 
 ### F13. Interaction language contradicts its own spec
-`DESIGN-LANGUAGE.md` §"Micro-interactions": *"hover/focus states are always a background
-or border delta, never a shadow pop… no scale/bounce."*
+The design language in force at the time said, under "Micro-interactions": *"hover/focus
+states are always a background or border delta, never a shadow pop… no scale/bounce."*
 
 Actual code: `/articles` and `/explore` cards use `group-hover:-translate-y-0.5
 group-hover:shadow-card`; `/practice` collection cards use `hover:-translate-y-0.5`;
@@ -188,12 +191,11 @@ It contains one non-functional search box, centered inside `max-w-3xl`. It is th
 home for the breadcrumb and currently holds nothing that earns the row.
 
 ### F18. Design-doc sprawl and contradiction
-Seven overlapping documents (`DESIGN-LANGUAGE.md`, `DESIGN-SYSTEM.md`,
-`docs/DESIGN_SYSTEM.md`, `docs/DESIGN_TOKENS.md`, `docs/COMPONENT_SPECIFICATION.md`,
-`docs/PROJECT_DESIGN_PRINCIPLES.md`, `docs/PAGE_GUIDELINES.md`), ~1,400 lines, with
-direct conflicts — e.g. `DESIGN-SYSTEM.md` prescribes section padding `py-10`–`py-14`
-while `DESIGN-LANGUAGE.md`'s token table prescribes `--space-12`/`--space-16`. When docs
-disagree, code follows neither.
+Nine overlapping documents, ~2,000 lines, with direct conflicts — `DESIGN-SYSTEM.md`
+prescribed section padding `py-10`–`py-14` while the design-language token table prescribed
+`--space-12`/`--space-16`; two separate files held near-identical Kaggle analyses; a third
+duplicated the token tables. When documents disagree, code follows neither. Resolved in
+Stage 6: four documents remain, each with one job.
 
 ## 1.3 Mock-only surfaces (no backend), ranked by whether they earn their space
 
@@ -346,8 +348,7 @@ and closes the hole completely. So:
 - Transition: `transition-colors duration-150`.
 - Every interactive element has a visible `focus-visible` ring — `outline-2
   outline-offset-2 outline-primary`.
-- This is what `DESIGN-LANGUAGE.md` already says; R8 makes it a lint-able rule instead of
-  prose (F13).
+- The design language already said this; R8 makes it a lint-able rule instead of prose (F13).
 
 ### R9 — The topbar carries navigation, not decoration
 
@@ -501,18 +502,37 @@ nav and from `/explore`.
 
 **Done when:** `pnpm lint` passes with the rules on. It does — 0 errors.
 
-## Stage 6 — Docs consolidation
+## Stage 6 — Docs consolidation *(done)*
 
-26. `DESIGN-SYSTEM.md` becomes the single design source of truth (tokens, components,
-    layout rules R1–R10).
-27. `DESIGN-LANGUAGE.md`, `docs/DESIGN_SYSTEM.md`, `docs/DESIGN_TOKENS.md` → reduced to a
-    pointer at `DESIGN-SYSTEM.md`, or deleted (F18).
-28. `docs/PAGE_GUIDELINES.md` → rewritten around the R1 page shell.
-29. `AGENTS.md` → correct the stale package table (F9) + add the UI rules section.
-30. `docs/IMPLEMENTATION_PLAN.md`, `docs/ROADMAP.md` → superseded by this document; delete
-    or point here.
+Nine design documents, ~2,000 lines, contradicting each other (F18). Now four, ~1,100.
 
-**Done when:** one document defines each rule, and no two documents contradict.
+26. `DESIGN-SYSTEM.md` is the single source of truth — tokens, components, and the rules.
+    Absorbed the icon/height/z-index/motion tables the token doc held.
+27. **Deleted, not reduced to pointers** (a pointer file is still a file to maintain):
+    `DESIGN-LANGUAGE.md` and `docs/DESIGN_SYSTEM.md` were two versions of the same Kaggle
+    analysis, `docs/DESIGN_TOKENS.md` duplicated the token tables, and
+    `docs/IMPLEMENTATION_PLAN.md` + `docs/ROADMAP.md` are superseded by this document.
+28. `docs/PAGE_GUIDELINES.md` → the page shell, the route inventory, and a 25-item
+    checklist. Its per-page notes went: they prescribed `PageBanner` and described
+    `/submissions` and `/progress`, which no longer exist.
+29. `AGENTS.md` → corrected package table (F9) and the UI rules section.
+30. `docs/COMPONENT_SPECIFICATION.md` → `Breadcrumb`, `StatStrip`, and `Pagination` marked
+    built, `PageBanner`/`StatBlock`/`Placeholder` removed. The *reasoning* for each built
+    component stays — why one was needed is what stops the next person re-deriving it.
+
+**What each document is for now:**
+
+| Document | Answers |
+|---|---|
+| `DESIGN-SYSTEM.md` | What are the tokens, components, and rules? |
+| `docs/PAGE_GUIDELINES.md` | How do I build or review one page? |
+| `docs/COMPONENT_SPECIFICATION.md` | What are this component's props, and what is still missing? |
+| `docs/PROJECT_DESIGN_PRINCIPLES.md` | Why is the rule what it is? |
+| `docs/UI_AUDIT_AND_PLAN.md` | What was wrong, what did we decide, what shipped? |
+| `AGENTS.md` | The short form an agent must follow. |
+
+**Done when:** one document defines each rule, and no two contradict. Cross-references were
+repaired in the same pass — no link points at a deleted file.
 
 ## Sequencing
 

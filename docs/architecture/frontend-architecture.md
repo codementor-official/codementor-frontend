@@ -222,4 +222,4 @@ Never configure aliases into another app. If two apps need the same code, extrac
 
 ## Design documentation
 
-`DESIGN-LANGUAGE.md`, `DESIGN-SYSTEM.md`, and the design documents under `docs/` currently describe the migrated web client. Their paths point to `apps/web/src`. They remain repository-level references and should be evaluated before applying the same visual system to lecturer or admin.
+`DESIGN-SYSTEM.md` and the design documents under `docs/` currently describe the migrated web client. Their paths point to `apps/web/src`. They remain repository-level references and should be evaluated before applying the same visual system to lecturer or admin.

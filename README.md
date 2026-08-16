@@ -71,7 +71,10 @@ packages/
   typescript-config/
 docs/
   architecture/frontend-architecture.md
-  UI_AUDIT_AND_PLAN.md
+  UI_AUDIT_AND_PLAN.md          The UI audit, its rules, and the rebuild plan
+  PAGE_GUIDELINES.md            The page shell and the per-page review checklist
+  COMPONENT_SPECIFICATION.md    Component props, and the gaps still open
+  PROJECT_DESIGN_PRINCIPLES.md  Why the rules are what they are
 ```
 
 All three applications consume `ui`, `api-client`, `auth`, and `types`.

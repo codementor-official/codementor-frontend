@@ -1,9 +1,13 @@
 # CodeMentor Design System
 
-**This is the single source of truth for the design system.** Where `DESIGN-LANGUAGE.md`,
-`docs/DESIGN_SYSTEM.md`, or `docs/DESIGN_TOKENS.md` disagree with this file, this file wins.
-Page-level application: `docs/PAGE_GUIDELINES.md`. The audit that produced the layout rules
-below: `docs/UI_AUDIT_AND_PLAN.md`.
+**The single source of truth for the design system** — tokens, components, and the rules every
+page follows. Five overlapping documents used to describe this system and contradict each other;
+they were merged into this file and deleted.
+
+- Page-level application: `docs/PAGE_GUIDELINES.md`
+- Component props and gaps: `docs/COMPONENT_SPECIFICATION.md`
+- Why the rules exist: `docs/PROJECT_DESIGN_PRINCIPLES.md`, `docs/UI_AUDIT_AND_PLAN.md`
+- Enforcement: `packages/eslint-config`
 
 Extracted from the CodeForge mockup (`mock.html`). Single-accent palette: neutral (navy/gray) + one orange accent. `accent`, `success`, and `ai` semantic tokens all alias navy; `danger` aliases primary orange — there are only two hues in the whole UI.
 
@@ -201,6 +205,53 @@ Tighter than the mockup's generous whitespace — sections should sit close enou
 - Default border: `1px solid var(--color-border)`.
 - Soft internal divider: `1px solid var(--color-border-soft)`.
 - Active/selected state: `1.5px solid var(--color-primary)` or `var(--color-navy)`.
+
+## Icon sizes
+
+| Token | Value | Use |
+|---|---|---|
+| `--icon-xs` | `14px` | Inline with `text-xs` |
+| `--icon-sm` | `16px` | Inline with `text-sm` — the default |
+| `--icon-md` | `20px` | Buttons, standalone controls |
+| `--icon-lg` | `24px` | Feature tiles, empty states |
+
+## Component heights
+
+| Token | Value |
+|---|---|
+| `--h-input-sm` / `--h-button-sm` | `32px` |
+| `--h-input-md` / `--h-button-md` | `40px` |
+| `--h-topbar` | `56px` |
+| `--h-tile-row` | `36px` |
+| `--h-tile-card` | `64px` |
+
+| Button / input size | Height | Padding (x) | Font |
+|---|---|---|---|
+| `sm` | 32px | 12px | `--text-xs` |
+| `md` | 40px | 16px | `--text-sm` |
+
+## Z-index
+
+Named layers, so a new component cannot pick a value that collides with an existing one.
+
+| Token | Value | Use |
+|---|---|---|
+| `--z-dropdown` | 20 | Inline dropdowns and popovers |
+| `--z-sheet` | 40 | Mobile filter bottom sheet |
+| `--z-overlay` | 100 | Full-screen click-away backdrops |
+| `--z-modal` | 150 | Centered modals |
+
+## Motion
+
+| Token | Value | Use |
+|---|---|---|
+| `--duration-fast` | `120ms` | Hover colour/border delta |
+| `--duration-base` | `180ms` | Default — matches the sidebar width transition |
+| `--ease-standard` | `cubic-bezier(0.4, 0, 0.2, 1)` | The only easing curve. No bounce, no elastic |
+
+Only `color`, `background-color`, `border-color`, and `transform: translate/rotate` on a chevron
+or the sidebar width are ever animated. Never `box-shadow`, never `scale` — see Interaction above,
+which lint enforces.
 
 ## Difficulty badges
 

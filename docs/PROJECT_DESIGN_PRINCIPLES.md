@@ -77,7 +77,7 @@ modals). No new, heavier shadow tier gets introduced.
 `--color-primary` (`#EA580C`) is the single accent. It marks the one primary action on a screen,
 active/selected states, and the small number of "this matters" badges (live progress, primary CTA).
 It is never used decoratively (large color blocks, backgrounds) — see the tint tokens in
-`DESIGN_TOKENS.md` for how it appears at low intensity instead.
+`DESIGN-SYSTEM.md` for how it appears at low intensity instead.
 
 ## 12. Neutral grayscale, true black — no blue undertone
 
@@ -100,18 +100,20 @@ Every interactive element gets a visible `focus-visible` state, every icon-only 
 `aria-selected`/`aria-current`), and color is never the sole carrier of meaning (status also gets
 a text label).
 
-## 15. Reuse before creating — and there is one place to reuse from
+## 15. Reuse before creating, and know which shelf to reach for
 
-Before writing a new component, check `packages/ui/src/` — **the only home for primitives** — then
-the app's own `src/components/` for a composed one. `EntityCard`, `FilterBar`, `SegmentedTabs`,
-`ProblemRow`, `PageHeader`, `Card`, `Badge`, `Button`, `Input`, `ProgressBar`, `Modal`,
-`DataTable` already exist and cover most "browse a list of things" and "show a stat" needs —
-extend their props before writing a sibling.
+`packages/ui/src/` holds primitives more than one app uses, on the shared token names.
+`apps/web/src/components/ui/` holds the student product's own, built on `navy`/`surface`/`on-ink`
+tokens the other apps do not define. `EntityCard`, `FilterBar`, `SegmentedTabs`, `ProblemRow`,
+`Breadcrumb`, `StatStrip`, `Pagination`, `Card`, `Badge`, `Button`, `Input`, `ProgressBar`,
+`Modal`, `DataTable` already exist and cover most "browse a list of things" and "show a number"
+needs — extend their props before writing a sibling.
 
-**No two exported components may share a name.** A duplicate is deleted, not aliased behind a
-different import path — the codebase carried two `Button`s, two `Card`s, and two `PageHeader`s for
-a while, and pages picked between them by accident. `COMPONENT_SPECIFICATION.md` is the audit of
-what exists vs. what's a genuine gap.
+A few names exist on both shelves (`Button`, `Card`, `PageHeader`) because the two surfaces want
+genuinely different components — web's `Button` is a 40px CTA that can render as a Link, the
+shared one a 36px control for dense tables. **Eslint blocks the wrong import rather than one
+being deleted; never add a third copy of a name.** `COMPONENT_SPECIFICATION.md` is the audit of
+what exists vs. what's a genuine gap; `docs/UI_AUDIT_AND_PLAN.md` → R6 has the full reasoning.
 
 ## 16. Business logic stays out of UI components
 
