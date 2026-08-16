@@ -32,8 +32,8 @@ function PreviewBody({ doc }: { doc: GroupDocument }) {
     return (
       <div className="flex aspect-video items-center justify-center rounded-md bg-navy">
         <div className="text-center">
-          <Play className="mx-auto mb-2 h-8 w-8 text-white/70" />
-          <p className="text-xs text-white/70">Bản xem trước video · {doc.sizeLabel}</p>
+          <Play className="mx-auto mb-2 h-8 w-8 text-on-ink/70" />
+          <p className="text-xs text-on-ink/70">Bản xem trước video · {doc.sizeLabel}</p>
         </div>
       </div>
     );

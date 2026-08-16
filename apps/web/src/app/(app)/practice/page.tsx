@@ -2,14 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Bookmark, CalendarDays, Check, CheckCircle2, ChevronRight, Circle, Flame, Layers3, Search, Sparkles, Target, Trophy } from "lucide-react";
+import { Bookmark, CheckCircle2, Circle, Search, Sparkles, Target, Trophy } from "lucide-react";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
+import { PageHeader } from "@/components/page-header";
+import { StreakCard } from "@/components/streak-card";
 import { Card } from "@/components/ui/card";
+import { Pagination } from "@/components/ui/pagination";
 import { practiceItems, type PracticeItem, type PracticeStatus, type PracticeTopic } from "@/data/practice-items";
 import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
 import { personalizedPractice, practiceRecommendationReason } from "@/lib/practice/practice-recommendation";
 import type { Difficulty } from "@/components/ui/badge";
-import { FilterBar, Select } from "@codementor/ui";
+import { FilterBar, SegmentedTabs, Select, StatStrip } from "@codementor/ui";
 
 type DifficultyFilter = Difficulty | "all";
 type TopicFilter = PracticeTopic | "all";
@@ -37,6 +40,9 @@ const SORT_OPTIONS = [
 ];
 const TOPIC_LABEL: Record<TopicFilter, string> = { all: "Tất cả chủ đề", Algorithms: "Thuật toán", Frontend: "Frontend", Backend: "Backend", Database: "Cơ sở dữ liệu", "Data & AI": "Data & AI", Mobile: "Mobile", Foundation: "Nền tảng" };
 const PAGE_SIZE = 10;
+const TRENDING_TAGS = ["Array", "String", "SQL", "React", "REST API", "BFS/DFS", "OOP", "Dynamic Programming", "System design", "Git"];
+const COLLECTION_OPTIONS = [{ value: "all", label: "Mọi bài tập" }, { value: "interview", label: "Top 100 phỏng vấn" }, { value: "foundation", label: "30 ngày nền tảng" }, { value: "backend", label: "Thử thách Backend" }];
+const PRACTICE_STREAK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => ({ label, active: index < 5 }));
 const COLLECTIONS: Record<CollectionKey, {
   title: string;
   description: string;
@@ -87,11 +93,11 @@ function ProblemTableRow({ item, number, featured, favorite, onToggleFavorite }:
       <Link href={item.href ?? "/practice"} className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="truncate text-sm font-semibold text-navy group-hover:text-primary">{item.title}</span>
-          {item.isDaily && <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-on-ink">Daily</span>}
-          {featured && <span className="hidden rounded-full bg-primary-tint px-2 py-0.5 text-[10px] font-bold text-primary sm:inline">{featured}</span>}
+          {item.isDaily && <span className="rounded-full bg-accent px-2 py-0.5 text-2xs font-bold text-on-ink">Daily</span>}
+          {featured && <span className="hidden rounded-full bg-primary-tint px-2 py-0.5 text-2xs font-bold text-primary sm:inline">{featured}</span>}
         </div>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          {(item.tags ?? []).slice(0, 3).map((tag) => <span key={tag} className="rounded bg-border-soft px-1.5 py-0.5 text-[10px] font-medium text-text-muted">{tag}</span>)}
+          {(item.tags ?? []).slice(0, 3).map((tag) => <span key={tag} className="rounded bg-border-soft px-1.5 py-0.5 text-2xs font-medium text-text-muted">{tag}</span>)}
         </div>
       </Link>
       <span className="inline-flex w-14 shrink-0 items-center justify-end gap-1 text-xs font-bold text-primary"><Trophy className="h-3.5 w-3.5" />{item.xp} XP</span>
@@ -106,21 +112,7 @@ function ProblemTableRow({ item, number, featured, favorite, onToggleFavorite }:
 }
 
 function TopicChip({ topic, active, count, onClick }: { topic: TopicFilter; active: boolean; count: number; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${active ? "border-navy bg-navy text-on-ink" : "border-border bg-surface text-text-muted hover:border-navy"}`}><span>{TOPIC_LABEL[topic]}</span><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-white/20 text-on-ink" : "bg-border-soft text-text-faint"}`}>{count}</span></button>;
-}
-
-function Pagination({ page, pageCount, onChange }: { page: number; pageCount: number; onChange: (page: number) => void }) {
-  if (pageCount <= 1) return null;
-  return (
-    <nav className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface px-4 py-3" aria-label="Phân trang bài tập">
-      <span className="text-xs text-text-faint">Trang {page} / {pageCount}</span>
-      <div className="flex items-center gap-1">
-        <button type="button" disabled={page === 1} onClick={() => onChange(page - 1)} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-40">Trước</button>
-        {Array.from({ length: pageCount }).map((_, index) => <button key={index + 1} type="button" onClick={() => onChange(index + 1)} className={`h-8 min-w-8 rounded-md px-2 text-xs font-semibold ${page === index + 1 ? "bg-navy text-on-ink" : "text-text-muted hover:bg-bg"}`}>{index + 1}</button>)}
-        <button type="button" disabled={page === pageCount} onClick={() => onChange(page + 1)} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-40">Sau</button>
-      </div>
-    </nav>
-  );
+  return <button type="button" onClick={onClick} className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${active ? "border-navy bg-navy text-on-ink" : "border-border bg-surface text-text-muted hover:border-navy"}`}><span>{TOPIC_LABEL[topic]}</span><span className={`rounded-full px-1.5 py-0.5 text-2xs ${active ? "bg-on-ink/20 text-on-ink" : "bg-border-soft text-text-faint"}`}>{count}</span></button>;
 }
 
 export default function PracticePage() {
@@ -170,21 +162,23 @@ export default function PracticePage() {
   const selectCollection = (key: CollectionKey) => { setCollection(key); setTopic("all"); setStatus("all"); setDifficulty("all"); setSearch(""); setSort("recommended"); setPage(1); };
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="mb-1 flex items-center gap-2 text-xs font-bold tracking-wide text-primary uppercase"><Layers3 className="h-3.5 w-3.5" /> Problem bank</div>
-          <h1 className="text-2xl font-bold text-navy sm:text-3xl">Bài luyện tập</h1>
-          <p className="mt-1 text-sm text-text-muted">Luyện theo chủ đề, lưu bài quan trọng và duy trì chuỗi giải bài mỗi ngày.</p>
-        </div>
-        <PersonalizationSettingsTrigger label="Điều chỉnh gợi ý" />
-      </header>
+    <div>
+      <PageHeader
+        title="Bài luyện tập"
+        subtitle="Luyện theo chủ đề, lưu bài quan trọng và duy trì chuỗi giải bài mỗi ngày."
+        actions={<PersonalizationSettingsTrigger label="Điều chỉnh gợi ý" />}
+      />
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        <button type="button" onClick={() => selectCollection("interview")} className={`rounded-xl border border-orange-200 bg-orange-50/50 p-4 text-left transition-transform hover:-translate-y-0.5 hover:border-primary/50 ${collection === "interview" ? "ring-2 ring-primary ring-offset-2" : ""}`}><div className="mb-5 flex items-center justify-between"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-primary"><Trophy className="h-5 w-5" /></span><ChevronRight className="h-4 w-4 text-zinc-400" /></div><div className="text-base font-bold text-navy">Top 100 phỏng vấn</div><p className="mt-1 text-xs leading-relaxed text-text-muted">Các dạng dữ liệu, thuật toán và xử lý nghiệp vụ thường gặp.</p></button>
-        <button type="button" onClick={() => selectCollection("foundation")} className={`rounded-xl bg-linear-to-br from-primary-fixed to-primary-fixed p-4 text-left text-white transition-transform hover:-translate-y-0.5 ${collection === "foundation" ? "ring-2 ring-navy ring-offset-2" : ""}`}><div className="mb-5 flex items-center justify-between"><CalendarDays className="h-5 w-5" /><ChevronRight className="h-4 w-4 text-white/70" /></div><div className="text-base font-bold">30 ngày nền tảng</div><p className="mt-1 text-xs leading-relaxed text-white/80">Mỗi ngày một bài, củng cố tư duy lập trình có hệ thống.</p></button>
-        <button type="button" onClick={() => selectCollection("backend")} className={`rounded-xl bg-linear-to-br from-ink-fixed to-primary-fixed p-4 text-left text-white transition-transform hover:-translate-y-0.5 ${collection === "backend" ? "ring-2 ring-navy ring-offset-2" : ""}`}><div className="mb-5 flex items-center justify-between"><Flame className="h-5 w-5" /><ChevronRight className="h-4 w-4 text-white/70" /></div><div className="text-base font-bold">Thử thách Backend</div><p className="mt-1 text-xs leading-relaxed text-white/85">API, SQL và các bài toán hệ thống gần với công việc thực tế.</p></button>
-      </div>
+      <StatStrip
+        className="mb-5"
+        stats={[
+          { label: "Đã giải", value: `${solvedCount}/${practiceItems.length}` },
+          { label: "XP", value: earnedXp.toLocaleString("vi-VN") },
+          { label: "Đã lưu", value: favorites.size },
+          { label: "Chuỗi", value: "5 ngày" },
+        ]}
+      />
+
 
       {activeCollection && (
         <section className="mb-5 rounded-xl border border-primary/20 bg-primary-tint p-4 sm:p-5">
@@ -198,10 +192,18 @@ export default function PracticePage() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
         <main className="min-w-0">
-          <section className="mb-4 overflow-x-auto pb-1"><div className="flex min-w-max gap-2">{TOPICS.map((value) => <TopicChip key={value} topic={value} active={topic === value} count={topicCounts[value]} onClick={() => { setTopic(value); setCollection(null); setPage(1); }} />)}</div></section>
+          {/* Topics wrap instead of scrolling: the strip hid the last chips on exactly the
+            * widths with room for them, and gave the keyboard no way to reach them. */}
+          <section className="mb-4 flex flex-wrap gap-2">
+            {TOPICS.map((value) => <TopicChip key={value} topic={value} active={topic === value} count={topicCounts[value]} onClick={() => { setTopic(value); setCollection(null); setPage(1); }} />)}
+          </section>
 
-          <div className="mb-4 flex flex-wrap gap-2 border-b border-border pb-4">
-            {STATUS_OPTIONS.map((option) => <button key={option.value} type="button" onClick={() => { setStatus(option.value); setCollection(null); setPage(1); }} className={`rounded-md px-3 py-2 text-xs font-semibold ${status === option.value ? "bg-primary-tint text-primary" : "text-text-muted hover:bg-bg"}`}>{option.label} <span className="ml-1 text-[10px] opacity-75">{statusCounts[option.value]}</span></button>)}
+          <div className="mb-4">
+            <SegmentedTabs
+              options={STATUS_OPTIONS.map((option) => ({ ...option, count: statusCounts[option.value] }))}
+              value={status}
+              onChange={(value) => { setStatus(value as StatusFilter); setCollection(null); setPage(1); }}
+            />
           </div>
 
           <FilterBar
@@ -212,7 +214,7 @@ export default function PracticePage() {
             activeFilterCount={activeFilters}
             onClearFilters={clearFilters}
             sheetTitle="Lọc bài tập"
-            controls={<><Select label="Độ khó" value={difficulty} options={DIFFICULTY_OPTIONS} onChange={(value) => { setDifficulty(value as DifficultyFilter); setCollection(null); setPage(1); }} /><Select label="Sắp xếp" value={sort} options={SORT_OPTIONS} onChange={(value) => { setSort(value as SortMode); setPage(1); }} /></>}
+            controls={<><Select label="Bộ luyện" value={collection ?? "all"} options={COLLECTION_OPTIONS} onChange={(value) => (value === "all" ? setCollection(null) : selectCollection(value as CollectionKey))} /><Select label="Độ khó" value={difficulty} options={DIFFICULTY_OPTIONS} onChange={(value) => { setDifficulty(value as DifficultyFilter); setCollection(null); setPage(1); }} /><Select label="Sắp xếp" value={sort} options={SORT_OPTIONS} onChange={(value) => { setSort(value as SortMode); setPage(1); }} /></>}
           />
 
           <section id="problem-list" className="scroll-mt-5 overflow-hidden rounded-xl border border-border bg-surface shadow-card">
@@ -226,18 +228,21 @@ export default function PracticePage() {
             </div>
             {shouldShowRecommendations && recommendations.length > 0 && <div className="flex items-center gap-2 border-b border-primary/20 bg-primary-tint px-4 py-2.5 text-xs font-semibold text-primary"><Sparkles className="h-4 w-4" /> Phù hợp nhất với bạn</div>}
             {shouldShowRecommendations && recommendations.map((item, index) => <ProblemTableRow key={`suggestion-${item.id}`} item={item} number={index + 1} featured={practiceRecommendationReason(item, preference)} favorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />)}
-            {shouldShowRecommendations && <div className="border-y border-border-soft bg-bg px-4 py-2 text-[11px] font-bold tracking-wide text-text-muted uppercase">Tất cả bài tập</div>}
+            {shouldShowRecommendations && <div className="border-y border-border-soft bg-bg px-4 py-2 text-2xs font-bold tracking-wide text-text-muted uppercase">Tất cả bài tập</div>}
             {paginatedItems.map((item, index) => <ProblemTableRow key={item.id} item={item} number={(currentPage - 1) * PAGE_SIZE + index + 1} favorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />)}
             {filteredItems.length === 0 && <div className="p-10 text-center"><Target className="mx-auto mb-2 h-5 w-5 text-text-faint" /><p className="text-sm font-semibold text-navy">Chưa có bài phù hợp</p><p className="mt-1 text-xs text-text-faint">Thử thay đổi chủ đề, trạng thái hoặc từ khóa tìm kiếm.</p></div>}
-            {tableItems.length > 0 && <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />}
+            {tableItems.length > 0 && <Pagination label="Phân trang bài tập" page={currentPage} pageCount={pageCount} onChange={setPage} className="border-t border-border bg-surface px-4 py-3" />}
           </section>
         </main>
 
+        {/* Two cards. The streak now uses the shared StreakCard rather than a second
+          * hand-rolled copy, and the XP/solved counts live in the page's StatStrip. */}
         <aside className="space-y-4 xl:sticky xl:top-5 xl:self-start">
-          <Card className="p-4"><div className="mb-3 flex items-center justify-between"><span className="text-sm font-bold text-navy">Chuỗi luyện tập</span><Flame className="h-4 w-4 text-accent" /></div><div className="mb-3 flex items-baseline gap-1"><span className="text-3xl font-bold text-primary">5</span><span className="text-xs text-text-faint">ngày liên tiếp</span></div><div className="grid grid-cols-7 gap-1.5">{[true, true, true, true, true, false, false].map((done, index) => <div key={index} className="text-center"><span className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${done ? "bg-primary text-on-ink" : "bg-border-soft text-text-faint"}`}>{done ? <Check className="h-3.5 w-3.5" /> : index + 1}</span><span className="mt-1 block text-[9px] text-text-faint">T{index + 2}</span></div>)}</div><p className="mt-3 border-t border-border-soft pt-3 text-xs leading-relaxed text-text-muted">Giải thêm 1 bài hôm nay để giữ chuỗi và nhận XP theo độ khó.</p></Card>
-          <Card className="p-4"><div className="mb-3 flex items-center justify-between"><span className="text-sm font-bold text-navy">Tiến độ & XP</span><span className="text-xs font-bold text-primary">{earnedXp.toLocaleString("vi-VN")} XP</span></div><div className="mb-2 h-2 overflow-hidden rounded-full bg-border-soft"><div className="h-full rounded-full bg-primary" style={{ width: `${(solvedCount / practiceItems.length) * 100}%` }} /></div><div className="flex justify-between text-[11px] text-text-faint"><span>{solvedCount}/{practiceItems.length} đã giải</span><span>{favorites.size} đã lưu</span></div><p className="mt-3 border-t border-border-soft pt-3 text-xs text-text-muted">Hoàn thành bài để nhận XP theo độ khó: 25 · 50 · 80 XP.</p></Card>
-          <Card className="p-4"><h2 className="mb-3 text-sm font-bold text-navy">Từ khóa thịnh hành</h2><div className="flex flex-wrap gap-2">{["Array", "String", "SQL", "React", "REST API", "BFS/DFS", "OOP", "Dynamic Programming", "System design", "Git"].map((tag) => <button key={tag} type="button" onClick={() => { setSearch(tag); setCollection(null); setPage(1); }} className="rounded-full bg-bg px-2.5 py-1.5 text-xs font-medium text-text-muted hover:bg-primary-tint hover:text-primary">{tag}</button>)}</div></Card>
-          <Card className="p-4"><h2 className="mb-2 text-sm font-bold text-navy">Nhu cầu tuyển dụng</h2><p className="mb-3 text-xs leading-relaxed text-text-muted">Các kỹ năng xuất hiện nhiều trong bộ bài phỏng vấn mock.</p><div className="flex flex-wrap gap-1.5">{["VNG", "MoMo", "Viettel", "FPT Software", "KMS", "NashTech"].map((company) => <span key={company} className="rounded-full border border-border px-2 py-1 text-[10px] font-semibold text-text-muted">{company}</span>)}</div></Card>
+          <StreakCard
+            days={PRACTICE_STREAK}
+            hint="Giải thêm 1 bài hôm nay để giữ chuỗi và nhận XP theo độ khó: 25 · 50 · 80 XP."
+          />
+          <Card className="p-4"><h2 className="mb-3 text-sm font-bold text-navy">Từ khóa thịnh hành</h2><div className="flex flex-wrap gap-2">{TRENDING_TAGS.map((tag) => <button key={tag} type="button" onClick={() => { setSearch(tag); setCollection(null); setPage(1); }} className="rounded-full bg-bg px-2.5 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-primary-tint hover:text-primary">{tag}</button>)}</div></Card>
         </aside>
       </div>
     </div>

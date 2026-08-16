@@ -15,9 +15,8 @@ import {
   Users,
 } from "lucide-react";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
-import { PAGE_ILLUSTRATIONS } from "@/lib/content-illustrations";
 import { courseDifficulty, courseHref, featuredCourses } from "@/lib/roadmap/course-catalog";
-import { PageBanner } from "@/components/page-banner";
+import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
@@ -93,26 +92,17 @@ export default function ExplorePage() {
 
   return (
     <div>
-      <PageBanner
-        illustrationSrc={PAGE_ILLUSTRATIONS.explore}
-        variant="explore"
-        eyebrow="Chọn nội dung theo mục tiêu của bạn"
-        highlights={[
-          { value: "24", label: "bài luyện tập" },
-          { value: "15", label: "lộ trình nghề nghiệp" },
-          { value: "8", label: "chủ đề nổi bật" },
-        ]}
+      {/* No StatStrip: the banner's "24 bài luyện tập / 15 lộ trình / 8 chủ đề" were
+        * hardcoded strings, not counts of anything. */}
+      <PageHeader
         title="Khám phá"
-        description="Nội dung mới đang nổi trên toàn hệ thống — khóa học, bài luyện tập, bài viết và cộng đồng. Lọc theo loại nội dung bên dưới, hoặc tìm thẳng thứ bạn cần."
+        subtitle="Nội dung mới đang nổi trên toàn hệ thống — khóa học, bài luyện tập, bài viết và cộng đồng."
         actions={
           <>
             <Button href="/paths" size="sm">
-              Xem lộ trình học
+              Xem lộ trình
             </Button>
             <PersonalizationSettingsTrigger label="Thiết lập gợi ý" />
-            <Button href="/create-problem" variant="outline" size="sm">
-              Tạo bài luyện tập
-            </Button>
           </>
         }
       />
@@ -145,33 +135,16 @@ export default function ExplorePage() {
             <h2 className="flex items-center gap-1.5 text-base font-bold text-navy">
               <Flame className="h-4 w-4 text-primary" /> Khóa học đang nổi
             </h2>
-            <Link href="/paths" className="text-xs font-semibold text-primary">
+            <Link href="/courses" className="text-xs font-semibold text-primary">
               Xem tất cả →
             </Link>
           </div>
           {filteredCourses.length === 0 ? (
             <p className="text-sm text-text-faint">Không có khóa học nào khớp với &ldquo;{search}&rdquo;.</p>
           ) : (
-            <div className="flex gap-4 overflow-x-auto pb-1">
-              <Card className="flex w-64 shrink-0 flex-col justify-center gap-3 p-5">
-                <div>
-                  <h3 className="mb-1 text-sm font-bold text-navy">Khám phá lộ trình học</h3>
-                  <p className="text-xs leading-relaxed text-text-muted">
-                    Mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp, xếp hạng theo mức
-                    độ phù hợp với bạn.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Button href="/paths" size="sm">
-                    Xem tất cả lộ trình
-                  </Button>
-                  <Button href="/create-problem" variant="outline" size="sm">
-                    Tạo bài luyện tập
-                  </Button>
-                </div>
-              </Card>
-              {filteredCourses.map((course, i) => (
-                <div key={course.id} className="w-64 shrink-0">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredCourses.slice(0, 8).map((course, i) => (
+                <div key={course.id}>
                   <EntityCard
                     tile={course.thumbnail}
                     tileVariant={COURSE_TILE_TONE[i % COURSE_TILE_TONE.length]}
@@ -213,13 +186,13 @@ export default function ExplorePage() {
                 href={`/articles/${a.slug}`}
                 className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
-              <Card className="flex h-full flex-col gap-2 p-4 transition group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-card">
-                <span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-[10px] font-bold tracking-wide text-navy uppercase">
+              <Card className="flex h-full flex-col gap-2 p-4 transition-colors group-hover:border-primary/40">
+                <span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-2xs font-bold tracking-wide text-navy uppercase">
                   {a.tag}
                 </span>
                 <h3 className="text-sm leading-snug font-semibold text-navy">{a.title}</h3>
                 <p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{a.excerpt}</p>
-                <div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2.5 text-[11px] text-text-faint">
+                <div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2.5 text-2xs text-text-faint">
                   <span className="truncate">{a.author}</span>
                   <span className="shrink-0">{a.readMinutes} phút đọc</span>
                 </div>
@@ -285,7 +258,7 @@ export default function ExplorePage() {
               {topLearners.map((l) => (
                 <div key={l.name} className="flex items-center gap-2.5">
                   <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-2xs font-bold ${
                       l.rank <= 3 ? "bg-primary text-on-ink" : "bg-border-soft text-navy"
                     }`}
                   >
@@ -293,7 +266,7 @@ export default function ExplorePage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs font-semibold text-navy">{l.name}</div>
-                    <div className="text-[11px] text-text-faint">{l.solved} bài đã giải</div>
+                    <div className="text-2xs text-text-faint">{l.solved} bài đã giải</div>
                   </div>
                   <span className="shrink-0 text-xs font-bold text-primary">{l.xp} XP</span>
                 </div>
@@ -314,7 +287,7 @@ export default function ExplorePage() {
                     <c.icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="mb-0.5 text-[10px] font-bold tracking-wide text-primary uppercase">
+                    <div className="mb-0.5 text-2xs font-bold tracking-wide text-primary uppercase">
                       {c.kind}
                     </div>
                     <div className="mb-0.5 text-sm font-semibold text-navy">{c.title}</div>

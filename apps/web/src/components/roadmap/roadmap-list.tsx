@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/ui/pagination";
 import { RoadmapCard } from "./roadmap-card";
 import type { RankedRoadmap } from "@/types/roadmap";
 
@@ -27,43 +28,19 @@ export function RoadmapList({
 
   return (
     <div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {roadmaps.map((roadmap) => (
           <RoadmapCard key={roadmap.id} roadmap={roadmap} />
         ))}
       </div>
 
-      {pageCount > 1 && (
-        <nav aria-label="Phân trang lộ trình" className="mt-6 flex items-center justify-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-navy hover:bg-bg disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            Trước
-          </button>
-          {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
-            <button
-              key={page}
-              type="button"
-              onClick={() => onPageChange(page)}
-              aria-current={page === currentPage ? "page" : undefined}
-              className={`h-9 min-w-9 rounded-md px-2 text-xs font-semibold ${page === currentPage ? "bg-navy text-on-ink" : "border border-border bg-surface text-navy hover:bg-bg"}`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === pageCount}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-navy hover:bg-bg disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            Sau
-          </button>
-        </nav>
-      )}
+      <Pagination
+        label="Phân trang lộ trình"
+        page={currentPage}
+        pageCount={pageCount}
+        onChange={onPageChange}
+        className="mt-6"
+      />
     </div>
   );
 }

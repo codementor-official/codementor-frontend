@@ -55,6 +55,10 @@
    * white text. Deliberately absent from the `.dark` block: not flipping is the point. */
   --color-ink-fixed: #18181b;
   --color-primary-fixed: #ea580c;
+  /* The foreground for `ink-fixed` surfaces — code blocks, brand tiles. `on-ink` cannot do
+   * this job: it inverts to near-black in dark mode, which is correct on `bg-navy` and
+   * unreadable on a surface that deliberately stayed dark. Also absent from `.dark`. */
+  --color-on-ink-fixed: #f4f4f5;
 
   --color-text: #374151;
   --color-text-muted: #6b7280;
@@ -127,7 +131,16 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  /* container / grid */
+  /* container / grid
+   *
+   * `--container-wide` is the app shell's only width ceiling, and pages fill it. It sits
+   * well above `--container-max` on purpose: the sidebar already takes 240px, so clamping
+   * the content column at 1200px left ~440px of dead gutter on a 1920px screen while the
+   * practice table hid two columns for lack of room. The ceiling exists only so an
+   * ultrawide monitor doesn't produce 30cm reading lines.
+   *
+   * `--container-max` is kept for prose and marketing sections — narrow on purpose. */
+  --container-wide: 1600px;
   --container-max: 1200px;
   --container-padding: 24px;
   --container-padding-sm: 16px;

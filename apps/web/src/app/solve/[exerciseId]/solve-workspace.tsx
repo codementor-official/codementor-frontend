@@ -23,7 +23,7 @@ import "highlight.js/styles/github-dark.css";
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center text-xs text-zinc-500">
+    <div className="flex h-full items-center justify-center text-xs text-text-muted">
       Đang tải trình soạn code...
     </div>
   ),
@@ -134,7 +134,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
             <div className="mb-4 border-b border-border-soft pb-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <div className="mb-1 text-[11px] font-semibold tracking-wide text-text-faint uppercase">Bài luyện tập</div>
+                  <div className="mb-1 text-2xs font-semibold tracking-wide text-text-faint uppercase">Bài luyện tập</div>
                   <h1 className="text-xl font-bold text-navy">{problem.title}</h1>
                 </div>
                 <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">+{xpByDifficulty[problem.difficulty]} XP</span>
@@ -143,12 +143,12 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
             </div>
             <div className="mb-3 flex flex-wrap gap-1.5">
               {problem.tags.map((tag) => (
-                <span key={tag} className="rounded-sm bg-border-soft px-2 py-0.5 text-[11px] font-medium text-text">
+                <span key={tag} className="rounded-sm bg-border-soft px-2 py-0.5 text-2xs font-medium text-text">
                   {tag}
                 </span>
               ))}
             </div>
-            <article className="prose-sm max-w-none text-sm leading-relaxed text-text [&_code]:rounded-sm [&_code]:bg-border-soft [&_code]:px-1 [&_code]:font-mono [&_code]:text-[13px] [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-ink-fixed [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:text-zinc-100 [&_strong]:font-semibold [&_strong]:text-navy">
+            <article className="prose-sm max-w-none text-sm leading-relaxed text-text [&_code]:rounded-sm [&_code]:bg-border-soft [&_code]:px-1 [&_code]:font-mono [&_code]:text-xs [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-ink-fixed [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:text-on-ink-fixed [&_strong]:font-semibold [&_strong]:text-navy">
               <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{problem.description}</ReactMarkdown>
             </article>
             <div className="mt-4 text-xs font-bold tracking-wide text-text-faint uppercase">Ràng buộc</div>
@@ -206,7 +206,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
           <div className="flex h-full flex-col gap-2 overflow-y-auto p-3">
             {problem.testCases.map((tc, i) => (
               <div key={i} className="rounded-md border border-border-soft bg-bg p-2.5 font-mono text-xs">
-                <div className="mb-1 font-sans text-[11px] font-semibold text-text-faint uppercase">Input</div>
+                <div className="mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">Input</div>
                 <div className="text-navy">{tc.input}</div>
               </div>
             ))}
@@ -287,7 +287,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
           <div className="flex h-full flex-col">
             <div className="border-b border-border-soft bg-ai-tint/60 p-3">
               <div className="flex items-center gap-2 text-xs font-bold text-ai"><Sparkles className="h-3.5 w-3.5" /> Trợ lý AI chuyên sâu</div>
-              <p className="mt-1 text-[10px] leading-4 text-text-muted">Phân tích toàn bộ hướng giải, độ phức tạp và code hiện tại. Hoạt động độc lập với chat nhanh Codey.</p>
+              <p className="mt-1 text-2xs leading-4 text-text-muted">Phân tích toàn bộ hướng giải, độ phức tạp và code hiện tại. Hoạt động độc lập với chat nhanh Codey.</p>
             </div>
             <div className="flex-1 overflow-y-auto p-3">
               {aiMessages.map((m, i) => (
@@ -310,7 +310,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
                 placeholder="Hỏi trợ lý AI..."
                 className="flex-1 rounded-md border border-border px-2.5 py-1.5 text-xs outline-none"
               />
-              <button onClick={sendAiMessage} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-ai text-white">
+              <button onClick={sendAiMessage} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-ai text-on-ink">
                 <Send className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -394,7 +394,7 @@ function WorkspaceBody({
           >
             {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />} Chạy
           </button>
-          <button onClick={runCode} disabled={running} className="rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50">
+          <button onClick={runCode} disabled={running} className="rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-ink hover:bg-primary-hover disabled:opacity-50">
             Nộp bài · +{xpByDifficulty[problem.difficulty]} XP
           </button>
           <button

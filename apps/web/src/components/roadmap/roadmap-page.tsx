@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { Briefcase, ChevronUp, Code2, RefreshCw, Sparkles, Sprout, TrendingUp } from "lucide-react";
-import { PageBanner } from "@/components/page-banner";
-import { PAGE_ILLUSTRATIONS } from "@/lib/content-illustrations";
 import { PageHeader } from "@/components/page-header";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import { useRoadmapRecommendation } from "@/hooks/use-roadmap-recommendation";
@@ -15,6 +13,12 @@ import { RoadmapDiscoverRow, type QuickList } from "./roadmap-discover-row";
 import { RoadmapFilterBar } from "./roadmap-filter-bar";
 import { RoadmapList } from "./roadmap-list";
 import { RoadmapLoadingState } from "./roadmap-loading";
+
+// Shared by the loading and loaded states — the page used to switch header component
+// between them, so it visibly changed shape the moment data arrived.
+const ROADMAP_TITLE = "Lộ trình";
+const ROADMAP_SUBTITLE =
+  "Mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp, sắp xếp sẵn thứ tự để bạn không phải tự mò mẫm nên học gì trước.";
 
 function RoadmapCuratedSection({ list, onCollapse }: { list: QuickList; onCollapse: () => void }) {
   return (
@@ -51,10 +55,7 @@ export function RoadmapPage() {
   if (isLoading) {
     return (
       <div>
-        <PageHeader
-          title="Lộ trình học"
-          subtitle="Học theo lộ trình có cấu trúc — mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp"
-        />
+        <PageHeader title={ROADMAP_TITLE} subtitle={ROADMAP_SUBTITLE} />
         <RoadmapLoadingState />
       </div>
     );
@@ -120,29 +121,13 @@ export function RoadmapPage() {
 
   return (
     <div>
-      <PageBanner
-        illustrationSrc={PAGE_ILLUSTRATIONS.paths}
-        variant="paths"
-        eyebrow={hasPreference ? "Đề xuất đang theo hồ sơ học tập" : "Chọn hướng đi phù hợp với bạn"}
-        highlights={[
-          { value: String(rankedRoadmaps.length), label: "lộ trình sẵn sàng" },
-          { value: "6", label: "hướng chuyên môn" },
-          { value: "1", label: "bước để bắt đầu" },
-        ]}
-        title="Lộ trình học"
-        description="Học theo lộ trình có cấu trúc — mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp, sắp xếp sẵn thứ tự để bạn không phải tự mò mẫm nên học gì trước."
+      <PageHeader
+        title={ROADMAP_TITLE}
+        subtitle={ROADMAP_SUBTITLE}
         actions={
-          <>
-            <PersonalizationSettingsTrigger
-              label={hasPreference ? "Chỉnh sửa gợi ý cá nhân" : "Thiết lập gợi ý cá nhân hóa"}
-            />
-            <a
-              href="#all-roadmaps"
-              className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-navy hover:bg-bg"
-            >
-              Khám phá tất cả lộ trình
-            </a>
-          </>
+          <PersonalizationSettingsTrigger
+            label={hasPreference ? "Chỉnh sửa gợi ý cá nhân" : "Thiết lập gợi ý cá nhân hóa"}
+          />
         }
       />
 

@@ -28,7 +28,7 @@ function CourseSummaryCard({ roadmapSlug, course, index }: { roadmapSlug: string
             {course.status === "locked" && <Badge tone="neutral">Đã khóa</Badge>}
           </div>
           <p className="mb-1.5 text-xs leading-relaxed text-text-muted">{course.description}</p>
-          <div className="flex flex-wrap gap-3 text-[11px] text-text-faint">
+          <div className="flex flex-wrap gap-3 text-2xs text-text-faint">
             <span>
               {course.totalChapters} chương · {course.totalLessons} bài học
             </span>

@@ -100,14 +100,18 @@ Every interactive element gets a visible `focus-visible` state, every icon-only 
 `aria-selected`/`aria-current`), and color is never the sole carrier of meaning (status also gets
 a text label).
 
-## 15. Reuse before creating
+## 15. Reuse before creating — and there is one place to reuse from
 
-Before writing a new web component, check `apps/web/src/components/ui/` and `apps/web/src/components/` for something
-that already does 80% of the job. `EntityCard`, `FilterBar`, `ProgressBar`, `SegmentedTabs`,
-`StatBlock`, `ProblemRow`, `PageHeader`, `Card`, `Badge`, `Button`, `Input` already exist and cover
-most "browse a list of things" and "show a stat" needs — extend their props before writing a
-sibling component. `COMPONENT_SPECIFICATION.md` is the audit of what exists vs. what's a genuine
-gap.
+Before writing a new component, check `packages/ui/src/` — **the only home for primitives** — then
+the app's own `src/components/` for a composed one. `EntityCard`, `FilterBar`, `SegmentedTabs`,
+`ProblemRow`, `PageHeader`, `Card`, `Badge`, `Button`, `Input`, `ProgressBar`, `Modal`,
+`DataTable` already exist and cover most "browse a list of things" and "show a stat" needs —
+extend their props before writing a sibling.
+
+**No two exported components may share a name.** A duplicate is deleted, not aliased behind a
+different import path — the codebase carried two `Button`s, two `Card`s, and two `PageHeader`s for
+a while, and pages picked between them by accident. `COMPONENT_SPECIFICATION.md` is the audit of
+what exists vs. what's a genuine gap.
 
 ## 16. Business logic stays out of UI components
 
@@ -123,6 +127,35 @@ inline `matches()` filter is acceptable at its current size but shouldn't grow w
 Every list/grid page needs a real 1-column mobile layout and a working filter-collapse pattern
 (`FilterBar`'s bottom sheet) — not a squeezed desktop layout. This is already implemented for the
 roadmap pages; it's the bar every other page's filter/search UI needs to clear.
+
+## 18. Chrome is fixed; only content is designed
+
+Every page has the same shell — `Breadcrumb → PageHeader → StatStrip? → content`. A page author
+decides its title, its one primary action, whether it has ≤5 real numbers, and whether its items
+are a grid or a list. Everything else about the page's chrome is not a design decision to be made
+per page. Three competing header patterns and three width clamps are what happens when it is.
+
+## 19. Navigation state must always be recoverable
+
+A user must always be able to see where they are and jump to any ancestor — from the shell's
+breadcrumb, derived from one route map, never from a hand-written `← Quay lại X` link. A
+hardcoded back link is a guess about where the user came from, and it is wrong the moment a
+second page links in.
+
+## 20. Content gets the space; chrome does not
+
+Width belongs to the content. The shell sets one ceiling and pages fill it — a page that clamps
+itself inside an already-clamped shell starves its own table to leave empty gutters. Likewise,
+stat tiles, banners, and illustrations do not get to push the page's actual purpose below the
+fold: at most one stat strip, ≤64px, real numbers only. A number that isn't computed and isn't
+actionable is decoration, and decoration gets deleted, not styled.
+
+## 21. Ship it or delete it
+
+No nav-reachable route may render a placeholder, and no mock exists to fill a grid. Mock data is
+allowed only where the shape and interaction are the real ones and a backend is planned.
+Everything else — the route, its components, and its data file — goes. Deleting a fake surface
+costs nothing that worked and stops the team from maintaining a lie.
 
 ---
 

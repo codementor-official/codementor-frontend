@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { GroupTabNav } from "@/components/study-group/group-tab-nav";
 import { resolveTab } from "@/components/study-group/group-tabs";
 import { AssignmentsTab } from "@/components/study-group/tabs/assignments-tab";
@@ -44,12 +42,7 @@ export default async function WorkspaceGroupPage({
 
   return (
     <div>
-      <Link
-        href="/workspace"
-        className="mb-3 inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-navy"
-      >
-        <ArrowLeft className="h-4 w-4" /> Danh sách nhóm
-      </Link>
+      <BreadcrumbTitle slug={groupId} title={group.name} />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-navy font-mono text-sm font-bold text-on-ink">
