@@ -499,34 +499,6 @@ nav and from `/explore`.
 
 **Done when:** `pnpm lint` passes with the rules on. It does — 0 errors.
 
-## Stage 7 — Accessibility (F16) *(done)*
-
-The item Stage 5 left open, and it turned out not to need the by-hand pass it was written
-to need.
-
-26. **Focus, once.** ~60 interactive elements across 25 files had no visible keyboard focus
-    state. A ring per component is 25 diffs that the 26th new component silently misses, so
-    a base rule in `globals.css` covers every `a[href]`, `button`, `summary`,
-    `[role="button"]`, `[role="tab"]`, `input`, `select`, `textarea` — including components
-    that do not exist yet. `:where()` keeps its specificity at zero, so a component with a
-    real reason still wins: `ProblemRow` uses an inset ring because it sits inside an
-    `overflow-hidden` Card that would clip an outline.
-27. **`outline-none` was the reason it didn't work.** A bare `outline-none` removes the
-    outline in *every* state including keyboard focus, and as a utility class it outranks
-    the base rule. Nineteen files had one — four of them in `packages/ui`, so those shared
-    controls suppressed focus in all three apps at once. Removed, and now an eslint error.
-28. Same rule added to `apps/lecturer` and `apps/admin`, so the lint message that says
-    "focus is already handled" is true everywhere rather than only in web.
-29. **List semantics.** `/courses`, `RoadmapList`, `/articles`, and the two problem runs on
-    `/practice` are real lists now — a screen reader announces a count and offers list
-    navigation. The practice runs are two `<ul>`s under their own headings; one list
-    spanning both would announce a count matching neither.
-
-**How it was verified, and why that matters:** by tabbing the rendered page over CDP.
-`:focus-visible` does not match a scripted `element.focus()`, so a source grep *and* a
-JS-driven check both report false results — the first attempt at this check claimed 100%
-failure on a rule that worked. 96 tab stops across three pages, zero missing rings.
-
 ## Stage 6 — Docs consolidation *(done)*
 
 Nine design documents, ~2,000 lines, contradicting each other (F18). Now four, ~1,100.
@@ -558,6 +530,34 @@ Nine design documents, ~2,000 lines, contradicting each other (F18). Now four, ~
 
 **Done when:** one document defines each rule, and no two contradict. Cross-references were
 repaired in the same pass — no link points at a deleted file.
+
+## Stage 7 — Accessibility (F16) *(done)*
+
+The item Stage 5 left open, and it turned out not to need the by-hand pass it was written
+to need.
+
+31. **Focus, once.** ~60 interactive elements across 25 files had no visible keyboard focus
+    state. A ring per component is 25 diffs that the 26th new component silently misses, so
+    a base rule in `globals.css` covers every `a[href]`, `button`, `summary`,
+    `[role="button"]`, `[role="tab"]`, `input`, `select`, `textarea` — including components
+    that do not exist yet. `:where()` keeps its specificity at zero, so a component with a
+    real reason still wins: `ProblemRow` uses an inset ring because it sits inside an
+    `overflow-hidden` Card that would clip an outline.
+32. **`outline-none` was the reason it didn't work.** A bare `outline-none` removes the
+    outline in *every* state including keyboard focus, and as a utility class it outranks
+    the base rule. Nineteen files had one — four of them in `packages/ui`, so those shared
+    controls suppressed focus in all three apps at once. Removed, and now an eslint error.
+33. Same rule added to `apps/lecturer` and `apps/admin`, so the lint message that says
+    "focus is already handled" is true everywhere rather than only in web.
+34. **List semantics.** `/courses`, `RoadmapList`, `/articles`, and the two problem runs on
+    `/practice` are real lists now — a screen reader announces a count and offers list
+    navigation. The practice runs are two `<ul>`s under their own headings; one list
+    spanning both would announce a count matching neither.
+
+**How it was verified, and why that matters:** by tabbing the rendered page over CDP.
+`:focus-visible` does not match a scripted `element.focus()`, so a source grep *and* a
+JS-driven check both report false results — the first attempt at this check claimed 100%
+failure on a rule that worked. 96 tab stops across three pages, zero missing rings.
 
 ## Sequencing
 
