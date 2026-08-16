@@ -138,7 +138,7 @@ export function ProfileManagementPage() {
         <div className="grid gap-4">
           <label className="text-sm font-semibold text-navy">Họ và tên<Input className="mt-1.5" value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} /></label>
           <label className="text-sm font-semibold text-navy">Tên hiển thị<Input className="mt-1.5" value={profile.handle} onChange={(event) => setProfile({ ...profile, handle: event.target.value })} /></label>
-          <label className="text-sm font-semibold text-navy">Giới thiệu<textarea className="mt-1.5 min-h-22 w-full rounded-md border border-border bg-surface p-3 text-sm text-navy outline-none focus:border-navy" value={profile.bio} onChange={(event) => setProfile({ ...profile, bio: event.target.value })} /></label>
+          <label className="text-sm font-semibold text-navy">Giới thiệu<textarea className="mt-1.5 min-h-22 w-full rounded-md border border-border bg-surface p-3 text-sm text-navy focus:border-navy" value={profile.bio} onChange={(event) => setProfile({ ...profile, bio: event.target.value })} /></label>
           <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold text-navy">Website<Input className="mt-1.5" value={profile.website} onChange={(event) => setProfile({ ...profile, website: event.target.value })} /></label><label className="text-sm font-semibold text-navy">GitHub<Input className="mt-1.5" value={profile.github} onChange={(event) => setProfile({ ...profile, github: event.target.value })} /></label></div>
         </div>
       </Modal>

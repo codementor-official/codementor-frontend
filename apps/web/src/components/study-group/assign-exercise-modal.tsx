@@ -82,7 +82,7 @@ export function AssignExerciseModal({
               setPage(0);
             }}
             placeholder="Tìm thành viên..."
-            className="h-9 w-full rounded-md border border-border bg-surface pr-3 pl-8 text-sm text-navy outline-none placeholder:text-text-faint focus:border-navy"
+            className="h-9 w-full rounded-md border border-border bg-surface pr-3 pl-8 text-sm text-navy placeholder:text-text-faint focus:border-navy"
           />
         </div>
         <Button size="sm" variant="outline" onClick={() => setPicked(members.map((m) => m.id))}>

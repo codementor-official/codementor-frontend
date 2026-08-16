@@ -82,9 +82,11 @@ Token/component detail: `DESIGN-SYSTEM.md`.
    no arbitrary type sizes (`text-[10px]`). Hardcoded colors are holes in dark mode. On a surface
    that stays dark in both themes (`bg-ink-fixed`) the foreground is `text-on-ink-fixed`, not
    `text-on-ink` — the latter inverts and would render near-black on near-black.
-8. **One interaction language.** Hover and focus are a border or background delta —
-   `transition-colors duration-150`. No `translate`, no `scale`, no hover shadow. Every
-   interactive element has a visible `focus-visible` ring.
+8. **One interaction language.** Hover is a border or background delta —
+   `transition-colors duration-150`. No `translate`, no `scale`, no hover shadow.
+   **Focus is already handled**: a base rule in `globals.css` rings every interactive element on
+   `:focus-visible`, so do not add one per component — and never write `outline-none`, which
+   suppresses it everywhere including keyboard focus.
 
 Rules 6–8 are enforced by eslint (`packages/eslint-config`), as errors in `apps/web` and as
 warnings in `apps/lecturer`, `apps/admin`, and `packages/ui` until those get their own audit.

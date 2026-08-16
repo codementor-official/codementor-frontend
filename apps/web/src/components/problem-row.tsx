@@ -31,6 +31,8 @@ export function ProblemRow({
   href: string;
 }) {
   return (
+    // Keeps its own inset ring rather than the base outline: the row sits inside an
+    // `overflow-hidden` Card, which would clip an outline drawn outside its edge.
     <Link
       href={href}
       className="flex items-center gap-3.5 border-t border-border-soft px-4 py-3 first:border-t-0 hover:bg-bg focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-inset"

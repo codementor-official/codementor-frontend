@@ -12,10 +12,10 @@ export default function ArticlesPage() {
         subtitle={`${articles.length} bài kiến thức nền, kinh nghiệm triển khai và mẹo thực chiến từ mentor CodeMentor.`}
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {articles.map((article) => (
+          <li key={article.slug}>
           <Link
-            key={article.slug}
             href={`/articles/${article.slug}`}
             className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
@@ -36,8 +36,9 @@ export default function ArticlesPage() {
               </div>
             </Card>
           </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

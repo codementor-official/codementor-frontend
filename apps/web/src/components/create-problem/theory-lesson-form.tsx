@@ -65,7 +65,7 @@ export function TheoryLessonForm() {
             onChange={(e) => patch({ summary: e.target.value })}
             rows={2}
             placeholder="Một câu tóm tắt hiển thị ngay dưới tiêu đề bài học."
-            className="mt-1.5 w-full resize-y rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy outline-none placeholder:text-text-faint focus:border-navy"
+            className="mt-1.5 w-full resize-y rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy placeholder:text-text-faint focus:border-navy"
           />
         </label>
       </Card>
@@ -96,7 +96,7 @@ export function TheoryLessonForm() {
                   })
                 }
                 placeholder="Ví dụ: Nắm ý chính của bài học"
-                className="h-9 flex-1 rounded-md border border-border bg-surface px-3 text-sm text-navy outline-none placeholder:text-text-faint focus:border-navy"
+                className="h-9 flex-1 rounded-md border border-border bg-surface px-3 text-sm text-navy placeholder:text-text-faint focus:border-navy"
               />
               <button
                 type="button"

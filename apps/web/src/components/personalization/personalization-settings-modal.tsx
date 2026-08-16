@@ -138,14 +138,14 @@ export function PersonalizationSettingsModal({ open, onClose }: { open: boolean;
                       disabled={!session.enabled}
                       value={session.startTime}
                       onChange={(event) => updateSchedule(day.key, { startTime: event.target.value })}
-                      className="h-8 rounded-md border border-border bg-surface px-2 text-xs text-navy outline-none focus:border-primary disabled:bg-bg"
+                      className="h-8 rounded-md border border-border bg-surface px-2 text-xs text-navy focus:border-primary disabled:bg-bg"
                     />
                     <select
                       aria-label={`Thời lượng học ${day.label}`}
                       disabled={!session.enabled}
                       value={session.durationMinutes}
                       onChange={(event) => updateSchedule(day.key, { durationMinutes: Number(event.target.value) })}
-                      className="h-8 rounded-md border border-border bg-surface px-2 text-xs text-navy outline-none focus:border-primary disabled:bg-bg"
+                      className="h-8 rounded-md border border-border bg-surface px-2 text-xs text-navy focus:border-primary disabled:bg-bg"
                     >
                       {[30, 45, 60, 90, 120].map((minutes) => <option key={minutes} value={minutes}>{minutes} phút</option>)}
                     </select>
@@ -176,7 +176,7 @@ export function PersonalizationSettingsModal({ open, onClose }: { open: boolean;
                     type="time"
                     value={draft.reminderTime}
                     onChange={(event) => setDraft((current) => ({ ...current, reminderTime: event.target.value }))}
-                    className="h-8 rounded-md border border-border bg-surface px-2 text-xs text-navy outline-none focus:border-primary"
+                    className="h-8 rounded-md border border-border bg-surface px-2 text-xs text-navy focus:border-primary"
                   />
                 </div>
               )}

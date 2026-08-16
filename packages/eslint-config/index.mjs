@@ -38,6 +38,15 @@ const DESIGN_TOKEN_RESTRICTIONS = [
         message:
           "Hover must be a border or background delta only — no translate, scale, or shadow. See DESIGN-SYSTEM.md → Interaction.",
       },
+      {
+        // A bare `outline-none` removes the outline in every state including keyboard
+        // focus, and being a utility class it outranks the zero-specificity base rule
+        // that rings every interactive element. Four shared controls carried it and
+        // silently suppressed focus across all three applications.
+        selector: "Literal[value=/(?:^|\\s|`)outline-none(?:$|\\s|`)/]",
+        message:
+          "`outline-none` suppresses the keyboard focus ring. Focus is handled by the base rule in globals.css — see DESIGN-SYSTEM.md → Focus. If an element needs a different indicator, declare that indicator rather than removing the outline.",
+      },
 ];
 
 const config = defineConfig([

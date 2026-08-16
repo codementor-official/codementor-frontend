@@ -87,7 +87,7 @@ function ProblemTableRow({ item, number, featured, favorite, onToggleFavorite }:
   item: PracticeItem; number: number; featured?: string; favorite: boolean; onToggleFavorite: () => void;
 }) {
   return (
-    <div className={`group flex items-center gap-3 border-t border-border-soft px-3 py-3 transition-colors hover:bg-bg sm:px-4 ${item.isDaily ? "bg-accent-tint/35" : ""}`}>
+    <li className={`group flex items-center gap-3 border-t border-border-soft px-3 py-3 transition-colors hover:bg-bg sm:px-4 ${item.isDaily ? "bg-accent-tint/35" : ""}`}>
       <span className="shrink-0">{statusIcon(item.status)}</span>
       <span className="hidden w-7 shrink-0 text-right text-xs tabular-nums text-text-faint md:block">{number}</span>
       <Link href={item.href ?? "/practice"} className="min-w-0 flex-1">
@@ -107,7 +107,7 @@ function ProblemTableRow({ item, number, featured, favorite, onToggleFavorite }:
       <button type="button" aria-label={favorite ? "Bỏ lưu bài tập" : "Lưu bài tập"} onClick={onToggleFavorite} className={`shrink-0 rounded p-1.5 ${favorite ? "text-accent" : "text-text-faint hover:bg-border-soft hover:text-navy"}`}>
         <Bookmark className="h-4 w-4" fill={favorite ? "currentColor" : "none"} />
       </button>
-    </div>
+    </li>
   );
 }
 
@@ -226,10 +226,18 @@ export default function PracticePage() {
               <span className="hidden w-20 text-right text-xs text-text-faint sm:block">Độ khó</span>
               <span className="w-7" />
             </div>
-            {shouldShowRecommendations && recommendations.length > 0 && <div className="flex items-center gap-2 border-b border-primary/20 bg-primary-tint px-4 py-2.5 text-xs font-semibold text-primary"><Sparkles className="h-4 w-4" /> Phù hợp nhất với bạn</div>}
-            {shouldShowRecommendations && recommendations.map((item, index) => <ProblemTableRow key={`suggestion-${item.id}`} item={item} number={index + 1} featured={practiceRecommendationReason(item, preference)} favorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />)}
-            {shouldShowRecommendations && <div className="border-y border-border-soft bg-bg px-4 py-2 text-2xs font-bold tracking-wide text-text-muted uppercase">Tất cả bài tập</div>}
-            {paginatedItems.map((item, index) => <ProblemTableRow key={item.id} item={item} number={(currentPage - 1) * PAGE_SIZE + index + 1} favorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />)}
+            {shouldShowRecommendations && recommendations.length > 0 && (
+              <>
+                <h3 id="problem-list-suggested" className="flex items-center gap-2 border-b border-primary/20 bg-primary-tint px-4 py-2.5 text-xs font-semibold text-primary"><Sparkles className="h-4 w-4" /> Phù hợp nhất với bạn</h3>
+                <ul aria-labelledby="problem-list-suggested">
+                  {recommendations.map((item, index) => <ProblemTableRow key={`suggestion-${item.id}`} item={item} number={index + 1} featured={practiceRecommendationReason(item, preference)} favorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />)}
+                </ul>
+              </>
+            )}
+            {shouldShowRecommendations && <h3 id="problem-list-all" className="border-y border-border-soft bg-bg px-4 py-2 text-2xs font-bold tracking-wide text-text-muted uppercase">Tất cả bài tập</h3>}
+            <ul aria-labelledby={shouldShowRecommendations ? "problem-list-all" : undefined}>
+              {paginatedItems.map((item, index) => <ProblemTableRow key={item.id} item={item} number={(currentPage - 1) * PAGE_SIZE + index + 1} favorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />)}
+            </ul>
             {filteredItems.length === 0 && <div className="p-10 text-center"><Target className="mx-auto mb-2 h-5 w-5 text-text-faint" /><p className="text-sm font-semibold text-navy">Chưa có bài phù hợp</p><p className="mt-1 text-xs text-text-faint">Thử thay đổi chủ đề, trạng thái hoặc từ khóa tìm kiếm.</p></div>}
             {tableItems.length > 0 && <Pagination label="Phân trang bài tập" page={currentPage} pageCount={pageCount} onChange={setPage} className="border-t border-border bg-surface px-4 py-3" />}
           </section>

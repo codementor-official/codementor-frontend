@@ -240,7 +240,7 @@ export function TableToolbar({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="h-9 min-w-48 flex-1 rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-foreground"
+          className="h-9 min-w-48 flex-1 rounded-md border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground"
         />
         {filters}
         {primaryAction}

@@ -134,7 +134,7 @@ export function ReviewModal({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Chỉ ra chỗ cần sửa, hoặc xác nhận bài đã đạt yêu cầu..."
-            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy outline-none placeholder:text-text-faint focus:border-navy"
+            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy placeholder:text-text-faint focus:border-navy"
           />
           <fieldset className="mt-3">
             <legend className="mb-1.5 text-xs font-medium text-text-muted">Kết luận</legend>

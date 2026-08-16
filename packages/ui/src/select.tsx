@@ -34,7 +34,7 @@ export function Select({
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`h-9 w-full appearance-none rounded-md border border-border bg-card py-0 pr-8 pl-3 text-xs font-semibold text-foreground outline-none focus:border-foreground sm:w-auto ${className}`}
+        className={`h-9 w-full appearance-none rounded-md border border-border bg-card py-0 pr-8 pl-3 text-xs font-semibold text-foreground focus:border-foreground sm:w-auto ${className}`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
