@@ -1,143 +1,72 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import StackIcon from "tech-stack-icons";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@codementor/ui";
+import { useAuth } from "@/providers/auth-provider";
 
+/**
+ * Đăng nhập và đăng ký đều do CodeMentor ID (Keycloak) xử lý.
+ *
+ * Trước đây đây là một form email/mật khẩu tự dựng, nhưng nó không gửi đi đâu cả — bấm
+ * "Đăng nhập" là `router.push("/dashboard")`. Một form nhận mật khẩu rồi không làm gì với nó
+ * còn tệ hơn không có form: nó dạy người dùng gõ mật khẩu thật vào chỗ không xác thực.
+ */
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
-  const [showPassword, setShowPassword] = useState(false);
+  const { status, error, signIn, signUp } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated") router.replace("/practice");
+  }, [status, router]);
+
+  const isSignup = mode === "signup";
 
   return (
     <div className="flex flex-1 items-center justify-center bg-bg p-5">
       <Card className="w-full max-w-sm p-7">
-        <h1 className="mb-5 text-center text-xl font-bold text-navy">
-          {mode === "login" ? "Chào mừng trở lại!" : "Tạo tài khoản mới"}
+        <h1 className="mb-2 text-center text-xl font-bold text-navy">
+          {isSignup ? "Tạo tài khoản mới" : "Chào mừng trở lại!"}
         </h1>
+        <p className="mb-6 text-center text-sm leading-relaxed text-text-muted">
+          Đăng nhập, đăng ký và đổi mật khẩu đều do CodeMentor ID xử lý. Trang này không nhận
+          mật khẩu của bạn.
+        </p>
 
-        <div className="mb-5 flex justify-center gap-6 border-b border-border text-sm font-medium">
-          <Link
-            href="/login"
-            className={`border-b-2 pb-2.5 ${
-              mode === "login" ? "border-navy text-navy" : "border-transparent text-text-muted"
-            }`}
+        {error && (
+          <p
+            className="mb-4 rounded-md border border-danger/40 bg-danger-tint px-3 py-2 text-sm text-danger"
+            role="alert"
           >
-            Đăng nhập
-          </Link>
-          <Link
-            href="/signup"
-            className={`border-b-2 pb-2.5 ${
-              mode === "signup" ? "border-navy text-navy" : "border-transparent text-text-muted"
-            }`}
-          >
-            Đăng ký
-          </Link>
-        </div>
+            {error}
+          </p>
+        )}
 
-        <div className="mb-4 flex flex-col gap-2">
-          <Button variant="outline" className="w-full justify-start">
-            <span className="h-5 w-5 shrink-0">
-              <StackIcon name="google" />
-            </span>
-            {mode === "login" ? "Đăng nhập với Google" : "Đăng ký với Google"}
-          </Button>
-          <Button variant="outline" className="w-full justify-start">
-            <span className="h-5 w-5 shrink-0">
-              <StackIcon name="github" />
-            </span>
-            {mode === "login" ? "Đăng nhập với GitHub" : "Đăng ký với GitHub"}
-          </Button>
-        </div>
-
-        <div className="mb-4 flex items-center gap-2.5 text-xs font-medium text-text-faint">
-          <div className="h-px flex-1 bg-border" />
-          hoặc
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <form
-          className="flex flex-col gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            router.push("/dashboard");
-          }}
+        <Button
+          className="w-full"
+          disabled={status === "loading"}
+          onClick={isSignup ? signUp : signIn}
         >
-          {mode === "signup" && (
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-muted">
-                Họ và tên
-              </label>
-              <Input type="text" placeholder="Nguyễn Văn A" />
-            </div>
-          )}
+          <LogIn className="h-4 w-4" />
+          {status === "loading"
+            ? "Đang kiểm tra phiên…"
+            : isSignup
+              ? "Đăng ký với CodeMentor ID"
+              : "Tiếp tục với CodeMentor ID"}
+        </Button>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-muted">Email</label>
-            <Input
-              type="text"
-              placeholder="ban@student.iuh.edu.vn"
-              icon={<Mail />}
-            />
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-muted">Mật khẩu</label>
-            <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              icon={<Lock />}
-              rightSlot={
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              }
-            />
-          </div>
-
-          {mode === "signup" && (
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-muted">
-                Xác nhận mật khẩu
-              </label>
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                icon={<Lock />}
-              />
-            </div>
-          )}
-
-          <Button type="submit" className="mt-1 w-full">
-            {mode === "login" ? "Đăng nhập" : "Đăng ký"}
-          </Button>
-        </form>
-
-        <div className="mt-4 text-center text-xs text-text-muted">
-          {mode === "login" ? (
-            <>
-              Chưa có tài khoản?{" "}
-              <Link href="/signup" className="font-semibold text-primary">
-                Đăng ký
-              </Link>
-            </>
-          ) : (
-            <>
-              Đã có tài khoản?{" "}
-              <Link href="/login" className="font-semibold text-primary">
-                Đăng nhập
-              </Link>
-            </>
-          )}
-        </div>
+        <p className="mt-4 text-center text-xs text-text-muted">
+          {isSignup ? "Đã có tài khoản? " : "Chưa có tài khoản? "}
+          <button
+            className="font-semibold text-primary"
+            onClick={isSignup ? signIn : signUp}
+            type="button"
+          >
+            {isSignup ? "Đăng nhập" : "Đăng ký"}
+          </button>
+        </p>
       </Card>
     </div>
   );

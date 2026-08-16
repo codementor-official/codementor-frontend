@@ -6,6 +6,8 @@ import type {
   Exercise,
   ExerciseContent,
   ExerciseListItem,
+  JudgeRunResult,
+  JudgeSpecPayload,
   Page,
 } from "@/features/exercises/types";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
@@ -99,6 +101,40 @@ export const api = {
     submit: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/withdraw`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/roadmaps/${id}`, { method: "DELETE" }),
+  },
+
+  /**
+   * judge-service chấm đồng bộ. Đây là đường "chạy thử": không tạo bài nộp, không ghi lịch
+   * sử — giảng viên chỉ muốn biết đề của mình chạy có ra kết quả không.
+   */
+  judge: {
+    run: (body: {
+      language: string;
+      sourceCode: string;
+      timeLimitMs: number;
+      memoryLimitKb: number;
+      /** Có mặt = chấm theo chữ ký hàm. Vắng mặt = so chuỗi stdout như trước. */
+      spec?: JudgeSpecPayload;
+      testCases: {
+        order: number;
+        input?: string;
+        args?: unknown[];
+        expected?: unknown;
+        weight?: number;
+      }[];
+    }) => unwrap<JudgeRunResult>("/judge/run", { method: "POST", body }),
+
+    /**
+     * Mã khởi tạo sinh từ chữ ký hàm.
+     *
+     * Ở judge chứ không ở client: cùng module đó sinh ra driver, nên chữ ký hai bên không
+     * thể lệch nhau. Xem `features/exercises/codegen.ts`.
+     */
+    starter: (body: { languages: string[]; spec: JudgeSpecPayload }) =>
+      unwrap<{ starters: Record<string, string>; unsupported: Record<string, string> }>(
+        "/judge/starter",
+        { method: "POST", body },
+      ),
   },
 
   courses: {

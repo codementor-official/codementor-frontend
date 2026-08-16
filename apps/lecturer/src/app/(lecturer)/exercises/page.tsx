@@ -23,6 +23,7 @@ import {
   STATUSES,
   STATUS_LABELS,
   STATUS_TONES,
+  showValue,
   type ExerciseListItem,
   type ExerciseStatus,
 } from "@/features/exercises/types";
@@ -316,10 +317,16 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
                 <ul className="grid gap-2">
                   {publicCases.map((testCase) => (
                     <li className="rounded-md border p-3 font-mono text-xs" key={testCase.order}>
+                      {/* Chế độ hàm lưu `args` là mảng và `expected` là giá trị JSON, nên cả
+                          hai phải qua showValue — in trực tiếp sẽ ra "[object Object]". */}
                       <p className="font-sans text-muted-foreground">Đầu vào</p>
-                      <pre className="mt-1 whitespace-pre-wrap">{testCase.input || "(rỗng)"}</pre>
+                      <pre className="mt-1 whitespace-pre-wrap">
+                        {showValue(testCase.args ?? testCase.input) || "(rỗng)"}
+                      </pre>
                       <p className="mt-2 font-sans text-muted-foreground">Đầu ra</p>
-                      <pre className="mt-1 whitespace-pre-wrap">{testCase.expected || "(rỗng)"}</pre>
+                      <pre className="mt-1 whitespace-pre-wrap">
+                        {showValue(testCase.expected) || "(rỗng)"}
+                      </pre>
                     </li>
                   ))}
                 </ul>

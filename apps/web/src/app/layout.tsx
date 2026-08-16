@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme-script";
+import { AuthProvider } from "@/providers/auth-provider";
 
 // No `weight` list on purpose. Naming individual weights makes next/font request the
 // static Inter build, which Google has retired — those .woff2 URLs now 404 and the
@@ -38,7 +39,9 @@ export default function RootLayout({
       <head>
         <ThemeScript />
       </head>
-      <body className="h-full flex flex-col">{children}</body>
+      <body className="h-full flex flex-col">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

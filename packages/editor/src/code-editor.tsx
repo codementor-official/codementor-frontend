@@ -20,6 +20,7 @@ export function CodeEditor({
   placeholder,
   height = 240,
   theme = "light",
+  onMount,
 }: {
   language: string;
   value: string;
@@ -33,10 +34,16 @@ export function CodeEditor({
    * depend on whichever state library the consuming application happens to use.
    */
   theme?: "light" | "dark";
+  /**
+   * Nhận instance Monaco. Cần cho những hành động chỉ gọi được trên editor — "Format code"
+   * là `editor.action.formatDocument`, không có API nào khác thay thế.
+   */
+  onMount?: (editor: { getAction: (id: string) => { run: () => void } | null }) => void;
 }) {
   return (
     <div className="relative overflow-hidden rounded-md border border-border" style={{ height }}>
       <Editor
+        onMount={(editor) => onMount?.(editor)}
         language={language}
         value={value}
         onChange={(v) => onChange(v ?? "")}
