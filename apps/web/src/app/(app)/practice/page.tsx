@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Bookmark, CheckCircle2, Circle, Layers3, Search, Sparkles, Target, Trophy } from "lucide-react";
+import { Bookmark, CheckCircle2, Circle, Search, Sparkles, Target, Trophy } from "lucide-react";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import { PageHeader } from "@/components/page-header";
 import { StreakCard } from "@/components/streak-card";
@@ -41,6 +41,7 @@ const SORT_OPTIONS = [
 const TOPIC_LABEL: Record<TopicFilter, string> = { all: "Tất cả chủ đề", Algorithms: "Thuật toán", Frontend: "Frontend", Backend: "Backend", Database: "Cơ sở dữ liệu", "Data & AI": "Data & AI", Mobile: "Mobile", Foundation: "Nền tảng" };
 const PAGE_SIZE = 10;
 const TRENDING_TAGS = ["Array", "String", "SQL", "React", "REST API", "BFS/DFS", "OOP", "Dynamic Programming", "System design", "Git"];
+const COLLECTION_OPTIONS = [{ value: "all", label: "Mọi bài tập" }, { value: "interview", label: "Top 100 phỏng vấn" }, { value: "foundation", label: "30 ngày nền tảng" }, { value: "backend", label: "Thử thách Backend" }];
 const PRACTICE_STREAK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => ({ label, active: index < 5 }));
 const COLLECTIONS: Record<CollectionKey, {
   title: string;
@@ -178,25 +179,6 @@ export default function PracticePage() {
         ]}
       />
 
-      {/* Three collection cards became three chips: they were a second filter surface
-        * dressed as content, two of them on gradients no other page uses. */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {(Object.keys(COLLECTIONS) as CollectionKey[]).map((key) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => (collection === key ? clearFilters() : selectCollection(key))}
-            aria-pressed={collection === key}
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
-              collection === key
-                ? "border-primary bg-primary-tint text-primary"
-                : "border-border bg-surface text-text-muted hover:border-navy hover:text-navy"
-            }`}
-          >
-            <Layers3 className="h-3.5 w-3.5" /> {COLLECTIONS[key].title}
-          </button>
-        ))}
-      </div>
 
       {activeCollection && (
         <section className="mb-5 rounded-xl border border-primary/20 bg-primary-tint p-4 sm:p-5">
@@ -232,7 +214,7 @@ export default function PracticePage() {
             activeFilterCount={activeFilters}
             onClearFilters={clearFilters}
             sheetTitle="Lọc bài tập"
-            controls={<><Select label="Độ khó" value={difficulty} options={DIFFICULTY_OPTIONS} onChange={(value) => { setDifficulty(value as DifficultyFilter); setCollection(null); setPage(1); }} /><Select label="Sắp xếp" value={sort} options={SORT_OPTIONS} onChange={(value) => { setSort(value as SortMode); setPage(1); }} /></>}
+            controls={<><Select label="Bộ luyện" value={collection ?? "all"} options={COLLECTION_OPTIONS} onChange={(value) => (value === "all" ? setCollection(null) : selectCollection(value as CollectionKey))} /><Select label="Độ khó" value={difficulty} options={DIFFICULTY_OPTIONS} onChange={(value) => { setDifficulty(value as DifficultyFilter); setCollection(null); setPage(1); }} /><Select label="Sắp xếp" value={sort} options={SORT_OPTIONS} onChange={(value) => { setSort(value as SortMode); setPage(1); }} /></>}
           />
 
           <section id="problem-list" className="scroll-mt-5 overflow-hidden rounded-xl border border-border bg-surface shadow-card">

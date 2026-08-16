@@ -6,6 +6,7 @@ import { FilterBar, SegmentedTabs, Select, StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { EntityCard } from "@/components/entity-card";
 import { Card } from "@/components/ui/card";
+import { Pagination } from "@/components/ui/pagination";
 import { courseCatalog, courseDifficulty, courseHref } from "@/lib/roadmap/course-catalog";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import type { Difficulty } from "@/components/ui/badge";
@@ -27,12 +28,15 @@ const DIFFICULTY_OPTIONS: { value: Difficulty | "all"; label: string }[] = [
 ];
 
 const TILE_TONE = ["ink", "primary"] as const;
+// The catalogue is 84 courses; an unbounded grid is a scroll with no end and no way back.
+const PAGE_SIZE = 20;
 
 export default function CoursesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
   const [roadmap, setRoadmap] = useState("all");
+  const [page, setPage] = useState(1);
 
   const roadmapOptions = useMemo(
     () => [
@@ -65,6 +69,10 @@ export default function CoursesPage() {
       );
   }, [search, status, difficulty, roadmap]);
 
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paginated = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   const inProgress = courseCatalog.filter((c) => c.progressPercent > 0 && c.progressPercent < 100).length;
   const completed = courseCatalog.filter((c) => c.progressPercent >= 100).length;
   const activeFilters = Number(difficulty !== "all") + Number(roadmap !== "all");
@@ -86,28 +94,29 @@ export default function CoursesPage() {
       />
 
       <div className="mb-4">
-        <SegmentedTabs options={STATUS_OPTIONS} value={status} onChange={(v) => setStatus(v as StatusFilter)} />
+        <SegmentedTabs options={STATUS_OPTIONS} value={status} onChange={(v) => { setStatus(v as StatusFilter); setPage(1); }} />
       </div>
 
       <FilterBar
         className="mb-5"
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(value) => { setSearch(value); setPage(1); }}
         searchPlaceholder="Tìm khóa học theo tên, công nghệ, lộ trình..."
         activeFilterCount={activeFilters}
         onClearFilters={() => {
           setDifficulty("all");
           setRoadmap("all");
+          setPage(1);
         }}
         sheetTitle="Lọc khóa học"
         controls={
           <>
-            <Select label="Lộ trình" value={roadmap} options={roadmapOptions} onChange={setRoadmap} />
+            <Select label="Lộ trình" value={roadmap} options={roadmapOptions} onChange={(v) => { setRoadmap(v); setPage(1); }} />
             <Select
               label="Độ khó"
               value={difficulty}
               options={DIFFICULTY_OPTIONS}
-              onChange={(v) => setDifficulty(v as Difficulty | "all")}
+              onChange={(v) => { setDifficulty(v as Difficulty | "all"); setPage(1); }}
             />
           </>
         }
@@ -120,8 +129,9 @@ export default function CoursesPage() {
           <p className="mt-1 text-xs text-text-faint">Thử bỏ bớt bộ lọc hoặc đổi từ khóa tìm kiếm.</p>
         </Card>
       ) : (
+        <>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {visible.map((course, index) => (
+          {paginated.map((course, index) => (
             <EntityCard
               key={course.id}
               tile={course.thumbnail}
@@ -141,6 +151,14 @@ export default function CoursesPage() {
             />
           ))}
         </div>
+        <Pagination
+          label="Phân trang khóa học"
+          page={currentPage}
+          pageCount={pageCount}
+          onChange={setPage}
+          className="mt-6"
+        />
+        </>
       )}
     </div>
   );
