@@ -14,6 +14,9 @@ import { TAB_META, type PaneId, type PanesState, type TabKind } from "@/componen
 import { Pane, ResizeHandle, useWorkspace, WorkspaceProvider } from "@codementor/ui";
 import { type Problem } from "@/data/sample-problem";
 import { useResolvedTheme } from "@/lib/store/use-resolved-theme";
+import { api } from "@/lib/api";
+import { useAuth } from "@/providers/auth-provider";
+import { JUDGE_LANGUAGE_IDS, VERDICT_LABELS, type JudgeRunResult } from "@/types/judge";
 import { DiscussionPanel } from "@/components/workspace/discussion-panel";
 import { MascotAssistant, type MascotState } from "@/components/workspace/mascot-assistant";
 import "highlight.js/styles/github-dark.css";
@@ -48,8 +51,10 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
   const [language, setLanguage] = useState(languages[0]);
   const [code, setCode] = useState<Record<string, string>>(problem.starter);
   const editorRef = useRef<MonacoEditorHandle | null>(null);
+  const { status: authStatus, signIn } = useAuth();
   const [running, setRunning] = useState(false);
-  const [results, setResults] = useState<{ input: string; expected: string; pass: boolean }[] | null>(null);
+  const [judgeResult, setJudgeResult] = useState<JudgeRunResult | null>(null);
+  const [judgeError, setJudgeError] = useState<string | null>(null);
   const [mascotState, setMascotState] = useState<MascotState>("idle");
   const [codeyVisible, setCodeyVisible] = useState(true);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,16 +76,42 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
     typingTimer.current = setTimeout(() => setMascotState("idle"), 900);
   };
 
-  const runCode = () => {
+  /**
+   * Chấm thật: gửi code sang judge-service, nó chạy trong container Docker riêng cho từng
+   * test case rồi trả verdict. Trước đây hàm này là một `setTimeout` đoán kết quả từ việc
+   * code có khác mã mẫu hay không — nó luôn "đạt" với bất kỳ thay đổi nào.
+   */
+  const runCode = async () => {
+    if (authStatus !== "authenticated") {
+      setJudgeError("Cần đăng nhập để chấm bài.");
+      return;
+    }
+
     setRunning(true);
     setMascotState("loading");
-    setTimeout(() => {
-      const hasMeaningfulChange = (code[language] ?? "").trim() !== (problem.starter[language] ?? "").trim();
-      const nextResults = problem.testCases.map((tc, index) => ({ input: tc.input, expected: tc.expected, pass: hasMeaningfulChange || index !== problem.testCases.length - 1 }));
-      setResults(nextResults);
+    setJudgeError(null);
+    setJudgeResult(null);
+
+    try {
+      const result = await api.judge.run({
+        language: JUDGE_LANGUAGE_IDS[language] ?? language.toLowerCase(),
+        sourceCode: code[language] ?? "",
+        timeLimitMs: 1000,
+        memoryLimitKb: 128 * 1024,
+        testCases: problem.testCases.map((testCase, index) => ({
+          order: index + 1,
+          input: testCase.input,
+          expected: testCase.expected,
+        })),
+      });
+      setJudgeResult(result);
+      setMascotState(result.verdict === "accepted" ? "success" : "error");
+    } catch (cause) {
+      setJudgeError(cause instanceof Error ? cause.message : "Không chấm được");
+      setMascotState("error");
+    } finally {
       setRunning(false);
-      setMascotState(nextResults.every((result) => result.pass) ? "success" : "error");
-    }, 700);
+    }
   };
 
   const sendAiMessage = () => {
@@ -189,21 +220,63 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
               <div className="flex items-center gap-2 text-xs text-text-muted">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang chạy trong sandbox...
               </div>
-            ) : results ? (
+            ) : judgeError ? (
+              <div className="flex flex-col items-start gap-2 rounded-md bg-danger-tint p-3 text-xs text-danger">
+                <span>{judgeError}</span>
+                {authStatus !== "authenticated" && (
+                  <button onClick={signIn} className="font-semibold underline underline-offset-2">
+                    Đăng nhập
+                  </button>
+                )}
+              </div>
+            ) : judgeResult ? (
               <div className="flex flex-col gap-2">
-                <div className={`mb-1 flex items-center justify-between rounded-md px-3 py-2 text-xs font-semibold ${results.every((result) => result.pass) ? "bg-success-tint text-success" : "bg-danger-tint text-danger"}`}>
-                  <span>{results.every((result) => result.pass) ? "Tất cả test case đã đạt" : "Có test case cần xem lại"}</span>
-                  <span>{results.filter((result) => result.pass).length}/{results.length}</span>
+                <div
+                  className={`mb-1 flex items-center justify-between rounded-md px-3 py-2 text-xs font-semibold ${
+                    judgeResult.verdict === "accepted"
+                      ? "bg-success-tint text-success"
+                      : "bg-danger-tint text-danger"
+                  }`}
+                >
+                  <span>{VERDICT_LABELS[judgeResult.verdict]}</span>
+                  <span>
+                    {judgeResult.passedTests}/{judgeResult.totalTests} · {judgeResult.runtimeMs} ms
+                  </span>
                 </div>
-                {results.map((r, i) => (
-                  <div key={i} className={`rounded-md p-2.5 font-mono text-xs ${r.pass ? "bg-success-tint" : "bg-danger-tint"}`}>
-                    <div className={`mb-1 font-sans font-semibold ${r.pass ? "text-success" : "text-danger"}`}>
-                      {r.pass ? "✓ Đạt" : "✗ Không đạt"} — Test {i + 1}
+
+                {judgeResult.compileOutput && (
+                  <pre className="overflow-x-auto rounded-md bg-danger-tint p-2.5 font-mono text-xs whitespace-pre-wrap text-danger">
+                    {judgeResult.compileOutput}
+                  </pre>
+                )}
+
+                {judgeResult.cases.map((caseResult) => {
+                  const passed = caseResult.verdict === "accepted";
+                  return (
+                    <div
+                      key={caseResult.order}
+                      className={`rounded-md p-2.5 font-mono text-xs ${passed ? "bg-success-tint" : "bg-danger-tint"}`}
+                    >
+                      <div
+                        className={`mb-1 flex justify-between font-sans font-semibold ${passed ? "text-success" : "text-danger"}`}
+                      >
+                        <span>
+                          {passed ? "✓ Đạt" : "✗ Không đạt"} — Test {caseResult.order}
+                        </span>
+                        <span className="font-normal text-text-faint">{caseResult.runtimeMs} ms</span>
+                      </div>
+                      {!passed && (
+                        <>
+                          <div className="text-text-faint">expected: {caseResult.expected}</div>
+                          <div className="text-text-faint">actual: {caseResult.actual || "(rỗng)"}</div>
+                          {caseResult.stderr && (
+                            <div className="mt-1 break-words text-danger">{caseResult.stderr}</div>
+                          )}
+                        </>
+                      )}
                     </div>
-                    <div className="text-text-faint">input: {r.input}</div>
-                    <div className="text-text-faint">expected: {r.expected}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-xs text-text-faint">Nhấn &ldquo;Chạy&rdquo; để biên dịch và xem kết quả.</div>

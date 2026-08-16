@@ -6,6 +6,7 @@ import type {
   Exercise,
   ExerciseContent,
   ExerciseListItem,
+  JudgeRunResult,
   Page,
 } from "@/features/exercises/types";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
@@ -99,6 +100,20 @@ export const api = {
     submit: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/withdraw`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/roadmaps/${id}`, { method: "DELETE" }),
+  },
+
+  /**
+   * judge-service chấm đồng bộ. Đây là đường "chạy thử": không tạo bài nộp, không ghi lịch
+   * sử — giảng viên chỉ muốn biết đề của mình chạy có ra kết quả không.
+   */
+  judge: {
+    run: (body: {
+      language: string;
+      sourceCode: string;
+      timeLimitMs: number;
+      memoryLimitKb: number;
+      testCases: { order: number; input: string; expected: string; weight?: number }[];
+    }) => unwrap<JudgeRunResult>("/judge/run", { method: "POST", body }),
   },
 
   courses: {

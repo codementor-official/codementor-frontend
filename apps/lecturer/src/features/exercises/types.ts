@@ -116,3 +116,53 @@ export const LANGUAGES: LanguageConfig[] = [
   { id: "javascript", label: "JavaScript", monaco: "javascript" },
   { id: "go", label: "Go", monaco: "go" },
 ];
+
+/** Kết quả chấm một test case, trả về từ POST /judge/run. */
+export interface JudgeCaseResult {
+  order: number;
+  verdict: JudgeVerdict;
+  expected: string;
+  actual: string;
+  stderr: string;
+  runtimeMs: number;
+  memoryKb: number;
+}
+
+export type JudgeVerdict =
+  | "accepted"
+  | "wrong_answer"
+  | "compile_error"
+  | "runtime_error"
+  | "timeout"
+  | "memory_exceeded";
+
+export interface JudgeRunResult {
+  verdict: JudgeVerdict;
+  score: number;
+  passedTests: number;
+  totalTests: number;
+  runtimeMs: number;
+  memoryKb: number;
+  /** Chỉ có khi verdict là compile_error. */
+  compileOutput: string | null;
+  /** Rỗng khi biên dịch hỏng — không case nào được chạy. */
+  cases: JudgeCaseResult[];
+}
+
+export const VERDICT_LABELS: Record<JudgeVerdict, string> = {
+  accepted: "Đạt",
+  wrong_answer: "Sai kết quả",
+  compile_error: "Lỗi biên dịch",
+  runtime_error: "Lỗi khi chạy",
+  timeout: "Quá thời gian",
+  memory_exceeded: "Quá bộ nhớ",
+};
+
+export const VERDICT_TONES: Record<JudgeVerdict, "neutral" | "success" | "warning" | "danger"> = {
+  accepted: "success",
+  wrong_answer: "danger",
+  compile_error: "warning",
+  runtime_error: "danger",
+  timeout: "warning",
+  memory_exceeded: "warning",
+};
