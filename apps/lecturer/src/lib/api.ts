@@ -7,6 +7,7 @@ import type {
   ExerciseContent,
   ExerciseListItem,
   JudgeRunResult,
+  JudgeSpecPayload,
   Page,
 } from "@/features/exercises/types";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
@@ -112,8 +113,28 @@ export const api = {
       sourceCode: string;
       timeLimitMs: number;
       memoryLimitKb: number;
-      testCases: { order: number; input: string; expected: string; weight?: number }[];
+      /** Có mặt = chấm theo chữ ký hàm. Vắng mặt = so chuỗi stdout như trước. */
+      spec?: JudgeSpecPayload;
+      testCases: {
+        order: number;
+        input?: string;
+        args?: unknown[];
+        expected?: unknown;
+        weight?: number;
+      }[];
     }) => unwrap<JudgeRunResult>("/judge/run", { method: "POST", body }),
+
+    /**
+     * Mã khởi tạo sinh từ chữ ký hàm.
+     *
+     * Ở judge chứ không ở client: cùng module đó sinh ra driver, nên chữ ký hai bên không
+     * thể lệch nhau. Xem `features/exercises/codegen.ts`.
+     */
+    starter: (body: { languages: string[]; spec: JudgeSpecPayload }) =>
+      unwrap<{ starters: Record<string, string>; unsupported: Record<string, string> }>(
+        "/judge/starter",
+        { method: "POST", body },
+      ),
   },
 
   courses: {
