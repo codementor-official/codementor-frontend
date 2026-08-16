@@ -1,16 +1,26 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, Code2, FileText, ListChecks, Loader2, Play, SquareTerminal } from "lucide-react";
+import {
+  ArrowLeft,
+  Braces,
+  Code2,
+  FileText,
+  ListChecks,
+  Loader2,
+  Play,
+  RotateCcw,
+  SquareTerminal,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
 import {
   Button,
+  LanguageDropdown,
   Pane,
   ResizeHandle,
-  SegmentedTabs,
   StatusBadge,
   useWorkspace,
   WorkspaceProvider,
@@ -26,12 +36,41 @@ import {
   VERDICT_TONES,
   type Exercise,
   type ExerciseStatus,
+  showValue,
   type JudgeRunResult,
 } from "@/features/exercises/types";
 import { api } from "@/lib/api";
 
 /** Closed union so the content switch below stays exhaustive when a tab is added. */
 type SolveTab = "description" | "code" | "testcase" | "result";
+
+/**
+ * `evaluation.checker` của đề → `judgeMode` của judge.
+ *
+ * Hai từ vựng không trùng nhau vì `checker` có sẵn từ thời stdin: `trimmed` và `custom` không
+ * có nghĩa khi so sánh giá trị có kiểu, nên chúng về `exact`.
+ */
+/**
+ * Đuôi file hiển thị trên chip tên file.
+ *
+ * `language.id` không phải lúc nào cũng là đuôi file — `python` là `.py`, `javascript` là
+ * `.js`. Chỉ liệt kê chỗ khác nhau; còn lại id chính là đuôi.
+ */
+const FILE_EXTENSIONS: Record<string, string> = {
+  python: "py",
+  javascript: "js",
+  typescript: "ts",
+};
+
+function fileExtension(languageId: string): string {
+  return FILE_EXTENSIONS[languageId] ?? languageId;
+}
+
+function judgeModeOf(checker: string | undefined): "exact" | "float" | "unordered" {
+  if (checker === "float" || checker === "unordered") return checker;
+  return "exact";
+}
+
 
 const TAB_META: TabMetaMap = {
   description: { label: "Đề bài", icon: FileText },
@@ -60,6 +99,8 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<JudgeRunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Monaco chỉ format được qua chính instance của nó; không có API nào khác.
+  const editorRef = useRef<{ getAction: (id: string) => { run: () => void } | null } | null>(null);
 
   const languages = exercise.content?.languages ?? [];
   const language = languages.find((item) => item.id === languageId);
@@ -69,6 +110,15 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
   );
 
   const allCases = exercise.content?.testCases ?? [];
+
+  /** Đổi ngôn ngữ — và nạp lại mã khởi tạo của ngôn ngữ đó. Cũng là hành vi nút "khôi phục". */
+  const selectLanguage = (id: string) => {
+    setLanguageId(id);
+    setCode(languages.find((item) => item.id === id)?.starterCode ?? "");
+  };
+
+  const signature = exercise.content?.signature;
+  const isFunction = exercise.content?.ioMode === "function";
 
   const submit = async (openResult: () => void) => {
     setRunning(true);
@@ -83,10 +133,23 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
           sourceCode: code,
           timeLimitMs: exercise.timeLimitMs,
           memoryLimitKb: exercise.memoryLimitKb,
+          // Không có `spec` = judge chấm theo stdin/stdout như trước.
+          ...(isFunction && signature
+            ? {
+                spec: {
+                  functionName: signature.functionName,
+                  // Ngôn ngữ kiểu tĩnh cần cả chữ ký để sinh driver, không chỉ tên hàm.
+                  parameters: signature.parameters ?? [],
+                  returnType: signature.returnType,
+                  judgeMode: judgeModeOf(exercise.content?.evaluation?.checker),
+                },
+              }
+            : {}),
           testCases: allCases.map((testCase) => ({
             order: testCase.order,
-            input: testCase.input,
-            expected: testCase.expected,
+            input: testCase.input ?? "",
+            args: testCase.args,
+            expected: testCase.expected ?? "",
             weight: testCase.weight ?? 1,
           })),
         }),
@@ -125,19 +188,38 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
       case "code":
         return (
           <div className="flex h-full flex-col">
-            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-2 py-1.5">
-              <span className="truncate font-mono text-xs text-muted-foreground">
-                {language ? `solution.${language.id}` : "chưa chọn ngôn ngữ"}
+            {/* Cùng bố cục với khu làm bài của học viên (apps/web): tên file bên trái, bộ
+                chọn ngôn ngữ và hai nút công cụ bên phải. Giảng viên xem trước chính màn hình
+                học viên sẽ thấy — hai bên khác nhau thì bản xem trước mất ý nghĩa. */}
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
+              <span className="truncate rounded-md border border-border bg-card px-2.5 py-1.5 font-mono text-xs font-semibold">
+                {language ? `solution.${fileExtension(language.id)}` : "chưa chọn ngôn ngữ"}
               </span>
               {languages.length > 0 && (
-                <SegmentedTabs
-                  onChange={(value) => {
-                    setLanguageId(value);
-                    setCode(languages.find((item) => item.id === value)?.starterCode ?? "");
-                  }}
-                  options={languages.map((item) => ({ value: item.id, label: item.label }))}
-                  value={languageId}
-                />
+                <div className="flex items-center gap-0.5">
+                  <LanguageDropdown
+                    label={(id) => languages.find((item) => item.id === id)?.label ?? id}
+                    language={languageId}
+                    languages={languages.map((item) => item.id)}
+                    onChange={selectLanguage}
+                  />
+                  <button
+                    className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onClick={() => selectLanguage(languageId)}
+                    title="Khôi phục mã khởi tạo"
+                    type="button"
+                  >
+                    <RotateCcw className="size-3.5" />
+                  </button>
+                  <button
+                    className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onClick={() => editorRef.current?.getAction("editor.action.formatDocument")?.run()}
+                    title="Định dạng code"
+                    type="button"
+                  >
+                    <Braces className="size-3.5" />
+                  </button>
+                </div>
               )}
             </div>
             <div className="min-h-0 flex-1">
@@ -146,6 +228,9 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
                   height="100%"
                   language={language.monaco ?? language.id}
                   onChange={setCode}
+                  onMount={(editor) => {
+                    editorRef.current = editor;
+                  }}
                   theme={theme}
                   value={code}
                 />
@@ -169,10 +254,25 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
               <ul className="grid gap-2">
                 {publicCases.map((testCase) => (
                   <li className="rounded-md border p-2.5 font-mono text-xs" key={testCase.order}>
-                    <p className="font-sans text-muted-foreground">Đầu vào</p>
-                    <pre className="mt-1 whitespace-pre-wrap">{testCase.input || "(rỗng)"}</pre>
-                    <p className="mt-2 font-sans text-muted-foreground">Đầu ra</p>
-                    <pre className="mt-1 whitespace-pre-wrap">{testCase.expected || "(rỗng)"}</pre>
+                    <p className="font-sans text-muted-foreground">
+                      {isFunction ? "Tham số" : "Đầu vào"}
+                    </p>
+                    <pre className="mt-1 whitespace-pre-wrap">
+                      {(isFunction
+                        ? (signature?.parameters ?? [])
+                            .map(
+                              (parameter, position) =>
+                                `${parameter.name} = ${showValue((testCase.args ?? [])[position])}`,
+                            )
+                            .join("\n")
+                        : showValue(testCase.input)) || "(rỗng)"}
+                    </pre>
+                    <p className="mt-2 font-sans text-muted-foreground">
+                      {isFunction ? "Trả về" : "Đầu ra"}
+                    </p>
+                    <pre className="mt-1 whitespace-pre-wrap">
+                      {showValue(testCase.expected) || "(rỗng)"}
+                    </pre>
                   </li>
                 ))}
               </ul>
@@ -221,6 +321,17 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
                   <pre className="overflow-x-auto rounded-md border border-warning/40 bg-warning/10 p-3 font-mono text-xs whitespace-pre-wrap">
                     {result.compileOutput}
                   </pre>
+                )}
+
+                {/* Chỉ có ở chế độ hàm: ở đó stdout không còn là bài nộp, nên `print` quay về
+                    đúng vai trò gỡ lỗi và phải được hiện ra chứ không bị nuốt. */}
+                {result.consoleOutput && (
+                  <div>
+                    <p className="mb-1 text-xs text-muted-foreground">Console</p>
+                    <pre className="max-h-40 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs whitespace-pre-wrap">
+                      {result.consoleOutput}
+                    </pre>
+                  </div>
                 )}
 
                 {result.cases.map((caseResult) => (
