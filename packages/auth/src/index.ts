@@ -130,6 +130,10 @@ function createUserManager(config: KeycloakPublicConfig, redirectOrigin: string)
     // form does not lose the session mid-edit.
     automaticSilentRenew: true,
     silent_redirect_uri: redirectOrigin + "/auth/silent-renew",
+    // Đăng xuất phải thu hồi refresh token, không chỉ quên nó đi. Không có cờ này,
+    // một refresh token bị lộ vẫn đổi được access token mới cho tới khi hết hạn — kể
+    // cả sau khi người dùng đã bấm "Đăng xuất".
+    revokeTokensOnSignout: true,
     stateStore: new WebStorageStateStore({ store: window.sessionStorage }),
     userStore: new WebStorageStateStore({ store: window.sessionStorage }),
     monitorSession: false,
@@ -152,6 +156,16 @@ export function registrationUrl(config: KeycloakPublicConfig, redirectOrigin: st
     prompt: "login",
   });
   return realmUrl(config) + "/protocol/openid-connect/registrations?" + params.toString();
+}
+
+/**
+ * Luồng "quên mật khẩu" của Keycloak. Đặt lại mật khẩu đi qua email nên nó phải sống ở
+ * phía Keycloak — CodeMentor không giữ mật khẩu, và cũng không nên tự gửi email đặt lại.
+ * Chỉ cần `client_id`: Keycloak tự tạo phiên xác thực cho luồng này.
+ */
+export function resetPasswordUrl(config: KeycloakPublicConfig): string {
+  const params = new URLSearchParams({ client_id: config.clientId });
+  return realmUrl(config) + "/login-actions/reset-credentials?" + params.toString();
 }
 
 /** Keycloak account console — where a user changes password, email, or 2FA. */

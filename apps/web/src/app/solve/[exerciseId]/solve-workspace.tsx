@@ -50,7 +50,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
   const [language, setLanguage] = useState(languages[0]);
   const [code, setCode] = useState<Record<string, string>>(problem.starter);
   const editorRef = useRef<MonacoEditorHandle | null>(null);
-  const { status: authStatus, signIn } = useAuth();
+  const { status: authStatus } = useAuth();
   const [running, setRunning] = useState(false);
   const [judgeResult, setJudgeResult] = useState<JudgeRunResult | null>(null);
   const [judgeError, setJudgeError] = useState<string | null>(null);
@@ -223,9 +223,11 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
               <div className="flex flex-col items-start gap-2 rounded-md bg-danger-tint p-3 text-xs text-danger">
                 <span>{judgeError}</span>
                 {authStatus !== "authenticated" && (
-                  <button onClick={signIn} className="font-semibold underline underline-offset-2">
+                  // Về /login, không đẩy thẳng sang Keycloak: form email/mật khẩu giờ
+                  // nằm ngay trên trang của CodeMentor.
+                  <Link href="/login" className="font-semibold underline underline-offset-2">
                     Đăng nhập
-                  </button>
+                  </Link>
                 )}
               </div>
             ) : judgeResult ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { accessTokenOf, getUserManager, registrationUrl } from "@codementor/auth";
 import type { OidcUser, UserManager } from "@codementor/auth";
@@ -18,16 +18,18 @@ interface AuthContextValue {
   /** The CodeMentor profile from GET /api/v1/me, not the raw Keycloak token. */
   user: User | null;
   error: string | null;
-  /** Full-page redirect to Keycloak — used for deep-link "you must log in" prompts, not the /login form. */
-  signIn: () => void;
   /**
-   * Opens Keycloak in a popup so /login never navigates away. No `provider` shows
-   * the plain username/password form; a provider skips straight to that IdP via
-   * `kc_idp_hint`. Rejects on cancel/error.
+   * Email/tên đăng nhập + mật khẩu, gửi tới BFF cùng origin — KHÔNG tới Keycloak.
+   * Chỉ ném lỗi kèm thông điệp hiển thị được; form ở /login bắt và hiện tại chỗ.
    */
-  signInWithPopup: (provider?: SocialProvider) => Promise<void>;
+  signInWithPassword: (username: string, password: string) => Promise<void>;
+  /**
+   * Opens Keycloak in a popup so /login never navigates away, skipping straight to the
+   * chosen IdP via `kc_idp_hint`. Rejects on cancel/error.
+   */
+  signInWithPopup: (provider: SocialProvider) => Promise<void>;
   signUp: () => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   /** Re-reads the profile after the user edits it. */
   refreshUser: () => Promise<void>;
 }
@@ -47,7 +49,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   // The token lives in a ref rather than in state: the API client reads it during a
   // request, and re-rendering the tree every time a silent renew swaps the token
-  // would be pointless churn.
+  // would be pointless churn. Phiên đăng nhập bằng mật khẩu để ref này ở `null` —
+  // token của nó nằm trong cookie HttpOnly và chỉ server đọc được.
   const tokenRef = useRef<string | null>(null);
   const managerRef = useRef<UserManager | null>(null);
 
@@ -59,46 +62,50 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     return managerRef.current;
   };
 
+  /**
+   * Một đường duy nhất để đi tới trạng thái đã-đăng-nhập, dùng chung cho cả hai loại
+   * phiên: token trong tab (popup Google/Facebook) và cookie HttpOnly (mật khẩu).
+   * Hồ sơ luôn lấy từ backend, không bao giờ từ claim của token.
+   */
+  const applySession = useCallback(async (oidcUser: OidcUser | null) => {
+    tokenRef.current = accessTokenOf(oidcUser);
+
+    // Back to "loading" before fetching the profile, not after. Redeeming the
+    // authorization code resolves before the profile does, and the callback page
+    // navigates to a guarded route immediately; leaving the status at "anonymous"
+    // during that gap makes the guard bounce the user to /login and straight back.
+    setStatus("loading");
+
+    if (!tokenRef.current && !(await hasPasswordSession())) {
+      setUser(null);
+      setStatus("anonymous");
+      return;
+    }
+
+    try {
+      // The profile comes from the backend, never from token claims. The token
+      // carries the Keycloak `sub`; `users.id` and the resolved platform role
+      // exist only in CodeMentor's own database.
+      setUser(await api.me());
+      setStatus("authenticated");
+    } catch (cause) {
+      // A valid token with a rejected profile means a suspended or deleted
+      // account. Staying "authenticated" would show an empty console instead.
+      tokenRef.current = null;
+      setUser(null);
+      setStatus("anonymous");
+      setError(cause instanceof Error ? cause.message : "Không tải được hồ sơ");
+    }
+  }, []);
+
   useEffect(() => {
     setAccessTokenReader(() => tokenRef.current);
 
-    const applyOidcUser = async (oidcUser: OidcUser | null) => {
-      const token = accessTokenOf(oidcUser);
-      tokenRef.current = token;
-
-      if (!token) {
-        setUser(null);
-        setStatus("anonymous");
-        return;
-      }
-
-      // Back to "loading" before fetching the profile, not after. Redeeming the
-      // authorization code resolves before the profile does, and the callback page
-      // navigates to a guarded route immediately; leaving the status at "anonymous"
-      // during that gap makes the guard bounce the user to /login and straight back.
-      setStatus("loading");
-
-      try {
-        // The profile comes from the backend, never from token claims. The token
-        // carries the Keycloak `sub`; `users.id` and the resolved platform role
-        // exist only in CodeMentor's own database.
-        setUser(await api.me());
-        setStatus("authenticated");
-      } catch (cause) {
-        // A valid token with a rejected profile means a suspended or deleted
-        // account. Staying "authenticated" would show an empty console instead.
-        tokenRef.current = null;
-        setUser(null);
-        setStatus("anonymous");
-        setError(cause instanceof Error ? cause.message : "Không tải được hồ sơ");
-      }
-    };
-
     const userManager = manager();
-    void userManager.getUser().then(applyOidcUser);
+    void userManager.getUser().then(applySession);
 
-    const onLoaded = (oidcUser: OidcUser) => void applyOidcUser(oidcUser);
-    const onUnloaded = () => void applyOidcUser(null);
+    const onLoaded = (oidcUser: OidcUser) => void applySession(oidcUser);
+    const onUnloaded = () => void applySession(null);
     userManager.events.addUserLoaded(onLoaded);
     userManager.events.addUserUnloaded(onUnloaded);
     userManager.events.addSilentRenewError(onUnloaded);
@@ -108,18 +115,28 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       userManager.events.removeUserUnloaded(onUnloaded);
       userManager.events.removeSilentRenewError(onUnloaded);
     };
-  }, []);
+  }, [applySession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       user,
       error,
-      // `prompt: login` forces Keycloak to re-authenticate even if its own SSO
-      // session (a separate cookie from ours) is still alive from a prior login —
-      // without it, "Login" after "Logout" can silently resume the last identity
-      // (including a linked Google/Facebook broker session) instead of asking again.
-      signIn: () => void manager().signinRedirect({ extraQueryParams: { prompt: "login" } }),
+      signInWithPassword: async (username, password) => {
+        setError(null);
+        const response = await fetch("/api/auth/login", {
+          body: JSON.stringify({ username, password }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as { message?: string } | null;
+          throw new Error(body?.message ?? "Đăng nhập thất bại. Vui lòng thử lại.");
+        }
+        // Cookie phiên đã được đặt trong response ở trên; `applySession(null)` thấy nó
+        // qua /api/auth/session rồi nạp hồ sơ như mọi đường đăng nhập khác.
+        await applySession(null);
+      },
       signInWithPopup: async (provider) => {
         setError(null);
         try {
@@ -128,10 +145,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           // `userLoaded` event fires on this manager instance just like a redirect
           // would, so the effect above picks the session up the same way.
           await manager().signinPopup({
-            // No provider → plain login form. `prompt: login` there for the same
-            // reason `signIn` needs it: an alive Keycloak SSO session would otherwise
-            // skip the form and silently resume whoever was last signed in.
-            extraQueryParams: provider ? { kc_idp_hint: provider } : { prompt: "login" },
+            extraQueryParams: { kc_idp_hint: provider },
             popupWindowFeatures: { width: 480, height: 640, popup: true },
           });
         } catch (cause) {
@@ -146,16 +160,54 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       signUp: () => {
         window.location.href = registrationUrl(keycloakConfig, window.location.origin);
       },
-      signOut: () => {
+      /**
+       * Đăng xuất phải kết thúc CẢ HAI phía, nếu không lần bấm "Đăng nhập" kế tiếp sẽ
+       * lặng lẽ khôi phục tài khoản cũ:
+       *
+       *   1. Phiên CodeMentor — cookie BFF (thu hồi refresh token ở Keycloak) và
+       *      token trong tab của oidc-client-ts.
+       *   2. Phiên SSO của Keycloak — cookie ở id.codementor.cloud, chỉ chết khi
+       *      trình duyệt thực sự ghé end_session. Đăng nhập bằng mật khẩu không tạo
+       *      cookie này (không có điều hướng nào tới Keycloak), nên chỉ phiên popup
+       *      mới cần chuyến đi đó.
+       *
+       * Không đụng tới phiên Google/Facebook của người dùng: end_session chỉ kết thúc
+       * phiên ở Keycloak, họ vẫn đăng nhập Gmail/Facebook bình thường.
+       */
+      signOut: async () => {
         tokenRef.current = null;
-        void manager().signoutRedirect();
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+
+        const oidcUser = await manager().getUser();
+        if (oidcUser) {
+          // signoutRedirect gửi id_token_hint, xoá user khỏi sessionStorage rồi quay
+          // về post_logout_redirect_uri (/login). Trang này bị thay nên không cần
+          // dọn state sau đó.
+          await manager().signoutRedirect();
+          return;
+        }
+
+        setUser(null);
+        setStatus("anonymous");
+        window.location.href = "/login";
       },
       refreshUser: async () => {
-        if (tokenRef.current) setUser(await api.me());
+        if (status === "authenticated") setUser(await api.me());
       },
     }),
-    [status, user, error],
+    [status, user, error, applySession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/** `true` nếu cookie BFF còn sống. Không trả token — token không rời khỏi server. */
+async function hasPasswordSession(): Promise<boolean> {
+  try {
+    const response = await fetch("/api/auth/session", { cache: "no-store" });
+    const body = (await response.json()) as { authenticated?: boolean };
+    return body.authenticated === true;
+  } catch {
+    return false;
+  }
 }

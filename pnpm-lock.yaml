@@ -269,6 +269,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: 3.29.2
         version: 3.29.2
+      jose:
+        specifier: ^6.2.8
+        version: 6.2.8
       lowlight:
         specifier: ^3.3.0
         version: 3.3.0

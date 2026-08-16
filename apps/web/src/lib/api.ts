@@ -14,10 +14,18 @@ export function setAccessTokenReader(reader: () => string | null): void {
   readAccessToken = reader;
 }
 
-const request = createApiClient({
-  baseUrl: apiBaseUrl,
-  getAccessToken: () => readAccessToken(),
-});
+/** Phiên Google/Facebook: token nằm trong tab, gọi thẳng gateway như trước. */
+const direct = createApiClient({ baseUrl: apiBaseUrl, getAccessToken: () => readAccessToken() });
+
+/**
+ * Phiên đăng nhập bằng mật khẩu: token nằm trong cookie HttpOnly nên trình duyệt không
+ * gắn `Authorization` được. Proxy cùng origin ở `/api/backend` gắn hộ phía server.
+ */
+const viaBff = createApiClient({ baseUrl: "/api/backend" });
+
+function request<T>(path: string, options?: Parameters<typeof direct>[1]): Promise<T> {
+  return readAccessToken() ? direct<T>(path, options) : viaBff<T>(path, options);
+}
 
 /** Every backend response is wrapped by the response interceptor in libs/platform. */
 async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]): Promise<T> {

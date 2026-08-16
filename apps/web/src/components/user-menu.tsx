@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LogOut, UserRound } from "lucide-react";
 import { ThemePicker } from "@/components/theme-picker";
+import { useAuth } from "@/providers/auth-provider";
 
 export function UserMenu({
   collapsed = false,
@@ -14,7 +15,9 @@ export function UserMenu({
   collapsed?: boolean;
   placement?: "up" | "down";
 }) {
+  const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,6 +29,8 @@ export function UserMenu({
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
+  const displayName = user?.displayName ?? "Tài khoản";
+
   return (
     // Expanded: take the leftover row width so the collapse toggle sits flush right.
     <div ref={ref} className={`relative ${collapsed ? "" : "min-w-0 flex-1"}`}>
@@ -36,8 +41,8 @@ export function UserMenu({
           }`}
         >
           <div className="border-b border-border-soft px-3 py-2">
-            <div className="text-sm font-semibold text-navy">Gia Sĩ</div>
-            <div className="truncate text-xs text-text-faint">giasi.nguyen@student.iuh.edu.vn</div>
+            <div className="truncate text-sm font-semibold text-navy">{displayName}</div>
+            {user?.email && <div className="truncate text-xs text-text-faint">{user.email}</div>}
           </div>
           <ThemePicker />
           <div className="my-1 border-t border-border-soft" />
@@ -48,28 +53,48 @@ export function UserMenu({
           >
             <UserRound className="h-4 w-4" /> Chỉnh sửa hồ sơ
           </Link>
-          <Link
-            href="/"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-bg"
+          {/*
+            Trước đây đây là `<Link href="/">` — bấm "Đăng xuất" chỉ đưa người dùng về
+            trang chủ mà không kết thúc phiên nào cả, nên lần đăng nhập kế tiếp lặng lẽ
+            khôi phục đúng tài khoản cũ. Nút thật gọi `signOut`, thứ kết thúc cả phiên
+            CodeMentor lẫn phiên SSO của Keycloak.
+          */}
+          <button
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-primary hover:bg-bg disabled:opacity-50"
+            disabled={leaving}
+            onClick={() => {
+              setLeaving(true);
+              // Không tắt menu: trang sắp bị thay bằng chuyến đi tới Keycloak, và tắt
+              // menu chỉ làm nút nhấp nháy rồi biến mất.
+              void signOut().finally(() => setLeaving(false));
+            }}
+            type="button"
           >
-            <LogOut className="h-4 w-4" /> Đăng xuất
-          </Link>
+            <LogOut className="h-4 w-4" /> {leaving ? "Đang đăng xuất…" : "Đăng xuất"}
+          </button>
         </div>
       )}
       <button
         onClick={() => setOpen((v) => !v)}
         title="Tài khoản"
-        aria-label="Tài khoản: Gia Sĩ"
+        aria-label={`Tài khoản: ${displayName}`}
         className={`flex h-9 w-full items-center gap-2 rounded-md hover:bg-bg ${
           collapsed ? "justify-center" : "px-1"
         }`}
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-on-ink">
-          GS
+          {initialsOf(displayName)}
         </span>
-        {!collapsed && <span className="min-w-0 truncate text-sm font-medium text-navy">Gia Sĩ</span>}
+        {!collapsed && (
+          <span className="min-w-0 truncate text-sm font-medium text-navy">{displayName}</span>
+        )}
       </button>
     </div>
   );
+}
+
+/** "Nguyễn Gia Sĩ" → "GS". Lấy hai từ cuối vì tên người Việt đặt họ trước. */
+function initialsOf(name: string): string {
+  const words = name.trim().split(/\s+/).slice(-2);
+  return words.map((word) => word[0]?.toUpperCase() ?? "").join("") || "?";
 }
