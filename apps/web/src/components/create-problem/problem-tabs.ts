@@ -1,6 +1,6 @@
-import { BookOpen, Code2, ListChecks, PenLine, type LucideIcon } from "lucide-react";
+import { BookOpen, Code2, type LucideIcon } from "lucide-react";
 
-export type ProblemTabKey = "code" | "theory" | "quiz" | "essay";
+export type ProblemTabKey = "code" | "theory";
 
 export interface ProblemTab {
   key: ProblemTabKey;
@@ -8,11 +8,11 @@ export interface ProblemTab {
   icon: LucideIcon;
 }
 
+// Quiz and essay authoring had tabs but no form — they rendered a dashed placeholder box.
+// Add them back alongside a real form, not before one.
 export const PROBLEM_TABS: ProblemTab[] = [
   { key: "code", label: "Code", icon: Code2 },
   { key: "theory", label: "Lý thuyết", icon: BookOpen },
-  { key: "quiz", label: "Trắc nghiệm", icon: ListChecks },
-  { key: "essay", label: "Tự luận", icon: PenLine },
 ];
 
 export function resolveProblemTab(raw: string | undefined): ProblemTabKey {

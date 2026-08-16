@@ -61,7 +61,8 @@ apps/
   lecturer/     Lecturer product
   admin/        Administration product
 packages/
-  ui/           UI shared by multiple applications (DashboardShell)
+  ui/           The primitive library — every app's buttons, cards, inputs, filters, tables
+  editor/       Monaco code editor and TipTap rich-text editor
   api-client/   Shared HTTP transport used by application API adapters
   auth/         Shared Keycloak-facing role and authentication primitives
   types/        Cross-application contracts
@@ -70,8 +71,32 @@ packages/
   typescript-config/
 docs/
   architecture/frontend-architecture.md
+  UI_AUDIT_AND_PLAN.md
 ```
 
-The empty packages are prepared seams for the lecturer and admin build-out, not dead code.
+All three applications consume `ui`, `api-client`, `auth`, and `types`.
+
+## Design system
+
+`packages/ui` is the **only** home for UI primitives — an app never defines its own `Button`,
+`Card`, or `PageHeader`. Application `src/components/` holds composed, domain-aware components
+only.
+
+Nine UI rules govern every page. The short version:
+
+- Every page is `Breadcrumb → PageHeader → StatStrip? → content`, in that order.
+- The breadcrumb is rendered by the shell and derived from `route-meta.ts` — never hand-rolled.
+- Only the shell sets a width ceiling; pages fill it. `max-w-[72ch]` on prose is the one clamp.
+- Grid when the user is choosing between items, list when hunting for one. No horizontal scroll
+  strips — overflow wraps.
+- One `StatStrip` per page, real numbers only. Stats never displace the page's actual content.
+- Tokens only: no `zinc-*`/`orange-*`/`bg-white`, no arbitrary type sizes. Hardcoded colors break
+  dark mode.
+- Hover and focus are a border/background delta at 150ms. No translate, scale, or hover shadow.
+- No nav-reachable route may render a placeholder.
+
+Full rules: [AGENTS.md](AGENTS.md) → UI rules.
+Tokens and components: [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md).
+Audit and rebuild plan: [docs/UI_AUDIT_AND_PLAN.md](docs/UI_AUDIT_AND_PLAN.md).
 
 See [Frontend architecture](docs/architecture/frontend-architecture.md) for ownership rules, dependency boundaries, authentication guidance, and feature placement.

@@ -56,12 +56,12 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-surface">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-navy px-4 py-3 text-on-ink sm:px-5">
-        <Link href={`/paths/${roadmapSlug}/courses/${course.slug}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-300 hover:text-white">
+        <Link href={`/paths/${roadmapSlug}/courses/${course.slug}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-on-ink/80 hover:text-on-ink">
           <ChevronLeft className="h-4 w-4" /> Quay lại khóa học
         </Link>
-        <span className="hidden h-4 w-px bg-white/20 sm:block" />
-        <span className="text-xs font-semibold text-white">{course.title}</span>
-        <span className="text-xs text-zinc-400">Bài {location.flatIndex + 1}/{lessons.length}</span>
+        <span className="hidden h-4 w-px bg-on-ink/20 sm:block" />
+        <span className="text-xs font-semibold text-on-ink">{course.title}</span>
+        <span className="text-xs text-on-ink/70">Bài {location.flatIndex + 1}/{lessons.length}</span>
       </div>
 
       <div className="grid min-h-[calc(100vh-7rem)] lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -70,12 +70,12 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
             <div className="relative flex aspect-video min-h-70 items-center justify-center overflow-hidden bg-navy">
               <Image src={contentIllustration(`${course.slug}-${lesson.id}`)} alt="" fill sizes="(min-width: 1024px) 70vw, 100vw" className="object-contain opacity-65" />
               <div className="absolute inset-0 bg-linear-to-br from-navy/65 via-navy/20 to-primary/35" />
-              <div className="relative z-10 text-center text-white">
-                <button type="button" aria-label="Phát video minh họa" className="mx-auto mb-4 flex h-15 w-15 items-center justify-center rounded-full bg-white text-primary shadow-lg transition-transform hover:scale-105">
+              <div className="relative z-10 text-center text-on-ink">
+                <button type="button" aria-label="Phát video minh họa" className="mx-auto mb-4 flex h-15 w-15 items-center justify-center rounded-full bg-surface text-primary shadow-lg transition-colors hover:bg-bg">
                   <Play className="ml-0.5 h-6 w-6 fill-current" />
                 </button>
                 <p className="text-sm font-semibold">Video minh họa · {formatMinutes(lesson.durationMinutes)}</p>
-                <p className="mt-1 text-xs text-zinc-200">Nội dung video đang dùng mock asset cho bản prototype</p>
+                <p className="mt-1 text-xs text-on-ink/90">Nội dung video đang dùng mock asset cho bản prototype</p>
               </div>
             </div>
           ) : (
@@ -114,8 +114,8 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
 
             {content.code && (
               <section className="mb-6 overflow-hidden rounded-lg border border-border bg-navy">
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs text-zinc-300"><span>{content.code.label}</span><span>{content.code.language}</span></div>
-                <pre className="overflow-x-auto p-4 text-[13px] leading-6 text-zinc-100"><code>{content.code.value}</code></pre>
+                <div className="flex items-center justify-between border-b border-on-ink/10 px-4 py-2 text-xs text-on-ink/80"><span>{content.code.label}</span><span>{content.code.language}</span></div>
+                <pre className="overflow-x-auto p-4 text-xs leading-6 text-on-ink/90"><code>{content.code.value}</code></pre>
               </section>
             )}
 
@@ -123,7 +123,7 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
               <section className="mb-6 rounded-lg border border-border bg-bg p-4">
                 <h2 className="mb-3 text-lg font-bold text-navy">Yêu cầu thực hành</h2>
                 <ol className="space-y-2 text-sm leading-relaxed text-text-muted">
-                  {content.exerciseBrief.map((item, index) => <li key={item} className="flex gap-2"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-bold text-on-ink">{index + 1}</span>{item}</li>)}
+                  {content.exerciseBrief.map((item, index) => <li key={item} className="flex gap-2"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-bold text-on-ink">{index + 1}</span>{item}</li>)}
                 </ol>
               </section>
             )}
@@ -153,7 +153,7 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
                 <div className="pb-1">
                   {chapter.lessons.map((chapterLesson) => {
                     const active = chapterLesson.id === lesson.id;
-                    const row = <><span className="mt-0.5 shrink-0">{lessonIcon(chapterLesson)}</span><span className={`min-w-0 flex-1 text-xs leading-relaxed ${active ? "font-semibold text-primary" : "text-text"}`}>{chapterLesson.title}</span><span className="shrink-0 text-[11px] text-text-faint">{formatMinutes(chapterLesson.durationMinutes)}</span></>;
+                    const row = <><span className="mt-0.5 shrink-0">{lessonIcon(chapterLesson)}</span><span className={`min-w-0 flex-1 text-xs leading-relaxed ${active ? "font-semibold text-primary" : "text-text"}`}>{chapterLesson.title}</span><span className="shrink-0 text-2xs text-text-faint">{formatMinutes(chapterLesson.durationMinutes)}</span></>;
                     return chapterLesson.isLocked ? <div key={chapterLesson.id} className="flex gap-2 px-4 py-2.5 opacity-55">{row}</div> : <Link key={chapterLesson.id} href={lessonTargetHref(roadmapSlug, course, chapterLesson)} className={`flex gap-2 px-4 py-2.5 hover:bg-bg ${active ? "bg-primary-tint" : ""}`}>{row}</Link>;
                   })}
                 </div>

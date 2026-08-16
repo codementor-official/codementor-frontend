@@ -1,6 +1,6 @@
 import {
+  BookOpen,
   Bot,
-  CheckSquare,
   Compass,
   Dumbbell,
   FilePlus2,
@@ -17,10 +17,10 @@ export const createAction = { href: "/create-problem", label: "Tạo bài tập"
 export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutGrid },
   { href: "/explore", label: "Khám phá", icon: Compass },
+  { href: "/courses", label: "Khóa học", icon: BookOpen },
+  { href: "/paths", label: "Lộ trình", icon: Map },
   { href: "/practice", label: "Luyện tập", icon: Dumbbell },
-  { href: "/paths", label: "Lộ trình học", icon: Map },
   { href: "/workspace", label: "Nhóm học tập", icon: Users },
   { href: "/ai-tutor", label: "Trợ lý AI", icon: Bot },
-  { href: "/exercises", label: "Bài tập", icon: CheckSquare },
   { href: "/settings", label: "Cài đặt", icon: Settings },
 ];

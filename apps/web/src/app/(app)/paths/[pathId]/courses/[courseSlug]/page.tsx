@@ -4,7 +4,6 @@ import {
   Award,
   BarChart3,
   Check,
-  ChevronRight,
   Clock,
   Code2,
   FileText,
@@ -17,6 +16,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CourseCurriculumOutline } from "@/components/roadmap/course-curriculum-outline";
@@ -57,14 +57,9 @@ export default async function CourseDetailPage({
 
   if (!result) {
     return (
-      <div>
-        <Link href={`/paths/${pathId}`} className="mb-3.5 inline-block text-sm text-text-muted hover:text-navy">
-          ← Quay lại lộ trình học
-        </Link>
-        <Card className="p-8 text-center text-sm text-text-faint">
-          Không tìm thấy khóa học này trong lộ trình.
-        </Card>
-      </div>
+      <Card className="p-8 text-center text-sm text-text-faint">
+        Không tìm thấy khóa học này trong lộ trình.
+      </Card>
     );
   }
 
@@ -84,47 +79,38 @@ export default async function CourseDetailPage({
 
   return (
     <div>
-      <nav className="mb-3.5 flex flex-wrap items-center gap-1.5 text-xs text-text-faint">
-        <Link href="/paths" className="hover:text-navy">
-          Lộ trình học
-        </Link>
-        <ChevronRight className="h-3 w-3" />
-        <span>{fieldLabel}</span>
-        <ChevronRight className="h-3 w-3" />
-        <Link href={`/paths/${roadmap.slug}#curriculum`} className="hover:text-navy">
-          {roadmap.title}
-        </Link>
-      </nav>
+      <BreadcrumbTitle slug={pathId} title={roadmap.title} />
+      <BreadcrumbTitle slug={courseSlug} title={course.title} />
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <div className="mb-5 rounded-lg bg-navy p-6 text-on-ink">
-            <div className="mb-2 text-[10.5px] font-bold tracking-wide text-primary uppercase">
+            <div className="mb-2 text-2xs font-bold tracking-wide text-primary uppercase">
               Khóa học · {roadmap.title}
             </div>
             <h1 className="mb-2 text-2xl font-bold">{course.title}</h1>
-            <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-zinc-300">{course.description}</p>
+            <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-on-ink/80">{course.description}</p>
 
             {course.instructor && (
-              <p className="mb-2.5 text-xs text-zinc-300">
-                Được tạo bởi <span className="font-semibold text-white">{course.instructor}</span>
+              <p className="mb-2.5 text-xs text-on-ink/80">
+                Được tạo bởi <span className="font-semibold text-on-ink">{course.instructor}</span>
               </p>
             )}
 
             {course.rating && (
-              <div className="mb-2.5 flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200">
+              <div className="mb-2.5 flex flex-wrap items-center gap-2 text-xs font-medium text-on-ink/90">
                 <span className="font-bold text-primary">{course.rating.toFixed(1)}</span>
                 <StarRating rating={course.rating} />
-                <span className="text-zinc-400">({course.ratingCount?.toLocaleString("vi-VN")} đánh giá)</span>
+                <span className="text-on-ink/60">({course.ratingCount?.toLocaleString("vi-VN")} đánh giá)</span>
                 {course.studentCount && (
-                  <span className="flex items-center gap-1 text-zinc-300">
+                  <span className="flex items-center gap-1 text-on-ink/80">
                     <Users className="h-3.5 w-3.5" /> {course.studentCount.toLocaleString("vi-VN")} học viên
                   </span>
                 )}
               </div>
             )}
 
-            <div className="flex flex-wrap gap-4 text-xs font-medium text-zinc-300">
+            <div className="flex flex-wrap gap-4 text-xs font-medium text-on-ink/80">
               <span className="flex items-center gap-1">
                 <BarChart3 className="h-3.5 w-3.5" /> {LEVEL_DISPLAY_LABEL[course.level]}
               </span>
@@ -218,7 +204,7 @@ export default async function CourseDetailPage({
                 className="object-cover"
               />
               <div className="absolute inset-0 flex items-center justify-center bg-navy/25">
-                <PlayCircle className="h-11 w-11 text-white drop-shadow" />
+                <PlayCircle className="h-11 w-11 text-on-ink drop-shadow" />
               </div>
             </div>
           </Card>

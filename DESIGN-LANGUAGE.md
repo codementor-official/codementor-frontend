@@ -1,3 +1,10 @@
+> **Superseded in part (2026-08-16).** `DESIGN-SYSTEM.md` is the single source of truth for the
+> design system, and `docs/UI_AUDIT_AND_PLAN.md` is the current audit and rebuild plan. Where this
+> document disagrees with either, they win. In particular this document predates the page-shell
+> rule (`Breadcrumb -> PageHeader -> StatStrip? -> content`), the removal of `PageBanner`, the
+> fluid-width rule, the ban on horizontal scroll strips, and the consolidation of all primitives
+> into `packages/ui`.
+
 > **Methodology note:** Live browser rendering of kaggle.com wasn't available in this session (Claude in Chrome extension not connected), so this analysis is built from Kaggle's long-stable, well-documented public interface architecture (competition listing, card system, nav, filter patterns), cross-checked against the site's current live metadata (brand color `#008ABC`, "AI Proving Ground" positioning, competitions/hackathons focus, fetched 2026-08-01). It focuses on structural and systemic design decisions — grid, spacing, hierarchy, component anatomy — which is what transfers to another product; it does not claim pixel-exact current values.
 >
 > **Codebase note:** CodeMentor's existing stack is Next.js 16 + Tailwind v4 (CSS-first `@theme` tokens in `apps/web/src/app/globals.css`) with a primitive library already in `apps/web/src/components/ui/` (`Button`, `Card`, `Badge`/`DifficultyBadge`, `Input`) and composed components (`CourseCard`, `ProblemRow`, `RoadmapCard`, `RoadmapFilterBar`, `Sidebar`, `Topbar`, `PageHeader`). Everything below is written to **extend** that system, not replace it — existing token names and component APIs are kept wherever possible.

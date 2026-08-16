@@ -1,25 +1,30 @@
-import { PageBanner } from "@/components/page-banner";
+import { StatStrip } from "@codementor/ui";
+import { PageHeader } from "@/components/page-header";
 import { StudyGroupBoard } from "@/components/study-group/study-group-board";
 import { CURRENT_USER_NAME } from "@/data/study-groups";
 import { studyGroupService } from "@/lib/study-group/study-group-service";
-import { PAGE_ILLUSTRATIONS } from "@/lib/content-illustrations";
+import { summarizeGroups } from "@/lib/study-group/study-group-stats";
 
 export default async function WorkspaceListPage() {
   const groups = await studyGroupService.getAll();
+  const summary = summarizeGroups(groups);
 
   return (
     <div>
-      <PageBanner
-        illustrationSrc={PAGE_ILLUSTRATIONS.workspace}
-        variant="workspace"
-        eyebrow="Cùng học, cùng hoàn thành mục tiêu"
-        highlights={[
-          { value: String(groups.length), label: "nhóm của bạn" },
-          { value: "1", label: "bài đang chờ" },
-          { value: "Tuần này", label: "cập nhật mới" },
-        ]}
+      <PageHeader
         title="Nhóm học tập"
-        description="Nơi học và luyện tập cùng các nhóm của bạn — nhóm tự tạo hoặc tham gia qua lời mời từ người khác. Mỗi nhóm có tài liệu, bài tập và bảng tiến độ riêng."
+        subtitle="Nhóm bạn tự tạo hoặc tham gia qua lời mời. Mỗi nhóm có tài liệu, bài tập và bảng tiến độ riêng."
+      />
+      {/* Counted from the groups themselves — the banner's "1 bài đang chờ" and
+        * "Tuần này" were fixed strings that never moved. */}
+      <StatStrip
+        className="mb-5"
+        stats={[
+          { label: "Nhóm", value: summary.totalGroups },
+          { label: "Bạn quản lý", value: summary.ownedCount },
+          { label: "Đã tham gia", value: summary.joinedCount },
+          { label: "Bài tập đang mở", value: summary.openTaskCount },
+        ]}
       />
       <StudyGroupBoard groups={groups} currentUserName={CURRENT_USER_NAME} />
     </div>
