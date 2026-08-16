@@ -62,7 +62,7 @@ html {
    * `:where()` keeps specificity at zero so a component can still declare its own, and
    * `:focus-visible` means only keyboard navigation paints a ring, not a mouse click.
    * Never pair this with `outline-none`: that suppresses it in every state.
-   * Mirrors the rule in apps/web; see DESIGN-SYSTEM.md → Focus. */
+   * Mirrors the rule in apps/client; see DESIGN-SYSTEM.md → Focus. */
   :where(a[href], button, summary, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"]), input, select, textarea):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;

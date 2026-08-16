@@ -23,7 +23,7 @@ Each application owns its routes, layouts, features, application-level component
 
 ### Application responsibilities
 
-- `apps/web` owns the public site and member/student learning experience. The original application, its routes, assets, mock data, styles, and state live here.
+- `apps/client` owns the public site and member/student learning experience. The original application, its routes, assets, mock data, styles, and state live here.
 - `apps/lecturer` owns lecturer-only teaching and review workflows.
 - `apps/admin` owns platform administration workflows.
 
@@ -33,7 +33,7 @@ The backend is outside this repository. Frontend refactors must not change backe
 
 The split is structural; the product is not evenly distributed across it yet.
 
-- `apps/web` holds every migrated route (`(app)` route group, `login`, `signup`, `solve`) and all
+- `apps/client` holds every migrated route (`(app)` route group, `login`, `signup`, `solve`) and all
   real UI. It consumes no workspace package today.
 - `apps/lecturer` and `apps/admin` are scaffolds: `src/app/layout.tsx`, one `src/app/page.tsx`
   rendering `DashboardShell` from `@codementor/ui`, and empty `components/`, `features/`, `hooks/`,
@@ -50,7 +50,7 @@ them; do not add new packages in their place, and do not delete them as dead cod
 Allowed dependencies flow from applications into packages:
 
 ```text
-apps/web       ─┐
+apps/client       ─┐
 apps/lecturer ─┼─> packages/*
 apps/admin     ─┘
 ```
@@ -91,7 +91,7 @@ Do not move an existing web component into `packages/ui` until another applicati
 Substantial business capabilities should be feature-first:
 
 ```text
-apps/web/src/features/exercises/
+apps/client/src/features/exercises/
   api/
   components/
   hooks/
@@ -102,10 +102,10 @@ apps/web/src/features/exercises/
 
 Create only the folders a feature needs and avoid deep nesting.
 
-`apps/web/src/features` is empty today. Migrated web code is organized by domain one level up:
+`apps/client/src/features` is empty today. Migrated web code is organized by domain one level up:
 
 ```text
-apps/web/src/
+apps/client/src/
   app/          Routes: (app) group, login, signup, solve
   components/   ui/ primitives + domain folders (study-group, workspace, exercises, roadmap, …)
   lib/          Domain logic and stores (store/, practice/, roadmap/, study-group/, …)
@@ -222,4 +222,4 @@ Never configure aliases into another app. If two apps need the same code, extrac
 
 ## Design documentation
 
-`DESIGN-SYSTEM.md` and the design documents under `docs/` currently describe the migrated web client. Their paths point to `apps/web/src`. They remain repository-level references and should be evaluated before applying the same visual system to lecturer or admin.
+`DESIGN-SYSTEM.md` and the design documents under `docs/` currently describe the migrated web client. Their paths point to `apps/client/src`. They remain repository-level references and should be evaluated before applying the same visual system to lecturer or admin.

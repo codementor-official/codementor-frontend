@@ -2,7 +2,7 @@
  * Self-check for the breadcrumb derivation. No test runner in this repository yet, so this
  * is runnable directly:
  *
- *   pnpm --filter @codementor/web exec tsx src/lib/navigation/route-meta.test.ts
+ *   pnpm --filter @codementor/client exec tsx src/lib/navigation/route-meta.test.ts
  *
  * Move it to whatever runner lands first; the assertions carry over unchanged.
  */

@@ -103,7 +103,7 @@ a text label).
 ## 15. Reuse before creating, and know which shelf to reach for
 
 `packages/ui/src/` holds primitives more than one app uses, on the shared token names.
-`apps/web/src/components/ui/` holds the student product's own, built on `navy`/`surface`/`on-ink`
+`apps/client/src/components/ui/` holds the student product's own, built on `navy`/`surface`/`on-ink`
 tokens the other apps do not define. `EntityCard`, `FilterBar`, `SegmentedTabs`, `ProblemRow`,
 `Breadcrumb`, `StatStrip`, `Pagination`, `Card`, `Badge`, `Button`, `Input`, `ProgressBar`,
 `Modal`, `DataTable` already exist and cover most "browse a list of things" and "show a number"
@@ -117,8 +117,8 @@ what exists vs. what's a genuine gap; `docs/UI_AUDIT_AND_PLAN.md` → R6 has the
 
 ## 16. Business logic stays out of UI components
 
-Data fetching, scoring/ranking, filtering, and formatting live in `apps/web/src/lib/`, `apps/web/src/hooks/`, and
-`apps/web/src/data/` — components receive already-shaped props and render them. This is already how the
+Data fetching, scoring/ranking, filtering, and formatting live in `apps/client/src/lib/`, `apps/client/src/hooks/`, and
+`apps/client/src/data/` — components receive already-shaped props and render them. This is already how the
 roadmap feature (`lib/roadmap/*`, `hooks/use-roadmap-*`) is built; the refactor keeps that
 boundary everywhere, including the pages that currently inline logic (e.g. `explore/page.tsx`'s
 inline `matches()` filter is acceptable at its current size but shouldn't grow without moving to

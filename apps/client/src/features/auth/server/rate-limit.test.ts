@@ -2,7 +2,7 @@
  * Self-check for the login rate limiter. No test runner in this repository yet, so this
  * is runnable directly:
  *
- *   pnpm --filter @codementor/web exec tsx src/features/auth/server/rate-limit.test.ts
+ *   pnpm --filter @codementor/client exec tsx src/features/auth/server/rate-limit.test.ts
  *
  * Move it to whatever runner lands first; the assertions carry over unchanged.
  */

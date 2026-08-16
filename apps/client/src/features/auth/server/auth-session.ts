@@ -6,7 +6,7 @@ import type { NextRequest, NextResponse } from "next/server";
 import { getWebAuthConfig, keycloakRealmUrl } from "./auth-config";
 
 /**
- * Phiên đăng nhập bằng mật khẩu của apps/web, giữ nguyên hình dạng đã chạy ổn ở
+ * Phiên đăng nhập bằng mật khẩu của apps/client, giữ nguyên hình dạng đã chạy ổn ở
  * apps/admin: token nằm trong một JWE mã hoá đặt trong cookie HttpOnly, trình duyệt
  * không bao giờ đọc được access/refresh token.
  *

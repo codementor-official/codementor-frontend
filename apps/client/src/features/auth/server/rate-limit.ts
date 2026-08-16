@@ -4,7 +4,7 @@
  * của Keycloak mới là thứ khoá tài khoản, và nó vẫn chạy vì mật khẩu vẫn do Keycloak kiểm.
  *
  * ponytail: đếm trong RAM của một tiến trình — chạy nhiều instance Next thì mỗi instance
- * có bộ đếm riêng. Đổi sang Redis khi apps/web thực sự chạy nhiều instance.
+ * có bộ đếm riêng. Đổi sang Redis khi apps/client thực sự chạy nhiều instance.
  */
 const WINDOW_MS = 60_000;
 const MAX_ATTEMPTS = 10;

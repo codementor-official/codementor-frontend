@@ -3,7 +3,7 @@
 CodeMentor's frontend is a pnpm/Turborepo monorepo with three independently deployable Next.js applications:
 
 ```text
-apps/web       Main member and student application — the full product today
+apps/client       Main member and student application — the full product today
 apps/lecturer  Lecturer dashboard — scaffold, one placeholder page
 apps/admin     Administration dashboard — scaffold, one placeholder page
 ```

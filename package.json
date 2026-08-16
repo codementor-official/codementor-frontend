@@ -5,7 +5,7 @@
   "packageManager": "pnpm@11.19.0",
   "scripts": {
     "dev": "turbo run dev",
-    "dev:web": "pnpm --filter @codementor/web dev",
+    "dev:client": "pnpm --filter @codementor/client dev",
     "dev:lecturer": "pnpm --filter @codementor/lecturer dev",
     "dev:admin": "pnpm --filter @codementor/admin dev",
     "build": "turbo run build",

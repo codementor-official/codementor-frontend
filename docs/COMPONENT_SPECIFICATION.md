@@ -16,7 +16,7 @@ Per principle #15, this ordering matters: read Part A fully before touching Part
 
 # Part A — Existing components
 
-## Web primitives (`apps/web/src/components/ui/`)
+## Web primitives (`apps/client/src/components/ui/`)
 
 ### `Button` — `ui/button.tsx`
 - **Purpose:** every clickable action except an inline text link.
@@ -213,7 +213,7 @@ re-deriving it. Everything else is still a genuine gap; build in the order liste
 - **Markup:** `<nav aria-label="breadcrumb">`, ordered list, last item `aria-current="page"`.
 - **Where it applies:** **every route under `(app)`**, rendered once by the shell in the topbar
   row — never by an individual page.
-- **Driven by:** `apps/web/src/lib/navigation/route-meta.ts` (new) — the single segment → label
+- **Driven by:** `apps/client/src/lib/navigation/route-meta.ts` (new) — the single segment → label
   map, so a new route cannot ship without a trail and a rename is a one-line edit. Dynamic
   segments resolve their label from the loaded entity, falling back to the slug.
 - **Replaces:** every hand-rolled back link. Delete them; "back" is the previous crumb.
@@ -246,7 +246,7 @@ are real**, and its illustration is dropped.
   "bottom" | "left"`.
 - **Priority:** low — nice-to-have accessibility/discoverability polish, not blocking any page.
 
-### `Pagination` — `apps/web/src/components/ui/pagination.tsx` — **built**
+### `Pagination` — `apps/client/src/components/ui/pagination.tsx` — **built**
 - **Purpose:** numbered pagination for plain lists — predictable scroll position, unlike infinite
   scroll. Three hand-rolled copies existed (inline in `/practice`, inside `RoadmapList`, and
   `/courses` shipped with none at all over 84 cards).

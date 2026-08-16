@@ -306,7 +306,7 @@ about roadmaps, courses, study groups, or problems.
 | `ManagePage` / `DashboardShell` | Layout shells for the lecturer/admin apps. |
 | `workspace/*` | Pane, tab bar, resize handle, language dropdown for the editor surfaces. |
 
-### Composed — `apps/web/src/components/`
+### Composed — `apps/client/src/components/`
 
 | Component | Notes |
 |---|---|

@@ -4,7 +4,7 @@ Follow `AGENTS.md` and use `docs/architecture/frontend-architecture.md` as the a
 
 Critical constraints:
 
-1. Maintain three independent Next.js apps: web, lecturer, and admin.
+1. Maintain three independent Next.js apps: client, lecturer, and admin.
 2. Never import application code across apps.
 3. Shared packages may be consumed by apps but must never depend on apps.
 4. Organize substantial business code feature-first under `apps/<app>/src/features`.
