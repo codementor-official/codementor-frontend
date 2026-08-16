@@ -1,6 +1,6 @@
 # CodeMentor Web — UI Audit, Solutions & Rebuild Plan
 
-**Scope:** `apps/web` (member/student app). Audited 2026-08-16 against the current
+**Scope:** `apps/client` (member/student app). Audited 2026-08-16 against the current
 `src/` tree, not against the older Kaggle-analysis docs.
 
 **Status:** all seven stages have shipped. Findings are kept in the past tense they were
@@ -123,7 +123,7 @@ Three shapes for one job. A user cannot learn "where the title is" because it mo
 ### F9. Two component libraries with colliding names
 `packages/ui` exports `Button`, `Card`, `Input`, `PageHeader`, `FilterBar`, `Select`,
 `SegmentedTabs`, `Modal`, `DataTable`, `TablePagination`, `StatusBadge`.
-`apps/web/src/components/ui/` separately defines `Button`, `Card`, `Badge`, `ProgressBar`,
+`apps/client/src/components/ui/` separately defines `Button`, `Card`, `Badge`, `ProgressBar`,
 `StatBlock`, `ConfirmDialog`, `RowActionMenu`, `CategoryFilterCards`.
 
 `/practice` imports `FilterBar, Select` from `@codementor/ui` **and** `Card` from
@@ -132,7 +132,7 @@ disambiguated only by import path. Nothing prevents a page from picking the wron
 
 `AGENTS.md` still describes `packages/ui` as "`DashboardShell` + `styles.css`, used only by
 the two scaffolds" and `packages/api-client` / `types` as having "No consumer yet". Both
-statements are false — `apps/web/package.json` depends on all of them. **The architecture
+statements are false — `apps/client/package.json` depends on all of them. **The architecture
 doc is stale enough to actively mislead.**
 
 ### F10. The right rail is a dumping ground
@@ -203,7 +203,7 @@ Stage 6: four documents remain, each with one job.
 |---|---|---|
 | `/exercises` (both tabs) | `data/authored-problems.ts`, `data/submission-history.ts` | **Delete** (F1) |
 | `/progress` | none — `<Placeholder>` | **Delete** (F14) |
-| `/admin` (in `apps/web`) | none — `<Placeholder>` | **Delete** — `apps/admin` owns this |
+| `/admin` (in `apps/client`) | none — `<Placeholder>` | **Delete** — `apps/admin` owns this |
 | "Nhu cầu tuyển dụng" card | 6 hardcoded strings | **Delete** |
 | `PageBanner` `highlights` | hardcoded strings | **Delete** with `PageBanner` (F7) |
 | Explore "Bảng xếp hạng tuần" / "Cộng đồng" | `data/sample-explore.ts` | Keep, demote out of the rail |
@@ -254,7 +254,7 @@ StatStrip?          at most one, ≤64px tall               ← see R5
 
 - New `packages/ui/src/breadcrumb.tsx` — `items: {label, href?}[]`, rendered as
   `<nav aria-label="breadcrumb">`, last item `aria-current="page"` and unlinked.
-- New `apps/web/src/lib/navigation/route-meta.ts` — the single map from route segment →
+- New `apps/client/src/lib/navigation/route-meta.ts` — the single map from route segment →
   label and parent. The breadcrumb is **derived** from `usePathname()` plus this map, so a
   new route cannot ship without a trail, and a rename (F3) is a one-line edit.
 - Dynamic segments resolve their label from the loaded entity (roadmap title, course
@@ -317,10 +317,10 @@ wrong one**. That is now an eslint error (`no-restricted-imports`), which costs 
 and closes the hole completely. So:
 
 - `packages/ui` holds primitives **used by more than one app**, on the shared token names.
-- `apps/web/src/components/ui` holds the student product's own primitives.
+- `apps/client/src/components/ui` holds the student product's own primitives.
 - Where a name exists in both, lint blocks the wrong import. **Never add a third copy of a
   name, and never re-export one library through the other.**
-- `apps/web/src/components/*` (outside `ui/`) keeps only *composed, domain-aware*
+- `apps/client/src/components/*` (outside `ui/`) keeps only *composed, domain-aware*
   components (`EntityCard`, `ProblemRow`, `Sidebar`, `roadmap/*`, `study-group/*`).
 - Genuine duplicates still go: `StatBlock` had zero importers and is deleted; the second
   and third numbered paginations collapse into one. `TablePagination` cannot absorb them —
@@ -329,7 +329,7 @@ and closes the hole completely. So:
 ### R7 — Tokens only
 
 - Zero `zinc-*` / `gray-*` / `slate-*` / `orange-*` / `bg-white` / `text-white` in
-  `apps/web/src`. Use `border-border`, `bg-surface`, `text-navy`, `bg-primary-tint`,
+  `apps/client/src`. Use `border-border`, `bg-surface`, `text-navy`, `bg-primary-tint`,
   `text-on-ink`, `bg-ink-fixed`. A third hue is never the answer — the landing page had
   picked up `violet-200`/`violet-50`, which is how a two-hue system stops being one.
 - **`on-ink` vs `on-ink-fixed`.** `on-ink` inverts with the theme, which is correct on
@@ -410,16 +410,16 @@ migrate things that are about to die.
 | Fix dangling links | `/dashboard` "Xem chi tiết →" → `/progress` (now gone) |
 | Delete card | `/practice` "Nhu cầu tuyển dụng" |
 
-**Done when:** no route renders `<Placeholder>`, `grep -rn "/exercises\|/progress" apps/web/src` is empty.
+**Done when:** no route renders `<Placeholder>`, `grep -rn "/exercises\|/progress" apps/client/src` is empty.
 
 ## Stage 1 — Shell: width, breadcrumb, topbar
 
 The foundation every later stage depends on.
 
 1. `packages/ui/src/breadcrumb.tsx` — new (R3). Export from `index.ts`.
-2. `apps/web/src/lib/navigation/route-meta.ts` — new. Segment → `{label, parent}` map,
+2. `apps/client/src/lib/navigation/route-meta.ts` — new. Segment → `{label, parent}` map,
    covering all `(app)` routes. Rename `Lộ trình học` → `Lộ trình` here (R3/F3).
-3. `apps/web/src/components/app-breadcrumb.tsx` — derives items from `usePathname()` +
+3. `apps/client/src/components/app-breadcrumb.tsx` — derives items from `usePathname()` +
    `route-meta`, resolves dynamic segments.
 4. `components/topbar.tsx` — breadcrumb on the left, `h-14`, search wired or removed (R9).
 5. `components/app-content.tsx` — drop `max-w-(--container-max)`; use
@@ -434,7 +434,7 @@ navigates there; no page sets `max-w-*` on its root.
 
 7. `packages/ui/src/stat-strip.tsx` — new (R5).
 8. `packages/ui/src/page-header.tsx` — confirm it covers `title` / `subtitle` / `actions`;
-   delete `apps/web/src/components/page-header.tsx` and repoint imports (R6).
+   delete `apps/client/src/components/page-header.tsx` and repoint imports (R6).
 9. **Delete `components/page-banner.tsx`.** Convert its 5 consumers to
    `PageHeader` + optional `StatStrip`:
    - `/dashboard` — header + `StatStrip` (real values from `dashStats`).
@@ -445,7 +445,7 @@ navigates there; no page sets `max-w-*` on its root.
 10. `/practice` and `/dashboard`: right rail down to ≤2 action-bearing cards; extract the
     streak widget once (R5/F10).
 
-**Done when:** `grep -rn "PageBanner" apps/web/src` is empty; every page's first element
+**Done when:** `grep -rn "PageBanner" apps/client/src` is empty; every page's first element
 under the breadcrumb is `PageHeader`; no page has more than one `StatStrip`.
 
 ## Stage 3 — `/courses` and list-orientation pass
@@ -472,14 +472,14 @@ nav and from `/explore`.
     with one consumer. See R6 for the full reasoning.
 17. Delete `StatBlock` — zero importers.
 18. Collapse the second and third numbered paginations into
-    `apps/web/src/components/ui/pagination.tsx`, used by `/practice` and `RoadmapList`.
+    `apps/client/src/components/ui/pagination.tsx`, used by `/practice` and `RoadmapList`.
     `TablePagination` cannot serve them: it takes a TanStack table instance.
 19. Add `no-restricted-imports` blocking `Button`/`Card`/`CardHeader`/`CardContent`/
-    `PageHeader` from `@codementor/ui` inside `apps/web` — this, not a merge, is what
+    `PageHeader` from `@codementor/ui` inside `apps/client` — this, not a merge, is what
     removes the risk of a file picking the wrong primitive.
 
 **Done when:** no component name has three copies, and importing the wrong `Button` in
-`apps/web` fails lint.
+`apps/client` fails lint.
 
 ## Stage 5 — Token & interaction cleanup, enforced *(done)*
 
@@ -493,7 +493,7 @@ nav and from `/explore`.
     `hover:shadow-*` are gone (R8/F13).
 25. **The rule that keeps this audit from repeating** — `packages/eslint-config` enforces
     hardcoded palette colors, hardcoded white/black, arbitrary font sizes, and hover
-    translate/scale/shadow. `error` in `apps/web`; `warn` in `apps/lecturer`, `apps/admin`,
+    translate/scale/shadow. `error` in `apps/client`; `warn` in `apps/lecturer`, `apps/admin`,
     and `packages/ui`, which have not had their audits. Promote an app to `error` in the
     change that cleans it up. Never silence a rule to land a change.
 

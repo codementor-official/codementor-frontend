@@ -74,7 +74,7 @@
 /* Motion for the overlay surfaces in this package (Modal, SideDrawer). Defined here
  * rather than per application, because a component that animates only in the app that
  * happened to declare the keyframes is a component that breaks on its second consumer.
- * Values match apps/web, which is where these surfaces came from. */
+ * Values match apps/client, which is where these surfaces came from. */
 @keyframes overlay-in {
   from {
     opacity: 0;

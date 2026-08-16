@@ -1,7 +1,7 @@
 # Đại tu frontend Lecturer — Thiết kế
 
 Ngày: 2026-08-15
-Phạm vi: `apps/lecturer`, `packages/ui`, và phần `apps/web` bị kéo theo khi component được đưa lên dùng chung.
+Phạm vi: `apps/lecturer`, `packages/ui`, và phần `apps/client` bị kéo theo khi component được đưa lên dùng chung.
 Không đụng backend.
 
 ---
@@ -26,11 +26,11 @@ Sáu vấn đề, đo được trên code hiện tại:
 
 Một vấn đề nền, phát hiện khi khảo sát và là điều kiện tiên quyết cho việc dùng chung component:
 
-7. **Hai app dùng hai bộ token, và `apps/web` thiếu mapping.** `apps/lecturer` map đầy đủ token
-   shadcn trong `@theme inline`. `apps/web` định nghĩa bộ riêng (`navy`, `surface`, `text-muted`,
+7. **Hai app dùng hai bộ token, và `apps/client` thiếu mapping.** `apps/lecturer` map đầy đủ token
+   shadcn trong `@theme inline`. `apps/client` định nghĩa bộ riêng (`navy`, `surface`, `text-muted`,
    `border-soft`, `primary-tint`) và **không** map `--color-card`, `--color-foreground`,
    `--color-muted-foreground`, `--color-popover*`, `--color-destructive*`, `--color-ring`,
-   `--color-input`. 31 file trong `apps/web` import `Modal`/`SideDrawer`/`DataTable`/`Input` từ
+   `--color-input`. 31 file trong `apps/client` import `Modal`/`SideDrawer`/`DataTable`/`Input` từ
    `@codementor/ui`; các class `bg-card`, `text-muted-foreground`, `bg-popover` trong những
    component đó **không sinh ra CSS** ở web. Đây là bug có sẵn, không phải hệ quả của đợt đại tu.
 
@@ -60,7 +60,7 @@ Một vấn đề nền, phát hiện khi khảo sát và là điều kiện ti�
 }
 ```
 
-`@theme inline` của **cả hai** app (`apps/lecturer/src/app/globals.css`, `apps/web/src/app/globals.css`):
+`@theme inline` của **cả hai** app (`apps/lecturer/src/app/globals.css`, `apps/client/src/app/globals.css`):
 
 ```css
 --radius-sm:  4px;   /* chip, badge nhỏ */
@@ -222,7 +222,7 @@ sách phẳng hai cột). Chia sẻ ba mảnh trên là đủ.
 
 | Component | Nguồn | Dùng ở |
 |---|---|---|
-| `Section` | `apps/web/create-problem/code-problem-form.tsx:59` | cả hai app |
+| `Section` | `apps/client/create-problem/code-problem-form.tsx:59` | cả hai app |
 | `RemoveButton` | cùng file, dòng 85 | cả hai app |
 | `RepeatableList` | rút từ khối tags / objectives / constraints | cả hai app |
 | `TestCaseRow` | rút từ khối test case | cả hai app |
@@ -230,7 +230,7 @@ sách phẳng hai cột). Chia sẻ ba mảnh trên là đủ.
 | `MarkdownPreview` | khối `showPreview` | cả hai app |
 | `fieldClasses` | `code-problem-form.tsx:104` | thay `components/form/field.tsx` của lecturer |
 
-`apps/web/src/components/create-problem/{code-problem-form,theory-lesson-form}.tsx` import ngược
+`apps/client/src/components/create-problem/{code-problem-form,theory-lesson-form}.tsx` import ngược
 lại từ `@codementor/ui`; hành vi giữ nguyên.
 
 **`CodeProblemForm` của lecturer** viết lại trên các component đó. Phần bổ sung so với hiện tại —
@@ -254,7 +254,7 @@ giao diện.
 
 ### 3.7 Workspace resize dùng chung
 
-Chuyển `apps/web/src/components/workspace/` → `packages/ui/src/workspace/`:
+Chuyển `apps/client/src/components/workspace/` → `packages/ui/src/workspace/`:
 
 `pane.tsx`, `tab-bar.tsx`, `tab.tsx`, `resize-handle.tsx`, `workspace-context.tsx`, `types.ts`.
 
@@ -262,7 +262,7 @@ Generic hóa: `PaneId` và `TabKind` hiện là union cứng của trang solve
 (`"left" | "editor" | "console" | "ai"`, `"description" | "discussion" | …`). Đổi thành `string`,
 và `TAB_META` thành tham số của `WorkspaceProvider` thay vì hằng số trong package.
 
-Giữ lại ở `apps/web`: `mascot-assistant`, `discussion-panel`, `problem-picker`, `language-dropdown` —
+Giữ lại ở `apps/client`: `mascot-assistant`, `discussion-panel`, `problem-picker`, `language-dropdown` —
 đều gắn với dữ liệu và tính năng riêng của web client.
 
 `apps/lecturer/package.json` thêm `react-resizable-panels: ^4.12.2` (đã có sẵn trong web).
@@ -329,7 +329,7 @@ bản dùng chung), `app/(lecturer)/{exercises,courses,roadmaps}/page.tsx`,
 `features/roadmaps/course-picker.tsx`, `features/exercises/code-problem-form.tsx`,
 `features/exercises/theory-lesson-form.tsx` (mới), `package.json`.
 
-**`apps/web` — sửa**
+**`apps/client` — sửa**
 
 `globals.css` (thêm `@theme inline` còn thiếu — sửa luôn bug ở mục 1.7),
 `components/create-problem/{code-problem-form,theory-lesson-form}.tsx` (import từ package),
@@ -375,7 +375,7 @@ Không có test framework trong repo (không thư mục `test`/`__tests__`, khô
 1. `pnpm typecheck` ở cả ba app và hai package — bắt hết call site lệch API
    (`Select.shape`, `PageHeader.center`, `ManagePage.tabs`, generic `PaneId`).
 2. `pnpm build` — bắt lỗi Tailwind v4 không sinh class.
-3. Kiểm tra mắt trên `apps/web` sau khi thêm mapping token: `Modal` và `SideDrawer` phải có nền
+3. Kiểm tra mắt trên `apps/client` sau khi thêm mapping token: `Modal` và `SideDrawer` phải có nền
    đặc (trước đó trong suốt). Đây là cách xác nhận bug 1.7 đã sửa.
 4. Kiểm tra mắt kéo thả: đường chèn phải xuất hiện đúng cạnh sẽ thả, kể cả khi kéo bài sang chương
    khác và khi thả vào chương rỗng.

@@ -2,7 +2,7 @@ import Image from "next/image";
 
 /**
  * Crops `/logo.png` (460x159, full wordmark) down to just the mark at the left edge —
- * same ratio apps/web uses for its compact variant, so the mark reads identically
+ * same ratio apps/client uses for its compact variant, so the mark reads identically
  * across every CodeMentor surface.
  */
 export function BrandLogo({ size = 40 }: { size?: number }) {

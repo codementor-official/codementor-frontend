@@ -51,7 +51,7 @@
 /* PHẢI nằm trong `@layer base`. Ở Tailwind v4, CSS không thuộc layer nào sẽ THẮNG mọi
  * utility (utility nằm trong `@layer utilities`). Trước đây khối này để trần, và hệ quả là
  * `button, input, select { font: inherit }` ghi đè mọi `text-sm`/`text-xs` đặt trên nút và ô
- * chọn — cả ứng dụng có chữ 16px trong khi phần còn lại 14px. `apps/web` đã ghi lại đúng bẫy
+ * chọn — cả ứng dụng có chữ 16px trong khi phần còn lại 14px. `apps/client` đã ghi lại đúng bẫy
  * này ở globals của nó; lecturer thì chưa. */
 @layer base {
   * {
@@ -62,7 +62,7 @@
    * `:where()` keeps specificity at zero so a component can still declare its own, and
    * `:focus-visible` means only keyboard navigation paints a ring, not a mouse click.
    * Never pair this with `outline-none`: that suppresses it in every state.
-   * Mirrors the rule in apps/web; see DESIGN-SYSTEM.md → Focus. */
+   * Mirrors the rule in apps/client; see DESIGN-SYSTEM.md → Focus. */
   :where(a[href], button, summary, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"]), input, select, textarea):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;

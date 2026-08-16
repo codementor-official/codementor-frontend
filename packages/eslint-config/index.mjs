@@ -55,7 +55,7 @@ const config = defineConfig([
   {
     settings: {
       next: {
-        rootDir: ["apps/web/", "apps/lecturer/", "apps/admin/"],
+        rootDir: ["apps/client/", "apps/lecturer/", "apps/admin/"],
       },
     },
     rules: {
@@ -68,7 +68,7 @@ const config = defineConfig([
     // Design-system enforcement. Every rule below encodes a finding from
     // docs/UI_AUDIT_AND_PLAN.md — without them, the same drift comes back, because a
     // convention that only lives in a document is a convention nobody runs.
-    files: ["apps/web/src/**/*.{ts,tsx}"],
+    files: ["apps/client/src/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": ["error", ...DESIGN_TOKEN_RESTRICTIONS],
     },
@@ -84,10 +84,10 @@ const config = defineConfig([
   },
   {
     // The two component libraries are deliberately separate: packages/ui serves the dense
-    // lecturer/admin surfaces, apps/web/src/components/ui serves the student product, and
+    // lecturer/admin surfaces, apps/client/src/components/ui serves the student product, and
     // they do not share a palette (web's navy/surface/on-ink tokens are not defined in the
     // other apps). What must never happen is a file reaching for the wrong Button.
-    files: ["apps/web/src/**/*.{ts,tsx}"],
+    files: ["apps/client/src/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -97,7 +97,7 @@ const config = defineConfig([
               name: "@codementor/ui",
               importNames: ["Button", "Card", "CardHeader", "CardContent", "PageHeader"],
               message:
-                "apps/web has its own Button/Card/PageHeader in @/components/ui — the @codementor/ui ones are styled for the lecturer/admin shells and use tokens web does not define.",
+                "apps/client has its own Button/Card/PageHeader in @/components/ui — the @codementor/ui ones are styled for the lecturer/admin shells and use tokens web does not define.",
             },
           ],
         },

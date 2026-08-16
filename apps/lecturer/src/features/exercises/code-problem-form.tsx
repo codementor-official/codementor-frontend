@@ -48,7 +48,7 @@ interface Props {
  * bài đọc thế nào, bên phải là bài chạy và chấm ra sao.
  *
  * Cả hai đều là component có kiểm soát — state nằm ở trang, form chỉ nhận `value` và phát
- * `onChange`. Đó là điểm khác duy nhất so với bản trong apps/web, vốn giữ state bên trong
+ * `onChange`. Đó là điểm khác duy nhất so với bản trong apps/client, vốn giữ state bên trong
  * nên chỉ dựng được giao diện chứ không nối được API.
  */
 export function ExerciseBriefForm({ value, onChange, readOnly = false, slugLocked = false }: Props) {

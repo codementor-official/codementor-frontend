@@ -9,15 +9,15 @@ pnpm workspace (`apps/*`, `packages/*`) orchestrated by Turborepo.
 
 | Path | Package name | Port | State |
 | --- | --- | ---: | --- |
-| `apps/web` | `@codementor/web` | 3000 | The real product: member/student app, all migrated routes and UI |
+| `apps/client` | `@codementor/client` | 3000 | The real product: member/student app, all migrated routes and UI |
 | `apps/lecturer` | `@codementor/lecturer` | 3010 | Built out: shell, auth, courses/exercises/roadmaps features |
 | `apps/admin` | `@codementor/admin` | 3011 | Built out: shell, auth boundary, dashboard/section features |
 | `packages/ui` | `@codementor/ui` | — | **The** primitive library — `Button`, `Card`, `Input`, `PageHeader`, `FilterBar`, `Select`, `SegmentedTabs`, `Modal`, `SideDrawer`, `DataTable`, `StatusBadge`, `ManagePage`, `DashboardShell`, `workspace/*`. Consumed by all three apps |
-| `packages/editor` | `@codementor/editor` | — | Monaco code editor + TipTap rich-text editor. Used by web + lecturer |
+| `packages/editor` | `@codementor/editor` | — | Monaco code editor + TipTap rich-text editor. Used by client + lecturer |
 | `packages/api-client` | `@codementor/api-client` | — | `createApiClient`, `ApiClientError`. Used by all three apps |
 | `packages/auth` | `@codementor/auth` | — | Keycloak config types, `hasRole`/`hasAnyRole`. Used by all three apps |
 | `packages/types` | `@codementor/types` | — | `Role`, `User`, `Pagination`, `ApiResponse`. Used by all three apps |
-| `packages/utils` | `@codementor/utils` | — | `joinUrl`. Used by `api-client`, web, lecturer |
+| `packages/utils` | `@codementor/utils` | — | `joinUrl`. Used by `api-client`, client, lecturer |
 | `packages/eslint-config` | `@codementor/eslint-config` | — | Flat config consumed by root `eslint.config.mjs` |
 | `packages/typescript-config` | `@codementor/typescript-config` | — | `base.json`, `nextjs.json` |
 
@@ -36,7 +36,7 @@ See `apps/admin/next.config.ts`.
 ## Placement and ownership
 
 - Put new business features in `apps/<app>/src/features/<feature>`.
-- `apps/web/src/features` is currently empty. Existing web code is organized by domain folders
+- `apps/client/src/features` is currently empty. Existing client code is organized by domain folders
   under `src/components/<domain>` and `src/lib/<domain>`, with `src/data` (mock data), `src/types`,
   `src/hooks`. Do not bulk-migrate it; move a domain into `features/` only when you are already
   reworking it.
@@ -56,7 +56,7 @@ Token/component detail: `DESIGN-SYSTEM.md`.
    in that order. No page renders its own `<header>` or an `<h1>` outside `PageHeader`. A page's
    loading state uses the same header components as its loaded state.
 2. **Breadcrumb everywhere.** Rendered by the shell, derived from
-   `apps/web/src/lib/navigation/route-meta.ts`. Never hand-roll a `← Quay lại X` link — "back"
+   `apps/client/src/lib/navigation/route-meta.ts`. Never hand-roll a `← Quay lại X` link — "back"
    is the previous crumb. A new route ships its `route-meta` entry in the same commit.
 3. **Fluid width.** Only the app shell sets a width ceiling. No page sets `max-w-*` on its root.
    The one permitted clamp is `max-w-[72ch]` on prose (article body, lesson text). Data, grids,
@@ -71,7 +71,7 @@ Token/component detail: `DESIGN-SYSTEM.md`.
    metadata belongs on the entity's card, not in a page-level tile. Right rails cap at 2 cards,
    each carrying an action or a deadline.
 6. **Two libraries, no ambiguity.** `packages/ui` holds primitives that more than one app uses
-   and that are built on the shared token names. `apps/web/src/components/ui` holds the student
+   and that are built on the shared token names. `apps/client/src/components/ui` holds the student
    product's own primitives — they are built on `navy`/`surface`/`on-ink`/`border-soft`, which
    lecturer and admin do not define, so moving them would create a shared package with one
    consumer. Where both libraries export the same name (`Button`, `Card`, `PageHeader`), eslint
@@ -88,7 +88,7 @@ Token/component detail: `DESIGN-SYSTEM.md`.
    `:focus-visible`, so do not add one per component — and never write `outline-none`, which
    suppresses it everywhere including keyboard focus.
 
-Rules 6–8 are enforced by eslint (`packages/eslint-config`), as errors in `apps/web` and as
+Rules 6–8 are enforced by eslint (`packages/eslint-config`), as errors in `apps/client` and as
 warnings in `apps/lecturer`, `apps/admin`, and `packages/ui` until those get their own audit.
 Promote an app to `error` in the same change that cleans it up. **Do not silence a rule to land
 a change** — the whole point is that the convention runs rather than being remembered.

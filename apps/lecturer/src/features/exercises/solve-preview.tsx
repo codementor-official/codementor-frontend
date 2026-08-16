@@ -90,7 +90,7 @@ const INITIAL_PANES: PanesState = {
  * below — the same three-pane split as the web client's solve screen, built on the same
  * primitives.
  *
- * No mascot, no AI assistant, no discussion tab. Those run on sample data in apps/web;
+ * No mascot, no AI assistant, no discussion tab. Those run on sample data in apps/client;
  * bringing them here would show an author invented conversation about their own exercise.
  */
 export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "light" | "dark" }) {
@@ -188,7 +188,7 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
       case "code":
         return (
           <div className="flex h-full flex-col">
-            {/* Cùng bố cục với khu làm bài của học viên (apps/web): tên file bên trái, bộ
+            {/* Cùng bố cục với khu làm bài của học viên (apps/client): tên file bên trái, bộ
                 chọn ngôn ngữ và hai nút công cụ bên phải. Giảng viên xem trước chính màn hình
                 học viên sẽ thấy — hai bên khác nhau thì bản xem trước mất ý nghĩa. */}
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
