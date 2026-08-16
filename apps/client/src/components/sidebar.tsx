@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
-import { createAction, navItems } from "./nav-items";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { navItems } from "./nav-items";
 import { UserMenu } from "./user-menu";
 import { useSidebarStore } from "@/lib/store/sidebar-store";
 import { BrandLogo } from "@/components/brand-logo";
@@ -25,17 +25,8 @@ export function Sidebar() {
         </Link>
       </div>
 
-      <Link
-        href={createAction.href}
-        title={collapsed ? createAction.label : undefined}
-        className={`mb-3 flex shrink-0 items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-navy hover:border-navy hover:bg-bg ${
-          collapsed ? "justify-center" : ""
-        }`}
-      >
-        <Plus className="h-4 w-4 shrink-0" />
-        {!collapsed && <span className="truncate">{createAction.label}</span>}
-      </Link>
-
+      {/* The elevated "Tạo bài tập" action used to sit here. Removed pending a decision on
+        * whether learners may author lessons at all — see `createAction` in ./nav-items. */}
       <nav className="flex flex-1 flex-col gap-1">
         {navItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
