@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail, UserRound } from "lucide-react";
 import { resetPasswordUrl } from "@codementor/auth";
 import { Input } from "@codementor/ui";
 import { BrandLogo } from "@/components/brand-logo";
@@ -13,21 +14,28 @@ import { keycloakConfig } from "@/lib/env";
 import { useAuth } from "@/providers/auth-provider";
 
 /**
+ * Đăng nhập và đăng ký, cả hai đều nằm trên giao diện CodeMentor — không trang nào của
+ * Keycloak lộ ra cho người dùng.
+ *
  * Keycloak vẫn là nơi duy nhất giữ tài khoản, mật khẩu, vai trò và việc liên kết tài
- * khoản. Form ở đây không tự xác thực gì cả: nó gửi thông tin đăng nhập tới BFF cùng
- * origin (`POST /api/auth/login`), nơi Direct Access Grant chạy bằng client bí mật
- * `codementor-web-bff`. Trình duyệt không bao giờ thấy client secret, cũng không bao
- * giờ gọi thẳng Keycloak — và mật khẩu không được lưu ở bất kỳ đâu trong trang này.
+ * khoản. Form ở đây không tự xác thực gì cả: nó gửi thông tin tới BFF cùng origin
+ * (`/api/auth/login`, `/api/auth/register`), nơi mọi việc với Keycloak diễn ra bằng
+ * client bí mật `codementor-web-bff`. Trình duyệt không bao giờ thấy client secret,
+ * cũng không bao giờ gọi thẳng Keycloak.
  *
  * Google/Facebook đi đường khác hẳn: popup + `kc_idp_hint`, do oidc-client-ts lo.
  */
-type Pending = "password" | "google" | "facebook" | null;
+type Pending = "credentials" | "google" | "facebook" | null;
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
-  const { status, error, signInWithPassword, signInWithPopup, signUp } = useAuth();
+  const { status, error, signInWithPassword, signUpWithPassword, signInWithPopup } = useAuth();
   const router = useRouter();
+  const isSignup = mode === "signup";
+
+  const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending>(null);
@@ -36,20 +44,32 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     if (status === "authenticated") router.replace("/practice");
   }, [status, router]);
 
-  const isSignup = mode === "signup";
   const busy = pending !== null || status === "loading";
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
-    setPending("password");
+
+    // Kiểm ngay tại chỗ: gửi lên rồi mới biết hai ô mật khẩu lệch nhau là một vòng
+    // request thừa, và tài khoản có thể đã được tạo với mật khẩu người dùng gõ nhầm.
+    if (isSignup && password !== confirmPassword) {
+      setFormError("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    setPending("credentials");
     try {
-      await signInWithPassword(username, password);
-      // Mật khẩu không nằm lại trong state lâu hơn mức cần thiết. Điều hướng do
-      // effect ở trên lo, sau khi provider xác nhận phiên.
+      if (isSignup) {
+        await signUpWithPassword({ displayName, email: username, password });
+      } else {
+        await signInWithPassword(username, password);
+      }
+      // Mật khẩu không nằm lại trong state lâu hơn mức cần thiết. Điều hướng do effect
+      // ở trên lo, sau khi provider xác nhận phiên.
       setPassword("");
+      setConfirmPassword("");
     } catch (cause) {
-      setFormError(cause instanceof Error ? cause.message : "Đăng nhập thất bại.");
+      setFormError(cause instanceof Error ? cause.message : "Thao tác thất bại.");
     } finally {
       setPending(null);
     }
@@ -71,7 +91,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     <div className="flex flex-1 flex-col items-center justify-center bg-bg px-5 py-10">
       {/* Logo đứng ngoài card và là mỏ neo thị giác của cả trang. `priority` vì nó nằm
           trên màn hình đầu tiên — để Next tải lười thì logo nhấp nháy khi vào trang. */}
-      <BrandLogo priority />
+      <BrandLogo priority size="lg" />
 
       <Card className="mt-6 w-full max-w-sm p-7">
         <h1 className="text-center text-xl font-bold text-navy">
@@ -92,73 +112,117 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           </p>
         )}
 
-        {isSignup ? (
-          // Đăng ký vẫn do Keycloak dựng: nó gắn liền với xác minh email, chính sách
-          // mật khẩu và các required action của realm. Dựng lại form đăng ký ở đây
-          // đồng nghĩa với việc chép lại toàn bộ những thứ đó.
-          <Button className="w-full" disabled={busy} onClick={signUp}>
-            Đăng ký với CodeMentor ID
-          </Button>
-        ) : (
-          <form className="flex flex-col gap-3" onSubmit={onSubmit}>
+        <form className="flex flex-col gap-3" onSubmit={onSubmit}>
+          {isSignup && (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="username">
-                Email / Tên đăng nhập
+              <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="displayName">
+                Họ và tên
               </label>
               <Input
-                autoComplete="username"
+                autoComplete="name"
                 autoFocus
-                icon={<Mail />}
-                id="username"
-                name="username"
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="ban@student.iuh.edu.vn"
+                icon={<UserRound />}
+                id="displayName"
+                name="displayName"
+                onChange={(event) => setDisplayName(event.target.value)}
+                placeholder="Nguyễn Văn A"
                 required
                 type="text"
-                value={username}
+                value={displayName}
               />
             </div>
+          )}
 
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="username">
+              {isSignup ? "Email" : "Email / Tên đăng nhập"}
+            </label>
+            <Input
+              autoComplete={isSignup ? "email" : "username"}
+              autoFocus={!isSignup}
+              icon={<Mail />}
+              id="username"
+              name="username"
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="ban@student.iuh.edu.vn"
+              required
+              type={isSignup ? "email" : "text"}
+              value={username}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="password">
+              Mật khẩu
+            </label>
+            <Input
+              autoComplete={isSignup ? "new-password" : "current-password"}
+              icon={<Lock />}
+              id="password"
+              minLength={isSignup ? 8 : undefined}
+              name="password"
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="••••••••"
+              required
+              rightSlot={
+                <button
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  className="rounded-sm focus-visible:ring-2 focus-visible:ring-navy focus-visible:outline-none"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  type="button"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              }
+              type={showPassword ? "text" : "password"}
+              value={password}
+            />
+          </div>
+
+          {isSignup && (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="password">
-                Mật khẩu
+              <label
+                className="mb-1.5 block text-xs font-medium text-text-muted"
+                htmlFor="confirmPassword"
+              >
+                Xác nhận mật khẩu
               </label>
               <Input
-                autoComplete="current-password"
+                autoComplete="new-password"
                 icon={<Lock />}
-                id="password"
-                name="password"
-                onChange={(event) => setPassword(event.target.value)}
+                id="confirmPassword"
+                name="confirmPassword"
+                onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="••••••••"
                 required
-                rightSlot={
-                  <button
-                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                    className="rounded-sm focus-visible:ring-2 focus-visible:ring-navy focus-visible:outline-none"
-                    onClick={() => setShowPassword((visible) => !visible)}
-                    type="button"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                }
                 type={showPassword ? "text" : "password"}
-                value={password}
+                value={confirmPassword}
               />
             </div>
+          )}
 
+          {!isSignup && (
             <a
               className="self-end text-xs font-medium text-primary hover:underline"
               href={resetPasswordUrl(keycloakConfig)}
             >
               Quên mật khẩu?
             </a>
+          )}
 
-            <Button className="mt-1 w-full" disabled={busy} type="submit">
-              {pending === "password" && <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />}
-              {pending === "password" ? "Đang đăng nhập…" : "Đăng nhập"}
-            </Button>
-          </form>
-        )}
+          <Button className={`w-full ${isSignup ? "mt-2" : "mt-1"}`} disabled={busy} type="submit">
+            {pending === "credentials" && (
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+            )}
+            {pending === "credentials"
+              ? isSignup
+                ? "Đang tạo tài khoản…"
+                : "Đang đăng nhập…"
+              : isSignup
+                ? "Đăng ký"
+                : "Đăng nhập"}
+          </Button>
+        </form>
 
         <div className="my-4 flex items-center gap-3 text-xs text-text-muted">
           <span className="h-px flex-1 bg-border" />
@@ -185,13 +249,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
 
         <p className="mt-5 text-center text-xs text-text-muted">
           {isSignup ? "Đã có tài khoản? " : "Chưa có tài khoản? "}
-          <button
-            className="font-semibold text-primary hover:underline"
-            onClick={() => (isSignup ? router.push("/login") : signUp())}
-            type="button"
-          >
+          <Link className="font-semibold text-primary hover:underline" href={isSignup ? "/login" : "/signup"}>
             {isSignup ? "Đăng nhập" : "Đăng ký"}
-          </button>
+          </Link>
         </p>
       </Card>
     </div>

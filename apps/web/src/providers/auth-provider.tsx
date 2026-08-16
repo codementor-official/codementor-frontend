@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { accessTokenOf, getUserManager, registrationUrl } from "@codementor/auth";
+import { accessTokenOf, getUserManager } from "@codementor/auth";
 import type { OidcUser, UserManager } from "@codementor/auth";
 import type { User } from "@codementor/types";
 import { keycloakConfig } from "@/lib/env";
@@ -28,7 +28,15 @@ interface AuthContextValue {
    * chosen IdP via `kc_idp_hint`. Rejects on cancel/error.
    */
   signInWithPopup: (provider: SocialProvider) => Promise<void>;
-  signUp: () => void;
+  /**
+   * Tạo tài khoản rồi đăng nhập luôn, cũng qua BFF. Keycloak vẫn là nơi tài khoản được
+   * tạo ra — CodeMentor không có bảng người dùng riêng nào ở đây.
+   */
+  signUpWithPassword: (input: {
+    displayName: string;
+    email: string;
+    password: string;
+  }) => Promise<void>;
   signOut: () => Promise<void>;
   /** Re-reads the profile after the user edits it. */
   refreshUser: () => Promise<void>;
@@ -124,17 +132,14 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       error,
       signInWithPassword: async (username, password) => {
         setError(null);
-        const response = await fetch("/api/auth/login", {
-          body: JSON.stringify({ username, password }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as { message?: string } | null;
-          throw new Error(body?.message ?? "Đăng nhập thất bại. Vui lòng thử lại.");
-        }
+        await postCredentials("/api/auth/login", { username, password });
         // Cookie phiên đã được đặt trong response ở trên; `applySession(null)` thấy nó
         // qua /api/auth/session rồi nạp hồ sơ như mọi đường đăng nhập khác.
+        await applySession(null);
+      },
+      signUpWithPassword: async (input) => {
+        setError(null);
+        await postCredentials("/api/auth/register", input);
         await applySession(null);
       },
       signInWithPopup: async (provider) => {
@@ -156,9 +161,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
             setError("Không thể đăng nhập. Vui lòng thử lại.");
           }
         }
-      },
-      signUp: () => {
-        window.location.href = registrationUrl(keycloakConfig, window.location.origin);
       },
       /**
        * Đăng xuất phải kết thúc CẢ HAI phía, nếu không lần bấm "Đăng nhập" kế tiếp sẽ
@@ -199,6 +201,22 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/**
+ * Gửi thông tin đăng nhập/đăng ký tới BFF và ném lỗi kèm thông điệp hiển thị được.
+ * Không log, không giữ lại gì: đối tượng `body` chết ngay khi request kết thúc.
+ */
+async function postCredentials(path: string, body: Record<string, string>): Promise<void> {
+  const response = await fetch(path, {
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(problem?.message ?? "Thao tác thất bại. Vui lòng thử lại.");
+  }
 }
 
 /** `true` nếu cookie BFF còn sống. Không trả token — token không rời khỏi server. */
