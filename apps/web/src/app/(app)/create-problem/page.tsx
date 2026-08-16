@@ -1,4 +1,3 @@
-import { Placeholder } from "@/components/placeholder";
 import { CodeProblemForm } from "@/components/create-problem/code-problem-form";
 import { ProblemTabNav } from "@/components/create-problem/problem-tab-nav";
 import { TheoryLessonForm } from "@/components/create-problem/theory-lesson-form";
@@ -24,8 +23,6 @@ export default async function CreateProblemPage({
 
       {tab === "code" && <CodeProblemForm />}
       {tab === "theory" && <TheoryLessonForm />}
-      {tab === "quiz" && <Placeholder label="Soạn câu hỏi trắc nghiệm: đáp án, giải thích, điểm" />}
-      {tab === "essay" && <Placeholder label="Soạn bài tự luận: đề bài, tiêu chí chấm, đáp án mẫu" />}
     </div>
   );
 }

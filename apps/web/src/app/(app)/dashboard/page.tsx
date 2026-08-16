@@ -157,8 +157,8 @@ export default function DashboardPage() {
               <h2 className="flex items-center gap-1.5 text-base font-bold text-navy">
                 <BarChart3 className="h-4 w-4 text-primary" /> Kỹ năng của bạn
               </h2>
-              <Link href="/progress" className="text-xs font-semibold text-primary">
-                Xem chi tiết →
+              <Link href="/practice" className="text-xs font-semibold text-primary">
+                Luyện tiếp →
               </Link>
             </div>
             <p className="mb-3 text-xs text-text-faint">

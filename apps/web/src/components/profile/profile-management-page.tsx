@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Award, CalendarDays, Code2, ExternalLink, GitBranch, Globe2, MapPin, Pencil, Trophy } from "lucide-react";
+import { Award, CalendarDays, Code2, GitBranch, Globe2, MapPin, Pencil, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { submissionHistory } from "@/data/submission-history";
@@ -126,7 +126,7 @@ export function ProfileManagementPage() {
           </Card>
 
           <Card className="overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4"><div><h2 className="font-bold text-navy">Bài nộp gần đây</h2><p className="mt-1 text-xs text-text-muted">Các lần làm mới nhất từ nhóm học tập và ngân hàng luyện tập</p></div><Button href="/exercises?tab=submissions" variant="ghost" size="sm">Xem tất cả <ExternalLink className="h-3.5 w-3.5" /></Button></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4"><div><h2 className="font-bold text-navy">Bài nộp gần đây</h2><p className="mt-1 text-xs text-text-muted">Các lần làm mới nhất từ nhóm học tập và ngân hàng luyện tập</p></div></div>
             <div className="divide-y divide-border-soft">
               {recent.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"><div className="min-w-0"><p className="truncate text-sm font-semibold text-navy">{item.title}</p><p className="mt-1 text-xs text-text-muted">{item.origin}{item.groupName ? ` · ${item.groupName}` : " · Ngân hàng bài luyện tập"}</p></div><div className="text-right"><span className={`text-xs font-bold ${item.result === "Đạt" ? "text-emerald-600" : item.result === "Không đạt" ? "text-amber-600" : "text-rose-600"}`}>{item.result}</span><p className="mt-1 text-[11px] text-text-faint">{item.submittedAt}</p></div></div>)}
             </div>
