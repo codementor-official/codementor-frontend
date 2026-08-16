@@ -48,58 +48,69 @@
   --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
-* {
-  border-color: var(--border);
-}
+/* PHẢI nằm trong `@layer base`. Ở Tailwind v4, CSS không thuộc layer nào sẽ THẮNG mọi
+ * utility (utility nằm trong `@layer utilities`). Trước đây khối này để trần, và hệ quả là
+ * `button, input, select { font: inherit }` ghi đè mọi `text-sm`/`text-xs` đặt trên nút và ô
+ * chọn — cả ứng dụng có chữ 16px trong khi phần còn lại 14px. `apps/web` đã ghi lại đúng bẫy
+ * này ở globals của nó; lecturer thì chưa. */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 
-html {
-  min-width: 320px;
-  background: var(--background);
-}
+  html {
+    min-width: 320px;
+    background: var(--background);
+  }
 
-body {
-  min-height: 100vh;
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
-  text-rendering: optimizeLegibility;
-}
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+  }
 
-button,
-input,
-select {
-  font: inherit;
-}
+  /* Chỉ kế thừa họ chữ, KHÔNG kế thừa cỡ chữ: `font: inherit` là shorthand, nó kéo theo cả
+   * `font-size` và đó chính là thứ đè lên utility. */
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-weight: inherit;
+  }
 
-button,
-a,
-select {
-  -webkit-tap-highlight-color: transparent;
-}
+  button,
+  a,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: var(--border);
-}
+  ::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--border);
+  }
 
-::-webkit-scrollbar-button {
-  display: none;
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
 }
