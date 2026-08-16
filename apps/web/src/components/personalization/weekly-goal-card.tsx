@@ -47,7 +47,7 @@ export function WeeklyGoalCard({ completedHours }: { completedHours: number }) {
             </div>
           </div>
         </div>
-        <p className="mt-3 text-[11px] text-text-faint">
+        <p className="mt-3 text-2xs text-text-faint">
           {scheduledDays > 0 ? `Đã lên lịch ${scheduledDays} ngày${preference.remindersEnabled ? ` · nhắc lúc ${preference.reminderTime}` : ""}` : "Chưa lên lịch học trong tuần"}
         </p>
       </Card>

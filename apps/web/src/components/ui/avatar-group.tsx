@@ -1,7 +1,7 @@
 /* Two-letter initials need the circle wide enough that the neighbour's overlap
  * doesn't clip the second letter — hence 28px minimum, not 24px. */
 const sizeClasses = {
-  sm: "h-7 w-7 text-[10px]",
+  sm: "h-7 w-7 text-2xs",
   md: "h-8 w-8 text-2xs",
 } as const;
 

@@ -55,6 +55,10 @@
    * white text. Deliberately absent from the `.dark` block: not flipping is the point. */
   --color-ink-fixed: #18181b;
   --color-primary-fixed: #ea580c;
+  /* The foreground for `ink-fixed` surfaces — code blocks, brand tiles. `on-ink` cannot do
+   * this job: it inverts to near-black in dark mode, which is correct on `bg-navy` and
+   * unreadable on a surface that deliberately stayed dark. Also absent from `.dark`. */
+  --color-on-ink-fixed: #f4f4f5;
 
   --color-text: #374151;
   --color-text-muted: #6b7280;

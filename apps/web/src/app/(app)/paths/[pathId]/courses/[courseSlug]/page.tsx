@@ -85,32 +85,32 @@ export default async function CourseDetailPage({
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <div className="mb-5 rounded-lg bg-navy p-6 text-on-ink">
-            <div className="mb-2 text-[10.5px] font-bold tracking-wide text-primary uppercase">
+            <div className="mb-2 text-2xs font-bold tracking-wide text-primary uppercase">
               Khóa học · {roadmap.title}
             </div>
             <h1 className="mb-2 text-2xl font-bold">{course.title}</h1>
-            <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-zinc-300">{course.description}</p>
+            <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-on-ink/80">{course.description}</p>
 
             {course.instructor && (
-              <p className="mb-2.5 text-xs text-zinc-300">
-                Được tạo bởi <span className="font-semibold text-white">{course.instructor}</span>
+              <p className="mb-2.5 text-xs text-on-ink/80">
+                Được tạo bởi <span className="font-semibold text-on-ink">{course.instructor}</span>
               </p>
             )}
 
             {course.rating && (
-              <div className="mb-2.5 flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-200">
+              <div className="mb-2.5 flex flex-wrap items-center gap-2 text-xs font-medium text-on-ink/90">
                 <span className="font-bold text-primary">{course.rating.toFixed(1)}</span>
                 <StarRating rating={course.rating} />
-                <span className="text-zinc-400">({course.ratingCount?.toLocaleString("vi-VN")} đánh giá)</span>
+                <span className="text-on-ink/60">({course.ratingCount?.toLocaleString("vi-VN")} đánh giá)</span>
                 {course.studentCount && (
-                  <span className="flex items-center gap-1 text-zinc-300">
+                  <span className="flex items-center gap-1 text-on-ink/80">
                     <Users className="h-3.5 w-3.5" /> {course.studentCount.toLocaleString("vi-VN")} học viên
                   </span>
                 )}
               </div>
             )}
 
-            <div className="flex flex-wrap gap-4 text-xs font-medium text-zinc-300">
+            <div className="flex flex-wrap gap-4 text-xs font-medium text-on-ink/80">
               <span className="flex items-center gap-1">
                 <BarChart3 className="h-3.5 w-3.5" /> {LEVEL_DISPLAY_LABEL[course.level]}
               </span>
@@ -204,7 +204,7 @@ export default async function CourseDetailPage({
                 className="object-cover"
               />
               <div className="absolute inset-0 flex items-center justify-center bg-navy/25">
-                <PlayCircle className="h-11 w-11 text-white drop-shadow" />
+                <PlayCircle className="h-11 w-11 text-on-ink drop-shadow" />
               </div>
             </div>
           </Card>

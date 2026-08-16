@@ -113,7 +113,7 @@ export default function DashboardPage() {
                   <div key={s.topic}>
                     <div className="mb-1.5 flex items-baseline justify-between gap-3">
                       <span className="truncate text-xs font-semibold text-navy">{s.topic}</span>
-                      <span className="shrink-0 text-[11px] text-text-faint">
+                      <span className="shrink-0 text-2xs text-text-faint">
                         {s.solved}/{s.total} bài · {percent}%
                       </span>
                     </div>

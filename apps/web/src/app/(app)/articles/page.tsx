@@ -19,8 +19,8 @@ export default function ArticlesPage() {
             href={`/articles/${article.slug}`}
             className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <Card className="flex h-full flex-col gap-3 p-5 transition group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-card">
-              <div className="flex items-center justify-between gap-3 text-[11px] text-text-faint">
+            <Card className="flex h-full flex-col gap-3 p-5 transition-colors group-hover:border-primary/40">
+              <div className="flex items-center justify-between gap-3 text-2xs text-text-faint">
                 <span className="rounded-sm bg-primary-tint px-2 py-1 font-bold tracking-wide text-primary uppercase">
                   {article.tag}
                 </span>
@@ -31,7 +31,7 @@ export default function ArticlesPage() {
               <div className="mt-auto flex items-center justify-between border-t border-border-soft pt-3 text-xs text-text-faint">
                 <span>{article.author} · {article.role}</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-primary">
-                  Đọc bài <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                  Đọc bài <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </div>
             </Card>

@@ -35,7 +35,7 @@ export function RoadmapDiscoverRow({
         >
           <list.icon className="h-4 w-4 text-navy" />
           <span className="text-xs font-bold text-navy">{list.label}</span>
-          <span className="line-clamp-2 text-[11px] leading-relaxed text-text-faint">{list.description}</span>
+          <span className="line-clamp-2 text-2xs leading-relaxed text-text-faint">{list.description}</span>
         </button>
       ))}
     </section>

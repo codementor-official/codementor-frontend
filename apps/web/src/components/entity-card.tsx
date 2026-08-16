@@ -79,13 +79,13 @@ export function EntityCard({
           />
         )}
         {eyebrow && (
-          <span className="absolute top-2 left-2 z-10 rounded-sm bg-surface/90 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-navy uppercase">
+          <span className="absolute top-2 left-2 z-10 rounded-sm bg-surface/90 px-1.5 py-0.5 text-2xs font-bold tracking-wide text-navy uppercase">
             {eyebrow}
           </span>
         )}
         {coverImage ? (
           <span
-            className={`absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full text-[10px] ring-2 ring-surface ${tileVariantClasses[tileVariant]}`}
+            className={`absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full text-2xs ring-2 ring-surface ${tileVariantClasses[tileVariant]}`}
           >
             {tile}
           </span>
@@ -95,7 +95,7 @@ export function EntityCard({
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         {kind && (
-          <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wide text-text-faint uppercase">
+          <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wide text-text-faint uppercase">
             <kind.icon className="h-3 w-3" /> {kind.label}
           </div>
         )}
@@ -125,7 +125,7 @@ export function EntityCard({
           </div>
         )}
         {note && (
-          <p className="rounded-md bg-border-soft px-2.5 py-2 text-[11px] leading-relaxed text-text">{note}</p>
+          <p className="rounded-md bg-border-soft px-2.5 py-2 text-2xs leading-relaxed text-text">{note}</p>
         )}
         {typeof progress === "number" && <ProgressBar value={progress} />}
         {footer && (

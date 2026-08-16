@@ -32,11 +32,11 @@ export default async function ArticleDetailPage({
           {article.sections.map((section) => (
             <section key={section.heading}>
               <h2 className="mb-3 text-xl font-bold text-navy">{section.heading}</h2>
-              <div className="space-y-3 text-[15px] leading-7 text-text">
+              <div className="space-y-3 text-base leading-7 text-text">
                 {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
               </div>
               {section.code && (
-                <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-ink-fixed p-4 text-xs leading-6 text-zinc-100">
+                <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-ink-fixed p-4 text-xs leading-6 text-on-ink-fixed">
                   <code>{section.code}</code>
                 </pre>
               )}

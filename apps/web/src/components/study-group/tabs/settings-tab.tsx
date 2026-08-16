@@ -52,7 +52,7 @@ function PermissionToggle({
       className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${on ? "bg-primary" : "bg-border"}`}
     >
       <span
-        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-[left] ${on ? "left-4.5" : "left-0.5"}`}
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-surface transition-[left] ${on ? "left-4.5" : "left-0.5"}`}
       />
     </button>
   );

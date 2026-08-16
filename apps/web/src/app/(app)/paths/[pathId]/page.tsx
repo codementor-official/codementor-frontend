@@ -25,10 +25,10 @@ export default async function RoadmapDetailPage({
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <div className="mb-5 rounded-lg bg-navy p-6 text-on-ink">
-            <div className="mb-2 text-[10.5px] font-bold tracking-wide text-primary uppercase">Lộ trình học</div>
+            <div className="mb-2 text-2xs font-bold tracking-wide text-primary uppercase">Lộ trình học</div>
             <h1 className="mb-2 text-2xl font-bold">{roadmap.title}</h1>
-            <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-zinc-300">{roadmap.description}</p>
-            <div className="flex flex-wrap gap-4 text-xs font-medium text-zinc-200">
+            <p className="mb-3.5 max-w-xl text-sm leading-relaxed text-on-ink/80">{roadmap.description}</p>
+            <div className="flex flex-wrap gap-4 text-xs font-medium text-on-ink/90">
               <span className="flex items-center gap-1">
                 <BarChart3 className="h-3.5 w-3.5" /> {LEVEL_DISPLAY_LABEL[roadmap.level]}
               </span>
@@ -45,8 +45,8 @@ export default async function RoadmapDetailPage({
               )}
             </div>
             <div className="mt-3.5 flex flex-wrap gap-2">
-              <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold">{totalChapters} chương</span>
-              <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold">{totalLessons} bài học</span>
+              <span className="rounded-md bg-on-ink/15 px-2.5 py-1 text-xs font-semibold">{totalChapters} chương</span>
+              <span className="rounded-md bg-on-ink/15 px-2.5 py-1 text-xs font-semibold">{totalLessons} bài học</span>
             </div>
           </div>
 

@@ -12,12 +12,12 @@ const heatLevels = Array.from({ length: 91 }, (_, index) => {
   return value > 0.88 ? 4 : value > 0.68 ? 3 : value > 0.46 ? 2 : value > 0.27 ? 1 : 0;
 });
 
-const heatColors = ["bg-border-soft", "bg-orange-100", "bg-orange-300", "bg-primary", "bg-orange-800"];
+const heatColors = ["bg-border-soft", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"];
 
 const difficulties = [
-  { label: "Cơ bản", value: "22/30", percent: 73, color: "bg-emerald-500" },
-  { label: "Trung bình", value: "18/32", percent: 56, color: "bg-amber-500" },
-  { label: "Nâng cao", value: "7/18", percent: 39, color: "bg-rose-500" },
+  { label: "Cơ bản", value: "22/30", percent: 73, color: "bg-success" },
+  { label: "Trung bình", value: "18/32", percent: 56, color: "bg-accent" },
+  { label: "Nâng cao", value: "7/18", percent: 39, color: "bg-danger" },
 ];
 
 export function ProfileManagementPage() {
@@ -47,7 +47,7 @@ export function ProfileManagementPage() {
           <h1 className="text-2xl font-bold text-navy">Hồ sơ & thành tích học tập</h1>
           <p className="mt-1 text-sm text-text-muted">Theo dõi quá trình luyện tập, chia sẻ kỹ năng và quản lý thông tin công khai.</p>
         </div>
-        {saved && <span className="text-xs font-semibold text-emerald-700">Đã lưu thay đổi hồ sơ</span>}
+        {saved && <span className="text-xs font-semibold text-success">Đã lưu thay đổi hồ sơ</span>}
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)]">
@@ -113,7 +113,7 @@ export function ProfileManagementPage() {
               <div className="mb-4 flex items-center justify-between"><div><h2 className="font-bold text-navy">Thành tích</h2><p className="mt-1 text-xs text-text-muted">Mốc học tập gần đây</p></div><Trophy className="h-5 w-5 text-primary" /></div>
               <div className="space-y-3">
                 {[["Người kiên trì", "Duy trì học 5 ngày liên tiếp"], ["100% Test case", "Hoàn thành 3 bài không lỗi"], ["Đồng đội tin cậy", "Đã nộp 36 bài cho nhóm"]].map(([title, detail], index) => (
-                  <div key={title} className="flex items-center gap-3 rounded-lg bg-bg p-3"><Award className={`h-5 w-5 ${index === 0 ? "text-amber-500" : "text-primary"}`} /><div><p className="text-xs font-semibold text-navy">{title}</p><p className="mt-0.5 text-[11px] text-text-muted">{detail}</p></div></div>
+                  <div key={title} className="flex items-center gap-3 rounded-lg bg-bg p-3"><Award className={`h-5 w-5 ${index === 0 ? "text-accent" : "text-primary"}`} /><div><p className="text-xs font-semibold text-navy">{title}</p><p className="mt-0.5 text-2xs text-text-muted">{detail}</p></div></div>
                 ))}
               </div>
             </Card>
@@ -122,13 +122,13 @@ export function ProfileManagementPage() {
           <Card className="p-5">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-bold text-navy">Hoạt động trong 13 tuần</h2><p className="mt-1 text-xs text-text-muted">{accepted.length} bài đạt trong các lần nộp gần đây · Chuỗi hiện tại 5 ngày</p></div><CalendarDays className="h-5 w-5 text-text-faint" /></div>
             <div className="overflow-x-auto pb-1"><div className="grid w-fit grid-flow-col grid-rows-7 gap-1">{heatLevels.map((level, index) => <span key={index} title={`${level} hoạt động`} className={`h-3 w-3 rounded-sm ${heatColors[level]}`} />)}</div></div>
-            <div className="mt-3 flex items-center justify-end gap-1.5 text-[11px] text-text-faint"><span>Ít</span>{heatColors.map((color) => <span key={color} className={`h-3 w-3 rounded-sm ${color}`} />)}<span>Nhiều</span></div>
+            <div className="mt-3 flex items-center justify-end gap-1.5 text-2xs text-text-faint"><span>Ít</span>{heatColors.map((color) => <span key={color} className={`h-3 w-3 rounded-sm ${color}`} />)}<span>Nhiều</span></div>
           </Card>
 
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4"><div><h2 className="font-bold text-navy">Bài nộp gần đây</h2><p className="mt-1 text-xs text-text-muted">Các lần làm mới nhất từ nhóm học tập và ngân hàng luyện tập</p></div></div>
             <div className="divide-y divide-border-soft">
-              {recent.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"><div className="min-w-0"><p className="truncate text-sm font-semibold text-navy">{item.title}</p><p className="mt-1 text-xs text-text-muted">{item.origin}{item.groupName ? ` · ${item.groupName}` : " · Ngân hàng bài luyện tập"}</p></div><div className="text-right"><span className={`text-xs font-bold ${item.result === "Đạt" ? "text-emerald-600" : item.result === "Không đạt" ? "text-amber-600" : "text-rose-600"}`}>{item.result}</span><p className="mt-1 text-[11px] text-text-faint">{item.submittedAt}</p></div></div>)}
+              {recent.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"><div className="min-w-0"><p className="truncate text-sm font-semibold text-navy">{item.title}</p><p className="mt-1 text-xs text-text-muted">{item.origin}{item.groupName ? ` · ${item.groupName}` : " · Ngân hàng bài luyện tập"}</p></div><div className="text-right"><span className={`text-xs font-bold ${item.result === "Đạt" ? "text-success" : item.result === "Không đạt" ? "text-accent" : "text-danger"}`}>{item.result}</span><p className="mt-1 text-2xs text-text-faint">{item.submittedAt}</p></div></div>)}
             </div>
           </Card>
         </main>

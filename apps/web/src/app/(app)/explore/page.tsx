@@ -186,13 +186,13 @@ export default function ExplorePage() {
                 href={`/articles/${a.slug}`}
                 className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
-              <Card className="flex h-full flex-col gap-2 p-4 transition group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-card">
-                <span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-[10px] font-bold tracking-wide text-navy uppercase">
+              <Card className="flex h-full flex-col gap-2 p-4 transition-colors group-hover:border-primary/40">
+                <span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-2xs font-bold tracking-wide text-navy uppercase">
                   {a.tag}
                 </span>
                 <h3 className="text-sm leading-snug font-semibold text-navy">{a.title}</h3>
                 <p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{a.excerpt}</p>
-                <div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2.5 text-[11px] text-text-faint">
+                <div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2.5 text-2xs text-text-faint">
                   <span className="truncate">{a.author}</span>
                   <span className="shrink-0">{a.readMinutes} phút đọc</span>
                 </div>
@@ -258,7 +258,7 @@ export default function ExplorePage() {
               {topLearners.map((l) => (
                 <div key={l.name} className="flex items-center gap-2.5">
                   <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-2xs font-bold ${
                       l.rank <= 3 ? "bg-primary text-on-ink" : "bg-border-soft text-navy"
                     }`}
                   >
@@ -266,7 +266,7 @@ export default function ExplorePage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs font-semibold text-navy">{l.name}</div>
-                    <div className="text-[11px] text-text-faint">{l.solved} bài đã giải</div>
+                    <div className="text-2xs text-text-faint">{l.solved} bài đã giải</div>
                   </div>
                   <span className="shrink-0 text-xs font-bold text-primary">{l.xp} XP</span>
                 </div>
@@ -287,7 +287,7 @@ export default function ExplorePage() {
                     <c.icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="mb-0.5 text-[10px] font-bold tracking-wide text-primary uppercase">
+                    <div className="mb-0.5 text-2xs font-bold tracking-wide text-primary uppercase">
                       {c.kind}
                     </div>
                     <div className="mb-0.5 text-sm font-semibold text-navy">{c.title}</div>
