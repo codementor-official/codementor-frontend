@@ -1,8 +1,9 @@
 "use client";
 
-import { Code2, X } from "lucide-react";
+import { X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { lecturerNavigation } from "@/components/navigation/lecturer-navigation";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -28,9 +29,7 @@ export function LecturerSidebar({ collapsed, mobile, onClose }: LecturerSidebarP
       }
     >
       <div className="flex h-16 shrink-0 items-center gap-3 px-4">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-sidebar-border bg-background">
-          <Code2 aria-hidden="true" className="size-4" />
-        </div>
+        <BrandLogo size={36} />
         {!collapsed && (
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-sm font-semibold">CodeMentor</p>

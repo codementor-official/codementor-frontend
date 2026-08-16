@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminAuthConfig, publicKeycloakRealmUrl } from "@/features/auth/server/auth-config";
+import { getAdminAuthConfig, keycloakRealmUrl } from "@/features/auth/server/auth-config";
 import {
   createAuthFlow,
   createCodeChallenge,
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const flow = createAuthFlow(request.nextUrl.searchParams.get("returnTo") ?? "/dashboard");
   const callbackUri = `${request.nextUrl.origin}/api/auth/callback`;
   const authorizationUrl = new URL(
-    `${publicKeycloakRealmUrl(request.nextUrl.origin, config)}/protocol/openid-connect/auth`,
+    `${keycloakRealmUrl(config)}/protocol/openid-connect/auth`,
   );
   authorizationUrl.search = new URLSearchParams({
     client_id: config.clientId,

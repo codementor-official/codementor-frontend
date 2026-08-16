@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { accessTokenOf, getUserManager, registrationUrl } from "@codementor/auth";
+import { accessTokenOf, getUserManager } from "@codementor/auth";
 import type { OidcUser, UserManager } from "@codementor/auth";
 import type { User } from "@codementor/types";
 import { keycloakConfig } from "@/lib/env";
@@ -16,7 +16,6 @@ interface AuthContextValue {
   user: User | null;
   error: string | null;
   signIn: () => void;
-  signUp: () => void;
   signOut: () => void;
   /** Re-reads the profile after the user edits it. */
   refreshUser: () => Promise<void>;
@@ -106,9 +105,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       user,
       error,
       signIn: () => void manager().signinRedirect(),
-      signUp: () => {
-        window.location.href = registrationUrl(keycloakConfig, window.location.origin);
-      },
       signOut: () => {
         tokenRef.current = null;
         void manager().signoutRedirect();
