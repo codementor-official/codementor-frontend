@@ -1,3 +1,10 @@
+> **Superseded in part (2026-08-16).** `DESIGN-SYSTEM.md` is the single source of truth for the
+> design system, and `docs/UI_AUDIT_AND_PLAN.md` is the current audit and rebuild plan. Where this
+> document disagrees with either, they win. In particular this document predates the page-shell
+> rule (`Breadcrumb -> PageHeader -> StatStrip? -> content`), the removal of `PageBanner`, the
+> fluid-width rule, the ban on horizontal scroll strips, and the consolidation of all primitives
+> into `packages/ui`.
+
 # CodeMentor Component Specification
 
 Two parts: **Part A** documents every reusable component that already exists (props pulled
@@ -211,13 +218,41 @@ that currently either duplicates markup or is simply missing.
   building if a page needs custom-styled option rendering (icons/descriptions in the dropdown)
   that native `<select>` can't do.
 
-### `Breadcrumb` — new, `ui/breadcrumb.tsx`
-- **Purpose:** roadmap detail and course detail pages currently use a plain `"← Quay lại X"` link,
-  not a trail. Kaggle-style detail pages (competition → notebook) use a real breadcrumb
-  (`Home > Competitions > X`) so a user can jump to any ancestor, not just "back one level."
-- **Proposed props:** `items: {label, href?}[]` (last item has no `href` — it's the current page).
-- **Where it applies:** `/paths/[pathId]` (Lộ trình học > {roadmap}), `/paths/[pathId]/courses/
-  [courseSlug]` (Lộ trình học > {roadmap} > {course}).
+### `Breadcrumb` — new, `packages/ui/src/breadcrumb.tsx` — **HIGHEST PRIORITY, blocks the shell**
+- **Purpose:** there is currently **no breadcrumb anywhere in the repo** (`grep -rn "readcrumb"`
+  → 0 hits). Detail pages improvise: `/paths/[pathId]` has a text link hardcoded to `/paths`,
+  `/workspace/[groupId]` has an `ArrowLeft` icon with different markup, and course detail, lesson,
+  and article detail have **nothing at all** — dead ends. Arriving at a course from `/explore`,
+  "back" either doesn't exist or throws the user to a page they were never on.
+- **Props:** `items: {label, href?}[]` (last item has no `href` — it's the current page).
+- **Markup:** `<nav aria-label="breadcrumb">`, ordered list, last item `aria-current="page"`.
+- **Where it applies:** **every route under `(app)`**, rendered once by the shell in the topbar
+  row — never by an individual page.
+- **Driven by:** `apps/web/src/lib/navigation/route-meta.ts` (new) — the single segment → label
+  map, so a new route cannot ship without a trail and a rename is a one-line edit. Dynamic
+  segments resolve their label from the loaded entity, falling back to the slug.
+- **Replaces:** every hand-rolled back link. Delete them; "back" is the previous crumb.
+
+### `StatStrip` — new, `packages/ui/src/stat-strip.tsx` — **HIGH PRIORITY**
+- **Purpose:** page-level stats currently consume ~530px above the fold on `/dashboard`
+  (`PageBanner` highlights + 4 `StatBlock` cards + an AI banner) before the first piece of real
+  content, and most of the numbers are hardcoded strings, not data. `StatStrip` replaces all of
+  it with one hairline-separated row.
+- **Props:** `stats: {label: string, value: string | number}[]`.
+- **Structure:** single horizontal row, `divide-x divide-border`, no card, no icon, no
+  illustration, **≤64px tall**, wraps on mobile.
+- **Rules:** at most one per page, directly under `PageHeader`. A number qualifies only if it is
+  computed from real data *and* actionable — hardcoded figures get deleted, not moved.
+- **Replaces:** `PageBanner`'s `highlights` prop (and `PageBanner` itself — see below) and the
+  grid-of-`StatBlock`-cards pattern on `/dashboard`.
+
+### `PageBanner` — `page-banner.tsx` — **DELETE**
+Not a gap; a mistake to remove. It is one of three competing page-header patterns (`PageBanner`
+on 5 pages, `PageHeader` on 3, inline `<header>` on 2), and `/paths` uses **both** — switching
+header component between its loading and loaded states, so the page visibly changes shape when
+data arrives. Its eyebrow becomes the breadcrumb, its title/description become `PageHeader`, its
+actions become `PageHeader.actions`, its `highlights` become a `StatStrip` **only when the numbers
+are real**, and its illustration is dropped.
 
 ### `Tooltip` — new, `ui/tooltip.tsx`
 - **Purpose:** doesn't exist anywhere yet. Needed for icon-only controls whose `aria-label` isn't

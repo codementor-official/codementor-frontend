@@ -1,6 +1,68 @@
 # CodeMentor Design System
 
+**This is the single source of truth for the design system.** Where `DESIGN-LANGUAGE.md`,
+`docs/DESIGN_SYSTEM.md`, or `docs/DESIGN_TOKENS.md` disagree with this file, this file wins.
+Page-level application: `docs/PAGE_GUIDELINES.md`. The audit that produced the layout rules
+below: `docs/UI_AUDIT_AND_PLAN.md`.
+
 Extracted from the CodeForge mockup (`mock.html`). Single-accent palette: neutral (navy/gray) + one orange accent. `accent`, `success`, and `ai` semantic tokens all alias navy; `danger` aliases primary orange — there are only two hues in the whole UI.
+
+## Page shell — the structure every page has
+
+Every route under `(app)` renders exactly this, in this order:
+
+```
+Breadcrumb      rendered by the shell, derived from route-meta.ts — never by the page
+PageHeader      title · subtitle? · actions?   ← the only component that emits an <h1>
+StatStrip?      at most one, ≤64px tall, real numbers only
+<content>       fills the width the shell gives it
+```
+
+Rules:
+
+- **No page renders its own `<header>`** or an `<h1>` outside `PageHeader`.
+- **A page's loading state uses the same header components as its loaded state.** A page that
+  swaps header component while data loads visibly changes shape — that is a bug.
+- **No page sets `max-w-*` on its root.** Width is the shell's job (`--container-wide`). The one
+  permitted clamp is `max-w-[72ch]` on prose — article body, lesson text, long descriptions.
+  Data, grids, and tables never clamp.
+- **Never hand-roll a back link.** `← Quay lại X` hardcodes a destination the user may not have
+  come from. Back is the previous crumb.
+
+## Layout — orientation and density
+
+> **Grid** when items are comparable and the user is choosing between them.
+> **List / table** when items are scannable and the user is looking for one.
+
+- Browse grids: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5`,
+  `gap-4`.
+- Dense lists: hairline-divided rows, no gap between them.
+- **Horizontal scroll strips are banned in the app shell.** They clip content on exactly the
+  screens that have room to show it, and they are not keyboard-reachable. Chips and filters
+  **wrap**; card lists become grids.
+- One filter mechanism per page: `FilterBar` (search + selects + mobile sheet), plus at most one
+  `SegmentedTabs` row. Not three stacked filter surfaces.
+
+## Stats — a strip, not a wall
+
+- `StatStrip`: one horizontal row of `label + value` pairs, hairline-separated. No card, no icon,
+  no illustration. **≤64px tall.** Wraps on mobile.
+- **At most one per page**, directly under `PageHeader`.
+- A number earns a place only if it is (a) computed from real data and (b) something the user
+  would act on. Hardcoded figures get deleted, not styled.
+- Per-entity metadata belongs **on the entity's card** — a course's chapter count goes on the
+  course card, not into a page-level tile.
+- Right rails cap at **2 cards**, each containing an action or a deadline. A rail is not a place
+  to put widgets that had nowhere else to go.
+- Any widget appearing on two pages is extracted once and reused — never re-marked-up.
+
+## Interaction
+
+- Hover and focus are a **border or background delta**. Nothing else.
+- Transition: `transition-colors duration-150`.
+- **No `translate`, no `scale`, no hover shadow.** Shadow is reserved for genuinely overlaid
+  content (dropdowns, modals).
+- Every interactive element has a visible focus ring: `outline-2 outline-offset-2 outline-primary`.
 
 ## Colors
 
@@ -150,12 +212,39 @@ Tighter than the mockup's generous whitespace — sections should sit close enou
 
 ## Shared components
 
-Reusable web-client primitives live in `apps/web/src/components/ui/`; page code should compose these rather than re-declaring styled `<button>`/`<input>`/card divs inline.
+**`packages/ui` is the only home for primitives.** Every app imports them from `@codementor/ui`.
+An application never defines its own `Button`, `Card`, `Input`, or `PageHeader` — **no two
+exported components may share a name**, and a duplicate is deleted, not aliased.
 
-| Component | File | Notes |
-|---|---|---|
-| `Button` | `ui/button.tsx` | Variants `primary` \| `outline` \| `ghost`; sizes `sm` \| `md`. `radius-md`. |
-| `Input` | `ui/input.tsx` | Optional leading icon slot; `radius-md`. |
-| `Badge` | `ui/badge.tsx` | Generic tone badge + `DifficultyBadge` (maps Cơ bản/Trung bình/Nâng cao to the table above). `radius-sm`. |
-| `Card` | `ui/card.tsx` | Bordered surface container, `radius-lg`, `shadow-card`. |
-| `CourseCard` | `course-card.tsx` | The tile-header + title/desc + tags + footer-meta card repeated for paths/practice/explore items in the mockup. |
+`apps/<app>/src/components/` holds **composed, domain-aware** components only: things that know
+about roadmaps, courses, study groups, or problems.
+
+### Primitives — `packages/ui/src/`
+
+| Component | Notes |
+|---|---|
+| `Button` | Variants `primary` \| `outline` \| `ghost`; sizes `sm` \| `md`. `radius-md`. |
+| `Input` | Optional leading icon slot; `radius-md`. |
+| `Card` | Bordered surface container, `radius-lg`, `shadow-card`. No default padding. |
+| `Badge` / `DifficultyBadge` | Generic tone badge; `DifficultyBadge` maps Cơ bản/Trung bình/Nâng cao to the table above. `radius-sm`. |
+| `StatusBadge` | State pill for tables and rows. |
+| `PageHeader` | Title · subtitle? · actions?. **The only component that emits an `<h1>`.** |
+| `Breadcrumb` | `items: {label, href?}[]`. `<nav aria-label="breadcrumb">`; last item unlinked, `aria-current="page"`. Rendered by the shell, not by pages. |
+| `StatStrip` | One hairline-separated row of label/value pairs, ≤64px. Max one per page. |
+| `FilterBar` | Search + selects + mobile bottom sheet + active-filter count. The **only** filter surface. |
+| `Select` | Styled single-select used inside `FilterBar`. |
+| `SegmentedTabs` | Status/category switching above a list. Max one row per page. |
+| `ProgressBar` | Thin linear indicator, `h-1.5`, `bg-primary` on `bg-border-soft`. |
+| `Modal` / `SideDrawer` | Overlay surfaces. The only place `shadow-modal` / `shadow-dropdown` are used. |
+| `DataTable` / `TablePagination` | Table shell and the **single** pagination implementation. |
+| `ManagePage` / `DashboardShell` | Layout shells for the lecturer/admin apps. |
+| `workspace/*` | Pane, tab bar, resize handle, language dropdown for the editor surfaces. |
+
+### Composed — `apps/web/src/components/`
+
+| Component | Notes |
+|---|---|
+| `EntityCard` | Tile/cover + title + description + tags + stats + progress + CTA. The card for every browse grid. |
+| `ProblemRow` | Dense, scannable list row. The row for every dense list. |
+| `Sidebar` / `Topbar` | The app shell. `Topbar` carries the breadcrumb. |
+| `roadmap/*`, `study-group/*`, `lesson-player/*` | Domain families. |

@@ -1,3 +1,10 @@
+> **Superseded in part (2026-08-16).** `DESIGN-SYSTEM.md` is the single source of truth for the
+> design system, and `docs/UI_AUDIT_AND_PLAN.md` is the current audit and rebuild plan. Where this
+> document disagrees with either, they win. In particular this document predates the page-shell
+> rule (`Breadcrumb -> PageHeader -> StatStrip? -> content`), the removal of `PageBanner`, the
+> fluid-width rule, the ban on horizontal scroll strips, and the consolidation of all primitives
+> into `packages/ui`.
+
 # CodeMentor Kaggle-Inspired Refactor — Implementation Plan
 
 ## Important status note before reading this plan
