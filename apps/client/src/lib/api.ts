@@ -2,6 +2,13 @@ import { createApiClient } from "@codementor/api-client";
 import type { ApiResponse, User } from "@codementor/types";
 import { apiBaseUrl } from "@/lib/env";
 import type { JudgeRunResult } from "@/types/judge";
+import type {
+  CatalogueParams,
+  CourseSummary,
+  ExerciseSummary,
+  Page,
+  RoadmapSummary,
+} from "@/types/catalogue";
 
 /**
  * The single place that knows a backend URL. Everything below calls the gateway, so
@@ -33,8 +40,36 @@ async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]):
   return response.data;
 }
 
+function query(params: CatalogueParams): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") search.set(key, String(value));
+  }
+  const encoded = search.toString();
+  return encoded ? `?${encoded}` : "";
+}
+
 export const api = {
   me: () => unwrap<User>("/me"),
+
+  /**
+   * The public catalogue: published, public content from every author.
+   *
+   * These are the same gateway routes the lecturer app calls, but only the read side —
+   * a learner browses, it does not author. The `/…/mine` variants are deliberately absent.
+   */
+  roadmaps: {
+    catalogue: (params: CatalogueParams = {}) =>
+      unwrap<Page<RoadmapSummary>>(`/roadmaps${query(params)}`),
+  },
+  courses: {
+    catalogue: (params: CatalogueParams = {}) =>
+      unwrap<Page<CourseSummary>>(`/courses${query(params)}`),
+  },
+  exercises: {
+    bank: (params: CatalogueParams = {}) =>
+      unwrap<Page<ExerciseSummary>>(`/exercises${query(params)}`),
+  },
 
   /**
    * judge-service chấm đồng bộ trong sandbox Docker. Đây là đường chạy thử: không tạo bài

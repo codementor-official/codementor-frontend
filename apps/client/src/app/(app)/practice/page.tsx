@@ -2,255 +2,268 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Bookmark, CheckCircle2, Circle, Search, Sparkles, Target, Trophy } from "lucide-react";
-import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
+import { Bookmark, Code2, Search, Target } from "lucide-react";
+import { FilterBar, SegmentedTabs, Select, StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { StreakCard } from "@/components/streak-card";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import { practiceItems, type PracticeItem, type PracticeStatus, type PracticeTopic } from "@/data/practice-items";
-import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
-import { personalizedPractice, practiceRecommendationReason } from "@/lib/practice/practice-recommendation";
+import { CatalogueError } from "@/components/ui/catalogue-state";
+import { useCatalogue } from "@/hooks/use-catalogue";
+import { api } from "@/lib/api";
+import { DIFFICULTY_OPTIONS, exerciseDifficulty } from "@/lib/catalogue/level";
 import type { Difficulty } from "@/components/ui/badge";
-import { FilterBar, SegmentedTabs, Select, StatStrip } from "@codementor/ui";
+import { MAX_PAGE_SIZE, type ExerciseSummary } from "@/types/catalogue";
 
-type DifficultyFilter = Difficulty | "all";
-type TopicFilter = PracticeTopic | "all";
-type StatusFilter = PracticeStatus | "all";
-type SortMode = "recommended" | "popular" | "acceptance";
-type CollectionKey = "interview" | "foundation" | "backend";
+const PAGE_SIZE = 15;
 
-const TOPICS: TopicFilter[] = ["all", "Algorithms", "Frontend", "Backend", "Database", "Data & AI", "Mobile", "Foundation"];
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "Tất cả" },
-  { value: "todo", label: "Chưa làm" },
-  { value: "attempted", label: "Đang làm" },
-  { value: "solved", label: "Đã giải" },
+const KIND_OPTIONS = [
+  { value: "all", label: "Mọi dạng bài" },
+  { value: "code", label: "Bài code" },
+  { value: "quiz", label: "Trắc nghiệm" },
+  { value: "essay", label: "Tự luận" },
 ];
-const DIFFICULTY_OPTIONS: { value: DifficultyFilter; label: string }[] = [
-  { value: "all", label: "Mọi độ khó" },
-  { value: "Cơ bản", label: "Cơ bản" },
-  { value: "Trung bình", label: "Trung bình" },
-  { value: "Nâng cao", label: "Nâng cao" },
-];
-const SORT_OPTIONS = [
-  { value: "recommended", label: "Ưu tiên gợi ý" },
-  { value: "popular", label: "Phổ biến nhất" },
-  { value: "acceptance", label: "Tỷ lệ hoàn thành" },
-];
-const TOPIC_LABEL: Record<TopicFilter, string> = { all: "Tất cả chủ đề", Algorithms: "Thuật toán", Frontend: "Frontend", Backend: "Backend", Database: "Cơ sở dữ liệu", "Data & AI": "Data & AI", Mobile: "Mobile", Foundation: "Nền tảng" };
-const PAGE_SIZE = 10;
-const TRENDING_TAGS = ["Array", "String", "SQL", "React", "REST API", "BFS/DFS", "OOP", "Dynamic Programming", "System design", "Git"];
-const COLLECTION_OPTIONS = [{ value: "all", label: "Mọi bài tập" }, { value: "interview", label: "Top 100 phỏng vấn" }, { value: "foundation", label: "30 ngày nền tảng" }, { value: "backend", label: "Thử thách Backend" }];
-const PRACTICE_STREAK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => ({ label, active: index < 5 }));
-const COLLECTIONS: Record<CollectionKey, {
-  title: string;
-  description: string;
-  action: string;
-  outcome: string;
-  matches: (item: PracticeItem) => boolean;
-}> = {
-  interview: {
-    title: "Top 100 phỏng vấn",
-    description: "Các dạng dữ liệu, thuật toán và xử lý nghiệp vụ thường gặp khi phỏng vấn kỹ thuật.",
-    action: "Bạn sẽ luyện mảng, chuỗi, cấu trúc dữ liệu, tối ưu truy vấn và các tình huống thiết kế API.",
-    outcome: "Hoàn thành bộ này để có một danh sách ôn tập có thứ tự, từ nền tảng tới bài phân tích.",
-    matches: (item) => item.goals.includes("interview") || item.topic === "Algorithms",
-  },
-  foundation: {
-    title: "30 ngày nền tảng",
-    description: "Mỗi ngày một bài ngắn để củng cố tư duy lập trình có hệ thống.",
-    action: "Bạn sẽ hoàn thiện từng dạng cơ bản: điều kiện, mảng, chuỗi, OOP, Git và các thao tác dữ liệu.",
-    outcome: "Mục tiêu là tạo thói quen giải bài đều đặn trước khi vào các bài phỏng vấn khó hơn.",
-    matches: (item) => item.level === "basic" || item.topic === "Foundation",
-  },
-  backend: {
-    title: "Thử thách Backend",
-    description: "API, SQL và các bài toán hệ thống gần với công việc thực tế.",
-    action: "Bạn sẽ thiết kế endpoint, kiểm tra dữ liệu, viết SQL, xử lý xác thực và suy nghĩ về hiệu năng hệ thống.",
-    outcome: "Bộ này phù hợp để chuyển kiến thức backend thành các case có thể trình bày trong portfolio hoặc phỏng vấn.",
-    matches: (item) => item.topic === "Backend" || item.topic === "Database",
-  },
-};
+
+/* ponytail: static, and honestly so — these are search shortcuts, not counts of anything.
+ * The backend has no tag or topic field on an exercise yet. */
+const TRENDING_TAGS = ["Array", "String", "SQL", "React", "REST API", "BFS/DFS", "OOP", "Git"];
+
+/* MOCK — user progress has no backend. submission-service does not exist, so nothing knows
+ * which exercises this learner solved or how long a streak they are on. Kept because the
+ * shape is the real one and the service is planned; delete both when it lands. */
+const PRACTICE_STREAK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => ({
+  label,
+  active: index < 5,
+}));
 
 function difficultyClass(difficulty: Difficulty) {
   return difficulty === "Cơ bản" ? "text-success" : difficulty === "Trung bình" ? "text-accent" : "text-danger";
 }
 
-function statusIcon(status: PracticeStatus) {
-  if (status === "solved") return <CheckCircle2 className="h-4 w-4 text-success" />;
-  if (status === "attempted") return <Circle className="h-4 w-4 text-accent" />;
-  return <Circle className="h-4 w-4 text-text-faint" />;
-}
-
-function ProblemTableRow({ item, number, featured, favorite, onToggleFavorite }: {
-  item: PracticeItem; number: number; featured?: string; favorite: boolean; onToggleFavorite: () => void;
+function ExerciseRow({
+  item,
+  number,
+  favorite,
+  onToggleFavorite,
+}: {
+  item: ExerciseSummary;
+  number: number;
+  favorite: boolean;
+  onToggleFavorite: () => void;
 }) {
+  const difficulty = exerciseDifficulty(item.difficulty);
   return (
-    <li className={`group flex items-center gap-3 border-t border-border-soft px-3 py-3 transition-colors hover:bg-bg sm:px-4 ${item.isDaily ? "bg-accent-tint/35" : ""}`}>
-      <span className="shrink-0">{statusIcon(item.status)}</span>
-      <span className="hidden w-7 shrink-0 text-right text-xs tabular-nums text-text-faint md:block">{number}</span>
-      <Link href={item.href ?? "/practice"} className="min-w-0 flex-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="truncate text-sm font-semibold text-navy group-hover:text-primary">{item.title}</span>
-          {item.isDaily && <span className="rounded-full bg-accent px-2 py-0.5 text-2xs font-bold text-on-ink">Daily</span>}
-          {featured && <span className="hidden rounded-full bg-primary-tint px-2 py-0.5 text-2xs font-bold text-primary sm:inline">{featured}</span>}
-        </div>
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {(item.tags ?? []).slice(0, 3).map((tag) => <span key={tag} className="rounded bg-border-soft px-1.5 py-0.5 text-2xs font-medium text-text-muted">{tag}</span>)}
-        </div>
+    <li className="group flex items-center gap-3 border-t border-border-soft px-3 py-3 transition-colors hover:bg-bg sm:px-4">
+      <span className="hidden w-7 shrink-0 text-right text-xs tabular-nums text-text-faint md:block">
+        {number}
+      </span>
+      <Link href={`/solve/${item.slug}`} className="min-w-0 flex-1">
+        <span className="truncate text-sm font-semibold text-navy group-hover:text-primary">
+          {item.title}
+        </span>
+        <span className="mt-0.5 block truncate text-2xs text-text-faint">
+          {item.authorName ?? "CodeMentor"} · cập nhật{" "}
+          {new Date(item.updatedAt).toLocaleDateString("vi-VN")}
+        </span>
       </Link>
-      <span className="inline-flex w-14 shrink-0 items-center justify-end gap-1 text-xs font-bold text-primary"><Trophy className="h-3.5 w-3.5" />{item.xp} XP</span>
-      <span className="hidden w-15 text-right text-xs tabular-nums text-text-muted xl:block">{item.acceptanceRate.toFixed(1)}%</span>
-      <span className={`hidden w-20 text-right text-xs font-semibold sm:block ${difficultyClass(item.difficulty)}`}>{item.difficulty}</span>
-      <span className="hidden w-12 text-right text-xs text-text-faint xl:block">{item.estimatedMinutes}p</span>
-      <button type="button" aria-label={favorite ? "Bỏ lưu bài tập" : "Lưu bài tập"} onClick={onToggleFavorite} className={`shrink-0 rounded p-1.5 ${favorite ? "text-accent" : "text-text-faint hover:bg-border-soft hover:text-navy"}`}>
+      <span className="hidden w-20 shrink-0 text-right text-xs text-text-muted sm:block">
+        {item.kind === "code" ? "Bài code" : item.kind}
+      </span>
+      <span className={`w-20 shrink-0 text-right text-xs font-semibold ${difficultyClass(difficulty)}`}>
+        {difficulty}
+      </span>
+      <button
+        type="button"
+        aria-label={favorite ? "Bỏ lưu bài tập" : "Lưu bài tập"}
+        onClick={onToggleFavorite}
+        className={`shrink-0 rounded p-1.5 transition-colors ${
+          favorite ? "text-accent" : "text-text-faint hover:bg-border-soft hover:text-navy"
+        }`}
+      >
         <Bookmark className="h-4 w-4" fill={favorite ? "currentColor" : "none"} />
       </button>
     </li>
   );
 }
 
-function TopicChip({ topic, active, count, onClick }: { topic: TopicFilter; active: boolean; count: number; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${active ? "border-navy bg-navy text-on-ink" : "border-border bg-surface text-text-muted hover:border-navy"}`}><span>{TOPIC_LABEL[topic]}</span><span className={`rounded-full px-1.5 py-0.5 text-2xs ${active ? "bg-on-ink/20 text-on-ink" : "bg-border-soft text-text-faint"}`}>{count}</span></button>;
-}
-
 export default function PracticePage() {
   const [search, setSearch] = useState("");
-  const [topic, setTopic] = useState<TopicFilter>("all");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
-  const [sort, setSort] = useState<SortMode>("recommended");
-  const [collection, setCollection] = useState<CollectionKey | null>(null);
+  const [kind, setKind] = useState("all");
+  const [difficulty, setDifficulty] = useState("all");
   const [page, setPage] = useState(1);
-  const [favorites, setFavorites] = useState(() => new Set(practiceItems.filter((item) => item.isFavorite).map((item) => item.id)));
-  const preference = useLearningPreferenceStore((state) => state.preference);
-  const recommendations = useMemo(() => personalizedPractice(practiceItems, preference), [preference]);
+  // Session-scoped: there is no endpoint to persist a bookmark yet.
+  const [favorites, setFavorites] = useState<Set<string>>(() => new Set());
 
-  const topicCounts = useMemo(() => Object.fromEntries(TOPICS.map((value) => [value, value === "all" ? practiceItems.length : practiceItems.filter((item) => item.topic === value).length])) as Record<TopicFilter, number>, []);
-  const statusCounts = useMemo(() => Object.fromEntries(STATUS_OPTIONS.map(({ value }) => [value, value === "all" ? practiceItems.length : practiceItems.filter((item) => item.status === value).length])) as Record<StatusFilter, number>, []);
-  const activeFilters = Number(topic !== "all") + Number(status !== "all") + Number(difficulty !== "all") + Number(collection !== null);
+  const { items, isLoading, error } = useCatalogue<ExerciseSummary>(() =>
+    api.exercises.bank({ limit: MAX_PAGE_SIZE }),
+  );
 
-  const filteredItems = useMemo(() => {
+  const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const sortValue = (item: PracticeItem) => sort === "popular" ? item.popularity : sort === "acceptance" ? item.acceptanceRate : item.popularity;
-    return practiceItems
-      .filter((item) => !collection || COLLECTIONS[collection].matches(item))
-      .filter((item) => topic === "all" || item.topic === topic)
-      .filter((item) => status === "all" || item.status === status)
-      .filter((item) => difficulty === "all" || item.difficulty === difficulty)
-      .filter((item) => !query || `${item.title} ${item.desc} ${item.topic} ${(item.tags ?? []).join(" ")}`.toLowerCase().includes(query))
-      .sort((left, right) => sortValue(right) - sortValue(left));
-  }, [search, topic, status, difficulty, sort, collection]);
+    return items
+      .filter((e) => kind === "all" || e.kind === kind)
+      .filter((e) => difficulty === "all" || e.difficulty === difficulty)
+      .filter((e) => !query || `${e.title} ${e.slug} ${e.authorName ?? ""}`.toLowerCase().includes(query));
+  }, [items, search, kind, difficulty]);
 
-  const shouldShowRecommendations = !collection && !search.trim() && topic === "all" && status === "all" && difficulty === "all" && sort === "recommended";
-  const recommendationIds = new Set(recommendations.map((item) => item.id));
-  const tableItems = shouldShowRecommendations ? filteredItems.filter((item) => !recommendationIds.has(item.id)) : filteredItems;
-  const pageCount = Math.max(1, Math.ceil(tableItems.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
-  const paginatedItems = tableItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const activeCollection = collection ? COLLECTIONS[collection] : null;
-  const solvedCount = practiceItems.filter((item) => item.status === "solved").length;
-  const earnedXp = practiceItems.filter((item) => item.status === "solved").reduce((total, item) => total + item.xp, 0);
-  const toggleFavorite = (id: string) => setFavorites((current) => {
-    const next = new Set(current);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    return next;
-  });
-  const clearFilters = () => { setTopic("all"); setStatus("all"); setDifficulty("all"); setSearch(""); setSort("recommended"); setCollection(null); setPage(1); };
-  const selectCollection = (key: CollectionKey) => { setCollection(key); setTopic("all"); setStatus("all"); setDifficulty("all"); setSearch(""); setSort("recommended"); setPage(1); };
+  const paginated = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const byDifficulty = (d: string) => items.filter((e) => e.difficulty === d).length;
+  const toggleFavorite = (id: string) =>
+    setFavorites((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   return (
     <div>
       <PageHeader
         title="Bài luyện tập"
-        subtitle="Luyện theo chủ đề, lưu bài quan trọng và duy trì chuỗi giải bài mỗi ngày."
-        actions={<PersonalizationSettingsTrigger label="Điều chỉnh gợi ý" />}
+        subtitle="Ngân hàng bài code đã công khai. Chọn một bài để mở trong không gian làm bài."
       />
 
+      {/* Counts of what the bank actually holds. Solved/XP are absent on purpose: no
+        * submission-service means nothing on the server knows this learner's progress. */}
       <StatStrip
         className="mb-5"
         stats={[
-          { label: "Đã giải", value: `${solvedCount}/${practiceItems.length}` },
-          { label: "XP", value: earnedXp.toLocaleString("vi-VN") },
-          { label: "Đã lưu", value: favorites.size },
-          { label: "Chuỗi", value: "5 ngày" },
+          { label: "Bài tập", value: items.length },
+          { label: "Cơ bản", value: byDifficulty("easy") },
+          { label: "Trung bình", value: byDifficulty("medium") },
+          { label: "Nâng cao", value: byDifficulty("hard") },
         ]}
       />
 
-
-      {activeCollection && (
-        <section className="mb-5 rounded-xl border border-primary/20 bg-primary-tint p-4 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="max-w-3xl"><div className="mb-1 flex items-center gap-2 text-xs font-bold text-primary"><Sparkles className="h-4 w-4" /> BỘ LUYỆN ĐANG CHỌN</div><h2 className="text-lg font-bold text-navy">{activeCollection.title}</h2><p className="mt-1 text-sm leading-relaxed text-text-muted">{activeCollection.description}</p></div>
-            <button type="button" onClick={clearFilters} className="rounded-md border border-primary/30 bg-surface px-3 py-2 text-xs font-semibold text-primary hover:bg-primary-tint">Thoát bộ luyện</button>
-          </div>
-          <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2"><div className="rounded-lg bg-surface/80 p-3"><div className="mb-1 text-xs font-bold text-navy">Khi học bộ này, bạn sẽ làm gì?</div><p className="text-xs leading-relaxed text-text-muted">{activeCollection.action}</p></div><div className="rounded-lg bg-surface/80 p-3"><div className="mb-1 text-xs font-bold text-navy">Kết quả hướng tới</div><p className="text-xs leading-relaxed text-text-muted">{activeCollection.outcome}</p></div></div>
-        </section>
-      )}
+      <div className="mb-4">
+        <SegmentedTabs
+          options={DIFFICULTY_OPTIONS}
+          value={difficulty}
+          onChange={(v) => {
+            setDifficulty(v);
+            setPage(1);
+          }}
+        />
+      </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
         <main className="min-w-0">
-          {/* Topics wrap instead of scrolling: the strip hid the last chips on exactly the
-            * widths with room for them, and gave the keyboard no way to reach them. */}
-          <section className="mb-4 flex flex-wrap gap-2">
-            {TOPICS.map((value) => <TopicChip key={value} topic={value} active={topic === value} count={topicCounts[value]} onClick={() => { setTopic(value); setCollection(null); setPage(1); }} />)}
-          </section>
-
-          <div className="mb-4">
-            <SegmentedTabs
-              options={STATUS_OPTIONS.map((option) => ({ ...option, count: statusCounts[option.value] }))}
-              value={status}
-              onChange={(value) => { setStatus(value as StatusFilter); setCollection(null); setPage(1); }}
-            />
-          </div>
-
           <FilterBar
             className="mb-5"
             searchValue={search}
-            onSearchChange={(value) => { setSearch(value); setPage(1); }}
-            searchPlaceholder="Tìm theo tên bài, keyword, chủ đề..."
-            activeFilterCount={activeFilters}
-            onClearFilters={clearFilters}
+            onSearchChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+            searchPlaceholder="Tìm theo tên bài, slug, tác giả..."
+            activeFilterCount={Number(kind !== "all")}
+            onClearFilters={() => {
+              setKind("all");
+              setDifficulty("all");
+              setSearch("");
+              setPage(1);
+            }}
             sheetTitle="Lọc bài tập"
-            controls={<><Select label="Bộ luyện" value={collection ?? "all"} options={COLLECTION_OPTIONS} onChange={(value) => (value === "all" ? setCollection(null) : selectCollection(value as CollectionKey))} /><Select label="Độ khó" value={difficulty} options={DIFFICULTY_OPTIONS} onChange={(value) => { setDifficulty(value as DifficultyFilter); setCollection(null); setPage(1); }} /><Select label="Sắp xếp" value={sort} options={SORT_OPTIONS} onChange={(value) => { setSort(value as SortMode); setPage(1); }} /></>}
+            controls={
+              <Select
+                label="Dạng bài"
+                value={kind}
+                options={KIND_OPTIONS}
+                onChange={(v) => {
+                  setKind(v);
+                  setPage(1);
+                }}
+              />
+            }
           />
 
-          <section id="problem-list" className="scroll-mt-5 overflow-hidden rounded-xl border border-border bg-surface shadow-card">
-            <div className="flex items-center gap-3 border-b border-border bg-bg px-4 py-3">
-              <Search className="h-4 w-4 text-text-faint" />
-              <span className="flex-1 text-sm font-bold text-navy">Danh sách bài tập</span>
-              <span className="w-14 text-right text-xs text-text-faint">XP</span>
-              <span className="hidden text-xs text-text-faint xl:block">Tỷ lệ đạt</span>
-              <span className="hidden w-20 text-right text-xs text-text-faint sm:block">Độ khó</span>
-              <span className="w-7" />
-            </div>
-            {shouldShowRecommendations && recommendations.length > 0 && (
-              <>
-                <h3 id="problem-list-suggested" className="flex items-center gap-2 border-b border-primary/20 bg-primary-tint px-4 py-2.5 text-xs font-semibold text-primary"><Sparkles className="h-4 w-4" /> Phù hợp nhất với bạn</h3>
-                <ul aria-labelledby="problem-list-suggested">
-                  {recommendations.map((item, index) => <ProblemTableRow key={`suggestion-${item.id}`} item={item} number={index + 1} featured={practiceRecommendationReason(item, preference)} favorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />)}
+          {error ? (
+            <CatalogueError message={error} />
+          ) : (
+            <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+              <div className="flex items-center gap-3 border-b border-border bg-bg px-4 py-3">
+                <Search className="h-4 w-4 text-text-faint" />
+                <span className="flex-1 text-sm font-bold text-navy">Danh sách bài tập</span>
+                <span className="hidden w-20 text-right text-xs text-text-faint sm:block">Dạng</span>
+                <span className="w-20 text-right text-xs text-text-faint">Độ khó</span>
+                <span className="w-7" />
+              </div>
+
+              {isLoading ? (
+                <ul>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <li key={index} className="flex items-center gap-3 border-t border-border-soft px-4 py-4">
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-border-soft" />
+                    </li>
+                  ))}
                 </ul>
-              </>
-            )}
-            {shouldShowRecommendations && <h3 id="problem-list-all" className="border-y border-border-soft bg-bg px-4 py-2 text-2xs font-bold tracking-wide text-text-muted uppercase">Tất cả bài tập</h3>}
-            <ul aria-labelledby={shouldShowRecommendations ? "problem-list-all" : undefined}>
-              {paginatedItems.map((item, index) => <ProblemTableRow key={item.id} item={item} number={(currentPage - 1) * PAGE_SIZE + index + 1} favorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />)}
-            </ul>
-            {filteredItems.length === 0 && <div className="p-10 text-center"><Target className="mx-auto mb-2 h-5 w-5 text-text-faint" /><p className="text-sm font-semibold text-navy">Chưa có bài phù hợp</p><p className="mt-1 text-xs text-text-faint">Thử thay đổi chủ đề, trạng thái hoặc từ khóa tìm kiếm.</p></div>}
-            {tableItems.length > 0 && <Pagination label="Phân trang bài tập" page={currentPage} pageCount={pageCount} onChange={setPage} className="border-t border-border bg-surface px-4 py-3" />}
-          </section>
+              ) : paginated.length > 0 ? (
+                <ul>
+                  {paginated.map((item, index) => (
+                    <ExerciseRow
+                      key={item.id}
+                      item={item}
+                      number={(currentPage - 1) * PAGE_SIZE + index + 1}
+                      favorite={favorites.has(item.id)}
+                      onToggleFavorite={() => toggleFavorite(item.id)}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <div className="p-10 text-center">
+                  <Target className="mx-auto mb-2 h-5 w-5 text-text-faint" />
+                  <p className="text-sm font-semibold text-navy">
+                    {items.length === 0 ? "Chưa có bài tập nào được công khai" : "Chưa có bài phù hợp"}
+                  </p>
+                  <p className="mt-1 text-xs text-text-faint">
+                    {items.length === 0
+                      ? "Bài tập xuất hiện ở đây sau khi giảng viên soạn và công khai."
+                      : "Thử đổi độ khó, dạng bài hoặc từ khóa tìm kiếm."}
+                  </p>
+                </div>
+              )}
+
+              {visible.length > 0 && (
+                <Pagination
+                  label="Phân trang bài tập"
+                  page={currentPage}
+                  pageCount={pageCount}
+                  onChange={setPage}
+                  className="border-t border-border bg-surface px-4 py-3"
+                />
+              )}
+            </section>
+          )}
         </main>
 
-        {/* Two cards. The streak now uses the shared StreakCard rather than a second
-          * hand-rolled copy, and the XP/solved counts live in the page's StatStrip. */}
         <aside className="space-y-4 xl:sticky xl:top-5 xl:self-start">
           <StreakCard
             days={PRACTICE_STREAK}
-            hint="Giải thêm 1 bài hôm nay để giữ chuỗi và nhận XP theo độ khó: 25 · 50 · 80 XP."
+            hint="Giải thêm 1 bài hôm nay để giữ chuỗi. (Số liệu tạm — chưa có submission-service.)"
           />
-          <Card className="p-4"><h2 className="mb-3 text-sm font-bold text-navy">Từ khóa thịnh hành</h2><div className="flex flex-wrap gap-2">{TRENDING_TAGS.map((tag) => <button key={tag} type="button" onClick={() => { setSearch(tag); setCollection(null); setPage(1); }} className="rounded-full bg-bg px-2.5 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-primary-tint hover:text-primary">{tag}</button>)}</div></Card>
+          <Card className="p-4">
+            <h2 className="mb-3 flex items-center gap-1.5 text-sm font-bold text-navy">
+              <Code2 className="h-4 w-4 text-primary" /> Từ khóa thịnh hành
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {TRENDING_TAGS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    setSearch(tag);
+                    setPage(1);
+                  }}
+                  className="rounded-full bg-bg px-2.5 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-primary-tint hover:text-primary"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </Card>
         </aside>
       </div>
     </div>

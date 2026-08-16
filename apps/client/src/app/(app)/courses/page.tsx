@@ -5,160 +5,165 @@ import { BookOpen } from "lucide-react";
 import { FilterBar, SegmentedTabs, Select, StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { EntityCard } from "@/components/entity-card";
-import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import { courseCatalog, courseDifficulty, courseHref } from "@/lib/roadmap/course-catalog";
+import {
+  CatalogueEmpty,
+  CatalogueError,
+  CatalogueSkeleton,
+} from "@/components/ui/catalogue-state";
+import { useCatalogue } from "@/hooks/use-catalogue";
+import { api } from "@/lib/api";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
-import type { Difficulty } from "@/components/ui/badge";
+import { levelToDifficulty, LEVEL_OPTIONS } from "@/lib/catalogue/level";
+import { MAX_PAGE_SIZE, type CourseSummary } from "@/types/catalogue";
 
-type StatusFilter = "all" | "learning" | "done" | "new";
+type StatusFilter = "all" | "published" | "draft";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "Tất cả" },
-  { value: "learning", label: "Đang học" },
-  { value: "done", label: "Hoàn thành" },
-  { value: "new", label: "Chưa bắt đầu" },
-];
-
-const DIFFICULTY_OPTIONS: { value: Difficulty | "all"; label: string }[] = [
-  { value: "all", label: "Mọi độ khó" },
-  { value: "Cơ bản", label: "Cơ bản" },
-  { value: "Trung bình", label: "Trung bình" },
-  { value: "Nâng cao", label: "Nâng cao" },
+  { value: "published", label: "Đã công khai" },
+  { value: "draft", label: "Đang soạn" },
 ];
 
 const TILE_TONE = ["ink", "primary"] as const;
-// The catalogue is 84 courses; an unbounded grid is a scroll with no end and no way back.
 const PAGE_SIZE = 20;
+
+/** Two initials from the title — the backend sends no thumbnail for a course. */
+function tileFor(title: string): string {
+  const words = title.trim().split(/\s+/);
+  return (words[0]?.[0] ?? "?").concat(words[1]?.[0] ?? "").toUpperCase();
+}
 
 export default function CoursesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
-  const [difficulty, setDifficulty] = useState<Difficulty | "all">("all");
-  const [roadmap, setRoadmap] = useState("all");
+  const [level, setLevel] = useState("all");
   const [page, setPage] = useState(1);
 
-  const roadmapOptions = useMemo(
-    () => [
-      { value: "all", label: "Mọi lộ trình" },
-      ...Array.from(new Map(courseCatalog.map((c) => [c.roadmapSlug, c.roadmapTitle])))
-        .map(([value, label]) => ({ value, label })),
-    ],
-    [],
+  // The catalogue endpoint already returns only published, public content, so this fetches
+  // once and filters in the browser. Move the filters into the query when the list is long
+  // enough that shipping it all is the wrong trade.
+  const { items, isLoading, error } = useCatalogue<CourseSummary>(() =>
+    api.courses.catalogue({ limit: MAX_PAGE_SIZE }),
   );
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return courseCatalog
-      .filter((c) => roadmap === "all" || c.roadmapSlug === roadmap)
-      .filter((c) => difficulty === "all" || courseDifficulty(c.level) === difficulty)
+    return items
+      .filter((c) => level === "all" || c.level === level)
       .filter((c) =>
-        status === "all"
-          ? true
-          : status === "learning"
-            ? c.progressPercent > 0 && c.progressPercent < 100
-            : status === "done"
-              ? c.progressPercent >= 100
-              : c.progressPercent === 0,
+        status === "all" ? true : status === "published" ? c.status === "published" : c.status !== "published",
       )
-      .filter((c) =>
-        !query ||
-        `${c.title} ${c.description} ${c.roadmapTitle} ${c.technologies.join(" ")}`
-          .toLowerCase()
-          .includes(query),
-      );
-  }, [search, status, difficulty, roadmap]);
+      .filter((c) => !query || `${c.title} ${c.slug} ${c.authorName ?? ""}`.toLowerCase().includes(query));
+  }, [items, search, status, level]);
 
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const paginated = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const inProgress = courseCatalog.filter((c) => c.progressPercent > 0 && c.progressPercent < 100).length;
-  const completed = courseCatalog.filter((c) => c.progressPercent >= 100).length;
-  const activeFilters = Number(difficulty !== "all") + Number(roadmap !== "all");
+  const published = items.filter((c) => c.status === "published").length;
+  const totalLessons = items.reduce((sum, c) => sum + (c.totalLessons ?? 0), 0);
 
   return (
     <div>
       <PageHeader
         title="Khóa học"
-        subtitle="Toàn bộ khóa học trên hệ thống, gộp từ mọi lộ trình. Học lẻ từng khóa hoặc theo thứ tự của một lộ trình."
+        subtitle="Toàn bộ khóa học đã công khai trên hệ thống. Học lẻ từng khóa hoặc theo thứ tự của một lộ trình."
       />
 
       <StatStrip
         className="mb-5"
         stats={[
-          { label: "Khóa học", value: courseCatalog.length },
-          { label: "Đang học", value: inProgress },
-          { label: "Hoàn thành", value: completed },
+          { label: "Khóa học", value: items.length },
+          { label: "Đã công khai", value: published },
+          { label: "Bài học", value: totalLessons },
         ]}
       />
 
       <div className="mb-4">
-        <SegmentedTabs options={STATUS_OPTIONS} value={status} onChange={(v) => { setStatus(v as StatusFilter); setPage(1); }} />
+        <SegmentedTabs
+          options={STATUS_OPTIONS}
+          value={status}
+          onChange={(v) => {
+            setStatus(v as StatusFilter);
+            setPage(1);
+          }}
+        />
       </div>
 
       <FilterBar
         className="mb-5"
         searchValue={search}
-        onSearchChange={(value) => { setSearch(value); setPage(1); }}
-        searchPlaceholder="Tìm khóa học theo tên, công nghệ, lộ trình..."
-        activeFilterCount={activeFilters}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+        searchPlaceholder="Tìm khóa học theo tên, slug, tác giả..."
+        activeFilterCount={Number(level !== "all")}
         onClearFilters={() => {
-          setDifficulty("all");
-          setRoadmap("all");
+          setLevel("all");
           setPage(1);
         }}
         sheetTitle="Lọc khóa học"
         controls={
-          <>
-            <Select label="Lộ trình" value={roadmap} options={roadmapOptions} onChange={(v) => { setRoadmap(v); setPage(1); }} />
-            <Select
-              label="Độ khó"
-              value={difficulty}
-              options={DIFFICULTY_OPTIONS}
-              onChange={(v) => { setDifficulty(v as Difficulty | "all"); setPage(1); }}
-            />
-          </>
+          <Select
+            label="Trình độ"
+            value={level}
+            options={LEVEL_OPTIONS}
+            onChange={(v) => {
+              setLevel(v);
+              setPage(1);
+            }}
+          />
         }
       />
 
-      {visible.length === 0 ? (
-        <Card className="border-dashed p-10 text-center">
-          <BookOpen className="mx-auto mb-2 h-5 w-5 text-text-faint" />
-          <p className="text-sm font-semibold text-navy">Không có khóa học nào khớp</p>
-          <p className="mt-1 text-xs text-text-faint">Thử bỏ bớt bộ lọc hoặc đổi từ khóa tìm kiếm.</p>
-        </Card>
+      {isLoading ? (
+        <CatalogueSkeleton />
+      ) : error ? (
+        <CatalogueError message={error} />
+      ) : visible.length === 0 ? (
+        <CatalogueEmpty
+          icon={BookOpen}
+          title={items.length === 0 ? "Chưa có khóa học nào được công khai" : "Không có khóa học nào khớp"}
+          description={
+            items.length === 0
+              ? "Khóa học xuất hiện ở đây sau khi giảng viên soạn và được duyệt công khai."
+              : "Thử bỏ bớt bộ lọc hoặc đổi từ khóa tìm kiếm."
+          }
+        />
       ) : (
         <>
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {paginated.map((course, index) => (
-            <li key={course.id}>
-            <EntityCard
-              tile={course.thumbnail}
-              tileVariant={TILE_TONE[index % TILE_TONE.length]}
-              coverImage={placeholderCoverUrl(course.slug)}
-              kind={{ icon: BookOpen, label: course.roadmapTitle }}
-              title={course.title}
-              description={course.description}
-              difficulty={courseDifficulty(course.level)}
-              tags={course.technologies.slice(0, 3)}
-              stats={[
-                { label: "chương", value: course.totalChapters },
-                { label: "giờ", value: course.durationHours },
-              ]}
-              progress={course.progressPercent > 0 ? course.progressPercent : undefined}
-              href={courseHref(course)}
-            />
-            </li>
-          ))}
-        </ul>
-        <Pagination
-          label="Phân trang khóa học"
-          page={currentPage}
-          pageCount={pageCount}
-          onChange={setPage}
-          className="mt-6"
-        />
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {paginated.map((course, index) => (
+              <li key={course.id}>
+                <EntityCard
+                  tile={tileFor(course.title)}
+                  tileVariant={TILE_TONE[index % TILE_TONE.length]}
+                  coverImage={placeholderCoverUrl(course.slug)}
+                  kind={{ icon: BookOpen, label: course.authorName ?? "CodeMentor" }}
+                  title={course.title}
+                  description={`${course.totalChapters} chương · ${course.totalLessons} bài học`}
+                  difficulty={levelToDifficulty(course.level)}
+                  stats={[
+                    { label: "chương", value: course.totalChapters },
+                    ...(course.durationHours ? [{ label: "giờ", value: course.durationHours }] : []),
+                  ]}
+                  // No href yet: the only course detail route is
+                  // /paths/[pathId]/courses/[courseSlug], and the catalogue endpoint does
+                  // not say which roadmap a course belongs to — so there is no URL to build.
+                  // A card that 404s is worse than one that doesn't move.
+                />
+              </li>
+            ))}
+          </ul>
+          <Pagination
+            label="Phân trang khóa học"
+            page={currentPage}
+            pageCount={pageCount}
+            onChange={setPage}
+            className="mt-6"
+          />
         </>
       )}
     </div>
