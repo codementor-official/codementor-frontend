@@ -130,10 +130,10 @@ export default function CoursesPage() {
         </Card>
       ) : (
         <>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {paginated.map((course, index) => (
+            <li key={course.id}>
             <EntityCard
-              key={course.id}
               tile={course.thumbnail}
               tileVariant={TILE_TONE[index % TILE_TONE.length]}
               coverImage={placeholderCoverUrl(course.slug)}
@@ -149,8 +149,9 @@ export default function CoursesPage() {
               progress={course.progressPercent > 0 ? course.progressPercent : undefined}
               href={courseHref(course)}
             />
+            </li>
           ))}
-        </div>
+        </ul>
         <Pagination
           label="Phân trang khóa học"
           page={currentPage}

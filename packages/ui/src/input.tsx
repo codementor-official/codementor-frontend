@@ -21,7 +21,7 @@ export function Input({
         </span>
       )}
       <input
-        className={`w-full rounded-md border border-border bg-card py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-foreground ${icon ? "pl-9" : "pl-3.5"} ${rightSlot ? "pr-9" : "pr-3.5"} ${className}`}
+        className={`w-full rounded-md border border-border bg-card py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground ${icon ? "pl-9" : "pl-3.5"} ${rightSlot ? "pr-9" : "pr-3.5"} ${className}`}
         {...props}
       />
       {rightSlot && (

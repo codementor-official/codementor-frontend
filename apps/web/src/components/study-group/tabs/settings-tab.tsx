@@ -153,7 +153,7 @@ export function SettingsTab({
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy outline-none placeholder:text-text-faint focus:border-navy"
+                className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy placeholder:text-text-faint focus:border-navy"
               />
             </div>
 

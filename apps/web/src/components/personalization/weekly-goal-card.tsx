@@ -26,7 +26,7 @@ export function WeeklyGoalCard({ completedHours }: { completedHours: number }) {
             onClick={() => setOpen(true)}
             aria-label="Thiết lập mục tiêu và lịch học"
             title="Thiết lập mục tiêu và lịch học"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy "
           >
             <Settings2 className="h-4 w-4" />
           </button>

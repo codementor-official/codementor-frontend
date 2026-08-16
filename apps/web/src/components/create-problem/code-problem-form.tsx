@@ -102,7 +102,7 @@ function RemoveButton({
 }
 
 const fieldClasses =
-  "w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs text-navy outline-none placeholder:text-text-faint focus:border-navy";
+  "w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs text-navy placeholder:text-text-faint focus:border-navy";
 
 export function CodeProblemForm() {
   // CodeEditor moved to @codementor/editor and takes the theme as a prop, so the
@@ -230,7 +230,7 @@ export function CodeProblemForm() {
               }}
               onBlur={addTag}
               placeholder="Thêm thẻ rồi nhấn Enter..."
-              className="h-8 min-w-44 flex-1 rounded-md border border-border bg-surface px-2.5 text-xs text-navy outline-none placeholder:text-text-faint focus:border-navy"
+              className="h-8 min-w-44 flex-1 rounded-md border border-border bg-surface px-2.5 text-xs text-navy placeholder:text-text-faint focus:border-navy"
             />
           </div>
         </div>

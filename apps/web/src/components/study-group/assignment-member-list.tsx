@@ -69,7 +69,7 @@ export function AssignmentMemberList({ assignments, exercises }: { assignments: 
         ].map(([value, label]) => <button key={value} type="button" onClick={() => setQuickFilter(value)} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${quickFilter === value ? "border-navy bg-navy text-on-ink" : "border-border bg-surface text-text-muted hover:bg-bg"}`}>{label}</button>)}
       </div>
       <Card className="mb-4 flex flex-col gap-2 p-3 sm:flex-row">
-        <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border px-3"><Search className="h-4 w-4 text-text-faint" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm bài tập..." className="min-w-0 flex-1 bg-transparent text-sm text-navy outline-none placeholder:text-text-faint" /></label>
+        <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border px-3"><Search className="h-4 w-4 text-text-faint" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm bài tập..." className="min-w-0 flex-1 bg-transparent text-sm text-navy placeholder:text-text-faint" /></label>
         <Select label="Độ khó" value={difficulty} onChange={setDifficulty} options={[{ value: "all", label: "Mọi độ khó" }, { value: "Cơ bản", label: "Cơ bản" }, { value: "Trung bình", label: "Trung bình" }, { value: "Nâng cao", label: "Nâng cao" }]} />
         <Select label="Sắp xếp" value={sort} onChange={setSort} options={[{ value: "due", label: "Hạn gần nhất" }, { value: "created", label: "Ngày tạo mới" }, { value: "score", label: "Điểm cao nhất" }, { value: "recent", label: "Lần làm gần nhất" }]} />
       </Card>

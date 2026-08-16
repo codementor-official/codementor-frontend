@@ -335,6 +335,24 @@ html {
   textarea {
     border-radius: var(--radius-md);
   }
+
+  /* Keyboard focus, for everything, once.
+   *
+   * The audit found ~60 interactive elements with no visible focus state across 25 files.
+   * Adding a ring to each is 25 diffs that the 26th new component silently misses; a base
+   * rule is one place and covers what does not exist yet.
+   *
+   * `:where()` has zero specificity, so any component that needs a different treatment
+   * still wins by declaring its own — this is a floor, not a ceiling. `:focus-visible`
+   * (not `:focus`) means a mouse click does not paint a ring, only keyboard navigation
+   * does. The outline follows the element's own border-radius automatically.
+   *
+   * Primary is used rather than ink because it stays visible on both light surfaces and
+   * the ink-filled bands (`bg-navy`, `bg-ink-fixed`), where an ink ring would vanish. */
+  :where(a[href], button, summary, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"]), input, select, textarea):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }
 
 /* Tiptap is headless: it emits plain HTML and no styles at all. These rules dress that

@@ -169,7 +169,7 @@ export function DocumentPreviewModal({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Ví dụ: tài liệu chứa thông tin cá nhân, cần che trước khi tải lại..."
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy outline-none focus:border-navy"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy focus:border-navy"
           />
           <label className="mt-2.5 flex cursor-pointer items-center gap-2 text-sm text-text">
             <input

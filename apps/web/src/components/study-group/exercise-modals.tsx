@@ -152,7 +152,7 @@ export function ExerciseEditModal({
             rows={3}
             value={form.objective}
             onChange={(e) => set("objective", e.target.value)}
-            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy outline-none focus:border-navy"
+            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy focus:border-navy"
           />
         </div>
 
@@ -200,7 +200,7 @@ export function ExerciseEditModal({
             rows={2}
             value={form.criteria}
             onChange={(e) => set("criteria", e.target.value)}
-            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy outline-none focus:border-navy"
+            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-navy focus:border-navy"
           />
         </div>
 

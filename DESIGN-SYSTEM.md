@@ -66,7 +66,22 @@ Rules:
 - Transition: `transition-colors duration-150`.
 - **No `translate`, no `scale`, no hover shadow.** Shadow is reserved for genuinely overlaid
   content (dropdowns, modals).
-- Every interactive element has a visible focus ring: `outline-2 outline-offset-2 outline-primary`.
+### Focus is handled once, in `globals.css`
+
+A base rule gives every `a[href]`, `button`, `summary`, `[role="button"]`, `[role="tab"]`,
+`input`, `select`, and `textarea` a 2px primary outline on `:focus-visible`. **Do not add a focus
+ring to a component** — it is already there, including on components that do not exist yet.
+
+- The selector is wrapped in `:where()`, so its specificity is zero. A component that genuinely
+  needs a different treatment still wins by declaring its own. `ProblemRow` does: it sits inside
+  an `overflow-hidden` Card that would clip an outline, so it uses an inset ring instead.
+- **Never write `outline-none`.** A bare `outline-none` removes the outline in *every* state
+  including keyboard focus, and being a utility class it outranks the base rule. Four shared
+  controls in `packages/ui` had it and silently suppressed focus in all three apps.
+- Primary, not ink: the ring has to stay visible on the ink-filled bands (`bg-navy`,
+  `bg-ink-fixed`) as well as on light surfaces.
+- Verified by tabbing the rendered page, not by reading source — `:focus-visible` does not match
+  a scripted `element.focus()`, so a source grep or a JS-driven check will both lie.
 
 ## Colors
 
