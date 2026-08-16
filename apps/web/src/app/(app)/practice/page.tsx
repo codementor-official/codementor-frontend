@@ -170,7 +170,7 @@ export default function PracticePage() {
   const selectCollection = (key: CollectionKey) => { setCollection(key); setTopic("all"); setStatus("all"); setDifficulty("all"); setSearch(""); setSort("recommended"); setPage(1); };
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div>
       <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs font-bold tracking-wide text-primary uppercase"><Layers3 className="h-3.5 w-3.5" /> Problem bank</div>

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock3, Lightbulb } from "lucide-react";
+import { Clock3, Lightbulb } from "lucide-react";
+import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { getArticle } from "@/data/articles";
 import { Card } from "@/components/ui/card";
 
@@ -15,9 +15,7 @@ export default async function ArticleDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-4xl">
-      <Link href="/articles" className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-navy">
-        <ArrowLeft className="h-4 w-4" /> Tất cả bài viết
-      </Link>
+      <BreadcrumbTitle slug={slug} title={article.title} />
       <article>
         <header className="border-b border-border pb-7">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-text-faint">

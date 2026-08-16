@@ -11,7 +11,7 @@ export default async function CreateProblemPage({
   const tab = resolveProblemTab((await searchParams).tab);
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div>
       <header className="mb-5">
         <h1 className="text-2xl font-bold tracking-tight text-navy">Tạo bài tập</h1>
         <p className="mt-1 text-sm text-text-muted">

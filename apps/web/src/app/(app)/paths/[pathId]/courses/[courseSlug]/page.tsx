@@ -4,7 +4,6 @@ import {
   Award,
   BarChart3,
   Check,
-  ChevronRight,
   Clock,
   Code2,
   FileText,
@@ -17,6 +16,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CourseCurriculumOutline } from "@/components/roadmap/course-curriculum-outline";
@@ -57,14 +57,9 @@ export default async function CourseDetailPage({
 
   if (!result) {
     return (
-      <div>
-        <Link href={`/paths/${pathId}`} className="mb-3.5 inline-block text-sm text-text-muted hover:text-navy">
-          ← Quay lại lộ trình học
-        </Link>
-        <Card className="p-8 text-center text-sm text-text-faint">
-          Không tìm thấy khóa học này trong lộ trình.
-        </Card>
-      </div>
+      <Card className="p-8 text-center text-sm text-text-faint">
+        Không tìm thấy khóa học này trong lộ trình.
+      </Card>
     );
   }
 
@@ -84,17 +79,8 @@ export default async function CourseDetailPage({
 
   return (
     <div>
-      <nav className="mb-3.5 flex flex-wrap items-center gap-1.5 text-xs text-text-faint">
-        <Link href="/paths" className="hover:text-navy">
-          Lộ trình học
-        </Link>
-        <ChevronRight className="h-3 w-3" />
-        <span>{fieldLabel}</span>
-        <ChevronRight className="h-3 w-3" />
-        <Link href={`/paths/${roadmap.slug}#curriculum`} className="hover:text-navy">
-          {roadmap.title}
-        </Link>
-      </nav>
+      <BreadcrumbTitle slug={pathId} title={roadmap.title} />
+      <BreadcrumbTitle slug={courseSlug} title={course.title} />
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">

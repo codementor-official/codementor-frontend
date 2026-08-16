@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BarChart3, Check, Clock, Layers, Users } from "lucide-react";
+import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { RoadmapCurriculum } from "@/components/roadmap/roadmap-curriculum";
 import { roadmapService } from "@/lib/roadmap/roadmap-service";
@@ -19,9 +20,7 @@ export default async function RoadmapDetailPage({
 
   return (
     <div>
-      <Link href="/paths" className="mb-3.5 inline-block text-sm text-text-muted hover:text-navy">
-        ← Quay lại lộ trình học
-      </Link>
+      <BreadcrumbTitle slug={pathId} title={roadmap.title} />
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">

@@ -40,7 +40,7 @@ export function ProfileManagementPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div>
       <div className="mb-6 flex flex-col justify-between gap-4 border-b border-border-soft pb-5 sm:flex-row sm:items-end">
         <div>
           <p className="mb-1 text-xs font-bold tracking-[0.14em] text-primary uppercase">Không gian cá nhân</p>

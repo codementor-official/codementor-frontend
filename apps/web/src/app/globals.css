@@ -127,7 +127,16 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  /* container / grid */
+  /* container / grid
+   *
+   * `--container-wide` is the app shell's only width ceiling, and pages fill it. It sits
+   * well above `--container-max` on purpose: the sidebar already takes 240px, so clamping
+   * the content column at 1200px left ~440px of dead gutter on a 1920px screen while the
+   * practice table hid two columns for lack of room. The ceiling exists only so an
+   * ultrawide monitor doesn't produce 30cm reading lines.
+   *
+   * `--container-max` is kept for prose and marketing sections — narrow on purpose. */
+  --container-wide: 1600px;
   --container-max: 1200px;
   --container-padding: 24px;
   --container-padding-sm: 16px;

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CircleCheck, Clock, Trophy, Users } from "lucide-react";
+import { CircleCheck, Clock, Trophy, Users } from "lucide-react";
+import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { getAuthoredProblem } from "@/data/authored-problems";
 
@@ -16,12 +16,7 @@ export default async function LessonPage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link
-        href="/create-problem"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-navy"
-      >
-        <ArrowLeft className="h-4 w-4" /> Soạn bài tập
-      </Link>
+      <BreadcrumbTitle slug={lessonId} title={lesson.title} />
 
       <div className="mb-2 flex flex-wrap items-center gap-3">
         <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary">
