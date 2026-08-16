@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Code2, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { Button } from "@codementor/ui";
+import { BrandLogo } from "@/components/brand-logo";
 import { useAuth } from "@/providers/auth-provider";
-import { selfSignupEnabled } from "@/lib/env";
 
 export default function LoginPage() {
-  const { status, error, signIn, signUp } = useAuth();
+  const { status, error, signIn } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -16,55 +16,47 @@ export default function LoginPage() {
   }, [status, router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg border border-border">
-            <Code2 aria-hidden="true" className="size-4" />
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-semibold">CodeMentor</p>
-            <p className="text-xs text-muted-foreground">Trang giảng viên</p>
-          </div>
-        </div>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-6">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 32rem), radial-gradient(circle at 85% 85%, color-mix(in srgb, var(--foreground) 6%, transparent), transparent 34rem)",
+        }}
+      />
 
-        <h1 className="text-xl font-semibold">Đăng nhập</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Đăng nhập, đăng ký và đổi mật khẩu đều do CodeMentor ID xử lý. Trang này không
-          nhận mật khẩu của bạn.
-        </p>
+      <div className="relative flex w-full max-w-sm flex-col items-center">
+        <BrandLogo size={56} />
+        <p className="mt-4 text-sm font-semibold">CodeMentor</p>
+        <p className="text-xs text-muted-foreground">Trang giảng viên</p>
 
-        {error && (
-          <p
-            className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            role="alert"
-          >
-            {error}
+        <div className="mt-6 w-full rounded-lg border bg-card p-8 shadow-sm">
+          <h1 className="text-xl font-semibold">Đăng nhập</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Đăng nhập và đổi mật khẩu đều do CodeMentor ID xử lý. Trang này không nhận mật
+            khẩu của bạn.
           </p>
-        )}
 
-        <Button
-          className="mt-6 w-full"
-          disabled={status === "loading"}
-          onClick={signIn}
-          type="button"
-        >
-          <LogIn aria-hidden="true" className="size-4" />
-          {status === "loading" ? "Đang kiểm tra phiên…" : "Tiếp tục với CodeMentor ID"}
-        </Button>
-
-        {selfSignupEnabled && (
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Chưa có tài khoản?{" "}
-            <button
-              className="font-medium text-foreground underline underline-offset-4"
-              onClick={signUp}
-              type="button"
+          {error && (
+            <p
+              className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              role="alert"
             >
-              Đăng ký
-            </button>
-          </p>
-        )}
+              {error}
+            </p>
+          )}
+
+          <Button
+            className="mt-6 w-full"
+            disabled={status === "loading"}
+            onClick={signIn}
+            type="button"
+          >
+            <LogIn aria-hidden="true" className="size-4" />
+            {status === "loading" ? "Đang kiểm tra phiên…" : "Tiếp tục với CodeMentor ID"}
+          </Button>
+        </div>
       </div>
     </main>
   );

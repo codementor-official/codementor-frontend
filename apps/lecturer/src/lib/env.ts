@@ -17,11 +17,3 @@ export const keycloakConfig = createKeycloakPublicConfig({
  * owns which resource.
  */
 export const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
-
-/**
- * Whether to offer self-service registration. The authoritative switch is the
- * Keycloak realm setting `registrationAllowed`; turning that off blocks sign-up at
- * the source. This flag only decides whether the application shows a link that
- * would otherwise lead to a rejection.
- */
-export const selfSignupEnabled = process.env.NEXT_PUBLIC_LECTURER_SELF_SIGNUP !== "false";

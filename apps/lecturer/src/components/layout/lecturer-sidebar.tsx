@@ -1,8 +1,9 @@
 "use client";
 
-import { Code2, X } from "lucide-react";
+import { X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { lecturerNavigation } from "@/components/navigation/lecturer-navigation";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -28,15 +29,16 @@ export function LecturerSidebar({ collapsed, mobile, onClose }: LecturerSidebarP
       }
     >
       {/* Collapsed drops the horizontal padding and centres instead. Keeping `px-4` while
-          the rail is 56px wide is what pushed every icon off to the left. */}
+          the rail is 56px wide is what pushed every icon off to the left.
+
+          Cao 48px chứ không 64px như admin: topbar của lecturer là `h-11`, nên header cao
+          hơn sẽ lệch khỏi đường kẻ ngang đó. Logo 28px khớp với ô `size-7` nó thay thế. */}
       <div
         className={`flex h-12 shrink-0 items-center ${
           collapsed ? "justify-center px-0" : "gap-2.5 px-3"
         }`}
       >
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background">
-          <Code2 aria-hidden="true" className="size-3.5" />
-        </div>
+        <BrandLogo size={28} />
         {!collapsed && (
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-sm font-semibold">CodeMentor</p>

@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronsUpDown, Code2, ShieldCheck, X } from "lucide-react";
+import { ChevronsUpDown, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { adminNavigation } from "@/components/navigation/admin-navigation";
 
 interface AdminSidebarProps {
@@ -26,9 +27,7 @@ export function AdminSidebar({ collapsed, mobile, onClose }: AdminSidebarProps) 
       }
     >
       <div className="flex h-16 shrink-0 items-center gap-3 px-4">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-sidebar-border bg-background">
-          <Code2 aria-hidden="true" className="size-4" />
-        </div>
+        <BrandLogo size={36} />
         {!collapsed && (
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-sm font-semibold">CodeMentor</p>

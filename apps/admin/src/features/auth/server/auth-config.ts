@@ -15,7 +15,7 @@ export function getAdminAuthConfig(): AdminAuthConfig {
   const internalKeycloakUrl = stripTrailingSlash(
     process.env.KEYCLOAK_INTERNAL_URL ??
       process.env.NEXT_PUBLIC_KEYCLOAK_URL ??
-      "http://13.214.122.227:8080",
+      "https://id.codementor.cloud",
   );
   const sessionSecret = process.env.AUTH_SESSION_SECRET;
   if (!sessionSecret || sessionSecret.length < 32) {
@@ -37,10 +37,6 @@ export function getAdminAuthConfig(): AdminAuthConfig {
 
 export function keycloakRealmUrl(config: AdminAuthConfig): string {
   return `${config.internalKeycloakUrl}/realms/${encodeURIComponent(config.realm)}`;
-}
-
-export function publicKeycloakRealmUrl(origin: string, config: AdminAuthConfig): string {
-  return `${origin}/auth/realms/${encodeURIComponent(config.realm)}`;
 }
 
 function stripTrailingSlash(value: string): string {
