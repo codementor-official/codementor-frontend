@@ -204,7 +204,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
       case "testcase":
         return (
           <div className="flex h-full flex-col gap-2 overflow-y-auto p-3">
-            {problem.testCases.map((tc, i) => (
+            {(problem.publicTestCases ?? problem.testCases).map((tc, i) => (
               <div key={i} className="rounded-md border border-border-soft bg-bg p-2.5 font-mono text-xs">
                 <div className="mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">Input</div>
                 <div className="text-navy">{tc.input}</div>

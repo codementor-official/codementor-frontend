@@ -64,6 +64,30 @@ export interface ExerciseSummary {
 }
 
 /**
+ * `GET /exercises/:id` — the list projection plus the body stored in MongoDB.
+ *
+ * `referenceSolution` is the author's answer. It is on the wire because the same endpoint
+ * serves the lecturer studio, and it must never reach the learner's editor.
+ *
+ * `visibility: "hidden"` test cases are also on the wire, so they are not hidden from
+ * anyone determined to look — the judge takes its cases from the client. Treating them as
+ * hidden is a UI courtesy until grading moves behind submission-service.
+ */
+export interface ExerciseDetail extends ExerciseSummary {
+  summary: string | null;
+  xpReward: number;
+  estimatedMinutes: number | null;
+  timeLimitMs: number;
+  memoryLimitKb: number;
+  publishedAt: string | null;
+  content: {
+    statement: string;
+    testCases: { order: number; input: string; expected: string; visibility: "public" | "hidden" }[];
+    languages: { id: string; label: string; referenceSolution?: string }[];
+  } | null;
+}
+
+/**
  * The largest page the backend will serve. Asking for more is a 400
  * ("limit must not be greater than 100"), not a silent clamp.
  */

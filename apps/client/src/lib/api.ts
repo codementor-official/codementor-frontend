@@ -5,6 +5,7 @@ import type { JudgeRunResult } from "@/types/judge";
 import type {
   CatalogueParams,
   CourseSummary,
+  ExerciseDetail,
   ExerciseSummary,
   Page,
   RoadmapSummary,
@@ -69,6 +70,8 @@ export const api = {
   exercises: {
     bank: (params: CatalogueParams = {}) =>
       unwrap<Page<ExerciseSummary>>(`/exercises${query(params)}`),
+    /** Takes the UUID, not the slug — the service has no slug lookup. */
+    detail: (id: string) => unwrap<ExerciseDetail>(`/exercises/${id}`),
   },
 
   /**

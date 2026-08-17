@@ -57,7 +57,7 @@ function ExerciseRow({
       <span className="hidden w-7 shrink-0 text-right text-xs tabular-nums text-text-faint md:block">
         {number}
       </span>
-      <Link href={`/solve/${item.slug}`} className="min-w-0 flex-1">
+      <Link href={`/solve/${item.id}`} className="min-w-0 flex-1">
         <span className="truncate text-sm font-semibold text-navy group-hover:text-primary">
           {item.title}
         </span>

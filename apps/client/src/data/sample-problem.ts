@@ -11,6 +11,8 @@ export interface Problem {
   description: string;
   constraints: string[];
   testCases: TestCase[];
+  /** What the learner is shown. Absent on mock problems, where every case is public. */
+  publicTestCases?: TestCase[];
   starter: Record<string, string>;
 }
 
