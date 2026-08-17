@@ -134,8 +134,21 @@ function createUserManager(config: KeycloakPublicConfig, redirectOrigin: string)
     // một refresh token bị lộ vẫn đổi được access token mới cho tới khi hết hạn — kể
     // cả sau khi người dùng đã bấm "Đăng xuất".
     revokeTokensOnSignout: true,
+    // `stateStore` giữ state của một lần đăng nhập ĐANG diễn ra — nó chỉ sống từ lúc bấm
+    // đăng nhập tới lúc callback chạy, nên sessionStorage là đúng chỗ và không rò sang tab
+    // khác.
     stateStore: new WebStorageStateStore({ store: window.sessionStorage }),
-    userStore: new WebStorageStateStore({ store: window.sessionStorage }),
+    // `userStore` thì phải là localStorage: sessionStorage là RIÊNG từng tab, nên mọi tab
+    // mở bằng target="_blank" đều bắt đầu với kho rỗng và người dùng hiện ra là chưa đăng
+    // nhập ở tab đó — đúng lỗi "bấm Làm bài, tab mới đá về trang đăng nhập", trong khi tab
+    // cũ vẫn vào được vì token nằm trong sessionStorage của riêng nó.
+    //
+    // Đánh đổi: token sống qua lần đóng trình duyệt thay vì mất theo tab. Chấp nhận được —
+    // access token chỉ sống 5 phút, và mọi lần gia hạn đều phải qua phiên SSO ở Keycloak,
+    // nơi vẫn có tiếng nói cuối cùng về việc phiên còn hiệu lực hay không. Muốn token không
+    // bao giờ chạm ổ đĩa thì phải cho luồng popup đi qua BFF như luồng mật khẩu — việc lớn
+    // hơn nhiều và nằm ngoài phạm vi bản vá này.
+    userStore: new WebStorageStateStore({ store: window.localStorage }),
     monitorSession: false,
   });
 }

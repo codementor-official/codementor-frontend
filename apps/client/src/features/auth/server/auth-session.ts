@@ -132,7 +132,12 @@ export async function readSession(request: NextRequest): Promise<WebSession | nu
     if (!chunk) break;
     encrypted += chunk;
   }
-  return encrypted ? decryptPayload<WebSession>(encrypted) : null;
+  if (!encrypted) return null;
+  const session = await decryptPayload<WebSession>(encrypted);
+  // Có cookie mà giải mã hỏng là chuyện khác hẳn "chưa đăng nhập": khoá phiên đã đổi,
+  // hoặc cookie bị cắt cụt. Cả hai đều im lặng biến thành 401 nếu không nói ra ở đây.
+  if (!session) console.error("[auth] cookie phiên có nhưng giải mã hỏng, coi như chưa đăng nhập");
+  return session;
 }
 
 export function clearSessionCookies(response: NextResponse): void {
@@ -157,11 +162,29 @@ async function requestTokens(parameters: Record<string, string>): Promise<TokenR
   return (await response.json()) as TokenResponse;
 }
 
+/**
+ * Một bộ khoá cho mỗi realm, giữ lại giữa các request.
+ *
+ * `createRemoteJWKSet` tự cache bên trong đối tượng nó trả về, nên tạo mới ở mỗi lần
+ * gọi là vứt cache đi: mỗi lần gia hạn token phải đi thêm một vòng HTTPS tới Keycloak
+ * chỉ để lấy lại đúng bộ khoá vừa lấy. Keycloak nằm ở máy khác, và vòng đó nằm trên
+ * đường đi của mọi request sau khi access token hết hạn.
+ */
+const jwksByRealm = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+function jwksFor(realmUrl: string): ReturnType<typeof createRemoteJWKSet> {
+  let jwks = jwksByRealm.get(realmUrl);
+  if (!jwks) {
+    jwks = createRemoteJWKSet(new URL(`${realmUrl}/protocol/openid-connect/certs`));
+    jwksByRealm.set(realmUrl, jwks);
+  }
+  return jwks;
+}
+
 async function verifyToken(token: string, audience: string): Promise<JWTPayload> {
   const config = getWebAuthConfig();
   const realmUrl = keycloakRealmUrl(config);
-  const jwks = createRemoteJWKSet(new URL(`${realmUrl}/protocol/openid-connect/certs`));
-  const result = await jwtVerify(token, jwks, { audience, issuer: realmUrl });
+  const result = await jwtVerify(token, jwksFor(realmUrl), { audience, issuer: realmUrl });
   return result.payload;
 }
 

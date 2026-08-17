@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { ApiClientError } from "@codementor/api-client";
 import { accessTokenOf, getUserManager } from "@codementor/auth";
 import type { OidcUser, UserManager } from "@codementor/auth";
 import type { User } from "@codementor/types";
@@ -9,6 +10,13 @@ import { keycloakConfig } from "@/lib/env";
 import { api, setAccessTokenReader } from "@/lib/api";
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
+
+/**
+ * Dưới hạn sống của access token (300s) nên mỗi nhịp thứ hai là một lần gia hạn thật,
+ * và xa dưới hạn nhàn rỗi 1800s của refresh token nên phiên không bao giờ chạm mốc đó
+ * khi người học vẫn đang mở tab.
+ */
+const SESSION_HEARTBEAT_MS = 4 * 60 * 1000;
 
 /** Keycloak identity provider alias, provisioned in the realm — see configure-codementor-realm.sh. */
 export type SocialProvider = "google" | "facebook";
@@ -97,12 +105,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setUser(await api.me());
       setStatus("authenticated");
     } catch (cause) {
-      // A valid token with a rejected profile means a suspended or deleted
-      // account. Staying "authenticated" would show an empty console instead.
+      setError(cause instanceof Error ? cause.message : "Không tải được hồ sơ");
+      // Chỉ 401/403 mới là "phiên này không dùng được nữa" — token bị từ chối, hoặc tài
+      // khoản bị khoá/xoá. Mọi lỗi khác (gateway 502, BFF 503 khi Keycloak vấp, mất mạng
+      // một nhịp) KHÔNG được đọc thành chưa đăng nhập: cookie phiên vẫn còn nguyên, và
+      // từ khi có RequireAuth thì đoán sai ở đây không còn là một ô trống trên trang nữa
+      // mà là đá thẳng người dùng về /login giữa lúc đang làm bài.
+      const status = cause instanceof ApiClientError ? cause.status : 0;
+      if (status !== 401 && status !== 403) {
+        setStatus(tokenRef.current || (await hasPasswordSession()) ? "authenticated" : "anonymous");
+        return;
+      }
       tokenRef.current = null;
       setUser(null);
       setStatus("anonymous");
-      setError(cause instanceof Error ? cause.message : "Không tải được hồ sơ");
     }
   }, []);
 
@@ -110,7 +126,21 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setAccessTokenReader(() => tokenRef.current);
 
     const userManager = manager();
-    void userManager.getUser().then(applySession);
+    // Token trong kho có thể đã quá hạn — nó chỉ sống 5 phút, còn `automaticSilentRenew`
+    // chỉ bắt đầu đếm sau khi có user được nạp, nên nó không cứu được lần mở tab đầu tiên.
+    // Gia hạn ngay tại đây qua iframe ẩn; Keycloak trả token mới nếu phiên SSO còn sống,
+    // và ném lỗi nếu không — lúc đó mới thực sự là chưa đăng nhập.
+    void userManager
+      .getUser()
+      .then(async (oidcUser) => {
+        if (!oidcUser?.expired) return oidcUser;
+        try {
+          return await userManager.signinSilent();
+        } catch {
+          return null;
+        }
+      })
+      .then(applySession);
 
     const onLoaded = (oidcUser: OidcUser) => void applySession(oidcUser);
     const onUnloaded = () => void applySession(null);
@@ -124,6 +154,53 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       userManager.events.removeSilentRenewError(onUnloaded);
     };
   }, [applySession]);
+
+  /**
+   * Nhịp giữ phiên khi tab đang mở.
+   *
+   * Refresh token của Keycloak sống 1800 giây và được đặt lại về 1800 sau MỖI lần gia
+   * hạn — nghĩa là 30 phút đó là hạn nhàn rỗi, không phải hạn cứng của phiên. Phiên chỉ
+   * được gia hạn khi có một lời gọi API đi qua BFF, nên một người học ngồi đọc bài lý
+   * thuyết 30 phút không phát sinh request nào sẽ mất phiên ở Keycloak mà không hề biết:
+   * cú bấm tiếp theo trả 401, và vì cookie bị dọn nên MỌI tab đang mở cùng chết theo —
+   * đúng cảnh mở tab làm bài rồi quay lại thấy trang bài học cũng 401.
+   *
+   * `/api/auth/session` đã tự gia hạn khi access token sắp hết hạn, nên chỉ cần gọi nó
+   * đều đặn. Chỉ gọi khi tab đang hiện: tab bị ẩn không phải người đang học, và giữ phiên
+   * sống cho một tab bỏ quên là kéo dài phiên quá điều người dùng thực sự làm.
+   */
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    // CHỈ dành cho phiên mật khẩu. Phiên popup giữ token ngay trong tab và tự gia hạn qua
+    // iframe (`automaticSilentRenew`), nó không có cookie BFF nào cả — nên với nó
+    // `/api/auth/session` trả `authenticated: false` là câu trả lời ĐÚNG, không phải dấu
+    // hiệu hết phiên. Nhịp này mà chạy cho phiên popup thì cứ mỗi lần đổi tab lại tự huỷ
+    // một phiên đang khoẻ và đá người dùng về /login.
+    if (tokenRef.current) return;
+    const beat = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const response = await fetch("/api/auth/session", { cache: "no-store" });
+        const body = (await response.json()) as { authenticated?: boolean; transient?: boolean };
+        // Phiên chết giữa chừng mà trạng thái vẫn là "đã đăng nhập" thì mọi trang chỉ
+        // hiện 401 và không có đường ra. `transient` là "chưa hỏi được Keycloak", không
+        // phải "hết phiên", nên không đá người dùng ra vì một cú vấp mạng.
+        if (body.authenticated === false && body.transient !== true) {
+          await applySession(null);
+        }
+      } catch {
+        // Mất mạng: lần nhịp sau thử lại, không kết luận gì.
+      }
+    };
+    const onBeat = () => void beat();
+    const timer = setInterval(onBeat, SESSION_HEARTBEAT_MS);
+    // Quay lại tab sau một lúc cũng phải gia hạn ngay, không đợi hết chu kỳ.
+    document.addEventListener("visibilitychange", onBeat);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onBeat);
+    };
+  }, [status, applySession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -219,12 +296,19 @@ async function postCredentials(path: string, body: Record<string, string>): Prom
   }
 }
 
-/** `true` nếu cookie BFF còn sống. Không trả token — token không rời khỏi server. */
+/**
+ * `true` nếu cookie BFF còn sống. Không trả token — token không rời khỏi server.
+ *
+ * `transient` là câu trả lời thứ ba, tách khỏi "còn phiên" và "hết phiên": route
+ * không hỏi được Keycloak nên chưa biết. Cookie vẫn còn, nên coi như còn phiên và để
+ * `api.me()` ngay sau đó quyết định — đoán là "hết phiên" ở đây sẽ đá người dùng ra
+ * màn hình đăng nhập vì một sự cố mạng thoáng qua.
+ */
 async function hasPasswordSession(): Promise<boolean> {
   try {
     const response = await fetch("/api/auth/session", { cache: "no-store" });
-    const body = (await response.json()) as { authenticated?: boolean };
-    return body.authenticated === true;
+    const body = (await response.json()) as { authenticated?: boolean; transient?: boolean };
+    return body.authenticated === true || body.transient === true;
   } catch {
     return false;
   }

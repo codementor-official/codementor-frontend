@@ -24,12 +24,15 @@ const DIFFICULTY_LABEL: Record<string, string> = {
  */
 export function ExerciseLesson({
   lesson,
+  courseId,
   progress,
   enrolled,
   onComplete,
   saving,
 }: {
   lesson: FlatLesson;
+  /** Dựng `returnTo` từ route thay vì `window.location`, thứ không tồn tại khi render ở server. */
+  courseId: string;
   progress: LessonProgress | undefined;
   enrolled: boolean;
   onComplete: (secondsSpent: number) => void;
@@ -118,7 +121,7 @@ export function ExerciseLesson({
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <a
-          href={`/solve/${lesson.exerciseId}?returnTo=${encodeURIComponent(window.location.pathname)}`}
+          href={`/solve/${lesson.exerciseId}?returnTo=${encodeURIComponent(`/courses/${courseId}/lessons/${lesson.id}`)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-on-ink transition-colors hover:bg-primary-hover"

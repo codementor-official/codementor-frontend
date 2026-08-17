@@ -139,6 +139,18 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
       <BreadcrumbTitle slug={courseId} title={course.title} />
       <BreadcrumbTitle slug={lessonId} title={current.title} />
 
+      {/* Lỗi lưu tiến độ từng bị nuốt: nhánh hiển thị lỗi ở trên chỉ chạy khi khóa học
+          chưa tải được, nên một lần PUT hỏng để lại trang y như cũ và người học tin là
+          đã lưu — cho tới lần đăng nhập sau. Ghi tiến độ hỏng phải nói ra. */}
+      {error && (
+        <p
+          role="alert"
+          className="mb-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-xs font-semibold text-danger"
+        >
+          Không lưu được tiến độ: {error}
+        </p>
+      )}
+
       <LessonShell
         course={course}
         lessons={lessons}
@@ -149,6 +161,7 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
         {CODE_LESSON_TYPES.has(current.type) ? (
           <ExerciseLesson
             lesson={current}
+            courseId={courseId}
             progress={currentProgress}
             enrolled={enrolled}
             onComplete={complete}
