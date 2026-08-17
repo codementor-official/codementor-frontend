@@ -1,4 +1,4 @@
-import type { BreadcrumbItem } from "@codementor/ui";
+import { breadcrumbTrail, type BreadcrumbItem, type RouteMeta } from "@codementor/ui";
 
 /**
  * The one place a route's human name lives.
@@ -8,12 +8,6 @@ import type { BreadcrumbItem } from "@codementor/ui";
  * Keys are path prefixes; the longest matching prefix wins, and each entry names its parent
  * so the trail is a chain rather than a flat pair.
  */
-interface RouteMeta {
-  label: string;
-  /** The path of the crumb before this one. Omitted on top-level destinations. */
-  parent?: string;
-}
-
 const HOME = "/dashboard";
 
 const ROUTES: Record<string, RouteMeta> = {
@@ -32,18 +26,12 @@ const ROUTES: Record<string, RouteMeta> = {
   "/solve": { label: "Làm bài", parent: "/practice" },
 };
 
-/** A slug with no registered title still has to read as words, not as a URL fragment. */
-function humanizeSlug(slug: string): string {
-  const words = decodeURIComponent(slug).replace(/[-_]+/g, " ").trim();
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
 /**
  * Segments that name a nested collection rather than a place. `/paths/x/courses/y` reads
  * as "Lộ trình › X › Y" — a crumb for the bare word "courses" would point at a route that
  * does not exist. Same for "lessons" in /courses/x/lessons/y.
  */
-const TRANSPARENT_SEGMENTS = new Set(["courses", "learn", "lessons"]);
+const TRANSPARENT_SEGMENTS = ["courses", "learn", "lessons"];
 
 /**
  * @param pathname  the current `usePathname()` value
@@ -54,33 +42,5 @@ export function breadcrumbFor(
   pathname: string,
   titles: Record<string, string> = {},
 ): BreadcrumbItem[] {
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments.length === 0) return [];
-
-  const root = `/${segments[0]}`;
-  const meta = ROUTES[root];
-  // An unregistered route gets no invented trail — that omission is the signal to add it
-  // to this map, and it is a great deal louder than a plausible-looking wrong crumb.
-  if (!meta) return [];
-
-  const items: BreadcrumbItem[] = [];
-
-  for (let parent = meta.parent; parent; parent = ROUTES[parent]?.parent) {
-    items.unshift({ label: ROUTES[parent]?.label ?? humanizeSlug(parent.slice(1)), href: parent });
-  }
-
-  items.push({ label: meta.label, href: root });
-
-  let href = root;
-  for (const segment of segments.slice(1)) {
-    href += `/${segment}`;
-    if (TRANSPARENT_SEGMENTS.has(segment)) continue;
-    items.push({ label: titles[segment] ?? humanizeSlug(segment), href });
-  }
-
-  // The current page is announced, not linked.
-  const last = items[items.length - 1];
-  if (last) delete last.href;
-
-  return items;
+  return breadcrumbTrail(ROUTES, pathname, { titles, transparent: TRANSPARENT_SEGMENTS });
 }

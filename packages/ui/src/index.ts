@@ -1,5 +1,10 @@
+export { AppSidebar } from "./app-sidebar";
+export type { AppNavGroup, AppNavItem, AppSidebarProps } from "./app-sidebar";
+export { AppTopbar } from "./app-topbar";
 export { Breadcrumb } from "./breadcrumb";
 export type { BreadcrumbItem } from "./breadcrumb";
+export { breadcrumbTrail } from "./breadcrumb-trail";
+export type { RouteMeta } from "./breadcrumb-trail";
 export { Button } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
 export { DashboardShell } from "./dashboard-shell";
@@ -17,6 +22,7 @@ export { SideDrawer } from "./side-drawer";
 export { StatStrip } from "./stat-strip";
 export type { Stat } from "./stat-strip";
 export { StatusBadge } from "./status-badge";
+export { ThemeMenu } from "./theme-menu";
 export type { DashboardShellProps } from "./dashboard-shell";
 export type { ManagePageProps } from "./manage-page";
 export type { SegmentedTabOption } from "./segmented-tabs";

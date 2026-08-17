@@ -12,10 +12,16 @@ export function LecturerShell({ children }: Readonly<{ children: ReactNode }>) {
   // Fixed viewport height rather than `min-h-screen`, because the studio and solve screens
   // are split panes: a pane can only size itself against a parent whose height is known,
   // and a page that grows with its content never gives it one. List screens get their
-  // scrolling back below, on `main`.
+  // scrolling back below, in <PageBody>.
   return (
-    <div className="flex h-screen flex-col bg-background">
-      <LecturerSidebar collapsed={collapsed} mobile={false} />
+    <div className="flex h-screen bg-background">
+      {/* A static rail in the row, not a fixed overlay the content has to pad around —
+        * the same arrangement all three applications use now. */}
+      <LecturerSidebar
+        collapsed={collapsed}
+        mobile={false}
+        onToggle={() => setCollapsed((value) => !value)}
+      />
 
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
@@ -25,19 +31,14 @@ export function LecturerShell({ children }: Readonly<{ children: ReactNode }>) {
             onClick={() => setMobileOpen(false)}
             type="button"
           />
-          <div className="relative h-full w-56 shadow-[8px_0_30px_rgba(0,0,0,0.2)]">
+          <div className="relative h-full w-60 shadow-[8px_0_30px_rgba(0,0,0,0.2)]">
             <LecturerSidebar collapsed={false} mobile onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
-      <div
-        className={`flex min-h-0 flex-1 flex-col ${collapsed ? "md:pl-14" : "md:pl-56"}`}
-      >
-        <LecturerTopbar
-          onDesktopToggle={() => setCollapsed((value) => !value)}
-          onMobileToggle={() => setMobileOpen(true)}
-        />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <LecturerTopbar onMobileMenu={() => setMobileOpen(true)} />
         {/* No padding here: a split-pane screen needs to reach the edges. Pages that want
             breathing room wrap themselves in <PageBody>. */}
         <main className="min-h-0 flex-1">{children}</main>

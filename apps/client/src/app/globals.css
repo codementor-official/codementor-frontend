@@ -35,6 +35,16 @@
   --color-primary-foreground: var(--color-on-ink);
   --color-destructive: var(--color-danger);
   --color-warning: var(--color-primary);
+  /* The shared AppSidebar is written in the `--sidebar*` names the two consoles use.
+   * Pointing them at web's own palette keeps this application's rail looking exactly as
+   * it did while the markup lives in one place. */
+  --color-sidebar: var(--color-surface);
+  --color-sidebar-foreground: var(--color-ink);
+  --color-sidebar-accent: var(--color-bg);
+  --color-sidebar-accent-foreground: var(--color-navy);
+  --color-sidebar-border: var(--color-border);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
 }
 
 @theme {
