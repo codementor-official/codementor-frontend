@@ -86,7 +86,7 @@ export function ArticleFeed() {
             />
             <input
               aria-label="Tìm bài viết"
-              className="h-11 w-full rounded-lg border border-border bg-surface pr-10 pl-10 text-sm text-navy transition-colors outline-none placeholder:text-text-faint focus-visible:border-primary"
+              className="h-11 w-full rounded-lg border border-border bg-surface pr-10 pl-10 text-sm text-navy transition-colors placeholder:text-text-faint focus-visible:border-primary"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm bài viết theo tiêu đề hoặc mô tả…"
               // `text` chứ không phải `search`: `type="search"` khiến Chrome vẽ thêm nút

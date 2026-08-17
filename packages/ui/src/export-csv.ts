@@ -37,7 +37,8 @@ export interface ExportableColumnMeta<TData> {
 // `ColumnMeta` của TanStack là interface rỗng, cố ý để bên dùng tự khai. Không mở rộng ở
 // đây thì `meta: { exportValue }` là lỗi thừa thuộc tính, và tham số `row` thành `any`.
 declare module "@tanstack/react-table" {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Thân rỗng là đúng ý đồ: declaration merging chỉ cần phần `extends`.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
   interface ColumnMeta<TData extends RowData, TValue> extends ExportableColumnMeta<TData> {}
 }
 
