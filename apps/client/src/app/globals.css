@@ -306,6 +306,21 @@ html {
   animation: menu-in var(--duration-fast) var(--ease-standard);
 }
 
+/* Thông báo vừa tới qua WebSocket: trượt xuống một chút rồi tắt dần vệt nền, để mắt bắt
+ * được thứ mới chèn vào đầu danh sách. Chỉ chạy một lần, không lặp — một mục nhấp nháy
+ * mãi trong panel đang mở là thứ người ta sẽ tắt thông báo để khỏi phải nhìn. */
+@keyframes notification-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    background-color: var(--color-primary-tint);
+  }
+}
+
+@utility animate-notification-in {
+  animation: notification-in var(--duration-normal, 240ms) var(--ease-standard);
+}
+
 /* Motion is decoration here — every one of these animations is safe to drop entirely. */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -318,6 +333,9 @@ html {
     transition: none !important;
   }
   .animate-menu-in {
+    animation: none;
+  }
+  .animate-notification-in {
     animation: none;
   }
   .mascot-sprite-idle {
