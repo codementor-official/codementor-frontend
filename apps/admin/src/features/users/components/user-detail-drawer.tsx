@@ -270,7 +270,7 @@ function ActivityTab({ entries }: { entries: ActivityEntry[] }) {
         const meta = ACTIVITY_LABELS[entry.kind];
         const Icon = meta.icon;
         return (
-          <li className="flex gap-3" key={`${entry.kind}-${entry.occurredAt}-${index}`}>
+          <li className="flex flex-wrap gap-x-3 gap-y-1" key={`${entry.kind}-${entry.occurredAt}-${index}`}>
             <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
               <Icon aria-hidden="true" className="size-3.5 text-muted-foreground" />
             </span>
@@ -281,7 +281,7 @@ function ActivityTab({ entries }: { entries: ActivityEntry[] }) {
                 {entry.detail && ` · ${entry.detail}`}
               </p>
             </div>
-            <span className="shrink-0 text-xs text-muted-foreground">
+            <span className="shrink-0 text-xs text-muted-foreground max-sm:w-full max-sm:pl-10">
               {dateTimeFormat.format(new Date(entry.occurredAt))}
             </span>
           </li>
@@ -327,7 +327,7 @@ function LoginsTab({ events }: { events: LoginEvent[] }) {
         const failed = event.type === "LOGIN_ERROR";
         const Icon = event.type === "LOGOUT" ? LogOut : LogIn;
         return (
-          <li className="flex gap-3" key={`${event.type}-${event.occurredAt}-${index}`}>
+          <li className="flex flex-wrap gap-x-3 gap-y-1" key={`${event.type}-${event.occurredAt}-${index}`}>
             <span
               className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full ${
                 failed ? "bg-destructive/10" : "bg-muted"
@@ -352,7 +352,7 @@ function LoginsTab({ events }: { events: LoginEvent[] }) {
                 {event.error && ` · ${event.error}`}
               </p>
             </div>
-            <span className="shrink-0 text-xs text-muted-foreground">
+            <span className="shrink-0 text-xs text-muted-foreground max-sm:w-full max-sm:pl-10">
               {dateTimeFormat.format(new Date(event.occurredAt))}
             </span>
           </li>
@@ -384,8 +384,10 @@ function Stat({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-3">
-      <dt className="w-36 shrink-0 text-muted-foreground">{label}</dt>
+    // Xếp dọc trên màn hẹp: cột nhãn cố định 144px không còn chỗ cho giá trị, và một uuid
+    // bị ép vào 190px thì xuống dòng giữa chuỗi, đọc ra thì được nhưng chép lại thì sai.
+    <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+      <dt className="text-muted-foreground sm:w-36 sm:shrink-0">{label}</dt>
       <dd className="min-w-0 flex-1 break-words">{value}</dd>
     </div>
   );

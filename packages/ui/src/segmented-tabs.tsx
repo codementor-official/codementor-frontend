@@ -20,7 +20,10 @@ export function SegmentedTabs({
   return (
     <div
       role="tablist"
-      className={`inline-flex items-center gap-1 rounded-md border border-border bg-card p-1 ${className}`}
+      // `max-w-full` + cuộn ngang thay vì để các nút co lại: bốn tab trên màn điện thoại
+      // bị bóp tới mức nhãn xuống dòng giữa từ ("Thông\ntin"), khó đọc hơn hẳn so với
+      // việc vuốt ngang. `shrink-0` ở từng nút bên dưới là nửa còn lại của cách này.
+      className={`inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-md border border-border bg-card p-1 ${className}`}
     >
       {options.map((opt) => {
         const active = opt.value === value;
@@ -31,7 +34,7 @@ export function SegmentedTabs({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(opt.value)}
-            className={`inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors ${
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-semibold whitespace-nowrap transition-colors ${
               active ? "bg-foreground text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
