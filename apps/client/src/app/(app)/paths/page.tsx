@@ -141,9 +141,7 @@ export default function PathsPage() {
                     { label: "khóa học", value: roadmap.courseCount },
                     ...(roadmap.estimatedHours ? [{ label: "giờ", value: roadmap.estimatedHours }] : []),
                   ]}
-                  // No href yet: /paths/[pathId] still reads the mock catalogue, so a real
-                  // backend slug would land on a detail page that cannot find it. Wire the
-                  // detail route to the backend and this becomes one line.
+                  href={`/paths/${roadmap.id}`}
                 />
               </li>
             ))}

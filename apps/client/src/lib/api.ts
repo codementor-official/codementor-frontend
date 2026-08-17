@@ -4,10 +4,12 @@ import { apiBaseUrl } from "@/lib/env";
 import type { JudgeRunResult } from "@/types/judge";
 import type {
   CatalogueParams,
+  CourseDetail,
   CourseSummary,
   ExerciseDetail,
   ExerciseSummary,
   Page,
+  RoadmapDetail,
   RoadmapSummary,
 } from "@/types/catalogue";
 
@@ -62,10 +64,13 @@ export const api = {
   roadmaps: {
     catalogue: (params: CatalogueParams = {}) =>
       unwrap<Page<RoadmapSummary>>(`/roadmaps${query(params)}`),
+    /** Takes the UUID, not the slug — the service has no slug lookup. */
+    detail: (id: string) => unwrap<RoadmapDetail>(`/roadmaps/${id}`),
   },
   courses: {
     catalogue: (params: CatalogueParams = {}) =>
       unwrap<Page<CourseSummary>>(`/courses${query(params)}`),
+    detail: (id: string) => unwrap<CourseDetail>(`/courses/${id}`),
   },
   exercises: {
     bank: (params: CatalogueParams = {}) =>

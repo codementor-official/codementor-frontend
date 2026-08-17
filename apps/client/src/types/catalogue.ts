@@ -63,6 +63,54 @@ export interface ExerciseSummary {
   updatedAt: string;
 }
 
+/** `GET /roadmaps/:id` — the summary plus its ordered course list. */
+export interface RoadmapDetail extends RoadmapSummary {
+  description: string | null;
+  shortDescription: string | null;
+  coverImageUrl: string | null;
+  prerequisiteNote: string | null;
+  progressionMode: string;
+  publishedAt: string | null;
+  courses: {
+    courseId: string;
+    position: number;
+    isOptional: boolean;
+    title: string;
+    slug: string;
+    status: ContentStatus;
+    durationHours: number | null;
+  }[];
+}
+
+export interface CourseLesson {
+  id: string;
+  title: string;
+  type: string;
+  durationMinutes: number | null;
+  isPreview: boolean;
+  isOptional: boolean;
+  position: number;
+  exerciseId: string | null;
+}
+
+/** `GET /courses/:id` — the summary plus the whole chapter tree. */
+export interface CourseDetail extends CourseSummary {
+  description: string | null;
+  coverImageUrl: string | null;
+  prerequisiteNote: string | null;
+  progressionMode: string;
+  instructorId: string | null;
+  publishedAt: string | null;
+  chapters: {
+    id: string;
+    title: string;
+    description: string | null;
+    isOptional: boolean;
+    position: number;
+    lessons: CourseLesson[];
+  }[];
+}
+
 /**
  * `GET /exercises/:id` — the list projection plus the body stored in MongoDB.
  *

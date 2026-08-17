@@ -149,10 +149,7 @@ export default function CoursesPage() {
                     { label: "chương", value: course.totalChapters },
                     ...(course.durationHours ? [{ label: "giờ", value: course.durationHours }] : []),
                   ]}
-                  // No href yet: the only course detail route is
-                  // /paths/[pathId]/courses/[courseSlug], and the catalogue endpoint does
-                  // not say which roadmap a course belongs to — so there is no URL to build.
-                  // A card that 404s is worse than one that doesn't move.
+                  href={`/courses/${course.id}`}
                 />
               </li>
             ))}
