@@ -6,6 +6,7 @@ import { ApiClientError } from "@codementor/api-client";
 import { Users } from "lucide-react";
 import { ManagePage, Select, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
+import { UserDetailDrawer } from "@/features/users/components/user-detail-drawer";
 import { usersApi, type AdminUser } from "@/lib/api";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -152,21 +153,10 @@ export function UsersPage() {
       drawer={{
         title: (row) => row.displayName,
         description: (row) => row.email,
-        body: (row) => (
-          <dl className="grid gap-3 text-sm">
-            <Row label="Vai trò" value={ROLE_LABELS[row.role] ?? row.role} />
-            <Row label="Trạng thái" value={STATUS_LABELS[row.status] ?? row.status} />
-            <Row label="Handle" value={row.handle ?? "—"} />
-            {/* Ánh xạ sang Keycloak: thứ cần khi phải đối chiếu một tài khoản giữa hai hệ thống. */}
-            <Row label="Keycloak ID" value={row.externalId ?? "chưa gắn"} />
-            <Row label="CodeMentor ID" value={row.id} />
-            <Row
-              label="Hoạt động cuối"
-              value={row.lastActiveAt ? dateTimeFormat.format(new Date(row.lastActiveAt)) : "chưa ghi nhận"}
-            />
-            <Row label="Ngày tạo" value={dateTimeFormat.format(new Date(row.createdAt))} />
-          </dl>
-        ),
+        width: "wide",
+        // `key` theo id: drawer giữ trạng thái tab và dữ liệu đã nạp bên trong, nên mở
+        // sang tài khoản khác phải dựng lại từ đầu chứ không tái dùng dữ liệu người trước.
+        body: (row) => <UserDetailDrawer key={row.id} user={row} />,
       }}
       emptyMessage="Không có tài khoản nào khớp bộ lọc."
       error={error}
@@ -208,15 +198,6 @@ export function UsersPage() {
       icon={Users}
       title="Người dùng"
     />
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-3">
-      <dt className="w-32 shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 flex-1 break-words">{value}</dd>
-    </div>
   );
 }
 

@@ -100,11 +100,87 @@ function search(params: Record<string, string | number | undefined>): string {
   return encoded ? `?${encoded}` : "";
 }
 
+/** Bộ đếm dẫn xuất từ bài nộp. `null` khi tài khoản chưa giải bài nào. */
+export interface AdminUserStats {
+  xp: number;
+  solvedCount: number;
+  currentStreakDays: number;
+  longestStreakDays: number;
+  lastSolvedOn: string | null;
+}
+
+/** Khảo sát định hướng, làm một lần lúc mới vào. */
+export interface AdminUserPreferences {
+  learningGoal: string | null;
+  careerGoal: string | null;
+  currentLevel: string | null;
+  weeklyStudyHours: number | null;
+  interestedFields: string[];
+  completedAt: string | null;
+}
+
+export interface AdminUserDetail extends AdminUser {
+  bio: string | null;
+  websiteUrl: string | null;
+  githubHandle: string | null;
+  locale: string;
+  timezone: string;
+  emailVerifiedAt: string | null;
+  stats: AdminUserStats | null;
+  preferences: AdminUserPreferences | null;
+}
+
+/** Một việc người học đã làm. Xem `UserActivityUseCases` bên learning-service. */
+export interface ActivityEntry {
+  kind:
+    | "roadmap_enrolled"
+    | "course_enrolled"
+    | "course_completed"
+    | "lesson_completed"
+    | "exercise_solved";
+  title: string;
+  detail: string | null;
+  occurredAt: string;
+}
+
+/** Một dòng nhật ký kiểm toán. Chỉ ghi thêm, không bao giờ sửa. */
+export interface AuditLogEntry {
+  id: string;
+  actorId: string | null;
+  actorEmail: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  summary: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+/** Một lần đăng nhập, đăng xuất hoặc đăng nhập hỏng, từ Keycloak. */
+export interface LoginEvent {
+  type: string;
+  occurredAt: string;
+  ipAddress: string | null;
+  clientId: string | null;
+  error: string | null;
+}
+
 export const usersApi = {
   list: (request: Request, query: UsersQuery = {}) =>
     unwrap<Page<AdminUser>>(request, `/users${search(query)}`),
   summary: (request: Request) =>
     unwrap<{ total: number; byRole: Record<string, number> }>(request, "/users/summary"),
+  detail: (request: Request, id: string) => unwrap<AdminUserDetail>(request, `/users/${id}`),
+
+  // Ba đường dưới đây đều nhận `users.id`, không phải id Keycloak — kể cả lịch sử đăng
+  // nhập, dù dữ liệu gốc nằm ở Keycloak. Một hệ định danh duy nhất ở mặt API; backend tự
+  // tra `external_id`. Hai bên đều là uuid nên gửi nhầm sẽ không báo lỗi, chỉ ra rỗng.
+  loginHistory: (request: Request, id: string) =>
+    unwrap<LoginEvent[]>(request, `/users/${id}/login-history`),
+  auditTrail: (request: Request, id: string) =>
+    unwrap<AuditLogEntry[]>(request, `/audit-logs${search({ targetType: "user", targetId: id })}`),
+  activity: (request: Request, id: string) =>
+    unwrap<ActivityEntry[]>(request, `/activity/users/${id}`),
 };
 
 /* ---------------------------------------------------------------- Articles */
