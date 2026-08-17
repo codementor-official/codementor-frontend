@@ -164,8 +164,6 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
             courseId={courseId}
             progress={currentProgress}
             enrolled={enrolled}
-            onComplete={complete}
-            saving={saving}
           />
         ) : (
           <TheoryLesson

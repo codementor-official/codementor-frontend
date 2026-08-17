@@ -27,20 +27,24 @@ export function ExerciseLesson({
   courseId,
   progress,
   enrolled,
-  onComplete,
-  saving,
 }: {
   lesson: FlatLesson;
-  /** Dựng `returnTo` từ route thay vì `window.location`, thứ không tồn tại khi render ở server. */
+  /** Dựng đường tới trang làm bài từ route thay vì `window.location`, thứ không tồn tại khi render ở server. */
   courseId: string;
   progress: LessonProgress | undefined;
   enrolled: boolean;
-  onComplete: (secondsSpent: number) => void;
-  saving: boolean;
 }) {
   const [exercise, setExercise] = useState<ExerciseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const done = progress?.status === "completed";
+
+  // `courseId`/`lessonId` đi kèm để trang làm bài gửi chúng cho judge. Thiếu chúng thì bài
+  // nộp là luyện tập tự do và không ghi tiến độ vào đâu cả — đó cũng là hành vi đúng khi
+  // vào thẳng /solve từ /practice.
+  const solveHref =
+    `/solve/${lesson.exerciseId}` +
+    `?returnTo=${encodeURIComponent(`/courses/${courseId}/lessons/${lesson.id}`)}` +
+    `&courseId=${encodeURIComponent(courseId)}&lessonId=${encodeURIComponent(lesson.id)}`;
 
   useEffect(() => {
     if (!lesson.exerciseId) return;
@@ -121,7 +125,7 @@ export function ExerciseLesson({
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <a
-          href={`/solve/${lesson.exerciseId}?returnTo=${encodeURIComponent(`/courses/${courseId}/lessons/${lesson.id}`)}`}
+          href={solveHref}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-on-ink transition-colors hover:bg-primary-hover"
@@ -130,33 +134,21 @@ export function ExerciseLesson({
           <ExternalLink className="h-3 w-3" />
         </a>
 
-        {enrolled &&
-          (done ? (
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary-tint px-3 py-2 text-xs font-semibold text-primary">
-              <Check className="h-3.5 w-3.5" /> Đã hoàn thành
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onComplete(0)}
-              disabled={saving}
-              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-navy transition-colors hover:bg-bg disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-              Đã nộp xong, đánh dấu hoàn thành
-            </button>
-          ))}
+        {enrolled && done && (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-primary-tint px-3 py-2 text-xs font-semibold text-primary">
+            <Check className="h-3.5 w-3.5" /> Đã hoàn thành
+          </span>
+        )}
       </div>
 
       {enrolled && !done && (
-        // Honest about the seam: nothing tells this page that a submission was graded.
-        // judge-service scores the run and stops there — no message reaches
-        // learning-service, so lesson_progress cannot move on its own. Until submissions
-        // publish that event, completion is the learner's own claim, and saying so beats
-        // a control that pretends to check.
+        // Không còn nút tự đánh dấu: bài code hoàn thành khi judge chấm ĐẠT, không phải khi
+        // người học nói là xong. Trang làm bài gửi kèm khóa học và bài học, judge phát
+        // `evt.exercise.solved.v1`, learning-service ghi tiến độ. Nói rõ cơ chế ở đây vì nó
+        // chạy bất đồng bộ — nộp xong quay lại tab này phải tải lại mới thấy đổi.
         <p className="mt-2 max-w-prose text-2xs leading-relaxed text-text-faint">
-          Chấm bài hiện chạy độc lập với tiến độ khóa học, nên sau khi nộp bài ở tab làm bài,
-          bạn tự đánh dấu hoàn thành ở đây.
+          Bài này được đánh dấu hoàn thành khi bạn nộp và tất cả test case đều đạt. Nộp xong,
+          tải lại trang để thấy tiến độ cập nhật.
         </p>
       )}
     </>

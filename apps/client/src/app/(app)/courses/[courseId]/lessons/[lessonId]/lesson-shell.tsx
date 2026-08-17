@@ -66,7 +66,47 @@ export function LessonShell({
   const nextLocked = Boolean(next) && nextProgress?.isAvailable === false;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+    // Mục lục nằm cột phải, nhưng đứng SAU nội dung trong DOM — thứ tự đọc và thứ tự Tab
+    // đi thẳng vào bài học, đúng thứ người học tới đây để đọc. Đảo bằng CSS thì bàn phím
+    // và trình đọc màn hình vẫn phải lội qua toàn bộ mục lục trước.
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="min-w-0">
+        {children}
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+          {previous ? (
+            <Link
+              href={`/courses/${course.id}/lessons/${previous.id}`}
+              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-navy transition-colors hover:bg-bg"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" /> Bài trước
+            </Link>
+          ) : (
+            <span />
+          )}
+
+          <div className="flex items-center gap-2">
+            {footer}
+            {next &&
+              (nextLocked ? (
+                <span
+                  title="Hoàn thành bài này để mở bài tiếp theo"
+                  className="flex cursor-not-allowed items-center gap-1.5 rounded-md bg-border-soft px-3.5 py-2 text-xs font-semibold text-text-faint"
+                >
+                  Bài tiếp theo <Lock className="h-3.5 w-3.5" />
+                </span>
+              ) : (
+                <Link
+                  href={`/courses/${course.id}/lessons/${next.id}`}
+                  className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-on-ink transition-colors hover:bg-primary-hover"
+                >
+                  Bài tiếp theo <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              ))}
+          </div>
+        </div>
+      </div>
+
       <aside className="lg:sticky lg:top-5 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
         <Link
           href={`/courses/${course.id}`}
@@ -128,43 +168,6 @@ export function LessonShell({
           })}
         </ol>
       </aside>
-
-      <div className="min-w-0">
-        {children}
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-          {previous ? (
-            <Link
-              href={`/courses/${course.id}/lessons/${previous.id}`}
-              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-navy transition-colors hover:bg-bg"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" /> Bài trước
-            </Link>
-          ) : (
-            <span />
-          )}
-
-          <div className="flex items-center gap-2">
-            {footer}
-            {next &&
-              (nextLocked ? (
-                <span
-                  title="Hoàn thành bài này để mở bài tiếp theo"
-                  className="flex cursor-not-allowed items-center gap-1.5 rounded-md bg-border-soft px-3.5 py-2 text-xs font-semibold text-text-faint"
-                >
-                  Bài tiếp theo <Lock className="h-3.5 w-3.5" />
-                </span>
-              ) : (
-                <Link
-                  href={`/courses/${course.id}/lessons/${next.id}`}
-                  className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-on-ink transition-colors hover:bg-primary-hover"
-                >
-                  Bài tiếp theo <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

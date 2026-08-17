@@ -135,6 +135,12 @@ export const api = {
         expected?: unknown;
         weight?: number;
       }[];
+      /**
+       * Bài code này mở từ trong một khóa học nào. Có mặt + chấm đạt = judge phát
+       * `evt.exercise.solved.v1` và learning-service đánh dấu bài học hoàn thành. Vắng mặt
+       * là luyện tập tự do: chấm xong là hết, không ghi tiến độ vào đâu.
+       */
+      context?: { courseId: string; lessonId: string; exerciseId: string };
     }) => unwrap<JudgeRunResult>("/judge/run", { method: "POST", body }),
   },
 };
