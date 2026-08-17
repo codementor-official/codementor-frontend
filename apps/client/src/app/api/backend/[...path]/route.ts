@@ -53,13 +53,25 @@ async function proxyBackend(request: NextRequest, context: { params: Promise<{ p
   }
   headers.set("Authorization", `Bearer ${session.accessToken}`);
 
-  const upstream = await fetch(target, {
-    body: SAFE_METHODS.has(request.method) ? undefined : await request.arrayBuffer(),
-    cache: "no-store",
-    headers,
-    method: request.method,
-    redirect: "manual",
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(target, {
+      body: SAFE_METHODS.has(request.method) ? undefined : await request.arrayBuffer(),
+      cache: "no-store",
+      headers,
+      method: request.method,
+      redirect: "manual",
+    });
+  } catch {
+    // Gateway down or unresolvable. Without this the fetch rejection escapes and Next
+    // answers 500 with a zero-byte body, so the page can only say "status 500" — the one
+    // failure a developer hits most often is the one that explains itself least. Every
+    // other rejection in this file carries a message; this one now does too.
+    return NextResponse.json(
+      { message: `Không kết nối được API gateway tại ${baseUrl}.` },
+      { status: 502 },
+    );
+  }
   const responseHeaders = new Headers();
   for (const name of ["content-type", "etag", "last-modified", "location", "x-request-id"]) {
     const value = upstream.headers.get(name);
