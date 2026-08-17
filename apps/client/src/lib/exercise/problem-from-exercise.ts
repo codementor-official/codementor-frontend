@@ -1,4 +1,4 @@
-import type { Problem } from "@/data/sample-problem";
+import type { Problem, TestCase } from "@/data/sample-problem";
 import type { ExerciseDetail } from "@/types/catalogue";
 
 const DIFFICULTY_LABEL = {
@@ -7,40 +7,55 @@ const DIFFICULTY_LABEL = {
   hard: "Nâng cao",
 } as const satisfies Record<ExerciseDetail["difficulty"], Problem["difficulty"]>;
 
+/** Both grading modes reach the judge; it picks by whether `spec` is present. */
+function toCase({ input, args, expected }: NonNullable<ExerciseDetail["content"]>["testCases"][number]): TestCase {
+  return { input, args, expected };
+}
+
 /**
- * Backend exercise → the shape the solve workspace renders.
+ * Backend exercise → the shape the solve workspace renders and grades.
  *
- * Three fields the workspace expects have no counterpart on the server, and are left empty
- * rather than filled in:
- *
- * - `tags` and `constraints` — the exercise service stores neither. Inventing them would
- *   put words on screen that no author wrote.
- * - `starter` — the only per-language code the server holds is `referenceSolution`, which
- *   is the *answer*. Seeding the editor with it would hand every learner the solution.
- *   Until authors can save real starter code, the editor opens empty.
+ * Two fields the workspace shows have no counterpart on the server and stay empty rather
+ * than being invented: `tags` and `constraints`. Starter code is different — authors can
+ * now save it per language, so the editor opens with the author's skeleton when there is
+ * one. `referenceSolution` is still never used: it is the answer.
  */
 export function problemFromExercise(exercise: ExerciseDetail): Problem {
-  const cases = exercise.content?.testCases ?? [];
+  const content = exercise.content;
+  const cases = content?.testCases ?? [];
+  const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
+
+  const starter: Record<string, string> = {};
+  for (const language of content?.languages ?? []) {
+    if (language.starterCode) starter[language.label] = language.starterCode;
+  }
+
   return {
     slug: exercise.slug,
     title: exercise.title,
     difficulty: DIFFICULTY_LABEL[exercise.difficulty],
     tags: [],
-    description: exercise.content?.statement ?? "",
+    description: content?.statement ?? "",
     constraints: [],
-    // Ordered by the author's `order`, not by array position — the two agree today and
-    // there is no reason to depend on that. Every case goes to the judge, or a "passed"
-    // verdict would mean nothing.
-    testCases: [...cases]
-      .sort((a, b) => a.order - b.order)
-      .map(({ input, expected }) => ({ input, expected })),
+    // Every case goes to the judge, or a "passed" verdict would mean nothing. Ordered by
+    // the author's `order` rather than array position — the two agree today and there is
+    // no reason to depend on that.
+    testCases: [...cases].sort(byOrder).map(toCase),
     // Only the public ones are rendered. They travel to the browser either way — the judge
     // takes its cases from the client — so this hides them from the page, not from anyone
     // reading the network tab. Real secrecy needs grading to move server-side.
-    publicTestCases: [...cases]
-      .filter((c) => c.visibility === "public")
-      .sort((a, b) => a.order - b.order)
-      .map(({ input, expected }) => ({ input, expected })),
-    starter: {},
+    publicTestCases: [...cases].filter((c) => c.visibility === "public").sort(byOrder).map(toCase),
+    starter,
+    // Only in function mode: sending a spec is what tells the judge to call a function
+    // instead of piping stdin, so it must be absent for stdin/stdout exercises.
+    spec:
+      content?.ioMode === "function" && content.signature
+        ? {
+            functionName: content.signature.functionName,
+            parameters: content.signature.parameters.map(({ name, type }) => ({ name, type })),
+            returnType: content.signature.returnType,
+          }
+        : undefined,
+    languages: content?.languages?.map(({ id, label }) => ({ id, label })),
   };
 }

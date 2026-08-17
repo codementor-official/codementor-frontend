@@ -122,7 +122,19 @@ export const api = {
       sourceCode: string;
       timeLimitMs: number;
       memoryLimitKb: number;
-      testCases: { order: number; input: string; expected: string; weight?: number }[];
+      /** Present = grade by calling this function; absent = pipe stdin. */
+      spec?: {
+        functionName: string;
+        parameters: { name: string; type: Record<string, unknown> }[];
+        returnType: Record<string, unknown>;
+      };
+      testCases: {
+        order: number;
+        input?: string;
+        args?: unknown[];
+        expected?: unknown;
+        weight?: number;
+      }[];
     }) => unwrap<JudgeRunResult>("/judge/run", { method: "POST", body }),
   },
 };

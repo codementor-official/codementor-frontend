@@ -47,7 +47,11 @@ interface MonacoEditorHandle {
 
 export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: Problem; backHref?: string }) {
   const editorTheme = useResolvedTheme();
-  const [language, setLanguage] = useState(languages[0]);
+  const offered = problem.languages?.length
+    ? problem.languages.map((entry) => entry.label).filter((label) => label in monacoLang)
+    : languages;
+  const available = offered.length > 0 ? offered : languages;
+  const [language, setLanguage] = useState(available[0]);
   const [code, setCode] = useState<Record<string, string>>(problem.starter);
   const editorRef = useRef<MonacoEditorHandle | null>(null);
   const { status: authStatus } = useAuth();
@@ -97,9 +101,12 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
         sourceCode: code[language] ?? "",
         timeLimitMs: 1000,
         memoryLimitKb: 128 * 1024,
+        // `spec` present = grade by calling the function; absent = pipe stdin. Sending one
+        // for a stdin exercise would make the judge look for a function that is not there.
+        ...(problem.spec ? { spec: problem.spec } : {}),
         testCases: problem.testCases.map((testCase, index) => ({
           order: index + 1,
-          input: testCase.input,
+          ...(testCase.args !== undefined ? { args: testCase.args } : { input: testCase.input ?? "" }),
           expected: testCase.expected,
         })),
       });
@@ -169,7 +176,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
                 <span className="truncate rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-xs font-semibold text-navy">solution.{fileExtension[language]}</span>
               </div>
               <div className="flex items-center gap-0.5">
-                <LanguageDropdown language={language} onChange={setLanguage} languages={languages} />
+                <LanguageDropdown language={language} onChange={setLanguage} languages={available} />
                 <button
                   onClick={resetCode}
                   title="Khôi phục code mẫu"
@@ -206,8 +213,22 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
           <div className="flex h-full flex-col gap-2 overflow-y-auto p-3">
             {(problem.publicTestCases ?? problem.testCases).map((tc, i) => (
               <div key={i} className="rounded-md border border-border-soft bg-bg p-2.5 font-mono text-xs">
-                <div className="mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">Input</div>
-                <div className="text-navy">{tc.input}</div>
+                <div className="mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">
+                  {tc.args !== undefined ? "Tham số" : "Input"}
+                </div>
+                <div className="text-navy">
+                  {tc.args !== undefined
+                    ? tc.args.map((arg) => JSON.stringify(arg)).join(", ")
+                    : tc.input}
+                </div>
+                {tc.expected !== undefined && tc.expected !== "" && (
+                  <>
+                    <div className="mt-1.5 mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">
+                      Kết quả mong đợi
+                    </div>
+                    <div className="text-navy">{JSON.stringify(tc.expected)}</div>
+                  </>
+                )}
               </div>
             ))}
           </div>

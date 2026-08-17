@@ -18,7 +18,6 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [content, setContent] = useState<LessonContent | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reloading, setReloading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const loadProgress = useCallback(async () => {
@@ -54,11 +53,6 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
       cancelled = true;
     };
   }, [courseId, lessonId]);
-
-  const reload = useCallback(() => {
-    setReloading(true);
-    loadProgress().finally(() => setReloading(false));
-  }, [loadProgress]);
 
   const complete = useCallback(
     async (secondsSpent: number) => {
@@ -150,8 +144,6 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
         lessons={lessons}
         progressByLesson={progressByLesson}
         current={current}
-        onReload={reload}
-        reloading={reloading}
         footer={null}
       >
         {CODE_LESSON_TYPES.has(current.type) ? (

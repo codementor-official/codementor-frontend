@@ -148,12 +148,12 @@ export function ExerciseLesson({
       {enrolled && !done && (
         // Honest about the seam: nothing tells this page that a submission was graded.
         // judge-service scores the run and stops there — no message reaches
-        // learning-service, so lesson_progress cannot move on its own yet. Until that
-        // pipeline exists, the learner marks it, and the reload button re-reads whatever
-        // the server does know.
+        // learning-service, so lesson_progress cannot move on its own. Until submissions
+        // publish that event, completion is the learner's own claim, and saying so beats
+        // a control that pretends to check.
         <p className="mt-2 max-w-prose text-2xs leading-relaxed text-text-faint">
-          Chấm bài hiện chạy độc lập với tiến độ khóa học, nên trạng thái hoàn thành phải tự
-          đánh dấu. Sau khi nộp, bấm nút tải lại ở mục lục để đồng bộ.
+          Chấm bài hiện chạy độc lập với tiến độ khóa học, nên sau khi nộp bài ở tab làm bài,
+          bạn tự đánh dấu hoàn thành ở đây.
         </p>
       )}
     </>

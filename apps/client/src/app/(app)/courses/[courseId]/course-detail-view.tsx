@@ -98,35 +98,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
   return (
     <div>
       <BreadcrumbTitle slug={courseId} title={course.title} />
-      <PageHeader
-        title={course.title}
-        subtitle={course.description ?? undefined}
-        actions={
-          enrolled ? (
-            firstOpen ? (
-              <Link
-                href={`/courses/${courseId}/lessons/${firstOpen.id}`}
-                className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover"
-              >
-                Tiếp tục học
-              </Link>
-            ) : (
-              <span className="flex items-center gap-1.5 rounded-md bg-primary-tint px-3.5 py-2 text-sm font-semibold text-primary">
-                <Check className="h-4 w-4" /> Đã hoàn thành khóa học
-              </span>
-            )
-          ) : (
-            <button
-              type="button"
-              onClick={enroll}
-              disabled={enrolling}
-              className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover disabled:opacity-50"
-            >
-              {enrolling && <Loader2 className="h-4 w-4 animate-spin" />} Đăng ký học
-            </button>
-          )
-        }
-      />
+      <PageHeader title={course.title} subtitle={course.description ?? undefined} />
 
       <StatStrip
         className="mb-5"
@@ -215,6 +187,41 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
         </section>
 
         <aside className="flex flex-col gap-4">
+          {/* The action sits with the course facts rather than in the page header: in the
+            * header it competed with the title for the same corner of the eye, and it is
+            * the rail the learner is already reading when they decide to start. */}
+          <Card className="p-4">
+            <h2 className="mb-3 text-sm font-bold text-navy">Bắt đầu học</h2>
+            {enrolled ? (
+              firstOpen ? (
+                <Link
+                  href={`/courses/${courseId}/lessons/${firstOpen.id}`}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover"
+                >
+                  Tiếp tục học
+                </Link>
+              ) : (
+                <span className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary-tint px-3.5 py-2.5 text-sm font-semibold text-primary">
+                  <Check className="h-4 w-4" /> Đã hoàn thành khóa học
+                </span>
+              )
+            ) : (
+              <button
+                type="button"
+                onClick={enroll}
+                disabled={enrolling}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover disabled:opacity-50"
+              >
+                {enrolling && <Loader2 className="h-4 w-4 animate-spin" />} Đăng ký học
+              </button>
+            )}
+            {enrollment && (
+              <p className="mt-2.5 text-2xs text-text-faint">
+                Đã học {enrollment.completedLessons}/{lessonCount} bài · {enrollment.progressPercent}%
+              </p>
+            )}
+          </Card>
+
           {course.prerequisiteNote && (
             <Card className="p-4">
               <h2 className="mb-2 text-sm font-bold text-navy">Yêu cầu đầu vào</h2>

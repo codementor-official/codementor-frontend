@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, ChevronLeft, ChevronRight, Circle, Code2, FileText, Lock, PlayCircle, RefreshCw } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Circle, Code2, FileText, Lock, PlayCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import type { CourseDetail, CourseLesson, LessonProgress } from "@/types/catalogue";
 
@@ -48,8 +48,6 @@ export function LessonShell({
   lessons,
   progressByLesson,
   current,
-  onReload,
-  reloading,
   footer,
   children,
 }: {
@@ -57,8 +55,6 @@ export function LessonShell({
   lessons: FlatLesson[];
   progressByLesson: Map<string, LessonProgress>;
   current: FlatLesson;
-  onReload: () => void;
-  reloading: boolean;
   /** The completion control — differs per lesson type, so the page owns it. */
   footer: ReactNode;
   children: ReactNode;
@@ -72,21 +68,12 @@ export function LessonShell({
   return (
     <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-5 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <Link href={`/courses/${course.id}`} className="min-w-0 text-sm font-bold text-navy hover:underline">
-            <span className="line-clamp-2">{course.title}</span>
-          </Link>
-          <button
-            type="button"
-            onClick={onReload}
-            disabled={reloading}
-            title="Tải lại trạng thái học"
-            aria-label="Tải lại trạng thái học"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg hover:text-navy disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${reloading ? "animate-spin" : ""}`} />
-          </button>
-        </div>
+        <Link
+          href={`/courses/${course.id}`}
+          className="mb-3 block min-w-0 text-sm font-bold text-navy hover:underline"
+        >
+          <span className="line-clamp-2">{course.title}</span>
+        </Link>
 
         <ol className="flex flex-col gap-0.5">
           {lessons.map((lesson, position) => {

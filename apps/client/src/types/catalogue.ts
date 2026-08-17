@@ -172,8 +172,24 @@ export interface ExerciseDetail extends ExerciseSummary {
   publishedAt: string | null;
   content: {
     statement: string;
-    testCases: { order: number; input: string; expected: string; visibility: "public" | "hidden" }[];
-    languages: { id: string; label: string; referenceSolution?: string }[];
+    /**
+     * `stdin_stdout` cases carry `input`; `function` cases carry positional `args` and an
+     * `expected` of any JSON type. Both shapes reach the judge, which picks by `spec`.
+     */
+    ioMode?: "stdin_stdout" | "function";
+    signature?: {
+      functionName: string;
+      parameters: { name: string; type: Record<string, unknown>; description?: string }[];
+      returnType: Record<string, unknown>;
+    };
+    testCases: {
+      order: number;
+      input?: string;
+      args?: unknown[];
+      expected?: unknown;
+      visibility: "public" | "hidden";
+    }[];
+    languages: { id: string; label: string; monaco?: string; starterCode?: string; referenceSolution?: string }[];
   } | null;
 }
 
