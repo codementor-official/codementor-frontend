@@ -192,7 +192,7 @@ export function UsersPage() {
       rows={rows}
       search={search}
       searchPlaceholder="Tìm theo tên, email hoặc handle…"
-      title="Users"
+      title="Người dùng"
     />
   );
 }

@@ -16,7 +16,7 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <button
-            aria-label="Close sidebar overlay"
+            aria-label="Đóng lớp phủ thanh bên"
             className="absolute inset-0 bg-black/50"
             onClick={() => setMobileOpen(false)}
             type="button"

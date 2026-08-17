@@ -19,8 +19,8 @@ export function OperationsOverview() {
               <Activity aria-hidden="true" className="size-4" />
             </span>
             <div>
-              <h2 className="text-base font-semibold">Recent Activity</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">Latest administrative events</p>
+              <h2 className="text-base font-semibold">Hoạt động gần đây</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">Các sự kiện quản trị mới nhất</p>
             </div>
           </div>
           <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground" type="button">
@@ -31,11 +31,11 @@ export function OperationsOverview() {
           <table className="w-full min-w-[680px] border-collapse text-left text-xs">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="px-5 py-2.5 font-medium">Activity</th>
-                <th className="px-4 py-2.5 font-medium">Actor</th>
-                <th className="px-4 py-2.5 font-medium">Resource</th>
-                <th className="px-4 py-2.5 font-medium">Time</th>
-                <th className="px-5 py-2.5 font-medium">Status</th>
+                <th className="px-5 py-2.5 font-medium">Hoạt động</th>
+                <th className="px-4 py-2.5 font-medium">Người thực hiện</th>
+                <th className="px-4 py-2.5 font-medium">Đối tượng</th>
+                <th className="px-4 py-2.5 font-medium">Thời điểm</th>
+                <th className="px-5 py-2.5 font-medium">Trạng thái</th>
               </tr>
             </thead>
             <tbody>
@@ -59,8 +59,8 @@ export function OperationsOverview() {
             <Server aria-hidden="true" className="size-4" />
           </span>
           <div>
-            <h2 className="text-base font-semibold">System Health</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">All services operational</p>
+            <h2 className="text-base font-semibold">Tình trạng hệ thống</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">Mọi dịch vụ đang hoạt động</p>
           </div>
         </CardHeader>
         <div className="divide-y px-5">

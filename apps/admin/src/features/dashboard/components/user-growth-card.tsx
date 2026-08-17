@@ -30,16 +30,16 @@ export function UserGrowthCard() {
           <span className="flex size-8 items-center justify-center rounded-lg border bg-background">
             <ChartNoAxesCombined aria-hidden="true" className="size-4" />
           </span>
-          <h2 className="text-base font-semibold">User Growth</h2>
+          <h2 className="text-base font-semibold">Tăng trưởng người dùng</h2>
         </div>
         <div className="flex items-center gap-3 text-[11px] text-muted-foreground sm:gap-4 sm:text-xs">
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-chart-1" />This Year</span>
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-chart-2" />Previous Year</span>
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-chart-1" />Năm nay</span>
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-chart-2" />Năm trước</span>
         </div>
       </CardHeader>
       <CardContent className="pb-4">
         <p className="text-2xl font-semibold tracking-tight sm:text-[28px]">12,486</p>
-        <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Total users this year</p>
+        <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Tổng người dùng năm nay</p>
         <div className="mt-5 h-[290px] w-full sm:h-[312px]">
           <ResponsiveContainer height="100%" width="100%">
             <ComposedChart data={userGrowthData} margin={{ bottom: 0, left: -18, right: 4, top: 4 }}>

@@ -367,7 +367,7 @@ export function ArticlesPage() {
         rows={rows}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
-        title="Posts"
+        title="Bài viết"
       />
 
       {/* Cùng class `.rich-text` mà trình soạn thảo dùng, nên bản xem trước và bản người

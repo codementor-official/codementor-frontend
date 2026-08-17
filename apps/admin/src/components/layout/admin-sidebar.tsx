@@ -17,7 +17,7 @@ export function AdminSidebar({ collapsed, mobile, onClose }: AdminSidebarProps) 
 
   return (
     <aside
-      aria-label="Admin navigation"
+      aria-label="Điều hướng quản trị"
       className={
         mobile
           ? "flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
@@ -36,7 +36,7 @@ export function AdminSidebar({ collapsed, mobile, onClose }: AdminSidebarProps) 
         )}
         {mobile && (
           <button
-            aria-label="Close sidebar"
+            aria-label="Đóng thanh bên"
             className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={onClose}
             type="button"
@@ -90,7 +90,7 @@ export function AdminSidebar({ collapsed, mobile, onClose }: AdminSidebarProps) 
             ? "m-2 flex h-12 items-center justify-center rounded-lg border border-transparent transition-colors hover:bg-sidebar-accent"
             : "m-2 flex h-14 items-center gap-3 rounded-lg border border-transparent px-2 text-left transition-colors hover:bg-sidebar-accent"
         }
-        title={collapsed ? "Admin account" : undefined}
+        title={collapsed ? "Tài khoản quản trị" : undefined}
         type="button"
       >
         <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-foreground text-background">

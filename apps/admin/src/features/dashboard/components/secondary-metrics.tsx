@@ -43,7 +43,7 @@ export function SecondaryMetrics() {
             <Activity aria-hidden="true" className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground">Daily Active Users</p>
+            <p className="text-xs text-muted-foreground">Người dùng hoạt động hằng ngày</p>
             <div className="mt-1 flex flex-wrap items-baseline gap-2">
               <span className="text-xl font-semibold">8,942</span>
               <span className="flex items-center text-xs text-success"><ArrowUpRight className="size-3.5" />4.8%</span>
@@ -80,7 +80,7 @@ export function SecondaryMetrics() {
             <Braces aria-hidden="true" className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground">Judge Executions</p>
+            <p className="text-xs text-muted-foreground">Lượt chấm bài</p>
             <div className="mt-1 flex flex-wrap items-baseline gap-2">
               <span className="text-xl font-semibold">42,781</span>
               <span className="flex items-center text-xs text-success"><ArrowUpRight className="size-3.5" />9.3%</span>
@@ -90,8 +90,8 @@ export function SecondaryMetrics() {
           <CardMenu label="Judge Executions" />
         </div>
         <div className="mt-4 flex gap-4 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-chart-1" />This month</span>
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-chart-2" />Last month</span>
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-chart-1" />Tháng này</span>
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-chart-2" />Tháng trước</span>
         </div>
         <div className="mt-3 h-[178px]">
           <ResponsiveContainer height="100%" width="100%">
@@ -116,8 +116,8 @@ export function SecondaryMetrics() {
             <PieChartIcon aria-hidden="true" className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">Platform Activity</p>
-            <p className="mt-1 text-xs text-muted-foreground">Last 28 days</p>
+            <p className="text-sm font-semibold">Hoạt động nền tảng</p>
+            <p className="mt-1 text-xs text-muted-foreground">28 ngày gần nhất</p>
           </div>
           <CardMenu label="Platform Activity" />
         </div>

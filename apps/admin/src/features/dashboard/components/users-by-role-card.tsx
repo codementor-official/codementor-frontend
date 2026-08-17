@@ -12,7 +12,7 @@ export function UsersByRoleCard() {
         <span className="mr-3 flex size-8 items-center justify-center rounded-lg border bg-background">
           <UsersRound aria-hidden="true" className="size-4" />
         </span>
-        <h2 className="text-base font-semibold">Users by Role</h2>
+        <h2 className="text-base font-semibold">Người dùng theo vai trò</h2>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">

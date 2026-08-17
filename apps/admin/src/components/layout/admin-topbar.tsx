@@ -71,7 +71,7 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
     <>
       <header className="sticky top-0 z-20 flex h-[69px] items-center gap-3 border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
         <button
-          aria-label="Toggle sidebar"
+          aria-label="Thu gọn thanh bên"
           className="hidden size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex"
           onClick={onDesktopToggle}
           type="button"
@@ -79,7 +79,7 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
           <PanelLeft aria-hidden="true" className="size-4" />
         </button>
         <button
-          aria-label="Open sidebar"
+          aria-label="Mở thanh bên"
           className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
           onClick={onMobileToggle}
           type="button"
@@ -90,20 +90,20 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
         <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">CodeMentor Admin</span>
 
         <button
-          aria-label="Open command search"
+          aria-label="Mở ô tìm kiếm nhanh"
           className="flex h-9 items-center gap-2 rounded-lg border bg-background px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted sm:w-9 sm:justify-start lg:w-[250px]"
           onClick={() => setCommandOpen(true)}
           type="button"
         >
           <Search aria-hidden="true" className="size-4 shrink-0" />
-          <span className="hidden truncate lg:inline">Search users, courses, exercises...</span>
+          <span className="hidden truncate lg:inline">Tìm người dùng, khoá học, bài tập…</span>
           <kbd className="ml-auto hidden items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 font-sans text-[10px] text-muted-foreground xl:flex">
             <Command aria-hidden="true" className="size-2.5" />K
           </kbd>
         </button>
 
         <button
-          aria-label="Notifications, 3 unread"
+          aria-label="Thông báo, 3 chưa đọc"
           className="relative flex size-9 items-center justify-center rounded-lg border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           type="button"
         >
@@ -117,7 +117,7 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
           <button
             aria-expanded={themeOpen}
             aria-haspopup="menu"
-            aria-label="Choose theme"
+            aria-label="Chọn giao diện"
             className="flex size-9 items-center justify-center rounded-lg border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             onClick={toggleThemeMenu}
             type="button"
@@ -127,9 +127,9 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
           {themeOpen && (
             <div className="absolute right-0 top-11 w-36 rounded-lg border bg-popover p-1 text-popover-foreground shadow-[0_8px_24px_rgba(0,0,0,0.18)]" role="menu">
               {([
-                ["light", "Light", Sun],
-                ["dark", "Dark", Moon],
-                ["system", "System", Monitor],
+                ["light", "Sáng", Sun],
+                ["dark", "Tối", Moon],
+                ["system", "Theo hệ thống", Monitor],
               ] as const).map(([value, label, Icon]) => (
                 <button
                   className={
@@ -151,7 +151,7 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
         </div>
 
         <button
-          aria-label={`Sign out ${user?.displayName ?? user?.email ?? "administrator"}`}
+          aria-label={`Đăng xuất ${user?.displayName ?? user?.email ?? "quản trị viên"}`}
           className="flex h-9 items-center gap-2 rounded-lg border bg-background px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           onClick={() => void logout()}
           type="button"
@@ -176,13 +176,13 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
             <div className="flex h-12 items-center gap-3 border-b px-4">
               <Search aria-hidden="true" className="size-4 text-muted-foreground" />
               <input
-                aria-label="Admin search"
+                aria-label="Tìm kiếm quản trị"
                 autoFocus
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                placeholder="Search users, courses, exercises..."
+                placeholder="Tìm người dùng, khoá học, bài tập…"
               />
               <button
-                aria-label="Close command search"
+                aria-label="Đóng ô tìm kiếm"
                 className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                 onClick={() => setCommandOpen(false)}
                 type="button"
@@ -191,11 +191,11 @@ export function AdminTopbar({ onDesktopToggle, onMobileToggle }: AdminTopbarProp
               </button>
             </div>
             <div className="p-2">
-              <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Quick navigation</p>
+              <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Đi nhanh tới</p>
               {[
-                "Manage users",
-                "Review reported exercises",
-                "Open system activity",
+                "Quản lý người dùng",
+                "Duyệt bài tập bị báo cáo",
+                "Xem hoạt động hệ thống",
               ].map((label) => (
                 <button
                   className="flex h-9 w-full items-center rounded-md px-2 text-left text-sm hover:bg-muted"

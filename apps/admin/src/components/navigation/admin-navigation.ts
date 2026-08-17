@@ -28,50 +28,54 @@ export interface AdminNavGroup {
   items: AdminNavItem[];
 }
 
+/**
+ * Đường dẫn giữ nguyên tiếng Anh, chỉ nhãn hiển thị là tiếng Việt: URL là một phần giao
+ * kèo với trình duyệt (dấu trang, lịch sử, liên kết đã gửi đi), còn nhãn thì không.
+ */
 export const adminNavigation: AdminNavGroup[] = [
   {
-    label: "General",
-    items: [{ href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }],
+    label: "Tổng quan",
+    items: [{ href: "/dashboard", icon: LayoutDashboard, label: "Bảng điều khiển" }],
   },
   {
-    label: "Moderation",
-    items: [{ href: "/moderation", icon: ShieldCheck, label: "Kiểm duyệt" }],
+    label: "Kiểm duyệt",
+    items: [{ href: "/moderation", icon: ShieldCheck, label: "Hàng chờ duyệt" }],
   },
   {
-    label: "Management",
+    label: "Quản lý",
     items: [
-      { href: "/users", icon: Users, label: "Users" },
-      { href: "/lecturers", icon: GraduationCap, label: "Lecturers" },
-      { href: "/courses", icon: BookOpen, label: "Courses" },
-      { href: "/learning-paths", icon: Route, label: "Learning Paths" },
-      { href: "/workspaces", icon: Network, label: "Workspaces" },
+      { href: "/users", icon: Users, label: "Người dùng" },
+      { href: "/lecturers", icon: GraduationCap, label: "Giảng viên" },
+      { href: "/courses", icon: BookOpen, label: "Khoá học" },
+      { href: "/learning-paths", icon: Route, label: "Lộ trình học" },
+      { href: "/workspaces", icon: Network, label: "Nhóm học tập" },
     ],
   },
   {
-    label: "Content",
+    label: "Nội dung",
     items: [
-      { href: "/posts", icon: Newspaper, label: "Posts" },
-      { href: "/exercises", icon: Braces, label: "Exercises" },
-      { href: "/documents", icon: FileText, label: "Documents" },
+      { href: "/posts", icon: Newspaper, label: "Bài viết" },
+      { href: "/exercises", icon: Braces, label: "Bài tập" },
+      { href: "/documents", icon: FileText, label: "Tài liệu" },
     ],
   },
   {
-    label: "Platform",
+    label: "Nền tảng",
     items: [
-      { href: "/ai-operations", icon: Bot, label: "AI Operations" },
-      { href: "/code-judge", icon: Braces, label: "Code Judge" },
-      { href: "/system-activity", icon: Activity, label: "System Activity" },
+      { href: "/ai-operations", icon: Bot, label: "Vận hành AI" },
+      { href: "/code-judge", icon: Braces, label: "Chấm bài" },
+      { href: "/system-activity", icon: Activity, label: "Hoạt động hệ thống" },
     ],
   },
   {
-    label: "Governance",
+    label: "Giám sát",
     items: [
-      { href: "/reports", icon: Flag, label: "Reports" },
-      { href: "/audit-logs", icon: ScrollText, label: "Audit Logs" },
+      { href: "/reports", icon: Flag, label: "Báo cáo vi phạm" },
+      { href: "/audit-logs", icon: ScrollText, label: "Nhật ký kiểm toán" },
     ],
   },
   {
-    label: "System",
-    items: [{ href: "/settings", icon: Settings, label: "Settings" }],
+    label: "Hệ thống",
+    items: [{ href: "/settings", icon: Settings, label: "Cài đặt" }],
   },
 ];

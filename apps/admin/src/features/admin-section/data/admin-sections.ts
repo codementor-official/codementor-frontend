@@ -1,81 +1,76 @@
 export interface AdminSectionDefinition {
   description: string;
   eyebrow: string;
-  highlights: Array<{ label: string; value: string }>;
   title: string;
 }
 
+/**
+ * Các mục điều hướng CHƯA nối API. Mỗi mục chỉ có tiêu đề, nhóm và một câu mô tả phạm vi.
+ *
+ * Trước đây mỗi mục còn kèm ba con số nổi bật — "1.247 khoá học", "26.814 request hôm nay"
+ * — đều là số bịa viết cứng trong file này. Một màn quản trị hiển thị số bịa còn tệ hơn
+ * một màn nói thẳng là chưa có dữ liệu: người đọc không có cách nào phân biệt, và quyết
+ * định dựa trên nó thì sai mà không ai biết. Bỏ hẳn, tới khi nối được API thật.
+ */
 export const adminSections: Record<string, AdminSectionDefinition> = {
   lecturers: {
-    description: "Review lecturer profiles, verification, and platform permissions.",
-    eyebrow: "Management",
-    highlights: [{ label: "Active lecturers", value: "328" }, { label: "Pending review", value: "9" }, { label: "Courses owned", value: "814" }],
-    title: "Lecturers",
+    description: "Hồ sơ giảng viên, trạng thái xác minh và quyền trên nền tảng.",
+    eyebrow: "Quản lý",
+    title: "Giảng viên",
   },
   courses: {
-    description: "Oversee course lifecycle, publishing status, and moderation signals.",
-    eyebrow: "Management",
-    highlights: [{ label: "Active courses", value: "1,247" }, { label: "Drafts", value: "83" }, { label: "Flagged", value: "12" }],
-    title: "Courses",
+    description: "Vòng đời khoá học, trạng thái công khai và tín hiệu kiểm duyệt.",
+    eyebrow: "Quản lý",
+    title: "Khoá học",
   },
   "learning-paths": {
-    description: "Organize platform learning paths and monitor publishing quality.",
-    eyebrow: "Management",
-    highlights: [{ label: "Published", value: "76" }, { label: "In review", value: "8" }, { label: "Enrollments", value: "4,812" }],
-    title: "Learning Paths",
+    description: "Sắp xếp lộ trình học và theo dõi chất lượng nội dung công khai.",
+    eyebrow: "Quản lý",
+    title: "Lộ trình học",
   },
   workspaces: {
-    description: "Administer shared learning workspaces, classes, and membership.",
-    eyebrow: "Management",
-    highlights: [{ label: "Active spaces", value: "642" }, { label: "Members", value: "9,104" }, { label: "Archived", value: "118" }],
-    title: "Workspaces",
+    description: "Quản trị nhóm học tập, lớp và thành viên.",
+    eyebrow: "Quản lý",
+    title: "Nhóm học tập",
   },
   exercises: {
-    description: "Moderate coding exercises, test cases, and content reports.",
-    eyebrow: "Content",
-    highlights: [{ label: "Published", value: "3,218" }, { label: "Attempts today", value: "18,406" }, { label: "Reports", value: "17" }],
-    title: "Exercises",
+    description: "Kiểm duyệt bài tập lập trình, bộ test và các báo cáo nội dung.",
+    eyebrow: "Nội dung",
+    title: "Bài tập",
   },
   documents: {
-    description: "Monitor uploaded learning documents and processing outcomes.",
-    eyebrow: "Content",
-    highlights: [{ label: "Processed", value: "8,731" }, { label: "Queued", value: "42" }, { label: "Failed", value: "6" }],
-    title: "Documents",
+    description: "Theo dõi tài liệu người dùng tải lên và kết quả xử lý.",
+    eyebrow: "Nội dung",
+    title: "Tài liệu",
   },
   "ai-operations": {
-    description: "Observe AI usage, processing queues, and service-level controls.",
-    eyebrow: "Platform",
-    highlights: [{ label: "Requests today", value: "26,814" }, { label: "Avg latency", value: "184 ms" }, { label: "Success rate", value: "99.2%" }],
-    title: "AI Operations",
+    description: "Quan sát mức dùng AI, hàng đợi xử lý và ngưỡng dịch vụ.",
+    eyebrow: "Nền tảng",
+    title: "Vận hành AI",
   },
   "code-judge": {
-    description: "Monitor judge capacity, execution reliability, and language runners.",
-    eyebrow: "Platform",
-    highlights: [{ label: "Executions", value: "42,781" }, { label: "Queue depth", value: "31" }, { label: "Success rate", value: "97.8%" }],
-    title: "Code Judge",
+    description: "Theo dõi năng lực chấm bài, độ tin cậy và trình chạy từng ngôn ngữ.",
+    eyebrow: "Nền tảng",
+    title: "Chấm bài",
   },
   "system-activity": {
-    description: "Inspect operational events and cross-service platform activity.",
-    eyebrow: "Platform",
-    highlights: [{ label: "Events today", value: "284,103" }, { label: "Warnings", value: "18" }, { label: "Incidents", value: "0" }],
-    title: "System Activity",
+    description: "Xem sự kiện vận hành và hoạt động xuyên suốt các dịch vụ.",
+    eyebrow: "Nền tảng",
+    title: "Hoạt động hệ thống",
   },
   reports: {
-    description: "Triage content, conduct, and platform reports requiring moderation.",
-    eyebrow: "Governance",
-    highlights: [{ label: "Open", value: "34" }, { label: "In review", value: "21" }, { label: "Resolved today", value: "16" }],
-    title: "Reports",
+    description: "Phân loại báo cáo về nội dung, hành vi và các vi phạm cần xử lý.",
+    eyebrow: "Giám sát",
+    title: "Báo cáo vi phạm",
   },
   "audit-logs": {
-    description: "Review traceable administrative and security-sensitive changes.",
-    eyebrow: "Governance",
-    highlights: [{ label: "Entries today", value: "1,864" }, { label: "Admin actors", value: "18" }, { label: "Retention", value: "180 days" }],
-    title: "Audit Logs",
+    description: "Tra cứu các thay đổi quản trị và thao tác nhạy cảm về bảo mật.",
+    eyebrow: "Giám sát",
+    title: "Nhật ký kiểm toán",
   },
   settings: {
-    description: "Configure platform defaults, integrations, and administrative policies.",
-    eyebrow: "System",
-    highlights: [{ label: "Integrations", value: "12" }, { label: "Feature flags", value: "28" }, { label: "Policy sets", value: "9" }],
-    title: "Settings",
+    description: "Cấu hình mặc định nền tảng, tích hợp và chính sách quản trị.",
+    eyebrow: "Hệ thống",
+    title: "Cài đặt",
   },
 };
