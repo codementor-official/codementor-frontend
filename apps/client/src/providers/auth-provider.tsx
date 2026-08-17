@@ -40,6 +40,14 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   /** Re-reads the profile after the user edits it. */
   refreshUser: () => Promise<void>;
+  /**
+   * Access token dùng để bắt tay WebSocket, hoặc `null` nếu chưa đăng nhập.
+   *
+   * Ở đây vì đây là chỗ duy nhất biết phiên hiện tại thuộc loại nào: phiên popup giữ
+   * token ngay trong tab, còn phiên mật khẩu giữ trong cookie HttpOnly và phải hỏi BFF.
+   * Để nơi khác tự đoán thì realtime sẽ im lặng không chạy với đúng một trong hai loại.
+   */
+  realtimeToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -192,6 +200,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         setUser(null);
         setStatus("anonymous");
         window.location.href = "/login";
+      },
+      realtimeToken: async () => {
+        // Phiên popup: token đã nằm sẵn trong tab, không cần đi đâu cả.
+        if (tokenRef.current) return tokenRef.current;
+
+        // Phiên mật khẩu: chỉ server đọc được cookie, nên phải xin vé.
+        try {
+          const response = await fetch("/api/auth/realtime-token", { cache: "no-store" });
+          if (!response.ok) return null;
+          const body = (await response.json()) as { token?: string };
+          return body.token ?? null;
+        } catch {
+          return null;
+        }
       },
       refreshUser: async () => {
         if (status === "authenticated") setUser(await api.me());

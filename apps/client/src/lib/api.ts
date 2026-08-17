@@ -2,7 +2,10 @@ import { createApiClient } from "@codementor/api-client";
 import type { ApiResponse, User } from "@codementor/types";
 import { apiBaseUrl } from "@/lib/env";
 import type { JudgeRunResult } from "@/types/judge";
+import type { NotificationPage } from "@/types/notification";
 import type {
+  ArticleDetail,
+  ArticleSummary,
   CatalogueParams,
   CourseDetail,
   CourseSummary,
@@ -43,7 +46,7 @@ async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]):
   return response.data;
 }
 
-function query(params: CatalogueParams): string {
+function query(params: CatalogueParams | Record<string, string | number | undefined>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== "") search.set(key, String(value));
@@ -77,6 +80,30 @@ export const api = {
       unwrap<Page<ExerciseSummary>>(`/exercises${query(params)}`),
     /** Takes the UUID, not the slug — the service has no slug lookup. */
     detail: (id: string) => unwrap<ExerciseDetail>(`/exercises/${id}`),
+  },
+
+  /**
+   * Bài viết. Trước đây trang `/articles` đọc `src/data/articles.ts` — nghĩa là bài admin
+   * vừa đăng, và cả liên kết trong thông báo trỏ tới nó, đều ra 404.
+   */
+  articles: {
+    catalogue: (params: CatalogueParams & { tag?: string } = {}) =>
+      unwrap<Page<ArticleSummary>>(`/articles${query(params)}`),
+    tags: () => unwrap<{ name: string; count: number }[]>("/articles/tags"),
+    read: (slug: string) => unwrap<ArticleDetail>(`/articles/${slug}`),
+  },
+
+  /**
+   * Lịch sử thông báo. WebSocket chỉ mang thông báo phát sinh khi tab đang mở; mọi thứ
+   * còn lại — đăng nhập lại, F5, vừa hết mạng — đều đọc từ đây.
+   */
+  notifications: {
+    list: (params: { limit?: number; before?: string } = {}) =>
+      unwrap<NotificationPage>(`/notifications${query(params)}`),
+    unreadCount: () => unwrap<{ count: number }>("/notifications/unread-count"),
+    markRead: (id: string) =>
+      unwrap<void>(`/notifications/${id}/read`, { method: "PATCH" }),
+    markAllRead: () => unwrap<{ marked: number }>("/notifications/read-all", { method: "PATCH" }),
   },
 
   /**

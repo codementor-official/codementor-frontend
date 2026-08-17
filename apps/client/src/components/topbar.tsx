@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { NotificationBell } from "@/features/notifications/notification-bell";
 
 export function Topbar() {
   return (
@@ -14,6 +15,10 @@ export function Topbar() {
         <BrandLogo size="sm" priority />
       </Link>
       <AppBreadcrumb />
+      {/* Đẩy chuông sang phải: breadcrumb chiếm phần còn lại của hàng. */}
+      <div className="ml-auto shrink-0">
+        <NotificationBell />
+      </div>
     </header>
   );
 }
