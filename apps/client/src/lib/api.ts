@@ -5,10 +5,15 @@ import type { JudgeRunResult } from "@/types/judge";
 import type {
   CatalogueParams,
   CourseDetail,
+  CourseEnrollment,
+  CourseProgress,
   CourseSummary,
   ExerciseDetail,
   ExerciseSummary,
+  LessonContent,
+  LessonProgress,
   Page,
+  ProgressStatus,
   RoadmapDetail,
   RoadmapSummary,
 } from "@/types/catalogue";
@@ -71,6 +76,33 @@ export const api = {
     catalogue: (params: CatalogueParams = {}) =>
       unwrap<Page<CourseSummary>>(`/courses${query(params)}`),
     detail: (id: string) => unwrap<CourseDetail>(`/courses/${id}`),
+
+    enroll: (id: string, viaRoadmapId?: string) =>
+      unwrap<CourseEnrollment>(`/courses/${id}/enroll`, {
+        method: "POST",
+        body: viaRoadmapId ? { viaRoadmapId } : {},
+      }),
+    unenroll: (id: string) => unwrap<void>(`/courses/${id}/enroll`, { method: "DELETE" }),
+
+    lessonContent: (courseId: string, lessonId: string) =>
+      unwrap<LessonContent | null>(`/courses/${courseId}/lessons/${lessonId}/content`),
+
+    /** Works before enrolling too — `enrollment` is null and the lessons still come back. */
+    progress: (id: string) => unwrap<CourseProgress>(`/courses/${id}/progress`),
+
+    /**
+     * `timeSpentSeconds` is this session only; the server adds it to the running total.
+     * Sending a cumulative figure would double-count on every save.
+     */
+    recordProgress: (
+      courseId: string,
+      lessonId: string,
+      body: { status: ProgressStatus; timeSpentSeconds?: number; lastPositionSeconds?: number | null },
+    ) =>
+      unwrap<LessonProgress>(`/courses/${courseId}/lessons/${lessonId}/progress`, {
+        method: "PUT",
+        body,
+      }),
   },
   exercises: {
     bank: (params: CatalogueParams = {}) =>

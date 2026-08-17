@@ -46,6 +46,12 @@ assert.deepEqual(
   ],
 );
 
+// "lessons" is a collection segment too — the reader lives at /courses/x/lessons/y.
+assert.deepEqual(
+  trail("/courses/js-co-ban/lessons/bai-1", { "js-co-ban": "JavaScript cơ bản", "bai-1": "Biến và kiểu" }),
+  ["Tổng quan→/dashboard", "Khóa học→/courses", "JavaScript cơ bản→/courses/js-co-ban", "Biến và kiểu"],
+);
+
 // Deep nesting keeps every ancestor reachable.
 assert.deepEqual(trail("/workspace/nhom-1"), [
   "Tổng quan→/dashboard",

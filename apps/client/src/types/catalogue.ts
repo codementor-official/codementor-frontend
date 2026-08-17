@@ -93,6 +93,48 @@ export interface CourseLesson {
   exerciseId: string | null;
 }
 
+/** `GET /courses/:id/lessons/:lessonId/content` — the TipTap body from MongoDB. */
+export interface LessonContent {
+  summary?: string;
+  objectives?: string[];
+  contentHtml?: string;
+  exerciseBrief?: string[];
+}
+
+export type ProgressStatus = "not_started" | "in_progress" | "completed";
+
+/** `GET /courses/:id/progress` — my enrolment and my state on every lesson. */
+export interface CourseEnrollment {
+  id: string;
+  userId: string;
+  courseId: string;
+  viaRoadmapId: string | null;
+  status: "active" | "completed" | "paused" | "dropped";
+  /** Maintained by database triggers. Read it; never try to compute or send it. */
+  completedLessons: number;
+  progressPercent: number;
+  startedAt: string;
+  completedAt: string | null;
+  lastActivityAt: string | null;
+}
+
+export interface LessonProgress {
+  lessonId: string;
+  status: ProgressStatus;
+  timeSpentSeconds: number;
+  lastPositionSeconds: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  /** From `fn_lesson_available` — the same rule the write path enforces. */
+  isAvailable: boolean;
+}
+
+export interface CourseProgress {
+  /** `null` until the learner enrols; the lesson list still comes back. */
+  enrollment: CourseEnrollment | null;
+  lessons: LessonProgress[];
+}
+
 /** `GET /courses/:id` — the summary plus the whole chapter tree. */
 export interface CourseDetail extends CourseSummary {
   description: string | null;
