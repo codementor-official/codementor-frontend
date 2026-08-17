@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { BookOpen, FileText, ListTree, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { ConfirmButton } from "@/components/page/confirm-button";
 import { PageBody } from "@/components/page/page-body";
 import {
+  DetailMeta,
   DetailRow,
   DetailSection,
   DrawerDetail,
@@ -152,6 +154,7 @@ export default function CoursesPage() {
           </Button>
         }
         activeFilterCount={[level, status].filter(Boolean).length}
+        icon={BookOpen}
         columns={columns}
         drawer={{
           title: (row) => row.title,
@@ -168,7 +171,7 @@ export default function CoursesPage() {
                     type="button"
                     variant="outline"
                   >
-                    Hủy gửi duyệt
+                    <Undo2 aria-hidden="true" className="size-4" /> Hủy gửi duyệt
                   </Button>
                 ) : (
                   <Button
@@ -177,24 +180,25 @@ export default function CoursesPage() {
                     type="button"
                     variant="outline"
                   >
-                    Gửi duyệt
+                    <Send aria-hidden="true" className="size-4" /> Gửi duyệt
                   </Button>
                 )}
                 {row.status !== "published" && (
-                  <Button
+                  <ConfirmButton
+                    confirmLabel="Xoá khóa học"
+                    description={`Khóa học “${row.title}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Không hoàn tác được.`}
                     disabled={busy}
-                    onClick={() => act(() => api.courses.remove(row.id))}
-                    type="button"
-                    variant="ghost"
+                    onConfirm={() => act(() => api.courses.remove(row.id))}
+                    title="Xoá khóa học này?"
                   >
-                    Xoá
-                  </Button>
+                    <Trash2 aria-hidden="true" className="size-4" /> Xoá
+                  </ConfirmButton>
                 )}
                 <Link
                   className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground"
                   href={`/courses/${row.id}/studio`}
                 >
-                  Mở studio
+                  <Pencil aria-hidden="true" className="size-4" /> Mở studio
                 </Link>
               </>
             ) : null,
@@ -204,7 +208,7 @@ export default function CoursesPage() {
         }
         error={error}
         filters={
-          <div className="grid gap-3">
+          <>
             <Select
               label="Trình độ"
               onChange={setLevel}
@@ -228,7 +232,7 @@ export default function CoursesPage() {
                 value={status}
               />
             )}
-          </div>
+          </>
         }
         getRowId={(row) => row.id}
         loading={loading}
@@ -264,7 +268,7 @@ function CourseDrawerBody({ row }: { row: CourseListItem }) {
         const chapters = course.chapters ?? [];
         return (
           <>
-            <dl className="grid gap-3 text-sm">
+            <DetailMeta>
               <DetailRow label="Slug" value={course.slug} />
               <DetailRow label="Trình độ" value={LEVEL_LABELS[course.level]} />
               <DetailRow
@@ -277,15 +281,15 @@ function CourseDrawerBody({ row }: { row: CourseListItem }) {
               />
               <DetailRow label="Tác giả" value={row.authorName ?? "—"} />
               <DetailRow label="Cập nhật" value={dateFormat.format(new Date(course.updatedAt))} />
-            </dl>
+            </DetailMeta>
 
             {course.description && (
-              <DetailSection title="Mô tả">
+              <DetailSection icon={FileText} title="Mô tả">
                 <p className="text-sm leading-relaxed">{course.description}</p>
               </DetailSection>
             )}
 
-            <DetailSection title="Chương trình học">
+            <DetailSection icon={ListTree} title="Chương trình học">
               {chapters.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Khóa học này chưa có chương nào.</p>
               ) : (

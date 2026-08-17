@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { BookOpen, FileText, Pencil, Plus, Route, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { ConfirmButton } from "@/components/page/confirm-button";
 import { PageBody } from "@/components/page/page-body";
 import {
+  DetailMeta,
   DetailRow,
   DetailSection,
   DrawerDetail,
@@ -160,6 +162,7 @@ export default function RoadmapsPage() {
           </Button>
         }
         activeFilterCount={[field, status].filter(Boolean).length}
+        icon={Route}
         columns={columns}
         drawer={{
           title: (row) => row.title,
@@ -176,7 +179,7 @@ export default function RoadmapsPage() {
                     type="button"
                     variant="outline"
                   >
-                    Hủy gửi duyệt
+                    <Undo2 aria-hidden="true" className="size-4" /> Hủy gửi duyệt
                   </Button>
                 ) : (
                   <Button
@@ -185,24 +188,25 @@ export default function RoadmapsPage() {
                     type="button"
                     variant="outline"
                   >
-                    Gửi duyệt
+                    <Send aria-hidden="true" className="size-4" /> Gửi duyệt
                   </Button>
                 )}
                 {row.status !== "published" && (
-                  <Button
+                  <ConfirmButton
+                    confirmLabel="Xoá lộ trình"
+                    description={`Lộ trình “${row.title}” sẽ bị xoá cùng danh sách khóa học bên trong. Bản thân các khóa học vẫn còn. Không hoàn tác được.`}
                     disabled={busy}
-                    onClick={() => act(() => api.roadmaps.remove(row.id))}
-                    type="button"
-                    variant="ghost"
+                    onConfirm={() => act(() => api.roadmaps.remove(row.id))}
+                    title="Xoá lộ trình này?"
                   >
-                    Xoá
-                  </Button>
+                    <Trash2 aria-hidden="true" className="size-4" /> Xoá
+                  </ConfirmButton>
                 )}
                 <Link
                   className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground"
                   href={`/roadmaps/${row.id}/studio`}
                 >
-                  Mở studio
+                  <Pencil aria-hidden="true" className="size-4" /> Mở studio
                 </Link>
               </>
             ) : null,
@@ -212,7 +216,7 @@ export default function RoadmapsPage() {
         }
         error={error}
         filters={
-          <div className="grid gap-3">
+          <>
             <Select
               label="Lĩnh vực"
               onChange={setField}
@@ -236,7 +240,7 @@ export default function RoadmapsPage() {
                 value={status}
               />
             )}
-          </div>
+          </>
         }
         getRowId={(row) => row.id}
         loading={loading}
@@ -276,7 +280,7 @@ function RoadmapDrawerBody({ row }: { row: RoadmapListItem }) {
 
         return (
           <>
-            <dl className="grid gap-3 text-sm">
+            <DetailMeta>
               <DetailRow label="Slug" value={roadmap.slug} />
               <DetailRow label="Lĩnh vực" value={FIELD_LABELS[roadmap.field]} />
               <DetailRow label="Trình độ" value={LEVEL_LABELS[roadmap.level]} />
@@ -286,15 +290,15 @@ function RoadmapDrawerBody({ row }: { row: RoadmapListItem }) {
               />
               <DetailRow label="Tác giả" value={row.authorName ?? "—"} />
               <DetailRow label="Cập nhật" value={dateFormat.format(new Date(roadmap.updatedAt))} />
-            </dl>
+            </DetailMeta>
 
             {roadmap.description && (
-              <DetailSection title="Mô tả">
+              <DetailSection icon={FileText} title="Mô tả">
                 <p className="text-sm leading-relaxed">{roadmap.description}</p>
               </DetailSection>
             )}
 
-            <DetailSection title={`Khóa học (${courses.length})`}>
+            <DetailSection icon={BookOpen} title={`Khóa học (${courses.length})`}>
               {courses.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Lộ trình này chưa có khóa học nào.</p>
               ) : (

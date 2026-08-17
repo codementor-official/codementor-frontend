@@ -12,6 +12,13 @@ export const LESSON_TYPE_LABELS: Record<LessonType, string> = {
   project: "Dự án",
 };
 
+/**
+ * Kiểu bài người soạn được phép chọn. Nền tảng mới chạy được hai loại: bài lý thuyết có
+ * thân bài, và bài code chấm tự động. Video/trắc nghiệm/thử thách/dự án vẫn đọc được từ
+ * dữ liệu cũ nhưng không mời chọn mới — không có màn soạn nào cho chúng.
+ */
+export const SELECTABLE_LESSON_TYPES: LessonType[] = ["article", "exercise"];
+
 /** Khớp CHECK `lessons_exercise_only_for_exercise_types` ở CSDL. */
 const EXERCISE_BEARING: LessonType[] = ["exercise", "quiz", "challenge", "project"];
 

@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, Send, Undo2 } from "lucide-react";
+import { Info, Save, Send, Tags, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import { Button, Card, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { CardHeading } from "@/components/page/card-heading";
+import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
+import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
 import { CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
 import type { CourseListItem } from "@/features/courses/types";
@@ -33,6 +36,11 @@ interface Draft {
   coverImageUrl: string;
   progressionMode: string;
   prerequisiteNote: string;
+}
+
+/** Chữ ký của bản nháp: thông tin lộ trình cộng danh sách khóa học theo đúng thứ tự. */
+function signature(draft: Draft, picked: PickedCourse[]): string {
+  return JSON.stringify([draft, picked.map((course) => [course.courseId, course.isOptional])]);
 }
 
 function toDraft(roadmap: Roadmap): Draft {
@@ -123,6 +131,22 @@ export default function RoadmapStudioPage() {
     }
   };
 
+  // Trước early return: hook phải chạy ở mọi lần render.
+  const unsavedDialog = useUnsavedGuard(
+    Boolean(roadmap && draft) &&
+      signature(draft as Draft, picked) !==
+        signature(
+          toDraft(roadmap as Roadmap),
+          ((roadmap as Roadmap).courses ?? []).map((course) => ({
+            courseId: course.courseId,
+            title: course.title,
+            status: course.status,
+            durationHours: course.durationHours,
+            isOptional: course.isOptional,
+          })),
+        ),
+  );
+
   if (error && !roadmap) {
     return (
       <div className="px-4 py-4 sm:px-5">
@@ -142,6 +166,8 @@ export default function RoadmapStudioPage() {
   const patch = (partial: Partial<Draft>) => setDraft({ ...draft, ...partial });
 
   return (
+    <>
+    {unsavedDialog}
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -255,7 +281,11 @@ export default function RoadmapStudioPage() {
         <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
         <Card className="p-5 lg:col-span-2">
-          <h2 className="mb-4 text-sm font-semibold">Thông tin lộ trình</h2>
+          <CardHeading
+            hint="Những gì học viên đọc thấy ở trang lộ trình và ở danh mục. Tiêu đề và mô tả là hai trường bắt buộc để gửi duyệt."
+            icon={Info}
+            title="Thông tin lộ trình"
+          />
 
           <Field htmlFor="title" label="Tiêu đề">
             <input
@@ -323,7 +353,11 @@ export default function RoadmapStudioPage() {
         </Card>
 
         <Card className="h-fit p-5">
-          <h2 className="mb-4 text-sm font-semibold">Phân loại</h2>
+          <CardHeading
+            hint="Quyết định lộ trình xuất hiện ở bộ lọc nào và học viên phải học theo thứ tự ra sao."
+            icon={Tags}
+            title="Phân loại"
+          />
 
           <Field htmlFor="field" label="Lĩnh vực">
             <select
@@ -372,25 +406,31 @@ export default function RoadmapStudioPage() {
         </Card>
 
           <div className="lg:col-span-3">
-            <Button
+            <DangerZone
+              actionLabel="Xoá lộ trình này"
+              confirmDescription={`Lộ trình “${draft.title || roadmap.slug}” sẽ bị xoá khỏi hệ thống cùng danh sách khóa học bên trong. Bản thân các khóa học vẫn còn. Không hoàn tác được.`}
+              confirmTitle="Xoá lộ trình này?"
+              description={
+                roadmap.status === "published"
+                  ? "Lộ trình đã công khai thì không xoá được — học viên đang theo nó. Gỡ công khai trước."
+                  : "Xoá lộ trình này khỏi hệ thống. Danh sách khóa học bên trong sẽ mất, các khóa học thì vẫn còn. Không hoàn tác được."
+              }
               disabled={saving || roadmap.status === "published"}
-              onClick={() =>
+              onConfirm={() =>
                 run(async () => {
                   await api.roadmaps.remove(id);
                   router.push("/roadmaps");
                   return roadmap;
                 }, "Đã xoá")
               }
-              type="button"
-              variant="ghost"
-            >
-              Xoá lộ trình này
-            </Button>
+              title="Xoá lộ trình"
+            />
           </div>
         </fieldset>
         </StudioScroll>
       )}
     </StudioShell>
+    </>
   );
 }
 

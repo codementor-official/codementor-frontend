@@ -15,11 +15,14 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useState } from "react";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { Button, StatusBadge } from "@codementor/ui";
+import { Button, Select, StatusBadge } from "@codementor/ui";
+import { ListPager, ListSearch, usePagedList } from "@/components/page/paged-list";
 import { DropIndicator, SortableOverlay, useSortableRow } from "@/components/sortable";
 import type { CourseListItem } from "@/features/courses/types";
 import {
+  CONTENT_STATUSES,
   CONTENT_STATUS_LABELS,
   CONTENT_STATUS_TONES,
   type RoadmapCourseItem,
@@ -122,15 +125,26 @@ export function PickedCourses({ picked, onChange, disabled }: Omit<Props, "avail
   );
 }
 
-/** The other half: everything not yet in the roadmap, one click away from being added. */
-export function CourseLibrary({
-  picked,
-  available,
-  onChange,
-  disabled,
-}: Props) {
+/**
+ * The other half: everything not yet in the roadmap, one click away from being added.
+ *
+ * Searchable, filterable and paged — the library is every published course on the platform
+ * plus every draft of the author's own, which was an unbounded scroll with no way to find
+ * the one course you came for.
+ */
+export function CourseLibrary({ picked, available, onChange, disabled }: Props) {
+  const [status, setStatus] = useState("");
+
   const chosen = new Set(picked.map((course) => course.courseId));
-  const rest = available.filter((course) => !chosen.has(course.id));
+  const rest = available.filter(
+    (course) => !chosen.has(course.id) && (status === "" || course.status === status),
+  );
+
+  const list = usePagedList(
+    rest,
+    (course, query) =>
+      `${course.title} ${course.slug}`.toLowerCase().includes(query),
+  );
 
   const add = (course: CourseListItem) =>
     onChange([
@@ -146,39 +160,74 @@ export function CourseLibrary({
 
   return (
     <div>
-      <h2 className="mb-3 text-sm font-semibold">Kho khóa học</h2>
-      {rest.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-          Không còn khóa học nào để thêm.
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <h2 className="text-sm font-semibold">Kho khóa học</h2>
+        <span className="text-xs text-muted-foreground">{list.total} khóa</span>
+      </div>
+
+      <ListSearch
+        filters={
+          <Select
+            className="h-9"
+            label="Trạng thái"
+            onChange={setStatus}
+            options={[
+              { value: "", label: "Mọi trạng thái" },
+              ...CONTENT_STATUSES.map((value) => ({
+                value,
+                label: CONTENT_STATUS_LABELS[value],
+              })),
+            ]}
+            value={status}
+          />
+        }
+        onChange={list.setQuery}
+        placeholder="Tìm khóa học theo tên hoặc slug…"
+        value={list.query}
+      />
+
+      {list.visible.length === 0 ? (
+        <p className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+          {rest.length === 0
+            ? "Không còn khóa học nào để thêm."
+            : "Không có khóa học nào khớp bộ lọc."}
         </p>
       ) : (
         <ul className="grid gap-2">
-            {rest.map((course) => (
-              <li
-                className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-                key={course.id}
+          {list.visible.map((course) => (
+            <li
+              className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+              key={course.id}
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{course.title}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {course.durationHours ? `${course.durationHours} giờ · ` : ""}
+                  {CONTENT_STATUS_LABELS[course.status]}
+                </p>
+              </div>
+              <Button
+                aria-label={`Thêm ${course.title}`}
+                disabled={disabled}
+                onClick={() => add(course)}
+                size="sm"
+                type="button"
+                variant="outline"
               >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{course.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {course.durationHours ? `${course.durationHours} giờ · ` : ""}
-                    {CONTENT_STATUS_LABELS[course.status]}
-                  </p>
-                </div>
-                <Button
-                  aria-label={`Thêm ${course.title}`}
-                  disabled={disabled}
-                  onClick={() => add(course)}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  <Plus aria-hidden="true" className="size-3.5" />
-                </Button>
-              </li>
-            ))}
+                <Plus aria-hidden="true" className="size-3.5" />
+              </Button>
+            </li>
+          ))}
         </ul>
       )}
+
+      <ListPager
+        onChange={list.setPage}
+        page={list.page}
+        pageCount={list.pageCount}
+        total={list.total}
+        unit="khóa học"
+      />
     </div>
   );
 }

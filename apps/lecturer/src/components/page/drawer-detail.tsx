@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 
 /**
  * Loads the full record for whatever row the drawer is showing.
@@ -66,23 +67,54 @@ function DetailSkeleton() {
   );
 }
 
-/** Label/value pair — the shape every drawer's metadata block already used. */
+/**
+ * The metadata block: every label/value pair in one bordered card, two columns from `sm`.
+ *
+ * It used to be a full-width stack with a 112px label gutter, so six short facts — a slug,
+ * a difficulty, a date — ate the top half of the drawer before any real content appeared.
+ */
+export function DetailMeta({ children }: { children: ReactNode }) {
+  return (
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-2.5 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-2">
+      {children}
+    </dl>
+  );
+}
+
+/** One label/value pair inside `DetailMeta`. Label above value: it wraps at any width. */
 export function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex gap-3">
-      <dt className="w-28 shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 flex-1 break-words">{value}</dd>
+    <div className="min-w-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 min-w-0 truncate text-sm font-medium" title={typeof value === "string" ? value : undefined}>
+        {value}
+      </dd>
     </div>
   );
 }
 
-/** Heading above a block of real content, as opposed to a metadata row. */
-export function DetailSection({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Heading above a block of real content, as opposed to a metadata row.
+ *
+ * The icon and the rule that runs out to the right edge are what separate one section
+ * from the next; without them a drawer of four sections read as one long column of text.
+ */
+export function DetailSection({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon?: LucideIcon;
+  children: ReactNode;
+}) {
   return (
     <section className="mt-5 first:mt-0">
-      <h3 className="mb-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">
-        {title}
-      </h3>
+      <div className="mb-2.5 flex items-center gap-2">
+        {Icon && <Icon aria-hidden="true" className="size-4 shrink-0 text-primary" />}
+        <h3 className="text-xs font-bold tracking-wide uppercase">{title}</h3>
+        <span aria-hidden="true" className="h-px flex-1 bg-border" />
+      </div>
       {children}
     </section>
   );

@@ -1,11 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eye, Loader2, Pencil, Plus, Wand2, X } from "lucide-react";
+import {
+  Braces,
+  Eye,
+  FileText,
+  FlaskConical,
+  Info,
+  Languages,
+  Loader2,
+  Pencil,
+  Plus,
+  Scale,
+  Wand2,
+  Workflow,
+  X,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Button, Card, Select } from "@codementor/ui";
 import { CodeEditor } from "@codementor/editor";
+import { CardHeading } from "@/components/page/card-heading";
+import { InfoHint } from "@/components/form/info-hint";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
 import { defaultValueFor } from "@/features/exercises/codegen";
 import {
@@ -61,7 +77,11 @@ export function ExerciseBriefForm({ value, onChange, readOnly = false, slugLocke
   return (
     <fieldset className="grid gap-4" disabled={readOnly}>
       <Card className="p-5">
-        <h2 className="mb-4 text-sm font-semibold">Thông tin chung</h2>
+        <CardHeading
+          hint="Tên bài, slug và các giới hạn chấm. Đây là phần học viên thấy trước khi mở bài."
+          icon={Info}
+          title="Thông tin chung"
+        />
 
         <Field htmlFor="title" label="Tiêu đề">
           <input
@@ -152,18 +172,23 @@ export function ExerciseBriefForm({ value, onChange, readOnly = false, slugLocke
       </Card>
 
       <Card className="p-5">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold">Đề bài</h2>
-          <Button
-            onClick={() => setPreviewStatement((shown) => !shown)}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            {previewStatement ? <Pencil className="size-3.5" /> : <Eye className="size-3.5" />}
-            {previewStatement ? "Soạn" : "Xem trước"}
-          </Button>
-        </div>
+        <CardHeading
+          action={
+            <Button
+              onClick={() => setPreviewStatement((shown) => !shown)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {previewStatement ? <Pencil className="size-3.5" /> : <Eye className="size-3.5" />}
+              {previewStatement ? "Soạn" : "Xem trước"}
+            </Button>
+          }
+          className="mb-3"
+          hint="Viết bằng Markdown: mô tả bài toán, ràng buộc đầu vào, dạng đầu ra. Bấm “Xem trước” để đọc như học viên đọc."
+          icon={FileText}
+          title="Đề bài"
+        />
 
         {previewStatement ? (
           <div className="prose prose-sm max-w-none rounded-lg border p-4 text-sm">
@@ -261,8 +286,12 @@ function SignatureCard({
 
   return (
     <Card className="p-5">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">Chữ ký hàm</h2>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <Braces aria-hidden="true" className="size-4 shrink-0 text-primary" />
+          Chữ ký hàm
+          <InfoHint text="Tên hàm, tham số và kiểu trả về mà học viên phải viết. Học viên chỉ điền thân hàm; mã khởi tạo và test case đều sinh theo chữ ký này." />
+        </h2>
         <Button
           onClick={() =>
             onChange({
@@ -281,10 +310,6 @@ function SignatureCard({
           Thêm tham số
         </Button>
       </div>
-      <p className="mb-3 text-sm text-muted-foreground">
-        Học viên chỉ điền thân hàm. Mã khởi tạo và test case đều sinh theo chữ ký này.
-      </p>
-
       <Field
         htmlFor="functionName"
         hint="snake_case. Hệ thống tự đổi sang camelCase cho JavaScript, TypeScript, Java, Go và PHP."
@@ -605,12 +630,15 @@ export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "l
   return (
     <fieldset className="grid gap-4" disabled={readOnly}>
       <Card className="p-5">
-        <h2 className="mb-1 text-sm font-semibold">Cách ra đề</h2>
-        <p className="mb-3 text-sm text-muted-foreground">
-          {isFunction
-            ? "Học viên chỉ viết thân hàm; hệ thống so sánh giá trị trả về."
-            : "Học viên viết cả chương trình, kể cả phần đọc đầu vào; hệ thống so chuỗi in ra."}
-        </p>
+        <CardHeading
+          hint={
+            isFunction
+              ? "Học viên chỉ viết thân hàm; hệ thống so sánh giá trị trả về."
+              : "Học viên viết cả chương trình, kể cả phần đọc đầu vào; hệ thống so chuỗi in ra."
+          }
+          icon={Workflow}
+          title="Cách ra đề"
+        />
         <Select
           label="Cách ra đề"
           onChange={(next) => switchMode(next as IoMode)}
@@ -630,11 +658,16 @@ export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "l
       )}
 
       <Card className="p-5">
-        <h2 className="mb-1 text-sm font-semibold">Ngôn ngữ hỗ trợ</h2>
-        <p className="mb-3 text-sm text-muted-foreground">
-          Mỗi ngôn ngữ đã chọn phải có lời giải mẫu thì mới gửi duyệt được.
-          {isFunction && " Chữ ký dùng kiểu ngôn ngữ nào không diễn tả được thì ngôn ngữ đó báo ngay bên dưới."}
-        </p>
+        <CardHeading
+          hint={
+            "Mỗi ngôn ngữ đã chọn phải có lời giải mẫu thì mới gửi duyệt được." +
+            (isFunction
+              ? " Chữ ký dùng kiểu ngôn ngữ nào không diễn tả được thì ngôn ngữ đó báo ngay bên dưới."
+              : "")
+          }
+          icon={Languages}
+          title="Ngôn ngữ hỗ trợ"
+        />
 
         <div className="mb-4 flex flex-wrap gap-2">
           {offered.map((option) => (
@@ -692,8 +725,19 @@ export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "l
       </Card>
 
       <Card className="p-5">
-        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold">Test case</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <FlaskConical aria-hidden="true" className="size-4 shrink-0 text-primary" />
+            Test case
+            <InfoHint
+              text={
+                "Tối thiểu 3 case, trong đó ít nhất một case công khai để học viên thấy ví dụ." +
+                (isFunction
+                  ? " Chỉ nhập tham số — bấm “Sinh đáp án” để chạy lời giải mẫu ra kết quả."
+                  : "")
+              }
+            />
+          </h2>
           <div className="flex items-center gap-2">
             {isFunction && (
               <Button
@@ -717,11 +761,6 @@ export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "l
             </Button>
           </div>
         </div>
-        <p className="mb-3 text-sm text-muted-foreground">
-          Tối thiểu 3 case, trong đó ít nhất một case công khai để học viên thấy ví dụ.
-          {isFunction && " Chỉ nhập tham số — bấm “Sinh đáp án” để chạy lời giải mẫu ra kết quả."}
-        </p>
-
         {generateError && (
           <p
             className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -820,7 +859,12 @@ export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "l
       </Card>
 
       <Card className="p-5">
-        <h2 className="mb-3 text-sm font-semibold">Cách chấm</h2>
+        <CardHeading
+          className="mb-3"
+          hint="Quy tắc so sánh kết quả của học viên với đáp án. Chọn sai bộ so khớp là bài đúng vẫn bị chấm sai."
+          icon={Scale}
+          title="Cách chấm"
+        />
         <Field
           htmlFor="checker"
           hint={

@@ -3,17 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Braces, FileText, FlaskConical, GitFork, Languages, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
 import { ApiClientError } from "@codementor/api-client";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import {
+  DetailMeta,
   DetailRow,
   DetailSection,
   DrawerDetail,
 } from "@/components/page/drawer-detail";
+import { ConfirmButton } from "@/components/page/confirm-button";
 import { PageBody } from "@/components/page/page-body";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
@@ -168,6 +170,7 @@ export default function ExercisesPage() {
           </Button>
         }
         activeFilterCount={[difficulty, status].filter(Boolean).length}
+        icon={Braces}
         columns={columns}
         drawer={{
           title: (row) => row.title,
@@ -191,7 +194,7 @@ export default function ExercisesPage() {
         }
         error={error}
         filters={
-          <div className="grid gap-3">
+          <>
             <Select
               label="Độ khó"
               onChange={setDifficulty}
@@ -215,7 +218,7 @@ export default function ExercisesPage() {
                 value={status}
               />
             )}
-          </div>
+          </>
         }
         getRowId={(row) => row.id}
         loading={loading}
@@ -256,7 +259,7 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
 
         return (
           <>
-            <dl className="grid gap-3 text-sm">
+            <DetailMeta>
               <DetailRow label="Slug" value={exercise.slug} />
               <DetailRow label="Độ khó" value={DIFFICULTY_LABELS[exercise.difficulty]} />
               <DetailRow label="Trạng thái" value={STATUS_LABELS[exercise.status]} />
@@ -272,9 +275,9 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
               {exercise.forkedFromId && (
                 <DetailRow label="Nguồn gốc" value="Fork từ một bài khác" />
               )}
-            </dl>
+            </DetailMeta>
 
-            <DetailSection title="Đề bài">
+            <DetailSection icon={FileText} title="Đề bài">
               {exercise.content?.statement ? (
                 <div className="prose prose-sm max-w-none text-sm">
                   <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
@@ -286,7 +289,7 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
               )}
             </DetailSection>
 
-            <DetailSection title="Ngôn ngữ hỗ trợ">
+            <DetailSection icon={Languages} title="Ngôn ngữ hỗ trợ">
               {languages.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Chưa khai báo ngôn ngữ nào.</p>
               ) : (
@@ -308,7 +311,7 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
               )}
             </DetailSection>
 
-            <DetailSection title={`Test case công khai (${publicCases.length})`}>
+            <DetailSection icon={FlaskConical} title={`Test case công khai (${publicCases.length})`}>
               {publicCases.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Chưa có case công khai nào — học viên sẽ không thấy ví dụ.
@@ -368,30 +371,36 @@ function ExerciseDrawerActions({
     <>
       {forkable && (
         <Button disabled={busy} onClick={onFork} type="button" variant="outline">
-          Fork & chỉnh sửa
+          <GitFork aria-hidden="true" className="size-4" /> Fork & chỉnh sửa
         </Button>
       )}
       {isMine && (
         <>
           {row.status === "pending_review" ? (
             <Button disabled={busy} onClick={onWithdraw} type="button" variant="outline">
-              Hủy gửi duyệt
+              <Undo2 aria-hidden="true" className="size-4" /> Hủy gửi duyệt
             </Button>
           ) : (
             <Button disabled={busy} onClick={onSubmit} type="button" variant="outline">
-              Gửi duyệt
+              <Send aria-hidden="true" className="size-4" /> Gửi duyệt
             </Button>
           )}
           {row.status !== "published" && (
-            <Button disabled={busy} onClick={onRemove} type="button" variant="ghost">
-              Xoá
-            </Button>
+            <ConfirmButton
+              confirmLabel="Xoá bài code"
+              description={`Bài “${row.title}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Không hoàn tác được.`}
+              disabled={busy}
+              onConfirm={onRemove}
+              title="Xoá bài code này?"
+            >
+              <Trash2 aria-hidden="true" className="size-4" /> Xoá
+            </ConfirmButton>
           )}
           <Link
             className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground"
             href={`/exercises/${row.id}/studio`}
           >
-            Mở studio
+            <Pencil aria-hidden="true" className="size-4" /> Mở studio
           </Link>
         </>
       )}
@@ -400,7 +409,7 @@ function ExerciseDrawerActions({
           className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium"
           href={`/exercises/${row.id}/solve`}
         >
-          Xem & giải thử
+          <FlaskConical aria-hidden="true" className="size-4" /> Xem & giải thử
         </Link>
       )}
     </>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { KeyRound, User } from "lucide-react";
 import { accountConsoleUrl } from "@codementor/auth";
 import { ProfileForm } from "@/features/profile/profile-form";
 import type { UserProfile } from "@/features/profile/types";
@@ -30,6 +31,7 @@ export default function ProfilePage() {
     <PageBody>
       <PageHeader
         description="Email, mật khẩu và đăng nhập do CodeMentor ID quản lý."
+        icon={User}
         title="Hồ sơ"
       />
 
@@ -45,30 +47,40 @@ export default function ProfilePage() {
       {!profile && !error && <p className="text-sm text-muted-foreground">Đang tải…</p>}
 
       {profile && (
-        <>
-          <ProfileForm
-            onSaved={(updated) => {
-              setProfile(updated);
-              // The sidebar shows the display name; without this it keeps the old one
-              // until the next full page load.
-              void refreshUser();
-            }}
-            profile={profile}
-          />
+        // Two panels across the row. The form used to be a single 576px column pinned to
+        // the left of a full-width page, which read as a rendering fault rather than a
+        // choice; the account note that trailed below it fills the other half.
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="min-w-0 rounded-lg border border-border bg-card p-4 sm:p-5">
+            <ProfileForm
+              onSaved={(updated) => {
+                setProfile(updated);
+                // The sidebar shows the display name; without this it keeps the old one
+                // until the next full page load.
+                void refreshUser();
+              }}
+              profile={profile}
+            />
+          </section>
 
-          <p className="mt-8 max-w-xl border-t pt-5 text-sm text-muted-foreground">
-            Đổi email, mật khẩu hoặc bật xác thực hai bước tại{" "}
-            <a
-              className="text-foreground underline underline-offset-4"
-              href={accountConsoleUrl(keycloakConfig)}
-              rel="noreferrer"
-              target="_blank"
-            >
-              trang tài khoản CodeMentor ID
-            </a>
-            .
-          </p>
-        </>
+          <aside className="rounded-lg border border-border bg-card p-4">
+            <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <KeyRound aria-hidden="true" className="size-4 text-primary" /> Đăng nhập & bảo mật
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Đổi email, mật khẩu hoặc bật xác thực hai bước tại{" "}
+              <a
+                className="text-foreground underline underline-offset-4"
+                href={accountConsoleUrl(keycloakConfig)}
+                rel="noreferrer"
+                target="_blank"
+              >
+                trang tài khoản CodeMentor ID
+              </a>
+              .
+            </p>
+          </aside>
+        </div>
       )}
     </PageBody>
   );

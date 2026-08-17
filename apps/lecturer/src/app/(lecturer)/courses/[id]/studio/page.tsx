@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, Send, Undo2 } from "lucide-react";
+import { Info, Save, Send, Tags, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import { Button, Card, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { CardHeading } from "@/components/page/card-heading";
+import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
+import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { CurriculumTree, type Selection } from "@/features/courses/curriculum-tree";
 import { Inspector } from "@/features/courses/inspector";
 import {
@@ -38,6 +41,16 @@ interface Meta {
   prerequisiteNote: string;
 }
 
+/**
+ * Chữ ký của bản nháp, để biết còn gì chưa lưu.
+ *
+ * Cây đi qua `toPayload` chứ không so trực tiếp: `toDraft` sinh `key` ngẫu nhiên cho mỗi
+ * hàng, nên hai bản sao y hệt nhau vẫn khác chuỗi JSON.
+ */
+function signature(meta: Meta, chapters: DraftChapter[]): string {
+  return JSON.stringify([meta, toPayload(chapters)]);
+}
+
 function toMeta(course: Course): Meta {
   return {
     slug: course.slug,
@@ -63,11 +76,15 @@ export default function CourseStudioPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savedSignature, setSavedSignature] = useState("");
 
   const apply = useCallback((loaded: Course) => {
+    const nextMeta = toMeta(loaded);
+    const nextChapters = toDraft(loaded.chapters ?? []);
     setCourse(loaded);
-    setMeta(toMeta(loaded));
-    setChapters(toDraft(loaded.chapters ?? []));
+    setMeta(nextMeta);
+    setChapters(nextChapters);
+    setSavedSignature(signature(nextMeta, nextChapters));
   }, []);
 
   useEffect(() => {
@@ -127,6 +144,11 @@ export default function CourseStudioPage() {
     [id],
   );
 
+  // Trước early return: hook phải chạy ở mọi lần render.
+  const unsavedDialog = useUnsavedGuard(
+    Boolean(meta) && signature(meta as Meta, chapters) !== savedSignature,
+  );
+
   if (error && !course) {
     return (
       <div className="px-4 py-4 sm:px-5">
@@ -146,6 +168,8 @@ export default function CourseStudioPage() {
   const patchMeta = (partial: Partial<Meta>) => setMeta({ ...meta, ...partial });
 
   return (
+    <>
+    {unsavedDialog}
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -258,7 +282,11 @@ export default function CourseStudioPage() {
         <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
           <Card className="p-5 lg:col-span-2">
-            <h2 className="mb-4 text-sm font-semibold">Thông tin khóa học</h2>
+            <CardHeading
+              hint="Những gì học viên đọc thấy ở trang khóa học và ở danh mục. Mô tả là trường bắt buộc để gửi duyệt."
+              icon={Info}
+              title="Thông tin khóa học"
+            />
 
             <Field htmlFor="title" label="Tiêu đề">
               <input
@@ -317,7 +345,11 @@ export default function CourseStudioPage() {
           </Card>
 
           <Card className="h-fit p-5">
-            <h2 className="mb-4 text-sm font-semibold">Phân loại</h2>
+            <CardHeading
+              hint="Quyết định khóa học xuất hiện ở bộ lọc nào và học viên có phải học lần lượt từng bài hay không."
+              icon={Tags}
+              title="Phân loại"
+            />
 
             <Field htmlFor="level" label="Trình độ">
               <select
@@ -351,25 +383,31 @@ export default function CourseStudioPage() {
           </Card>
 
           <div className="lg:col-span-3">
-            <Button
+            <DangerZone
+              actionLabel="Xoá khóa học này"
+              confirmDescription={`Khóa học “${meta.title || course.slug}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Không hoàn tác được.`}
+              confirmTitle="Xoá khóa học này?"
+              description={
+                course.status === "published"
+                  ? "Khóa học đã công khai thì không xoá được — học viên đang học và tiến độ của họ nằm ở đây. Gỡ công khai trước."
+                  : "Xoá khóa học này cùng toàn bộ chương và bài bên trong. Không hoàn tác được."
+              }
               disabled={saving || course.status === "published"}
-              onClick={() =>
+              onConfirm={() =>
                 run(async () => {
                   await api.courses.remove(id);
                   router.push("/courses");
                   return course;
                 }, "Đã xoá")
               }
-              type="button"
-              variant="ghost"
-            >
-              Xoá khóa học này
-            </Button>
+              title="Xoá khóa học"
+            />
           </div>
           </fieldset>
         </StudioScroll>
       )}
     </StudioShell>
+    </>
   );
 }
 

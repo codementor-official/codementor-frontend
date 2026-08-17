@@ -64,7 +64,7 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
   };
 
   return (
-    <form className="max-w-xl" noValidate onSubmit={handleSubmit(onSubmit)}>
+    <form className="grid gap-x-5 gap-y-5 sm:grid-cols-2" noValidate onSubmit={handleSubmit(onSubmit)}>
       <Field error={errors.displayName?.message} htmlFor="displayName" label="Tên hiển thị">
         <input className={inputClassName} id="displayName" {...register("displayName")} />
       </Field>
@@ -78,7 +78,7 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
         <input className={inputClassName} id="handle" placeholder="giasi" {...register("handle")} />
       </Field>
 
-      <Field error={errors.bio?.message} htmlFor="bio" label="Giới thiệu">
+      <Field error={errors.bio?.message} htmlFor="bio" label="Giới thiệu" wide>
         <textarea className={textareaClassName} id="bio" {...register("bio")} />
       </Field>
 
@@ -126,14 +126,14 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
 
       {failure && (
         <p
-          className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="sm:col-span-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
           role="alert"
         >
           {failure}
         </p>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 sm:col-span-2">
         <Button disabled={isSubmitting || !isDirty} type="submit">
           {isSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
         </Button>

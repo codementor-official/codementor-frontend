@@ -7,7 +7,9 @@ import { Play, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import { Button, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { DangerZone } from "@/components/page/danger-zone";
 import { StudioShell } from "@/components/page/studio-shell";
+import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { useResolvedTheme } from "@/lib/use-resolved-theme";
 import {
   ExerciseBriefForm,
@@ -110,6 +112,11 @@ export default function ExerciseStudioPage() {
       return api.exercises.saveContent(id, draft.content);
     }, "Đã lưu");
 
+  // Trước early return: hook phải chạy ở mọi lần render.
+  const unsavedDialog = useUnsavedGuard(
+    Boolean(exercise && draft) && JSON.stringify(draft) !== JSON.stringify(toDraft(exercise as Exercise)),
+  );
+
   if (error && !exercise) {
     return (
       <div className="px-4 py-4 sm:px-5">
@@ -128,6 +135,8 @@ export default function ExerciseStudioPage() {
   const locked = exercise.status === "pending_review";
 
   return (
+    <>
+    {unsavedDialog}
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -195,21 +204,22 @@ export default function ExerciseStudioPage() {
               value={draft}
             />
 
-            <div className="mt-4 flex justify-end">
-              <Button
+            <div className="mt-4">
+              <DangerZone
+                actionLabel="Xoá bài này"
+                confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Không hoàn tác được.`}
+                confirmTitle="Xoá bài code này?"
+                description="Xoá bài code này cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Không hoàn tác được."
                 disabled={saving}
-                onClick={() =>
+                onConfirm={() =>
                   run(async () => {
                     await api.exercises.remove(id);
                     router.push("/exercises");
                     return exercise;
                   }, "Đã xoá")
                 }
-                type="button"
-                variant="ghost"
-              >
-                Xoá bài này
-              </Button>
+                title="Xoá bài code"
+              />
             </div>
           </div>
         </Panel>
@@ -228,6 +238,7 @@ export default function ExerciseStudioPage() {
         </Panel>
       </Group>
     </StudioShell>
+    </>
   );
 }
 

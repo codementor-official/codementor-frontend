@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type ButtonVariant = "default" | "outline" | "ghost";
+type ButtonVariant = "default" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -12,6 +12,10 @@ const variantClasses: Record<ButtonVariant, string> = {
   default: "border border-primary bg-primary text-primary-foreground hover:opacity-90",
   outline: "border bg-background text-foreground hover:bg-muted",
   ghost: "border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+  // Xoá là thao tác không lùi lại được. Nó từng mang biến thể `ghost` — trông y hệt một
+  // liên kết phụ, nằm lẫn giữa các nút khác.
+  danger:
+    "border border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
