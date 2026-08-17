@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Braces, Route } from "lucide-react";
+import { BookOpen, Braces, LayoutDashboard, Route } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { PageHeader } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
@@ -22,6 +22,7 @@ export default function DashboardPage() {
   return (
     <PageBody>
       <PageHeader
+        icon={LayoutDashboard}
         description={`Đăng nhập với ${user?.email ?? ""}.`}
         title={`Chào ${user?.displayName ?? ""}`}
       />

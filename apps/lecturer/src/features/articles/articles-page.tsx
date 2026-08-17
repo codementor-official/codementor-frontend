@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Eye, ExternalLink, Plus, Save, Send, Undo2 } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  Eye,
+  FilePlus2,
+  Newspaper,
+  Plus,
+  Save,
+  Send,
+  Undo2,
+  X,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { RichTextEditor } from "@codementor/editor";
@@ -189,6 +200,7 @@ export function ArticlesPage() {
           </Button>
         }
         activeFilterCount={status ? 1 : 0}
+        icon={Newspaper}
         columns={columns}
         description="Bài viết của bạn. Gửi duyệt để quản trị viên xem xét; bài được duyệt lần đầu sẽ gửi thông báo tới toàn bộ người học."
         drawer={{
@@ -340,7 +352,7 @@ export function ArticlesPage() {
         />
         <div className="mt-5 flex justify-end gap-2">
           <Button onClick={() => setCreating(false)} type="button" variant="ghost">
-            Huỷ
+            <X aria-hidden="true" className="size-4" /> Huỷ
           </Button>
           <Button
             disabled={busy || newTitle.trim().length === 0}
@@ -353,7 +365,7 @@ export function ArticlesPage() {
             }
             type="button"
           >
-            Tạo bản nháp
+            <FilePlus2 aria-hidden="true" className="size-4" /> Tạo bản nháp
           </Button>
         </div>
       </Modal>

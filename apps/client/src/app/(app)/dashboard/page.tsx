@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, BookOpen, Calendar, Pencil } from "lucide-react";
+import { BarChart3, BookOpen, Calendar, LayoutDashboard, Pencil } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -24,6 +24,7 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHeader
+        icon={LayoutDashboard}
         title="Chào mừng trở lại, Gia Sĩ"
         subtitle="Lộ trình Frontend Developer của bạn đang ở 14% — còn 2 bài nữa là xong chương CSS layout."
         actions={

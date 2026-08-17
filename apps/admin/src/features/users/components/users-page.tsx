@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
+import { Users } from "lucide-react";
 import { ManagePage, Select, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { usersApi, type AdminUser } from "@/lib/api";
@@ -204,6 +205,7 @@ export function UsersPage() {
       rows={rows}
       search={search}
       searchPlaceholder="Tìm theo tên, email hoặc handle…"
+      icon={Users}
       title="Người dùng"
     />
   );

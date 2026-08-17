@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Download } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { Button } from "./button";
 import { DataTable, TablePagination, useDataTable } from "./data-table";
@@ -14,6 +15,8 @@ import { SideDrawer } from "./side-drawer";
 export interface ManagePageProps<TData> {
   title: string;
   description?: string;
+  /** Square tile beside the title — see `PageHeader`. */
+  icon?: LucideIcon;
   /** The one primary action for this screen, rendered beside the title. */
   action?: ReactNode;
   /** Scope switch for the screen — "mine" versus the shared catalogue. Rendered inside the
@@ -83,6 +86,7 @@ function slugify(title: string): string {
 export function ManagePage<TData>({
   title,
   description,
+  icon,
   action,
   tabs,
   rows,
@@ -134,6 +138,7 @@ export function ManagePage<TData>({
           )
         }
         description={description}
+        icon={icon}
         title={title}
       />
 

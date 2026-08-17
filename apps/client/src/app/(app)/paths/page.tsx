@@ -58,6 +58,7 @@ export default function PathsPage() {
   return (
     <div>
       <PageHeader
+        icon={Map}
         title="Lộ trình"
         subtitle="Mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp, sắp xếp sẵn thứ tự để bạn không phải tự mò mẫm nên học gì trước."
       />

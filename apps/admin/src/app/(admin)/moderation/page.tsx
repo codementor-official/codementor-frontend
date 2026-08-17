@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCheck, PencilLine, XCircle } from "lucide-react";
+import { CheckCheck, PencilLine, ShieldCheck, XCircle } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { Button, ManagePage, SegmentedTabs } from "@codementor/ui";
@@ -207,6 +207,7 @@ export default function ModerationPage() {
         rows={filtered}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề…"
+        icon={ShieldCheck}
         title="Kiểm duyệt"
       />
     </>

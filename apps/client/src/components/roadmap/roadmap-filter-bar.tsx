@@ -85,7 +85,6 @@ export function RoadmapFilterBar({
       controls={controls}
       activeFilterCount={activeFilterCount}
       onClearFilters={onClear}
-      displayMode="inline"
     />
   );
 }

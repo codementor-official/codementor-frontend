@@ -1,4 +1,5 @@
 import { StatStrip } from "@codementor/ui";
+import { Users } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { StudyGroupBoard } from "@/components/study-group/study-group-board";
 import { CURRENT_USER_NAME } from "@/data/study-groups";
@@ -12,6 +13,7 @@ export default async function WorkspaceListPage() {
   return (
     <div>
       <PageHeader
+        icon={Users}
         title="Nhóm học tập"
         subtitle="Nhóm bạn tự tạo hoặc tham gia qua lời mời. Mỗi nhóm có tài liệu, bài tập và bảng tiến độ riêng."
       />

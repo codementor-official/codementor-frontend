@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Archive, Check, CheckCheck, Eye, ExternalLink, PencilLine, Plus, Save, XCircle } from "lucide-react";
+import {
+  Archive,
+  Check,
+  CheckCheck,
+  ExternalLink,
+  Eye,
+  Newspaper,
+  PencilLine,
+  Plus,
+  Save,
+  XCircle,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { RichTextEditor } from "@codementor/editor";
@@ -368,6 +379,7 @@ export function ArticlesPage() {
         rows={rows}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
+        icon={Newspaper}
         title="Bài viết"
       />
 

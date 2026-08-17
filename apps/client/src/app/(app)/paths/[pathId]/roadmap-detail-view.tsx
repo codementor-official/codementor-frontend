@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Clock, Loader2 } from "lucide-react";
+import { ArrowRight, Clock, Loader2, Map } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
@@ -70,7 +70,7 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
   return (
     <div>
       <BreadcrumbTitle slug={roadmapId} title={roadmap.title} />
-      <PageHeader title={roadmap.title} subtitle={roadmap.description ?? undefined} />
+      <PageHeader icon={Map} title={roadmap.title} subtitle={roadmap.description ?? undefined} />
 
       <StatStrip
         className="mb-5"

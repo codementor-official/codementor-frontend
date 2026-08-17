@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Flame,
   BookOpen,
+  Compass,
   Dumbbell,
   FileText,
   LayoutGrid,
@@ -95,6 +96,7 @@ export default function ExplorePage() {
       {/* No StatStrip: the banner's "24 bài luyện tập / 15 lộ trình / 8 chủ đề" were
         * hardcoded strings, not counts of anything. */}
       <PageHeader
+        icon={Compass}
         title="Khám phá"
         subtitle="Nội dung mới đang nổi trên toàn hệ thống — khóa học, bài luyện tập, bài viết và cộng đồng."
         actions={

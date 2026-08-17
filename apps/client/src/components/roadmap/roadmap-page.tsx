@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Briefcase, ChevronUp, Code2, RefreshCw, Sparkles, Sprout, TrendingUp } from "lucide-react";
+import { Briefcase, ChevronUp, Code2, Map, RefreshCw, Sparkles, Sprout, TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import { useRoadmapRecommendation } from "@/hooks/use-roadmap-recommendation";
@@ -55,7 +55,7 @@ export function RoadmapPage() {
   if (isLoading) {
     return (
       <div>
-        <PageHeader title={ROADMAP_TITLE} subtitle={ROADMAP_SUBTITLE} />
+        <PageHeader icon={Map} title={ROADMAP_TITLE} subtitle={ROADMAP_SUBTITLE} />
         <RoadmapLoadingState />
       </div>
     );
@@ -122,6 +122,7 @@ export function RoadmapPage() {
   return (
     <div>
       <PageHeader
+        icon={Map}
         title={ROADMAP_TITLE}
         subtitle={ROADMAP_SUBTITLE}
         actions={

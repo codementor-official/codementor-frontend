@@ -122,6 +122,7 @@ export default function PracticePage() {
   return (
     <div>
       <PageHeader
+        icon={Code2}
         title="Bài luyện tập"
         subtitle="Ngân hàng bài code đã công khai. Chọn một bài để mở trong không gian làm bài."
       />
