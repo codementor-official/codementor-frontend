@@ -196,6 +196,8 @@ export const usersApi = {
     unwrap<Page<AdminUser>>(request, `/users${search(query)}`),
   summary: (request: Request) =>
     unwrap<{ total: number; byRole: Record<string, number> }>(request, "/users/summary"),
+  growth: (request: Request) =>
+    unwrap<{ month: string; newUsers: number; total: number }[]>(request, "/users/growth"),
   detail: (request: Request, id: string) => unwrap<AdminUserDetail>(request, `/users/${id}`),
 
   // Ba đường dưới đây đều nhận `users.id`, không phải id Keycloak — kể cả lịch sử đăng
@@ -205,6 +207,9 @@ export const usersApi = {
     unwrap<LoginEvent[]>(request, `/users/${id}/login-history`),
   auditTrail: (request: Request, id: string) =>
     unwrap<AuditLogEntry[]>(request, `/audit-logs${search({ targetType: "user", targetId: id })}`),
+  /** Nhật ký kiểm toán gần đây, mọi đối tượng — cho bảng "Hoạt động gần đây". */
+  recentAudit: (request: Request, limit = 8) =>
+    unwrap<AuditLogEntry[]>(request, `/audit-logs${search({ limit })}`),
   activity: (request: Request, id: string) =>
     unwrap<ActivityEntry[]>(request, `/activity/users/${id}`),
 
