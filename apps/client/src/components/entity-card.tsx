@@ -39,6 +39,8 @@ export interface EntityCardProps {
   footer?: ReactNode;
   /** Standalone CTA link pinned to the bottom, independent of whole-card `href` (e.g. roadmap "Xem chi tiết"). */
   cta?: { label: string; href: string };
+  /** Interactive control pinned to the bottom (e.g. enrol / continue). Safe to combine with `href`. */
+  action?: ReactNode;
   /** When set, the entire card becomes a link (e.g. course tiles). Don't combine with `cta`. */
   href?: string;
 }
@@ -60,10 +62,15 @@ export function EntityCard({
   note,
   footer,
   cta,
+  action,
   href,
 }: EntityCardProps) {
   const content = (
-    <Card interactive={Boolean(href)} className="flex h-full flex-col overflow-hidden">
+    <Card interactive={Boolean(href)} className="relative flex h-full flex-col overflow-hidden">
+      {/* A stretched overlay link rather than a wrapper around the card: `action` holds real
+        * buttons, and a <button> inside an <a> is invalid markup that eats its own clicks.
+        * Inside the Card so `interactive`'s hover still fires. */}
+      {href && <Link href={href} className="absolute inset-0 z-0" aria-label={title} />}
       <div
         className={`relative flex shrink-0 items-center justify-center font-mono font-bold text-on-ink ${
           coverImage ? "bg-border-soft" : tileVariantClasses[tileVariant]
@@ -136,21 +143,15 @@ export function EntityCard({
         {cta && (
           <Link
             href={cta.href}
-            className="mt-auto rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-on-ink hover:bg-navy/90"
+            className="relative z-10 mt-auto rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-on-ink hover:bg-navy/90"
           >
             {cta.label}
           </Link>
         )}
+        {action && <div className="relative z-10 mt-auto pt-1">{action}</div>}
       </div>
     </Card>
   );
 
-  if (href) {
-    return (
-      <Link href={href} className="block h-full">
-        {content}
-      </Link>
-    );
-  }
   return content;
 }

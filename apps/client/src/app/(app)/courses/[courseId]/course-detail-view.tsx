@@ -2,7 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Check, Clock, FileText, Layers, Loader2, Lock, PlayCircle, Code2 } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  Clock,
+  Code2,
+  FileText,
+  Layers,
+  Loader2,
+  Lock,
+  PlayCircle,
+  RotateCcw,
+  Trophy,
+} from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
@@ -89,16 +101,20 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
   const progressByLesson = new Map((progress?.lessons ?? []).map((l) => [l.lessonId, l]));
   const enrollment = progress?.enrollment ?? null;
   const enrolled = enrollment !== null && enrollment.status !== "dropped";
-  const firstOpen = flatLessons(course).find(
+  const lessons = flatLessons(course);
+  const firstOpen = lessons.find(
     (lesson) => progressByLesson.get(lesson.id)?.status !== "completed",
   );
+  const completed = enrolled && lessons.length > 0 && !firstOpen;
+  /** Where the action button lands: the next unfinished lesson, or back to the start. */
+  const resumeLesson = firstOpen ?? lessons[0];
 
   const lessonCount = course.chapters.reduce((total, ch) => total + ch.lessons.length, 0);
 
   return (
     <div>
       <BreadcrumbTitle slug={courseId} title={course.title} />
-      <PageHeader title={course.title} subtitle={course.description ?? undefined} />
+      <PageHeader icon={BookOpen} title={course.title} subtitle={course.description ?? undefined} />
 
       <StatStrip
         className="mb-5"
@@ -193,18 +209,35 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
           <Card className="p-4">
             <h2 className="mb-3 text-sm font-bold text-navy">Bắt đầu học</h2>
             {enrolled ? (
-              firstOpen ? (
-                <Link
-                  href={`/courses/${courseId}/lessons/${firstOpen.id}`}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover"
-                >
-                  Tiếp tục học
-                </Link>
-              ) : (
-                <span className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary-tint px-3.5 py-2.5 text-sm font-semibold text-primary">
-                  <Check className="h-4 w-4" /> Đã hoàn thành khóa học
-                </span>
-              )
+              <>
+                {/* Completion is a status line, not a button. It used to replace the action
+                  * entirely, which left a finished learner with no way back into the lessons. */}
+                {completed && (
+                  <p className="mb-2.5 flex items-center gap-1.5 rounded-md bg-primary-tint px-3 py-2 text-xs font-semibold text-primary">
+                    <Trophy className="h-4 w-4 shrink-0" /> Đã hoàn thành khóa học
+                  </p>
+                )}
+                {resumeLesson ? (
+                  <Link
+                    href={`/courses/${courseId}/lessons/${resumeLesson.id}`}
+                    className={`flex w-full items-center justify-center gap-1.5 rounded-md px-3.5 py-2.5 text-sm font-semibold transition-colors ${
+                      completed
+                        ? "border border-border bg-surface text-navy hover:bg-bg"
+                        : "bg-primary text-on-ink hover:bg-primary-hover"
+                    }`}
+                  >
+                    {completed ? (
+                      <>
+                        <RotateCcw className="h-4 w-4" /> Xem lại khóa học
+                      </>
+                    ) : (
+                      "Tiếp tục học"
+                    )}
+                  </Link>
+                ) : (
+                  <p className="text-xs text-text-faint">Khóa học chưa có bài nào để mở.</p>
+                )}
+              </>
             ) : (
               <button
                 type="button"
