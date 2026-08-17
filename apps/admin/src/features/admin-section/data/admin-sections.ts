@@ -6,12 +6,6 @@ export interface AdminSectionDefinition {
 }
 
 export const adminSections: Record<string, AdminSectionDefinition> = {
-  users: {
-    description: "Manage learner accounts, access status, roles, and platform membership.",
-    eyebrow: "Management",
-    highlights: [{ label: "Total users", value: "12,486" }, { label: "Active today", value: "8,942" }, { label: "Needs review", value: "24" }],
-    title: "Users",
-  },
   lecturers: {
     description: "Review lecturer profiles, verification, and platform permissions.",
     eyebrow: "Management",

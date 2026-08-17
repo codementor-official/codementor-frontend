@@ -4,6 +4,8 @@ import { apiBaseUrl } from "@/lib/env";
 import type { JudgeRunResult } from "@/types/judge";
 import type { NotificationPage } from "@/types/notification";
 import type {
+  ArticleDetail,
+  ArticleSummary,
   CatalogueParams,
   CourseSummary,
   ExerciseSummary,
@@ -70,6 +72,17 @@ export const api = {
   exercises: {
     bank: (params: CatalogueParams = {}) =>
       unwrap<Page<ExerciseSummary>>(`/exercises${query(params)}`),
+  },
+
+  /**
+   * Bài viết. Trước đây trang `/articles` đọc `src/data/articles.ts` — nghĩa là bài admin
+   * vừa đăng, và cả liên kết trong thông báo trỏ tới nó, đều ra 404.
+   */
+  articles: {
+    catalogue: (params: CatalogueParams & { tag?: string } = {}) =>
+      unwrap<Page<ArticleSummary>>(`/articles${query(params)}`),
+    tags: () => unwrap<{ name: string; count: number }[]>("/articles/tags"),
+    read: (slug: string) => unwrap<ArticleDetail>(`/articles/${slug}`),
   },
 
   /**

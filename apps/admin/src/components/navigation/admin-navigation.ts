@@ -8,6 +8,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Network,
+  Newspaper,
   Route,
   ScrollText,
   Settings,
@@ -49,6 +50,7 @@ export const adminNavigation: AdminNavGroup[] = [
   {
     label: "Content",
     items: [
+      { href: "/posts", icon: Newspaper, label: "Posts" },
       { href: "/exercises", icon: Braces, label: "Exercises" },
       { href: "/documents", icon: FileText, label: "Documents" },
     ],
