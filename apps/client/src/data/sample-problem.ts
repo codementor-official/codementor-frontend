@@ -1,6 +1,16 @@
 export interface TestCase {
-  input: string;
-  expected: string;
+  /** stdin/stdout mode. */
+  input?: string;
+  /** Function mode: positional arguments matching the signature. */
+  args?: unknown[];
+  expected?: unknown;
+}
+
+/** Present when the exercise is graded by calling a function rather than piping stdin. */
+export interface JudgeSpec {
+  functionName: string;
+  parameters: { name: string; type: Record<string, unknown> }[];
+  returnType: Record<string, unknown>;
 }
 
 export interface Problem {
@@ -14,6 +24,10 @@ export interface Problem {
   /** What the learner is shown. Absent on mock problems, where every case is public. */
   publicTestCases?: TestCase[];
   starter: Record<string, string>;
+  /** Sent to the judge when set; absent means stdin/stdout grading. */
+  spec?: JudgeSpec;
+  /** Language labels the author published, so the picker offers only what will compile. */
+  languages?: { id: string; label: string }[];
 }
 
 export const problems: Problem[] = [

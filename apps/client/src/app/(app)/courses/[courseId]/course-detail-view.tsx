@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Clock, FileText, Layers, Loader2, PlayCircle, Code2 } from "lucide-react";
+import { BookOpen, Check, Clock, FileText, Layers, Loader2, Lock, PlayCircle, Code2 } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import type { CourseDetail, CourseLesson } from "@/types/catalogue";
+import type { CourseDetail, CourseProgress } from "@/types/catalogue";
 
 const LEVEL_LABEL: Record<string, string> = {
   none: "Chưa có nền",
@@ -23,21 +23,29 @@ const LESSON_ICON: Record<string, typeof FileText> = {
   exercise: Code2,
 };
 
-function lessonHref(lesson: CourseLesson) {
-  // A code lesson points at the exercise it wraps. Theory has no reader route on the
-  // client yet, so it stays plain text rather than a link that 404s.
-  return lesson.exerciseId ? `/solve/${lesson.exerciseId}` : null;
+
+
+/** Chapters flattened into learning order — the same order the backend gates on. */
+function flatLessons(course: CourseDetail) {
+  return [...course.chapters]
+    .sort((a, b) => a.position - b.position)
+    .flatMap((chapter) => [...chapter.lessons].sort((a, b) => a.position - b.position));
 }
 
 export function CourseDetailView({ courseId }: { courseId: string }) {
   const [course, setCourse] = useState<CourseDetail | null>(null);
+  const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    api.courses
-      .detail(courseId)
-      .then((data) => !cancelled && setCourse(data))
+    Promise.all([api.courses.detail(courseId), api.courses.progress(courseId)])
+      .then(([courseData, progressData]) => {
+        if (cancelled) return;
+        setCourse(courseData);
+        setProgress(progressData);
+      })
       .catch((cause: unknown) =>
         !cancelled && setError(cause instanceof Error ? cause.message : "Không tải được khóa học"),
       );
@@ -45,6 +53,18 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
       cancelled = true;
     };
   }, [courseId]);
+
+  const enroll = async () => {
+    setEnrolling(true);
+    try {
+      await api.courses.enroll(courseId);
+      setProgress(await api.courses.progress(courseId));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không đăng ký được khóa học");
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   if (error) {
     return (
@@ -66,6 +86,13 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
     );
   }
 
+  const progressByLesson = new Map((progress?.lessons ?? []).map((l) => [l.lessonId, l]));
+  const enrollment = progress?.enrollment ?? null;
+  const enrolled = enrollment !== null && enrollment.status !== "dropped";
+  const firstOpen = flatLessons(course).find(
+    (lesson) => progressByLesson.get(lesson.id)?.status !== "completed",
+  );
+
   const lessonCount = course.chapters.reduce((total, ch) => total + ch.lessons.length, 0);
 
   return (
@@ -80,6 +107,12 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
           { label: "Chương", value: course.chapters.length },
           { label: "Bài học", value: lessonCount },
           { label: "Giờ học", value: course.durationHours ?? "—" },
+          ...(enrollment
+            ? [
+                { label: "Đã học", value: `${enrollment.completedLessons}/${lessonCount}` },
+                { label: "Tiến độ", value: `${enrollment.progressPercent}%` },
+              ]
+            : []),
         ]}
       />
 
@@ -107,10 +140,17 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                     <ul className="divide-y divide-border-soft">
                       {chapter.lessons.map((lesson) => {
                         const Icon = LESSON_ICON[lesson.type] ?? FileText;
-                        const href = lessonHref(lesson);
+                        const state = progressByLesson.get(lesson.id);
+                        const locked = state?.isAvailable === false;
                         const body = (
                           <>
-                            <Icon className="h-4 w-4 shrink-0 text-text-faint" />
+                            {state?.status === "completed" ? (
+                              <Check className="h-4 w-4 shrink-0 text-primary" />
+                            ) : locked ? (
+                              <Lock className="h-4 w-4 shrink-0 text-text-faint" />
+                            ) : (
+                              <Icon className="h-4 w-4 shrink-0 text-text-faint" />
+                            )}
                             <span className="min-w-0 flex-1 truncate text-sm text-text">{lesson.title}</span>
                             {lesson.durationMinutes !== null && (
                               <span className="shrink-0 text-2xs text-text-faint">
@@ -121,15 +161,19 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                         );
                         return (
                           <li key={lesson.id}>
-                            {href ? (
+                            {/* Locked lessons are not links: the server refuses them, so a
+                              * click would only teach that the app says no at random. */}
+                            {locked ? (
+                              <div className="flex cursor-not-allowed items-center gap-3 px-4 py-2.5 opacity-60">
+                                {body}
+                              </div>
+                            ) : (
                               <Link
-                                href={`${href}?returnTo=${encodeURIComponent(`/courses/${courseId}`)}`}
+                                href={`/courses/${courseId}/lessons/${lesson.id}`}
                                 className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg"
                               >
                                 {body}
                               </Link>
-                            ) : (
-                              <div className="flex items-center gap-3 px-4 py-2.5">{body}</div>
                             )}
                           </li>
                         );
@@ -143,6 +187,41 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
         </section>
 
         <aside className="flex flex-col gap-4">
+          {/* The action sits with the course facts rather than in the page header: in the
+            * header it competed with the title for the same corner of the eye, and it is
+            * the rail the learner is already reading when they decide to start. */}
+          <Card className="p-4">
+            <h2 className="mb-3 text-sm font-bold text-navy">Bắt đầu học</h2>
+            {enrolled ? (
+              firstOpen ? (
+                <Link
+                  href={`/courses/${courseId}/lessons/${firstOpen.id}`}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover"
+                >
+                  Tiếp tục học
+                </Link>
+              ) : (
+                <span className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary-tint px-3.5 py-2.5 text-sm font-semibold text-primary">
+                  <Check className="h-4 w-4" /> Đã hoàn thành khóa học
+                </span>
+              )
+            ) : (
+              <button
+                type="button"
+                onClick={enroll}
+                disabled={enrolling}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover disabled:opacity-50"
+              >
+                {enrolling && <Loader2 className="h-4 w-4 animate-spin" />} Đăng ký học
+              </button>
+            )}
+            {enrollment && (
+              <p className="mt-2.5 text-2xs text-text-faint">
+                Đã học {enrollment.completedLessons}/{lessonCount} bài · {enrollment.progressPercent}%
+              </p>
+            )}
+          </Card>
+
           {course.prerequisiteNote && (
             <Card className="p-4">
               <h2 className="mb-2 text-sm font-bold text-navy">Yêu cầu đầu vào</h2>

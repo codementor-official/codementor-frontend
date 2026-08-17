@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
-import { ArrowLeft, Bot, Braces, Loader2, Play, RotateCcw, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Bot, Braces, Loader2, PartyPopper, Play, RotateCcw, Send, Sparkles } from "lucide-react";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
 import { UserMenu } from "@/components/user-menu";
 import { TAB_META, type PaneId, type PanesState, type TabKind } from "@/components/workspace/types";
@@ -45,9 +45,27 @@ interface MonacoEditorHandle {
   getAction: (id: string) => { run: () => void } | null;
 }
 
-export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: Problem; backHref?: string }) {
+export interface LessonContext {
+  courseId: string;
+  lessonId: string;
+  exerciseId: string;
+}
+
+export function SolveWorkspace({
+  problem,
+  backHref = "/practice",
+  context,
+}: {
+  problem: Problem;
+  backHref?: string;
+  context?: LessonContext;
+}) {
   const editorTheme = useResolvedTheme();
-  const [language, setLanguage] = useState(languages[0]);
+  const offered = problem.languages?.length
+    ? problem.languages.map((entry) => entry.label).filter((label) => label in monacoLang)
+    : languages;
+  const available = offered.length > 0 ? offered : languages;
+  const [language, setLanguage] = useState(available[0]);
   const [code, setCode] = useState<Record<string, string>>(problem.starter);
   const editorRef = useRef<MonacoEditorHandle | null>(null);
   const { status: authStatus } = useAuth();
@@ -55,6 +73,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
   const [judgeResult, setJudgeResult] = useState<JudgeRunResult | null>(null);
   const [judgeError, setJudgeError] = useState<string | null>(null);
   const [mascotState, setMascotState] = useState<MascotState>("idle");
+  const [celebrating, setCelebrating] = useState(false);
   const [codeyVisible, setCodeyVisible] = useState(true);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [aiInput, setAiInput] = useState("");
@@ -76,11 +95,14 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
   };
 
   /**
-   * Chấm thật: gửi code sang judge-service, nó chạy trong container Docker riêng cho từng
-   * test case rồi trả verdict. Trước đây hàm này là một `setTimeout` đoán kết quả từ việc
-   * code có khác mã mẫu hay không — nó luôn "đạt" với bất kỳ thay đổi nào.
+   * Chạy thử và nộp bài đi cùng một đường chấm; khác nhau ở hai điểm.
+   *
+   * Nộp bài gửi kèm `context`, và đó là thứ quyết định bài học có được đánh dấu hoàn thành
+   * hay không — chạy thử không được phép ghi tiến độ, nếu không thì bấm "Chạy" một lần là
+   * xong bài. Nộp mà ĐẠT thì mở hộp chúc mừng; sai thì không, vì lúc đó thứ người học cần
+   * là bảng test case sai, không phải một hộp thoại chắn đường.
    */
-  const runCode = async () => {
+  const execute = async (mode: "run" | "submit") => {
     if (authStatus !== "authenticated") {
       setJudgeError("Cần đăng nhập để chấm bài.");
       return;
@@ -90,6 +112,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
     setMascotState("loading");
     setJudgeError(null);
     setJudgeResult(null);
+    setCelebrating(false);
 
     try {
       const result = await api.judge.run({
@@ -97,14 +120,19 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
         sourceCode: code[language] ?? "",
         timeLimitMs: 1000,
         memoryLimitKb: 128 * 1024,
+        // `spec` present = grade by calling the function; absent = pipe stdin. Sending one
+        // for a stdin exercise would make the judge look for a function that is not there.
+        ...(problem.spec ? { spec: problem.spec } : {}),
         testCases: problem.testCases.map((testCase, index) => ({
           order: index + 1,
-          input: testCase.input,
+          ...(testCase.args !== undefined ? { args: testCase.args } : { input: testCase.input ?? "" }),
           expected: testCase.expected,
         })),
+        ...(mode === "submit" && context ? { context } : {}),
       });
       setJudgeResult(result);
       setMascotState(result.verdict === "accepted" ? "success" : "error");
+      if (mode === "submit" && result.verdict === "accepted") setCelebrating(true);
     } catch (cause) {
       setJudgeError(cause instanceof Error ? cause.message : "Không chấm được");
       setMascotState("error");
@@ -169,7 +197,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
                 <span className="truncate rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-xs font-semibold text-navy">solution.{fileExtension[language]}</span>
               </div>
               <div className="flex items-center gap-0.5">
-                <LanguageDropdown language={language} onChange={setLanguage} languages={languages} />
+                <LanguageDropdown language={language} onChange={setLanguage} languages={available} />
                 <button
                   onClick={resetCode}
                   title="Khôi phục code mẫu"
@@ -206,8 +234,22 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
           <div className="flex h-full flex-col gap-2 overflow-y-auto p-3">
             {(problem.publicTestCases ?? problem.testCases).map((tc, i) => (
               <div key={i} className="rounded-md border border-border-soft bg-bg p-2.5 font-mono text-xs">
-                <div className="mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">Input</div>
-                <div className="text-navy">{tc.input}</div>
+                <div className="mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">
+                  {tc.args !== undefined ? "Tham số" : "Input"}
+                </div>
+                <div className="text-navy">
+                  {tc.args !== undefined
+                    ? tc.args.map((arg) => JSON.stringify(arg)).join(", ")
+                    : tc.input}
+                </div>
+                {tc.expected !== undefined && tc.expected !== "" && (
+                  <>
+                    <div className="mt-1.5 mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">
+                      Kết quả mong đợi
+                    </div>
+                    <div className="text-navy">{JSON.stringify(tc.expected)}</div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -323,7 +365,16 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
 
   return (
     <WorkspaceProvider initialPanes={initialPanes} tabMeta={TAB_META}>
-      <WorkspaceBody problem={problem} backHref={backHref} runCode={runCode} running={running} mascotState={mascotState} codeyVisible={codeyVisible} onToggleCodey={() => setCodeyVisible((v) => !v)} renderTabContent={renderTabContent} />
+      <WorkspaceBody problem={problem} backHref={backHref} execute={execute} running={running} mascotState={mascotState} codeyVisible={codeyVisible} onToggleCodey={() => setCodeyVisible((v) => !v)} renderTabContent={renderTabContent} />
+      {celebrating && judgeResult && (
+        <SolvedDialog
+          result={judgeResult}
+          xp={xpByDifficulty[problem.difficulty]}
+          backHref={backHref}
+          tracked={Boolean(context)}
+          onClose={() => setCelebrating(false)}
+        />
+      )}
     </WorkspaceProvider>
   );
 }
@@ -331,7 +382,7 @@ export function SolveWorkspace({ problem, backHref = "/practice" }: { problem: P
 function WorkspaceBody({
   problem,
   backHref,
-  runCode,
+  execute,
   running,
   mascotState,
   codeyVisible,
@@ -340,16 +391,33 @@ function WorkspaceBody({
 }: {
   problem: Problem;
   backHref: string;
-  runCode: () => void;
+  execute: (mode: "run" | "submit") => void;
   running: boolean;
   mascotState: MascotState;
   codeyVisible: boolean;
   onToggleCodey: () => void;
   renderTabContent: (kind: TabKind) => ReactNode;
 }) {
-  const { panes, openTab, closeTab, maximized } = useWorkspace();
+  const { panes, setActive, openTab, closeTab, maximized } = useWorkspace();
   const aiVisible = panes.ai.tabs.length > 0;
   const toggleAi = () => (aiVisible ? closeTab("ai", "ai") : openTab("ai", "ai"));
+
+  /**
+   * Chuyển sang tab Kết quả TRƯỚC khi chấm, không phải sau.
+   *
+   * Bấm Chạy mà màn hình không đổi gì ngoài cái spinner trong nút thì người dùng không biết
+   * có chuyện gì đang xảy ra — kết quả nằm ở một tab họ không nhìn. Chuyển trước để họ thấy
+   * ngay dòng "Đang chạy trong sandbox...".
+   *
+   * Tìm pane nào đang GIỮ tab đó thay vì mặc định `console`: tab kéo thả được, và
+   * `openTab` sẽ lôi nó về chỗ cũ, giật mất bố cục người dùng tự sắp.
+   */
+  const focusResult = (mode: "run" | "submit") => {
+    const holder = Object.keys(panes).find((pane) => panes[pane].tabs.includes("result"));
+    if (holder) setActive(holder, "result");
+    else openTab("console", "result");
+    execute(mode);
+  };
 
   const leftPane = (
     <Pane<TabKind> id="left" className="min-h-0">
@@ -390,13 +458,17 @@ function WorkspaceBody({
 
         <div className="flex items-center gap-2 justify-self-center">
           <button
-            onClick={runCode}
+            onClick={() => focusResult("run")}
             disabled={running}
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-navy hover:bg-bg disabled:opacity-50"
           >
             {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />} Chạy
           </button>
-          <button onClick={runCode} disabled={running} className="rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-ink hover:bg-primary-hover disabled:opacity-50">
+          <button
+            onClick={() => focusResult("submit")}
+            disabled={running}
+            className="rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-ink hover:bg-primary-hover disabled:opacity-50"
+          >
             Nộp bài · +{xpByDifficulty[problem.difficulty]} XP
           </button>
           <button
@@ -461,6 +533,89 @@ function WorkspaceBody({
         )}
       </div>
       {codeyVisible && <MascotAssistant state={mascotState} />}
+    </div>
+  );
+}
+
+/**
+ * Xác nhận khi nộp đạt.
+ *
+ * Trước đây nộp bài và chạy thử cho ra cùng một thứ: một bảng kết quả ở tab người dùng
+ * không nhìn. Không có gì đánh dấu rằng lần bấm này khác — rằng bài đã xong.
+ *
+ * Là dialog thật (`role="dialog"`, `aria-modal`), đóng được bằng Esc, và tự lấy tiêu điểm
+ * để bàn phím không rơi lại vào trình soạn code phía sau. Hiệu ứng phóng vào bị tắt khi hệ
+ * điều hành báo `prefers-reduced-motion` — với một số người nó gây chóng mặt thật.
+ */
+function SolvedDialog({
+  result,
+  xp,
+  backHref,
+  tracked,
+  onClose,
+}: {
+  result: JudgeRunResult;
+  xp: number;
+  backHref: string;
+  /** Bài mở từ trong khóa học: tiến độ sẽ được ghi. Luyện tập tự do thì không. */
+  tracked: boolean;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="solved-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-fixed/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(event) => event.stopPropagation()}
+        className="w-full max-w-sm rounded-lg border border-border bg-surface p-6 text-center shadow-lg motion-safe:animate-[solved-pop_220ms_ease-out]"
+      >
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success-tint text-success motion-safe:animate-[solved-pop_320ms_ease-out]">
+          <PartyPopper className="h-7 w-7" />
+        </div>
+
+        <h2 id="solved-title" className="mt-4 text-lg font-bold text-navy">
+          Chính xác!
+        </h2>
+        <p className="mt-1 text-xs text-text-muted">
+          {result.passedTests}/{result.totalTests} test case đạt · {result.runtimeMs} ms · +{xp} XP
+        </p>
+
+        <p className="mt-3 text-2xs leading-relaxed text-text-faint">
+          {tracked
+            ? "Bài học đã được ghi nhận hoàn thành. Quay lại khóa học và tải lại trang để thấy tiến độ cập nhật."
+            : "Đây là bài luyện tập tự do nên không gắn với tiến độ khóa học nào."}
+        </p>
+
+        <div className="mt-5 flex items-center justify-center gap-2">
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-navy hover:bg-bg"
+          >
+            Ở lại xem code
+          </button>
+          <Link
+            href={backHref}
+            className="rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-on-ink hover:bg-primary-hover"
+          >
+            {tracked ? "Quay lại bài học" : "Quay lại danh sách"}
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

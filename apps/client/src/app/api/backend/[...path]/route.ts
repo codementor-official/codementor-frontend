@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   clearSessionCookies,
+  InvalidCredentialsError,
   readSession,
   refreshWebSession,
   sessionNeedsRefresh,
@@ -22,13 +23,39 @@ async function proxyBackend(request: NextRequest, context: { params: Promise<{ p
   }
 
   let session = await readSession(request);
-  if (!session) return NextResponse.json({ message: "Authentication required" }, { status: 401 });
+  if (!session) {
+    // Một lời gọi API mà không có phiên là chuyện đáng ghi lại, và ghi RIÊNG hai trường
+    // hợp: không có mảnh cookie nào (trình duyệt chưa gửi, hoặc đã xoá vì hết hạn) khác
+    // hẳn có cookie mà đọc không ra. Lần trước chính dòng log này chỉ ra thủ phạm.
+    const chunks = request.cookies
+      .getAll()
+      .map((cookie) => cookie.name)
+      .filter((name) => name.startsWith("codementor_web_session"));
+    console.error(
+      `[auth] 401 không phiên: ${request.method} /${(await context.params).path.join("/")} —` +
+        (chunks.length ? ` có cookie [${chunks.join(", ")}] nhưng đọc không ra` : " không có mảnh cookie phiên nào"),
+    );
+    return NextResponse.json({ message: "Authentication required" }, { status: 401 });
+  }
 
   let refreshed = false;
   try {
     refreshed = sessionNeedsRefresh(session);
     if (refreshed) session = await refreshWebSession(session);
-  } catch {
+  } catch (cause) {
+    // Chỉ `InvalidCredentialsError` mới nghĩa là refresh token thật sự đã chết —
+    // Keycloak trả 400 `invalid_grant` khi nó hết hạn hoặc bị thu hồi. Mọi lỗi khác
+    // (Keycloak nghẽn, DNS chớp, JWKS lấy hụt) là sự cố tạm thời, và xoá cookie ở đó
+    // là đá người dùng ra khỏi phiên còn hiệu lực tới 30 phút vì một cú vấp một giây.
+    // Refresh token vẫn còn nguyên, nên giữ cookie lại và để request sau thử lại.
+    if (!(cause instanceof InvalidCredentialsError)) {
+      console.error("[auth] gia hạn phiên thất bại tạm thời:", cause);
+      return NextResponse.json(
+        { message: "Không gia hạn được phiên đăng nhập. Vui lòng thử lại." },
+        { status: 503 },
+      );
+    }
+    console.error("[auth] refresh token bị Keycloak từ chối (hết hạn nhàn rỗi hoặc bị thu hồi), xoá phiên");
     const response = NextResponse.json({ message: "Session expired" }, { status: 401 });
     clearSessionCookies(response);
     return response;
@@ -70,6 +97,15 @@ async function proxyBackend(request: NextRequest, context: { params: Promise<{ p
     return NextResponse.json(
       { message: `Không kết nối được API gateway tại ${baseUrl}.` },
       { status: 502 },
+    );
+  }
+  // Một 401 từ đây là 401 của backend, không phải của BFF: phiên hợp lệ, access token vừa
+  // được gắn, mà upstream vẫn từ chối. Hai nguyên nhân đó cần hai cách chữa khác hẳn nhau,
+  // nên chúng phải phân biệt được trong log thay vì cùng hiện ra là "401".
+  if (upstream.status === 401 || upstream.status === 403) {
+    console.error(
+      `[auth] upstream ${upstream.status} ${request.method} /${path.join("/")}` +
+        ` (phiên còn hiệu lực, token vừa gắn${refreshed ? ", vừa gia hạn" : ""})`,
     );
   }
   const responseHeaders = new Headers();

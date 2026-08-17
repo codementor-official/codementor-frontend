@@ -41,7 +41,13 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const [pending, setPending] = useState<Pending>(null);
 
   useEffect(() => {
-    if (status === "authenticated") router.replace("/practice");
+    if (status !== "authenticated") return;
+    // `next` do RequireAuth đặt khi nó chặn một trang. Chỉ nhận đường dẫn nội bộ bắt đầu
+    // bằng một dấu "/": "//evil.com" là URL tuyệt đối với trình duyệt, nên nếu chỉ kiểm
+    // ký tự đầu thì trang đăng nhập trở thành bàn đạp chuyển hướng ra ngoài.
+    const next = new URLSearchParams(window.location.search).get("next");
+    const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : "/practice";
+    router.replace(safe);
   }, [status, router]);
 
   const busy = pending !== null || status === "loading";

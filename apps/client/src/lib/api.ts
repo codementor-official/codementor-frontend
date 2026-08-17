@@ -8,10 +8,15 @@ import type {
   ArticleSummary,
   CatalogueParams,
   CourseDetail,
+  CourseEnrollment,
+  CourseProgress,
   CourseSummary,
   ExerciseDetail,
   ExerciseSummary,
+  LessonContent,
+  LessonProgress,
   Page,
+  ProgressStatus,
   RoadmapDetail,
   RoadmapSummary,
 } from "@/types/catalogue";
@@ -74,6 +79,33 @@ export const api = {
     catalogue: (params: CatalogueParams = {}) =>
       unwrap<Page<CourseSummary>>(`/courses${query(params)}`),
     detail: (id: string) => unwrap<CourseDetail>(`/courses/${id}`),
+
+    enroll: (id: string, viaRoadmapId?: string) =>
+      unwrap<CourseEnrollment>(`/courses/${id}/enroll`, {
+        method: "POST",
+        body: viaRoadmapId ? { viaRoadmapId } : {},
+      }),
+    unenroll: (id: string) => unwrap<void>(`/courses/${id}/enroll`, { method: "DELETE" }),
+
+    lessonContent: (courseId: string, lessonId: string) =>
+      unwrap<LessonContent | null>(`/courses/${courseId}/lessons/${lessonId}/content`),
+
+    /** Works before enrolling too — `enrollment` is null and the lessons still come back. */
+    progress: (id: string) => unwrap<CourseProgress>(`/courses/${id}/progress`),
+
+    /**
+     * `timeSpentSeconds` is this session only; the server adds it to the running total.
+     * Sending a cumulative figure would double-count on every save.
+     */
+    recordProgress: (
+      courseId: string,
+      lessonId: string,
+      body: { status: ProgressStatus; timeSpentSeconds?: number; lastPositionSeconds?: number | null },
+    ) =>
+      unwrap<LessonProgress>(`/courses/${courseId}/lessons/${lessonId}/progress`, {
+        method: "PUT",
+        body,
+      }),
   },
   exercises: {
     bank: (params: CatalogueParams = {}) =>
@@ -117,7 +149,25 @@ export const api = {
       sourceCode: string;
       timeLimitMs: number;
       memoryLimitKb: number;
-      testCases: { order: number; input: string; expected: string; weight?: number }[];
+      /** Present = grade by calling this function; absent = pipe stdin. */
+      spec?: {
+        functionName: string;
+        parameters: { name: string; type: Record<string, unknown> }[];
+        returnType: Record<string, unknown>;
+      };
+      testCases: {
+        order: number;
+        input?: string;
+        args?: unknown[];
+        expected?: unknown;
+        weight?: number;
+      }[];
+      /**
+       * Bài code này mở từ trong một khóa học nào. Có mặt + chấm đạt = judge phát
+       * `evt.exercise.solved.v1` và learning-service đánh dấu bài học hoàn thành. Vắng mặt
+       * là luyện tập tự do: chấm xong là hết, không ghi tiến độ vào đâu.
+       */
+      context?: { courseId: string; lessonId: string; exerciseId: string };
     }) => unwrap<JudgeRunResult>("/judge/run", { method: "POST", body }),
   },
 };

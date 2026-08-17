@@ -6,7 +6,16 @@ import type { ApiResponse } from "@codementor/types";
  * endpoint như thế buộc một service đọc bảng của service khác.
  */
 export type ContentKind = "exercises" | "courses" | "roadmaps";
-export type ModerationDecision = "approve" | "request_changes" | "reject" | "archive";
+/**
+ * `restore` takes archived content back to `draft` so it walks the review flow again —
+ * there is no path from archived straight to published, by design.
+ */
+export type ModerationDecision =
+  | "approve"
+  | "request_changes"
+  | "reject"
+  | "archive"
+  | "restore";
 
 export interface QueueItem {
   id: string;

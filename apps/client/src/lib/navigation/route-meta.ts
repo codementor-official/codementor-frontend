@@ -41,9 +41,9 @@ function humanizeSlug(slug: string): string {
 /**
  * Segments that name a nested collection rather than a place. `/paths/x/courses/y` reads
  * as "Lộ trình › X › Y" — a crumb for the bare word "courses" would point at a route that
- * does not exist.
+ * does not exist. Same for "lessons" in /courses/x/lessons/y.
  */
-const TRANSPARENT_SEGMENTS = new Set(["courses", "learn"]);
+const TRANSPARENT_SEGMENTS = new Set(["courses", "learn", "lessons"]);
 
 /**
  * @param pathname  the current `usePathname()` value
