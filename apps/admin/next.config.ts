@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@codementor/api-client",
     "@codementor/auth",
+    "@codementor/editor",
     "@codementor/types",
     "@codementor/ui",
   ],

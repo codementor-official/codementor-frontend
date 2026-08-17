@@ -75,6 +75,9 @@ importers:
       '@codementor/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@codementor/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
       '@codementor/types':
         specifier: workspace:*
         version: link:../../packages/types

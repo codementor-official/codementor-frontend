@@ -79,3 +79,30 @@ export interface CatalogueParams {
   cursor?: string;
   limit?: number;
 }
+
+/** Bài viết biên tập, đúng hình dạng `ArticleView` mà learning-service trả về. */
+export interface ArticleDetail {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  takeaway: string | null;
+  readMinutes: number | null;
+  status: string;
+  authorName: string | null;
+  tagName: string | null;
+  publishedAt: string | null;
+  /** HTML từ RichTextEditor. Xem `article_contents.contentHtml`. */
+  contentHtml: string;
+}
+
+export interface ArticleSummary {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  readMinutes: number | null;
+  authorName: string | null;
+  tagName: string | null;
+  publishedAt: string | null;
+}

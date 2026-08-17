@@ -12,6 +12,7 @@ import type {
 } from "@/features/exercises/types";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
 import type { Course, CourseListItem, LessonContent } from "@/features/courses/types";
+import type { Article, ArticleListItem } from "@/features/articles/types";
 
 /**
  * The single place that knows a backend URL. Everything below calls the gateway, so
@@ -160,5 +161,25 @@ export const api = {
     submit: (id: string) => unwrap<Course>(`/courses/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Course>(`/courses/${id}/withdraw`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/courses/${id}`, { method: "DELETE" }),
+  },
+
+  /**
+   * Bài viết biên tập. Giảng viên chỉ thấy và sửa được bài của chính mình — ràng buộc
+   * đó do learning-service áp, không phải do giao diện này ẩn nút đi.
+   */
+  articles: {
+    mine: (params: { q?: string; status?: string; limit?: number; cursor?: string } = {}) =>
+      unwrap<Page<ArticleListItem>>(`/articles/manage${query(params)}`),
+    detail: (id: string) => unwrap<Article>(`/articles/manage/${id}`),
+    create: (body: { title: string; slug?: string }) =>
+      unwrap<Article>("/articles", { method: "POST", body }),
+    update: (
+      id: string,
+      body: { title?: string; excerpt?: string; takeaway?: string; readMinutes?: number },
+    ) => unwrap<Article>(`/articles/${id}`, { method: "PATCH", body }),
+    saveContent: (id: string, contentHtml: string) =>
+      unwrap<Article>(`/articles/${id}/content`, { method: "PUT", body: { contentHtml } }),
+    submit: (id: string) => unwrap<Article>(`/articles/${id}/submit`, { method: "POST" }),
+    withdraw: (id: string) => unwrap<Article>(`/articles/${id}/withdraw`, { method: "POST" }),
   },
 };

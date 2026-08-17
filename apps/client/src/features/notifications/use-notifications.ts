@@ -50,6 +50,20 @@ export function useNotifications(): NotificationState {
   const [cursor, setCursor] = useState<string | null>(null);
   const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(() => new Set());
   const socketRef = useRef<Socket | null>(null);
+  /**
+   * Bản sao đồng bộ của `items`.
+   *
+   * `markRead` chạy từ một trình xử lý sự kiện và phải biết NGAY thông báo đó đã đọc hay
+   * chưa; đọc `items` từ closure sẽ lấy giá trị của lần render cũ, còn đọc bên trong
+   * updater của `setItems` thì kết quả tới quá muộn.
+   */
+  const itemsRef = useRef<AppNotification[]>([]);
+  // Đồng bộ trong effect chứ không gán thẳng lúc render: ghi vào ref khi đang render là
+  // thao tác không an toàn với React. Effect chạy sau khi commit và trước khi người dùng
+  // kịp bấm, nên tới lúc `markRead` cần đọc thì ref đã đúng.
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
   // Hẹn giờ gỡ hiệu ứng; dọn khi unmount để không setState trên component đã biến mất.
   const freshTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -174,17 +188,17 @@ export function useNotifications(): NotificationState {
   }, [cursor]);
 
   const markRead = useCallback(async (id: string) => {
-    // Đổi giao diện trước rồi mới gọi API: đánh dấu đã đọc là thao tác không thể hỏng
-    // theo cách người dùng cần biết, còn chờ mạng xong mới đổi màu thì thấy giật.
-    let changed = false;
+    // Quyết định dựa trên `itemsRef`, KHÔNG phải trên một biến gán bên trong updater của
+    // `setItems`: React không chạy updater đó đồng bộ, nên biến ấy vẫn còn `false` ở dòng
+    // kiểm tra ngay sau đó — và lời gọi API bị bỏ qua hoàn toàn. Đó chính là lý do bấm
+    // vào một thông báo realtime mà nó không được đánh dấu đã đọc.
+    const target = itemsRef.current.find((item) => item.id === id);
+    if (!target || target.read) return;
+
+    // Đổi giao diện trước rồi mới gọi API: chờ mạng xong mới đổi màu thì thấy giật.
     setItems((current) =>
-      current.map((item) => {
-        if (item.id !== id || item.read) return item;
-        changed = true;
-        return { ...item, read: true };
-      }),
+      current.map((item) => (item.id === id ? { ...item, read: true } : item)),
     );
-    if (!changed) return;
     setUnreadCount((count) => Math.max(count - 1, 0));
 
     try {
