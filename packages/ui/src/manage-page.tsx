@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { Download } from "lucide-react";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import { Button } from "./button";
 import { DataTable, TablePagination, useDataTable } from "./data-table";
+import { exportTableToCsv } from "./export-csv";
 import { FilterBar } from "./filter-bar";
 import { PageHeader } from "./page-header";
 import { SegmentedTabs, type SegmentedTabOption } from "./segmented-tabs";
@@ -27,6 +30,8 @@ export interface ManagePageProps<TData> {
   columns: ColumnDef<TData, any>[];
   getRowId: (row: TData) => string;
   initialSorting?: SortingState;
+  /** Cột ẩn khỏi bảng nhưng vẫn xuất ra CSV, theo id. */
+  columnVisibility?: Record<string, boolean>;
 
   search: string;
   onSearchChange: (value: string) => void;
@@ -40,6 +45,9 @@ export interface ManagePageProps<TData> {
   loading?: boolean;
   error?: string | null;
 
+  /** Tên tệp khi xuất CSV, không kèm đuôi. Bỏ trống thì suy từ `title`. */
+  exportFilename?: string;
+
   /** Right-hand drawer contents for the selected row. Absent means rows are not clickable. */
   drawer?: {
     title: (row: TData) => string;
@@ -48,6 +56,18 @@ export interface ManagePageProps<TData> {
     footer?: (row: TData) => ReactNode;
     width?: "default" | "wide";
   };
+}
+
+/** Tên tệp tải về từ tiêu đề trang. Bỏ dấu tiếng Việt vì tên tệp có dấu hay vỡ khi đi
+ * qua email hoặc một máy chủ tệp cũ. */
+function slugify(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/gi, "d")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 /**
@@ -69,6 +89,7 @@ export function ManagePage<TData>({
   columns,
   getRowId,
   initialSorting,
+  columnVisibility,
   search,
   onSearchChange,
   searchPlaceholder,
@@ -78,6 +99,7 @@ export function ManagePage<TData>({
   emptyMessage,
   loading = false,
   error = null,
+  exportFilename,
   drawer,
 }: ManagePageProps<TData>) {
   // Holds the id, not the row. A row object captured here goes stale the moment the
@@ -85,12 +107,27 @@ export function ManagePage<TData>({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? (rows.find((row) => getRowId(row) === selectedId) ?? null) : null;
 
-  const table = useDataTable({ data: rows, columns, getRowId, initialSorting });
+  const table = useDataTable({ data: rows, columns, getRowId, initialSorting, columnVisibility });
 
   return (
     <>
       <PageHeader
-        action={action}
+        action={
+          // Nút xuất nằm ở ĐÂY chứ không phải ở từng màn: mọi màn quản trị đều dựng từ
+          // component này, nên thêm một bảng mới là có sẵn nút xuất, không phải nhớ.
+          <div className="flex items-center gap-2">
+            <Button
+              disabled={rows.length === 0}
+              onClick={() => exportTableToCsv(table, exportFilename ?? slugify(title))}
+              type="button"
+              variant="outline"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              Xuất Excel
+            </Button>
+            {action}
+          </div>
+        }
         center={
           tabs && (
             <SegmentedTabs onChange={tabs.onChange} options={tabs.options} value={tabs.value} />

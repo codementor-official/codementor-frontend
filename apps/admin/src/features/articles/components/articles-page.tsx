@@ -192,6 +192,7 @@ export function ArticlesPage() {
             {STATUS_LABELS[row.original.status] ?? row.original.status}
           </StatusBadge>
         ),
+        meta: { exportValue: (row) => STATUS_LABELS[row.status] ?? row.status },
       },
       {
         accessorKey: "authorName",

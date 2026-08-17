@@ -4,6 +4,8 @@ export { Button } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
 export { DashboardShell } from "./dashboard-shell";
 export { DataTable, TableCheckbox, TablePagination, TableToolbar, useDataTable } from "./data-table";
+export { exportTableToCsv } from "./export-csv";
+export type { ExportableColumnMeta } from "./export-csv";
 export { FilterBar } from "./filter-bar";
 export { Input } from "./input";
 export { ManagePage } from "./manage-page";

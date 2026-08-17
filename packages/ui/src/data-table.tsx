@@ -142,6 +142,7 @@ export function useDataTable<TData>({
   columns,
   getRowId,
   initialSorting = [],
+  columnVisibility,
   pageSize = 10,
 }: {
   data: TData[];
@@ -150,13 +151,20 @@ export function useDataTable<TData>({
   columns: ColumnDef<TData, any>[];
   getRowId: (row: TData) => string;
   initialSorting?: SortingState;
+  /** Cột nào ẩn khỏi bảng, theo id. Cột ẩn vẫn nằm trong file xuất CSV — chỗ dùng là
+   * những trường dài (email, id) làm chật bảng nhưng lại cần khi mở bằng Excel. */
+  columnVisibility?: Record<string, boolean>;
   /** Rows per page. */
   pageSize?: number;
 }) {
   return useReactTable({
     data,
     columns,
-    initialState: { sorting: initialSorting, pagination: { pageIndex: 0, pageSize } },
+    initialState: {
+      sorting: initialSorting,
+      columnVisibility,
+      pagination: { pageIndex: 0, pageSize },
+    },
     getRowId,
     enableRowSelection: true,
     autoResetPageIndex: false,

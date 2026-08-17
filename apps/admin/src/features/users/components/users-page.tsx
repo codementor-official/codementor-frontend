@@ -89,10 +89,15 @@ export function UsersPage() {
           </div>
         ),
       },
+      // Ô "Người dùng" hiện hai dòng, nhưng file xuất chỉ đọc được một giá trị mỗi cột.
+      // Email vì thế là cột riêng, ẩn khỏi bảng (xem `columnVisibility`) và chỉ xuất hiện
+      // trong CSV — nơi nó là thứ đầu tiên người ta cần.
+      { accessorKey: "email", header: "Email" },
       {
         accessorKey: "role",
         header: "Vai trò",
         cell: ({ row }) => ROLE_LABELS[row.original.role] ?? row.original.role,
+        meta: { exportValue: (row) => ROLE_LABELS[row.role] ?? row.role },
       },
       {
         accessorKey: "status",
@@ -102,6 +107,7 @@ export function UsersPage() {
             {STATUS_LABELS[row.original.status] ?? row.original.status}
           </StatusBadge>
         ),
+        meta: { exportValue: (row) => STATUS_LABELS[row.status] ?? row.status },
       },
       {
         accessorKey: "lastActiveAt",
@@ -111,6 +117,10 @@ export function UsersPage() {
             {row.original.lastActiveAt ? dateTimeFormat.format(new Date(row.original.lastActiveAt)) : "—"}
           </span>
         ),
+        meta: {
+          exportValue: (row) =>
+            row.lastActiveAt ? dateTimeFormat.format(new Date(row.lastActiveAt)) : "",
+        },
       },
       {
         accessorKey: "createdAt",
@@ -120,6 +130,7 @@ export function UsersPage() {
             {dateFormat.format(new Date(row.original.createdAt))}
           </span>
         ),
+        meta: { exportValue: (row) => dateFormat.format(new Date(row.createdAt)) },
       },
     ],
     [],
@@ -130,6 +141,7 @@ export function UsersPage() {
   return (
     <ManagePage
       activeFilterCount={activeFilterCount}
+      columnVisibility={{ email: false }}
       columns={columns}
       description={
         total === null
