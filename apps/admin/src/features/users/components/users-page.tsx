@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Users } from "lucide-react";
-import { ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { Lock, Plus, Unlock, Users } from "lucide-react";
+import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
+import { CreateUserModal } from "@/features/users/components/create-user-modal";
 import { UserDetailDrawer } from "@/features/users/components/user-detail-drawer";
-import { usersApi, type AdminUser } from "@/lib/api";
+import { usersApi, KEYCLOAK_ROLE_OF, type AdminUser, type KeycloakRole } from "@/lib/api";
 
 const ROLE_LABELS: Record<string, string> = {
   learner: "Học viên",
@@ -41,6 +42,8 @@ export function UsersPage() {
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(
     async (nextCursor?: string) => {
@@ -140,8 +143,36 @@ export function UsersPage() {
 
   const activeFilterCount = (role ? 1 : 0) + (status ? 1 : 0);
 
+  /**
+   * Thao tác ghi lên một tài khoản, rồi nạp lại danh sách.
+   *
+   * Nạp lại chứ không sửa tại chỗ trong `rows`: nguồn sự thật của vai trò và trạng thái là
+   * Keycloak, còn danh sách này đọc từ bảng `users`. Đoán trước kết quả rồi vẽ lên màn
+   * hình sẽ hiện một trạng thái không ai xác nhận, và nếu Keycloak từ chối thì màn hình
+   * nói dối cho tới lần tải sau.
+   */
+  const act = async (action: () => Promise<unknown>) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+      await load();
+    } catch (cause) {
+      setError(describe(cause));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
+    <>
     <ManagePage
+      action={
+        <Button onClick={() => setCreating(true)} type="button">
+          <Plus aria-hidden="true" className="size-4" />
+          Tài khoản mới
+        </Button>
+      }
       activeFilterCount={activeFilterCount}
       columnVisibility={{ email: false }}
       columns={columns}
@@ -154,9 +185,60 @@ export function UsersPage() {
         title: (row) => row.displayName,
         description: (row) => row.email,
         width: "wide",
-        // `key` theo id: drawer giữ trạng thái tab và dữ liệu đã nạp bên trong, nên mở
-        // sang tài khoản khác phải dựng lại từ đầu chứ không tái dùng dữ liệu người trước.
-        body: (row) => <UserDetailDrawer key={row.id} user={row} />,
+        // `key` gồm cả vai trò và trạng thái, không chỉ id: drawer cache dữ liệu từng tab
+        // bên trong, nên sau khi khoá tài khoản thì footer đổi thành "Mở khoá" trong khi
+        // tab Thông tin vẫn hiện bản đã nạp từ trước — hai nửa cùng màn hình nói ngược
+        // nhau. Đổi khoá là dựng lại, và lần dựng lại đó đọc dữ liệu mới.
+        body: (row) => <UserDetailDrawer key={`${row.id}:${row.role}:${row.status}`} user={row} />,
+        footer: (row) => (
+          // Đổi vai trò và khoá/mở đi thẳng vào Keycloak, nên chúng cần `externalId` chứ
+          // không phải `row.id`. Tài khoản chưa gắn Keycloak thì không thao tác được —
+          // vô hiệu hoá và nói rõ lý do, thay vì để bấm rồi nhận 404 khó hiểu.
+          row.externalId === null ? (
+            <p className="text-xs text-muted-foreground">
+              Tài khoản chưa gắn với Keycloak nên chưa đổi được vai trò hay trạng thái.
+            </p>
+          ) : (
+            <>
+              <Select
+                label="Đổi vai trò"
+                onChange={(value) =>
+                  void act(() => usersApi.setRole(request, row.externalId!, value as KeycloakRole))
+                }
+                options={[
+                  { value: "STUDENT", label: "Học viên" },
+                  { value: "LECTURER", label: "Giảng viên" },
+                  { value: "ADMIN", label: "Quản trị" },
+                ]}
+                value={KEYCLOAK_ROLE_OF[row.role] ?? "STUDENT"}
+              />
+              {row.status === "suspended" ? (
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void act(() => usersApi.setStatus(request, row.externalId!, "ACTIVE"))
+                  }
+                  type="button"
+                >
+                  <Unlock aria-hidden="true" className="size-4" />
+                  Mở khoá
+                </Button>
+              ) : (
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void act(() => usersApi.setStatus(request, row.externalId!, "SUSPENDED"))
+                  }
+                  type="button"
+                  variant="outline"
+                >
+                  <Lock aria-hidden="true" className="size-4" />
+                  Tạm khoá
+                </Button>
+              )}
+            </>
+          )
+        ),
       }}
       emptyMessage="Không có tài khoản nào khớp bộ lọc."
       error={error}
@@ -198,6 +280,13 @@ export function UsersPage() {
       icon={Users}
       title="Người dùng"
     />
+
+    <CreateUserModal
+      onClose={() => setCreating(false)}
+      onCreated={() => void load()}
+      open={creating}
+    />
+    </>
   );
 }
 

@@ -165,6 +165,32 @@ export interface LoginEvent {
   error: string | null;
 }
 
+/**
+ * Vai trò như KEYCLOAK gọi. Khác với `role` trong danh sách (`learner`/`lecturer`/`admin`),
+ * là giá trị enum trong Postgres.
+ *
+ * Hai bộ từ vựng cho cùng một khái niệm, và không bộ nào sai: Keycloak sở hữu việc gán
+ * vai trò, Postgres sở hữu hồ sơ. Gửi nhầm chỉ nhận 400, nhưng đọc code mà không biết có
+ * hai bộ thì rất dễ gửi nhầm — nên tên kiểu nói thẳng ra.
+ */
+export type KeycloakRole = "STUDENT" | "LECTURER" | "ADMIN";
+
+/** Đổi vai trò của một hàng trong danh sách sang từ vựng Keycloak. */
+export const KEYCLOAK_ROLE_OF: Record<string, KeycloakRole> = {
+  learner: "STUDENT",
+  lecturer: "LECTURER",
+  admin: "ADMIN",
+};
+
+/** Tài khoản như Keycloak trả về sau khi tạo hoặc sửa. */
+export interface ManagedUser {
+  id: string;
+  email: string;
+  displayName: string;
+  enabled: boolean;
+  roles: KeycloakRole[];
+}
+
 export const usersApi = {
   list: (request: Request, query: UsersQuery = {}) =>
     unwrap<Page<AdminUser>>(request, `/users${search(query)}`),
@@ -181,6 +207,29 @@ export const usersApi = {
     unwrap<AuditLogEntry[]>(request, `/audit-logs${search({ targetType: "user", targetId: id })}`),
   activity: (request: Request, id: string) =>
     unwrap<ActivityEntry[]>(request, `/activity/users/${id}`),
+
+  // ------------------------------------------------------------------ ghi
+  //
+  // CHÚ Ý: ba hàm dưới đây nhận `externalId` (id Keycloak), KHÁC với các hàm đọc ở trên
+  // vốn nhận `users.id`. Không gộp được: chúng thao tác thẳng trên Keycloak, nơi không
+  // biết gì về `users.id`. Tên tham số nói rõ để không phải nhớ.
+  //
+  // Không có hàm xoá, và đó là chủ ý — xem `0002_identity.sql`: tài khoản ngừng dùng đặt
+  // `status = 'deleted'`, không xoá vật lý, để bài viết và bài nộp họ từng tạo vẫn còn
+  // tác giả hợp lệ. "Xoá" ở giao diện quản trị nghĩa là tạm khoá.
+  create: (
+    request: Request,
+    body: { email: string; displayName: string; role: KeycloakRole; temporaryPassword?: string },
+  ) => unwrap<ManagedUser>(request, "/users", { method: "POST", body }),
+
+  setRole: (request: Request, externalId: string, role: KeycloakRole) =>
+    unwrap<ManagedUser>(request, `/users/${externalId}/role`, { method: "PATCH", body: { role } }),
+
+  setStatus: (request: Request, externalId: string, status: "ACTIVE" | "SUSPENDED") =>
+    unwrap<ManagedUser>(request, `/users/${externalId}/status`, {
+      method: "PATCH",
+      body: { status },
+    }),
 };
 
 /* ---------------------------------------------------------------- Articles */
