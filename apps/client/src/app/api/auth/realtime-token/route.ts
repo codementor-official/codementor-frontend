@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  InvalidCredentialsError,
   readSession,
   refreshWebSession,
   sessionNeedsRefresh,
@@ -38,7 +39,14 @@ export async function GET(request: NextRequest) {
     if (refreshed) await setSessionCookies(response, session);
     response.headers.set("Cache-Control", "no-store");
     return response;
-  } catch {
-    return NextResponse.json({ message: "Phiên đã hết hạn" }, { status: 401 });
+  } catch (cause) {
+    // Cùng cách phân biệt như `/api/auth/session` và proxy `/api/backend`: chỉ
+    // `invalid_grant` mới là phiên chết. Keycloak vấp một nhịp mà trả 401 ở đây thì client
+    // kết luận đã đăng xuất và thôi thử lại, trong khi phiên vẫn còn hiệu lực.
+    if (cause instanceof InvalidCredentialsError) {
+      return NextResponse.json({ message: "Phiên đã hết hạn" }, { status: 401 });
+    }
+    console.error("[auth] không cấp được vé realtime:", cause);
+    return NextResponse.json({ message: "Chưa cấp được vé, thử lại sau" }, { status: 503 });
   }
 }
