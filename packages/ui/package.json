@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
+    "./rich-text.css": "./src/rich-text.css",
     "./theme.css": "./src/theme.css"
   },
   "scripts": {

@@ -139,7 +139,14 @@ export const articlesApi = {
   update: (
     request: Request,
     id: string,
-    body: { title?: string; slug?: string; excerpt?: string; takeaway?: string; readMinutes?: number },
+    body: {
+      title?: string;
+      slug?: string;
+      excerpt?: string;
+      takeaway?: string;
+      readMinutes?: number;
+      tagId?: string;
+    },
   ) => unwrap<ArticleDetail>(request, `/articles/${id}`, { method: "PATCH", body }),
   saveContent: (request: Request, id: string, contentHtml: string) =>
     unwrap<ArticleDetail>(request, `/articles/${id}/content`, {
@@ -159,4 +166,19 @@ export const articlesApi = {
     }),
   remove: (request: Request, id: string) =>
     unwrap<void>(request, `/articles/${id}`, { method: "DELETE" }),
+};
+
+/** Chủ đề dùng chung cho bài viết và bài tập, do core-service sở hữu. */
+export interface Tag {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+/**
+ * Không nhầm với `GET /articles/tags` bên learning-service: đường đó chỉ trả chủ đề đã có
+ * bài công khai, nên bài đầu tiên của một chủ đề mới sẽ không bao giờ gắn được chủ đề đó.
+ */
+export const tagsApi = {
+  list: (request: Request) => unwrap<Tag[]>(request, "/tags"),
 };

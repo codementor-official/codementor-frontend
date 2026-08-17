@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Bookmark, Loader2, Newspaper } from "lucide-react";
+import { BadgeCheck, Bookmark, Loader2, Newspaper, Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
@@ -23,18 +23,20 @@ export function ArticleFeed() {
   const [items, setItems] = useState<ArticleSummary[]>([]);
   const [tags, setTags] = useState<{ name: string; count: number }[]>([]);
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(
-    async (tag: string | null, nextCursor?: string) => {
+    async (tag: string | null, q: string, nextCursor?: string) => {
       setLoading(true);
       setError(null);
       try {
         const page = await api.articles.catalogue({
           limit: PAGE_SIZE,
           tag: tag ?? undefined,
+          q: q.trim() || undefined,
           cursor: nextCursor,
         });
         // Có cursor nghĩa là "xem thêm" — nối vào; không có thì đây là lần lọc mới.
@@ -49,9 +51,12 @@ export function ArticleFeed() {
     [],
   );
 
+  // Hoãn 300ms: gõ "websocket" mà gọi ngay từng phím là chín request, và request về sau
+  // có thể tới trước request trước nó rồi ghi đè kết quả bằng danh sách của tiền tố cũ.
   useEffect(() => {
-    void load(activeTag);
-  }, [activeTag, load]);
+    const timer = setTimeout(() => void load(activeTag, search), 300);
+    return () => clearTimeout(timer);
+  }, [activeTag, search, load]);
 
   useEffect(() => {
     void api.articles
@@ -71,6 +76,36 @@ export function ArticleFeed() {
 
       <div className="flex flex-col gap-8 lg:flex-row">
         <div className="min-w-0 flex-1">
+          {/* Tìm trong tiêu đề và tóm tắt, do learning-service lọc (tham số `q`) chứ không
+              lọc trên mảng đã tải: danh sách phân trang nên lọc ở client chỉ tìm được
+              trong 15 bài đầu tiên. */}
+          <div className="relative mb-5">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-faint"
+            />
+            <input
+              aria-label="Tìm bài viết"
+              className="h-11 w-full rounded-lg border border-border bg-surface pr-10 pl-10 text-sm text-navy transition-colors outline-none placeholder:text-text-faint focus-visible:border-primary"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Tìm bài viết theo tiêu đề hoặc mô tả…"
+              // `text` chứ không phải `search`: `type="search"` khiến Chrome vẽ thêm nút
+              // xoá của riêng nó, nằm ngay cạnh nút xoá bên dưới — hai dấu X cạnh nhau.
+              type="text"
+              value={search}
+            />
+            {search !== "" && (
+              <button
+                aria-label="Xoá tìm kiếm"
+                className="absolute top-1/2 right-3 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-text-faint transition-colors hover:bg-bg hover:text-navy"
+                onClick={() => setSearch("")}
+                type="button"
+              >
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
           {error !== null && (
             <p className="rounded-lg border border-danger/40 bg-danger-tint px-4 py-3 text-sm text-danger" role="alert">
               {error}
@@ -86,9 +121,17 @@ export function ArticleFeed() {
             <div className="rounded-xl border border-border bg-surface py-20 text-center">
               <Newspaper aria-hidden="true" className="mx-auto h-8 w-8 text-border" />
               <p className="mt-3 text-sm font-medium text-navy">
-                {activeTag ? `Chưa có bài viết nào thuộc "${activeTag}"` : "Chưa có bài viết nào"}
+                {search.trim()
+                  ? `Không tìm thấy bài viết nào khớp "${search.trim()}"`
+                  : activeTag
+                    ? `Chưa có bài viết nào thuộc "${activeTag}"`
+                    : "Chưa có bài viết nào"}
               </p>
-              <p className="mt-1 text-xs text-text-muted">Bài viết mới sẽ xuất hiện ở đây.</p>
+              <p className="mt-1 text-xs text-text-muted">
+                {search.trim()
+                  ? "Thử từ khoá ngắn hơn, hoặc bỏ lọc chủ đề."
+                  : "Bài viết mới sẽ xuất hiện ở đây."}
+              </p>
             </div>
           ) : (
             <ul className="flex flex-col gap-4">
@@ -102,7 +145,7 @@ export function ArticleFeed() {
             <button
               className="mt-6 w-full rounded-lg border border-border bg-surface py-3 text-sm font-semibold text-primary transition-colors hover:bg-bg disabled:opacity-50"
               disabled={loading}
-              onClick={() => void load(activeTag, cursor)}
+              onClick={() => void load(activeTag, search, cursor)}
               type="button"
             >
               {loading ? "Đang tải…" : "Xem thêm bài viết"}
@@ -192,7 +235,7 @@ function ArticleRow({ article }: { article: ArticleSummary }) {
               </Link>
             </h2>
             {article.excerpt && (
-              <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-text-muted">
+              <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-text-muted">
                 {article.excerpt}
               </p>
             )}

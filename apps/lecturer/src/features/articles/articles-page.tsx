@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ExternalLink, Plus, Save, Send, Undo2 } from "lucide-react";
+import { Check, Eye, ExternalLink, Plus, Save, Send, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { RichTextEditor } from "@codementor/editor";
 import { Button, ManagePage, Modal, Select, StatusBadge } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
-import { api } from "@/lib/api";
+import { api, type Tag } from "@/lib/api";
 import {
   ARTICLE_STATUSES,
   ARTICLE_STATUS_LABELS,
@@ -16,6 +16,7 @@ import {
 } from "@/features/articles/types";
 
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
+const timeFormat = new Intl.DateTimeFormat("vi-VN", { timeStyle: "short" });
 
 /** Ứng dụng người học, để mở xem trước bài — bài nháp cũng xem được bởi chính tác giả. */
 const CLIENT_URL = process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000";
@@ -26,6 +27,8 @@ interface Draft {
   excerpt: string;
   takeaway: string;
   readMinutes: string;
+  /** "" = chưa chọn chủ đề. */
+  tagId: string;
   contentHtml: string;
 }
 
@@ -46,6 +49,20 @@ export function ArticlesPage() {
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [previewing, setPreviewing] = useState(false);
+  // Bấm Lưu xong thì màn hình không đổi gì cả — drawer vẫn nguyên, danh sách vẫn nguyên —
+  // nên người viết tưởng nút hỏng dù dữ liệu đã ghi. Đây là dấu hiệu rằng nó đã chạy.
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+
+  // Nạp một lần cho cả trang: danh sách chủ đề đổi rất hiếm, và mỗi lần mở một bài mà gọi
+  // lại thì drawer phải chờ thêm một vòng mạng chỉ để vẽ đúng ô select đó.
+  useEffect(() => {
+    void api.tags
+      .list()
+      .then(setTags)
+      .catch(() => setTags([]));
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,12 +100,15 @@ export function ArticlesPage() {
   };
 
   const loadDraft = useCallback(async (id: string) => {
+    // Mở sang bài khác thì dấu "đã lưu" của bài trước không còn đúng nữa.
+    setSavedAt(null);
     const detail = await api.articles.detail(id);
     setDraft({
       id,
       excerpt: detail.excerpt ?? "",
       takeaway: detail.takeaway ?? "",
       readMinutes: detail.readMinutes ? String(detail.readMinutes) : "",
+      tagId: detail.tagId ?? "",
       contentHtml: detail.contentHtml ?? "",
     });
   }, []);
@@ -100,12 +120,16 @@ export function ArticlesPage() {
         excerpt: draft.excerpt.trim() || undefined,
         takeaway: draft.takeaway.trim() || undefined,
         readMinutes: draft.readMinutes ? Number(draft.readMinutes) : undefined,
+        // `undefined` = không đụng tới. Backend chưa có đường gỡ chủ đề đã gắn; bỏ chọn
+        // chỉ giữ nguyên chủ đề cũ chứ không xoá — chưa ai cần xoá nên chưa mở đường đó.
+        tagId: draft.tagId || undefined,
       });
       // Tiptap trả "<p></p>" cho tài liệu rỗng; ghi nó sẽ gắn `content_ref` cho một bài
       // trống — `publish()` cho qua, còn người đọc mở ra thấy trắng.
       if (draft.contentHtml.replace(/<[^>]*>/g, "").trim().length > 0) {
         await api.articles.saveContent(id, draft.contentHtml);
       }
+      setSavedAt(new Date());
     },
     [draft],
   );
@@ -172,19 +196,49 @@ export function ArticlesPage() {
           description: (row) => ARTICLE_STATUS_LABELS[row.status] ?? row.status,
           width: "wide",
           body: (row) => (
-            <Editor draft={draft} key={row.id} onChange={setDraft} onLoad={loadDraft} row={row} />
+            <Editor
+              draft={draft}
+              key={row.id}
+              onChange={setDraft}
+              onLoad={loadDraft}
+              row={row}
+              tags={tags}
+            />
           ),
           footer: (row) => (
             <>
-              <a
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                href={`${CLIENT_URL}/articles/${row.slug}`}
-                rel="noreferrer"
-                target="_blank"
+              {savedAt !== null && draft?.id === row.id && (
+                <span
+                  aria-live="polite"
+                  className="mr-auto inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <Check aria-hidden="true" className="size-3.5 text-success" />
+                  Đã lưu lúc {timeFormat.format(savedAt)}
+                </span>
+              )}
+              {/* Xem trước dựng từ bản nháp ĐANG SỬA, ngay tại chỗ. Trước đây nút này mở
+                  sang ứng dụng người học — với bài chưa đăng thì trang đó trả 404, và kể
+                  cả bài đã đăng thì nó hiện bản đã lưu chứ không phải bản đang gõ. */}
+              <Button
+                disabled={draft?.id !== row.id}
+                onClick={() => setPreviewing(true)}
+                type="button"
+                variant="outline"
               >
-                <ExternalLink aria-hidden="true" className="size-4" />
+                <Eye aria-hidden="true" className="size-4" />
                 Xem trước
-              </a>
+              </Button>
+              {row.status === "published" && (
+                <a
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                  href={`${CLIENT_URL}/articles/${row.slug}`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <ExternalLink aria-hidden="true" className="size-4" />
+                  Xem trên client
+                </a>
+              )}
               <Button
                 disabled={busy || draft?.id !== row.id}
                 onClick={() => void act(() => saveDraft(row.id))}
@@ -248,6 +302,28 @@ export function ArticlesPage() {
         title="Bài viết"
       />
 
+      {/* Cùng class `.rich-text` mà trình soạn thảo dùng, nên bản xem trước và bản người
+          học đọc được dựng từ đúng một bộ luật trình bày. */}
+      <Modal
+        onClose={() => setPreviewing(false)}
+        open={previewing}
+        title="Xem trước bài viết"
+        width="lg"
+      >
+        <article>
+          <h1 className="text-2xl leading-snug font-bold">
+            {rows.find((row) => row.id === draft?.id)?.title ?? ""}
+          </h1>
+          {draft?.excerpt ? (
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{draft.excerpt}</p>
+          ) : null}
+          <div
+            className="rich-text mt-6"
+            dangerouslySetInnerHTML={{ __html: draft?.contentHtml ?? "" }}
+          />
+        </article>
+      </Modal>
+
       <Modal onClose={() => setCreating(false)} open={creating} title="Tạo bài viết mới">
         <p className="mb-4 text-sm text-muted-foreground">
           Bài được tạo ở dạng nháp. Thêm tóm tắt và nội dung rồi mới đăng được.
@@ -290,11 +366,13 @@ function Editor({
   onChange,
   onLoad,
   row,
+  tags,
 }: {
   draft: Draft | null;
   onChange: (draft: Draft) => void;
   onLoad: (id: string) => Promise<void>;
   row: ArticleListItem;
+  tags: Tag[];
 }) {
   useEffect(() => {
     if (draft?.id !== row.id) void onLoad(row.id);
@@ -332,6 +410,28 @@ function Editor({
           onChange={(event) => onChange({ ...draft, takeaway: event.target.value })}
           value={draft.takeaway}
         />
+      </Field>
+
+      <Field
+        hint="Chip lọc ở trang bài viết lấy từ đây. Bài không có chủ đề vẫn hiện trong danh sách nhưng không lọc ra được."
+        label="Chủ đề"
+      >
+        {/* `<select>` thô chứ không dùng `Select` của @codementor/ui: cái đó là ô lọc
+            (cao 9, chữ nhỏ đậm, co lại ở màn rộng) — đặt cạnh các ô nhập của form này
+            thì lệch hẳn một nấc. Cùng class với `<input>` bên dưới là khớp luôn. */}
+        <select
+          aria-label="Chủ đề"
+          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+          onChange={(event) => onChange({ ...draft, tagId: event.target.value })}
+          value={draft.tagId}
+        >
+          <option value="">— Chưa chọn —</option>
+          {tags.map((tag) => (
+            <option key={tag.id} value={tag.id}>
+              {tag.name}
+            </option>
+          ))}
+        </select>
       </Field>
 
       <Field label="Thời gian đọc (phút)">

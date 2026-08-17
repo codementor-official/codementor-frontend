@@ -278,7 +278,10 @@ export function RichTextEditor({
       }),
       CodeBlockLowlight.configure({ lowlight, defaultLanguage: "plaintext" }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Image,
+      // `allowBase64` mặc định là false, và hệ quả của nó là im lặng: mọi `<img>` mang
+      // `data:` URI bị LOẠI ngay lúc nạp tài liệu. Mở một bài có ảnh nhúng rồi bấm Lưu là
+      // ghi đè bằng bản không còn ảnh — mất dữ liệu mà không báo lỗi ở đâu cả.
+      Image.configure({ allowBase64: true }),
       Youtube.configure({ width: 640, height: 360 }),
       FileVideo,
       // Rendered as a ::before on the empty node itself, so it disappears the moment a

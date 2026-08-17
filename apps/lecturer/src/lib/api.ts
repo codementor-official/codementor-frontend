@@ -46,6 +46,13 @@ function query(params: Record<string, string | number | undefined>): string {
   return encoded ? `?${encoded}` : "";
 }
 
+/** Chủ đề dùng chung cho bài viết và bài tập. */
+export interface Tag {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 /** Tham số danh sách dùng chung; mỗi domain chỉ đọc những khoá nó hiểu. */
 export interface ListExercisesParams {
   q?: string;
@@ -175,11 +182,27 @@ export const api = {
       unwrap<Article>("/articles", { method: "POST", body }),
     update: (
       id: string,
-      body: { title?: string; excerpt?: string; takeaway?: string; readMinutes?: number },
+      body: {
+        title?: string;
+        excerpt?: string;
+        takeaway?: string;
+        readMinutes?: number;
+        tagId?: string;
+      },
     ) => unwrap<Article>(`/articles/${id}`, { method: "PATCH", body }),
     saveContent: (id: string, contentHtml: string) =>
       unwrap<Article>(`/articles/${id}/content`, { method: "PUT", body: { contentHtml } }),
     submit: (id: string) => unwrap<Article>(`/articles/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Article>(`/articles/${id}/withdraw`, { method: "POST" }),
+  },
+
+  /**
+   * Từ vựng chủ đề, do core-service sở hữu.
+   *
+   * Không nhầm với `GET /articles/tags`: đường đó chỉ trả chủ đề đã có bài công khai, nên
+   * dùng để chọn lúc soạn thì bài đầu tiên của một chủ đề mới sẽ không bao giờ gắn được.
+   */
+  tags: {
+    list: () => unwrap<Tag[]>("/tags"),
   },
 };

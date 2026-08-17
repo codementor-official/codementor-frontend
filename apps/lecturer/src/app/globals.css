@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@codementor/ui/theme.css";
+@import "@codementor/ui/rich-text.css";
 
 @source "../../../../packages/ui/src";
 @source "../../../../packages/editor/src";

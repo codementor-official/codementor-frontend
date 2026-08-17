@@ -1,0 +1,111 @@
+/* Kiểu trình bày cho HTML mà Tiptap sinh ra (`packages/editor` gắn class `rich-text` lên
+ * chính vùng soạn thảo), và cho mọi chỗ render lại HTML đó ở chế độ chỉ đọc — bản xem
+ * trước trong studio là ví dụ. Soạn và xem phải trông giống nhau, nên chung một khối.
+ *
+ * Vì sao ở đây mà không phải trong globals của từng app: trước đây khối này CHỈ có trong
+ * `apps/client/src/app/globals.css`, nên tiêu đề, danh sách, khối mã trong studio của
+ * giảng viên và quản trị viên hiện ra như văn bản trần — cùng một component, hai kết quả.
+ *
+ * Chỉ dùng token của `theme.css` (shadcn). `apps/client` có bảng token riêng
+ * (`--color-navy`, `--color-ink-fixed`…) và giữ bản `.rich-text` của nó; hợp nhất hai hệ
+ * token là việc khác, lớn hơn nhiều, và không cần thiết để sửa lỗi này.
+ *
+ * Preflight của Tailwind xoá mặc định của heading/list, nên mọi thứ dưới đây phải khai lại. */
+.rich-text {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+.rich-text > * + * {
+  margin-top: 0.75rem;
+}
+.rich-text h1,
+.rich-text h2,
+.rich-text h3 {
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+.rich-text h1 {
+  font-size: 1.5rem;
+}
+.rich-text h2 {
+  font-size: 1.25rem;
+}
+.rich-text h3 {
+  font-size: 1.0625rem;
+}
+.rich-text :is(h1, h2, h3) + * {
+  margin-top: 0.5rem;
+}
+.rich-text strong {
+  font-weight: 700;
+  color: var(--foreground);
+}
+.rich-text a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.rich-text :is(ul, ol) {
+  padding-left: 1.5rem;
+}
+.rich-text ul {
+  list-style: disc;
+}
+.rich-text ol {
+  list-style: decimal;
+}
+.rich-text li::marker {
+  color: var(--muted-foreground);
+}
+.rich-text blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+.rich-text code {
+  border-radius: 4px;
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
+}
+.rich-text pre {
+  overflow-x: auto;
+  border-radius: 6px;
+  /* Màu cố định, không theo theme: khối mã ở đây luôn đọc trên nền tối cho khớp với các
+   * pane Monaco. Để nó đảo màu theo dark mode sẽ ra chữ sáng trên nền sáng. */
+  background: #18181b;
+  padding: 0.875rem 1rem;
+  color: #f4f4f5;
+}
+/* Chip mã inline và nền tối riêng của highlight.js sẽ lòi ra bên trong khối mã nếu không
+ * reset. Màu token nằm ở các span `.hljs-*` nên chỉ reset màu nền. */
+.rich-text pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.8125rem;
+  color: inherit;
+}
+/* Extension Placeholder của Tiptap đánh dấu mọi node rỗng — kể cả `pre` rỗng hay `p` nằm
+ * trong một blockquote mới. Giới hạn về đúng đoạn văn ở cấp cao nhất là thứ chặn gợi ý
+ * vẽ xuyên qua các khối đó. */
+.rich-text > p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted-foreground);
+}
+.rich-text :is(img, iframe, video) {
+  max-width: 100%;
+  border-radius: 6px;
+}
+.rich-text video {
+  width: 100%;
+}
+.rich-text iframe {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: auto;
+}
