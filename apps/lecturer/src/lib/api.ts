@@ -33,8 +33,11 @@ const request = createApiClient({
 
 /** Every backend response is wrapped by the response interceptor in libs/platform. */
 async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]): Promise<T> {
-  const response = await request<ApiResponse<T>>(path, options);
-  return response.data;
+  const response = await request<ApiResponse<T> | undefined>(path, options);
+  // 204 No Content — mọi lệnh DELETE trả về thế này. Không có thân thì không có `data` để
+  // bóc, và đọc `.data` của `undefined` là chỗ "can't access property data" nổ ra ngay khi
+  // xoá thành công: bản ghi đã mất rồi mà màn hình vẫn báo lỗi.
+  return response?.data as T;
 }
 
 function query(params: Record<string, string | number | undefined>): string {
