@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -47,6 +47,29 @@ export function TableCheckbox({
  * chrome, no zebra striping, no column labels repeated inside cells — the header
  * carries the label, the cell carries only the value.
  */
+/**
+ * Bóng đổ ở mép trái/phải, tự hiện khi còn nội dung và tự biến mất khi đã cuộn hết.
+ *
+ * Thuần CSS, không cần nghe sự kiện scroll: hai lớp `local` cuộn CÙNG nội dung nên chúng
+ * che mất bóng khi ở sát mép, còn hai lớp `scroll` đứng yên so với khung. Nghe sự kiện
+ * cuộn sẽ cho kết quả y hệt, đổi lại một listener trên mọi bảng của cả hệ thống.
+ *
+ * Khai bằng thuộc tính rời chứ không dùng `background` gộp: dạng gộp reset luôn
+ * `background-color`, và màu nền của khung đang do lớp `bg-card` cấp.
+ */
+const SCROLL_SHADOW: CSSProperties = {
+  backgroundImage: [
+    "linear-gradient(to right, var(--card), transparent)",
+    "linear-gradient(to left, var(--card), transparent)",
+    "radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.2), transparent)",
+    "radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.2), transparent)",
+  ].join(", "),
+  backgroundPosition: "0 0, 100% 0, 0 0, 100% 0",
+  backgroundSize: "36px 100%, 36px 100%, 16px 100%, 16px 100%",
+  backgroundRepeat: "no-repeat",
+  backgroundAttachment: "local, local, scroll, scroll",
+};
+
 export function DataTable<TData>({
   table,
   emptyMessage,
@@ -58,8 +81,11 @@ export function DataTable<TData>({
   onRowClick?: (row: TData) => void;
 }) {
   const rows = table.getRowModel().rows;
+  // Bảng rộng hơn khung thì cuộn ngang được, nhưng trên điện thoại không có thanh cuộn
+  // nào hiện ra — nhìn vào chỉ thấy cột cuối bị cắt, và người dùng kết luận là hỏng chứ
+  // không nghĩ tới việc vuốt. Bóng đổ ở mép là dấu hiệu duy nhất cho biết còn nội dung.
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-card">
+    <div className="overflow-x-auto rounded-lg border border-border bg-card" style={SCROLL_SHADOW}>
       <table className="w-full min-w-3xl border-collapse text-sm">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
