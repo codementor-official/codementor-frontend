@@ -27,6 +27,7 @@
     "react-hook-form": "^7.83.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.12.2",
+    "recharts": "^3.10.1",
     "rehype-highlight": "^7.0.2",
     "zod": "^4.4.3"
   },

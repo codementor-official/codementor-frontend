@@ -17,6 +17,7 @@ import { PageHeader, StatusBadge } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
 import { useAuth } from "@/providers/auth-provider";
 import { api } from "@/lib/api";
+import { ActivityChart, StatusChart } from "@/features/dashboard/content-charts";
 
 /** Bốn loại nội dung một giảng viên sở hữu, cùng đường dẫn tới màn quản lý của nó. */
 const KINDS = [
@@ -55,6 +56,8 @@ interface Item {
   status: string;
   updatedAt: string;
   kind: KindKey;
+  /** `users.id` của người tạo. Hai loại gọi nó là `createdBy`, hai loại gọi `authorId`. */
+  ownerId: string | null;
 }
 
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
@@ -112,6 +115,16 @@ export function LecturerDashboardPage() {
     };
   }, []);
 
+  // Lọc theo người đang đăng nhập chứ không tin danh sách trả về là đã lọc sẵn.
+  // `/articles/manage` trả TOÀN BỘ bài cho tài khoản admin — một admin mở trang giảng viên
+  // sẽ thấy "Nội dung của bạn: 11 bài viết" trong khi họ viết đúng một bài.
+  const mine = (items ?? []).filter((item) => item.ownerId === null || item.ownerId === user?.id);
+  const chartItems = mine.map((item) => ({
+    status: item.status,
+    updatedAt: item.updatedAt,
+    kindLabel: labelOf(item.kind),
+  }));
+
   return (
     <PageBody>
       <PageHeader
@@ -141,9 +154,13 @@ export function LecturerDashboardPage() {
         </p>
       ) : (
         <div className="grid gap-6">
-          <NeedsAction items={items} />
-          <PendingReview items={items} />
-          <StatusOverview items={items} unavailable={unavailable} />
+          <NeedsAction items={mine} />
+          <PendingReview items={mine} />
+          <StatusOverview items={mine} unavailable={unavailable} />
+          <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+            <StatusChart items={chartItems} />
+            <ActivityChart items={chartItems} />
+          </div>
         </div>
       )}
     </PageBody>
@@ -276,9 +293,25 @@ function labelOf(key: KindKey): string {
 }
 
 function toItem(
-  row: { id: string; title: string; status: string; updatedAt: string },
+  row: {
+    id: string;
+    title: string;
+    status: string;
+    updatedAt: string;
+    createdBy?: string | null;
+    authorId?: string | null;
+  },
   kind: KindKey,
 ): Item {
-  return { id: row.id, title: row.title, status: row.status, updatedAt: row.updatedAt, kind };
+  return {
+    id: row.id,
+    title: row.title,
+    status: row.status,
+    updatedAt: row.updatedAt,
+    kind,
+    // Khoá học và lộ trình dùng `createdBy`, bài code và bài viết dùng `authorId`. Gộp lại
+    // một tên ở đây để phần lọc bên dưới không phải biết loại nào gọi là gì.
+    ownerId: row.createdBy ?? row.authorId ?? null,
+  };
 }
 
