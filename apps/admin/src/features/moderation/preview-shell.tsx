@@ -66,14 +66,17 @@ export function PreviewShell({
 
       <div className="rounded-lg border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold">Quyết định</h2>
-        <ModerationActions
-          id={id}
-          kind={kind}
-          // Về lại danh sách sau khi quyết định: trang này vẽ một trạng thái vừa hết đúng,
-          // và hàng chờ là nơi có việc tiếp theo.
-          onDone={() => router.push(KIND_ROUTES[kind])}
-          status={status}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <ModerationActions
+            id={id}
+            kind={kind}
+            title={title}
+            // Về lại danh sách sau khi quyết định: trang này vẽ một trạng thái vừa hết
+            // đúng, và hàng chờ là nơi có việc tiếp theo.
+            onDone={() => router.push(KIND_ROUTES[kind])}
+            status={status}
+          />
+        </div>
       </div>
     </div>
   );

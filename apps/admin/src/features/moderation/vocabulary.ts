@@ -17,11 +17,17 @@ export const KIND_ROUTES: Record<ContentKind, string> = {
 
 export interface DecisionMeta {
   label: string;
-  /** Câu nói rõ hậu quả, hiện ngay cạnh nút — quyết định kiểm duyệt thấy được ở đâu khác. */
+  /** Câu tóm tắt hậu quả, hiện khi rê chuột lên nút. */
   hint: string;
+  /** Có hỏi lại bằng hộp thoại không. Việc nào để lại dấu vết cho tác giả thì có. */
+  asks: boolean;
+  /** Tiêu đề hộp thoại — một câu hỏi, để đọc xong biết mình đang xác nhận gì. */
+  question: string;
+  /** Chuyện gì xảy ra ngay sau khi xác nhận. */
+  consequence: string;
   requiresReason: boolean;
-  /** Bấm nhầm là nội dung đang chạy biến mất khỏi trang học viên, nên hỏi lại một lần. */
-  confirm: boolean;
+  /** Câu báo sau khi xong, đi bằng toast. */
+  done: string;
   variant: "default" | "outline" | "ghost" | "danger";
   icon: LucideIcon;
 }
@@ -30,40 +36,58 @@ export const DECISIONS: Record<ModerationDecision, DecisionMeta> = {
   approve: {
     label: "Duyệt",
     hint: "Công khai ngay cho người học.",
+    asks: false,
+    question: "Duyệt nội dung này?",
+    consequence: "Nội dung sẽ hiện với người học ngay lập tức.",
     requiresReason: false,
-    confirm: false,
+    done: "Đã duyệt",
     variant: "default",
     icon: CheckCheck,
   },
   request_changes: {
     label: "Yêu cầu sửa",
     hint: "Trả về cho tác giả sửa rồi gửi lại.",
+    asks: true,
+    question: "Trả lại cho tác giả sửa?",
+    consequence:
+      "Nội dung rời hàng chờ và về lại tay tác giả. Họ sửa xong sẽ gửi duyệt lần nữa.",
     requiresReason: true,
-    confirm: false,
+    done: "Đã trả lại cho tác giả sửa",
     variant: "outline",
     icon: PencilLine,
   },
   reject: {
     label: "Từ chối",
     hint: "Đóng lượt gửi này. Duyệt lại được sau nếu đổi ý.",
+    asks: true,
+    question: "Từ chối nội dung này?",
+    consequence:
+      "Lượt gửi này đóng lại và tác giả đọc được lý do. Nếu sau đó nghĩ lại, bạn vẫn duyệt thẳng được từ tab “Đã từ chối”.",
     requiresReason: true,
-    confirm: false,
+    done: "Đã từ chối",
     variant: "ghost",
     icon: XCircle,
   },
   archive: {
     label: "Gỡ khỏi công khai",
     hint: "Người học mất quyền xem ngay lập tức.",
+    asks: true,
+    question: "Gỡ nội dung này khỏi công khai?",
+    consequence:
+      "Người học mất quyền xem ngay lập tức. Nội dung chuyển sang “Đã gỡ”; khôi phục được nhưng phải đi lại vòng duyệt từ bản nháp.",
     requiresReason: true,
-    confirm: true,
+    done: "Đã gỡ khỏi công khai",
     variant: "danger",
     icon: EyeOff,
   },
   restore: {
     label: "Khôi phục về nháp",
     hint: "Trả về cho tác giả, đi lại vòng duyệt từ đầu.",
+    asks: false,
+    question: "Khôi phục nội dung đã gỡ?",
+    consequence: "Nội dung về lại bản nháp của tác giả và phải gửi duyệt lại mới công khai.",
     requiresReason: false,
-    confirm: false,
+    done: "Đã khôi phục về nháp",
     variant: "outline",
     icon: RotateCcw,
   },

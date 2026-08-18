@@ -12,11 +12,12 @@ pnpm workspace (`apps/*`, `packages/*`) orchestrated by Turborepo.
 | `apps/client` | `@codementor/client` | 3000 | The real product: member/student app, all migrated routes and UI |
 | `apps/lecturer` | `@codementor/lecturer` | 3010 | Built out: shell, auth, courses/exercises/roadmaps features |
 | `apps/admin` | `@codementor/admin` | 3011 | Built out: shell, auth boundary, dashboard/section features |
-| `packages/ui` | `@codementor/ui` | — | **The** primitive library — `Button`, `Card`, `Input`, `PageHeader`, `FilterBar`, `Select`, `SegmentedTabs`, `Modal`, `SideDrawer`, `DataTable`, `StatusBadge`, `ManagePage`, `DashboardShell`, `workspace/*`. Consumed by all three apps |
+| `packages/ui` | `@codementor/ui` | — | **The** primitive library — `Button`, `Card`, `Input`, `PageHeader`, `FilterBar`, `Select`, `SegmentedTabs`, `Modal`, `ConfirmButton`, `SideDrawer`, `DrawerDetail`/`DetailMeta`/`DetailRow`/`DetailSection`, `ToastProvider`/`useToast`, `DataTable`, `StatusBadge`, `ManagePage`, `DashboardShell`, `useResolvedTheme`, `workspace/*`. Consumed by all three apps |
 | `packages/editor` | `@codementor/editor` | — | Monaco code editor + TipTap rich-text editor. Used by client + lecturer |
 | `packages/api-client` | `@codementor/api-client` | — | `createApiClient`, `ApiClientError`. Used by all three apps |
 | `packages/auth` | `@codementor/auth` | — | Keycloak config types, `hasRole`/`hasAnyRole`. Used by all three apps |
-| `packages/types` | `@codementor/types` | — | `Role`, `User`, `Pagination`, `ApiResponse`. Used by all three apps |
+| `packages/solve` | `@codementor/solve` | — | `SolvePreview` (màn giải bài ba khung) + kiểu/nhãn bài code. Used by lecturer (xem thử) + admin (kiểm duyệt) |
+| `packages/types` | `@codementor/types` | — | `Role`, `User`, `Pagination`, `ApiResponse`, and the content vocabulary (`FIELDS`/`LEVELS`/`MODES`/`CONTENT_STATUSES`, `LESSON_TYPES` and their labels/tones). Used by all three apps |
 | `packages/utils` | `@codementor/utils` | — | `joinUrl`. Used by `api-client`, client, lecturer |
 | `packages/eslint-config` | `@codementor/eslint-config` | — | Flat config consumed by root `eslint.config.mjs` |
 | `packages/typescript-config` | `@codementor/typescript-config` | — | `base.json`, `nextjs.json` |
@@ -95,6 +96,23 @@ a change** — the whole point is that the convention runs rather than being rem
 9. **Ship it or delete it.** No nav-reachable route may render a placeholder. Mock data is
    allowed only where the shape and interaction are the real ones and a backend is planned; a
    mock that exists to fill a grid gets deleted, along with its data file and components.
+10. **Confirm in a dialog, report in a toast.** An action the user cannot walk back — deleting,
+   unpublishing, rejecting, anything that changes what other people see — asks first in a modal
+   (`ConfirmButton`, or `Modal` when the confirmation also collects input such as a reason). The
+   modal names the consequence in a sentence; it does not merely say "are you sure". Never
+   confirm with a second click on the same button, an inline warning strip, or `window.confirm`.
+
+   The **result** of an action — "Đã lưu", "Đã duyệt", "Lưu thất bại" — is a toast
+   (`useToast()`), never a strip under the page header. Header strips push the layout down,
+   sit far from where the user just clicked, and stay on screen long after the fact.
+
+   Three things stay in place and never become toasts, because the user needs them while
+   looking at the thing they describe: a **load failure** for the surface being read (the list
+   that could not be fetched), a **field validation** message (it belongs beside the field), and
+   **record state** such as the rejection reason on content that was sent back. If a message is
+   still true five seconds later, it is not a toast.
+
+   `ToastProvider` wraps each app in its root `layout.tsx`, outside the auth provider.
 
 ## Refactoring rules
 

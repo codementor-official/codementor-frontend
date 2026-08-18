@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { ExternalLink, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ManagePage } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { ModerationActions } from "@/features/moderation/moderation-actions";
-import { describeError } from "@/features/moderation/use-moderation";
+import { ModerationActions, ReviewLink } from "@/features/moderation/moderation-actions";
+import { ModerationDrawerBody } from "@/features/moderation/drawer-body";
 import { dateTimeFormat, daysWaiting, KIND_LABELS, KIND_ROUTES } from "@/features/moderation/vocabulary";
 import { moderationApi, type ContentKind, type QueueItem } from "@/lib/api";
 
@@ -128,43 +127,21 @@ export default function ModerationPage() {
         title: (row) => row.title,
         description: (row) =>
           `${row.kind ? KIND_LABELS[row.kind] : ""} · ${row.authorName ?? "không rõ tác giả"}`,
-        body: (row) => (
-          <>
-            <dl className="mb-4 grid gap-3 text-sm">
-              <Row label="Slug" value={row.slug} />
-              <Row label="Loại" value={row.kind ? KIND_LABELS[row.kind] : "—"} />
-              <Row label="Tác giả" value={row.authorName ?? "—"} />
-              <Row label="Chờ từ" value={dateTimeFormat.format(new Date(row.updatedAt))} />
-            </dl>
-
-            {row.kind && (
-              <Link
-                className="mb-5 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm hover:bg-muted"
-                href={`${KIND_ROUTES[row.kind]}/${row.id}`}
-              >
-                <span>
-                  <span className="font-medium">Mở trang kiểm tra</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    Đọc nội dung thật trước khi duyệt hoặc từ chối.
-                  </span>
-                </span>
-                <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-              </Link>
-            )}
-
-            {/* `key` theo id: ô lý do và bước xác nhận nằm trong state của component này, và
-                không có `key` thì lý do gõ cho nội dung trước còn nguyên khi mở nội dung sau. */}
-            {row.kind && (
-              <ModerationActions
-                id={row.id}
-                key={`${row.kind}:${row.id}`}
-                kind={row.kind}
-                onDone={() => void load()}
-                status={row.status}
-              />
-            )}
-          </>
-        ),
+        width: "wide",
+        body: (row) => (row.kind ? <ModerationDrawerBody kind={row.kind} row={row} /> : null),
+        footer: (row) =>
+          row.kind ? (
+            <ModerationActions
+              before={<ReviewLink href={`${KIND_ROUTES[row.kind]}/${row.id}`} />}
+              id={row.id}
+              key={`${row.kind}:${row.id}`}
+              kind={row.kind}
+              onDone={() => void load()}
+              size="sm"
+              status={row.status}
+              title={row.title}
+            />
+          ) : null,
       }}
       emptyMessage="Không có nội dung nào đang chờ duyệt."
       error={error}
@@ -193,11 +170,3 @@ export default function ModerationPage() {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-3">
-      <dt className="w-24 shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 flex-1 break-words">{value}</dd>
-    </div>
-  );
-}

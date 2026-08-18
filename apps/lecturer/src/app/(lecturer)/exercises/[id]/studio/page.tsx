@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Play, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
-import { Button, PageHeader, ResizeHandle, StatusBadge, useResolvedTheme } from "@codementor/ui";
+import { Button, PageHeader, ResizeHandle, StatusBadge, useResolvedTheme, useToast } from "@codementor/ui";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
@@ -48,10 +48,10 @@ export default function ExerciseStudioPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
+  const toast = useToast();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [draft, setDraft] = useState<ExerciseDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const theme = useResolvedTheme();
 
@@ -76,15 +76,15 @@ export default function ExerciseStudioPage() {
 
   const run = async (action: () => Promise<Exercise>, done: string) => {
     setSaving(true);
-    setError(null);
-    setNotice(null);
     try {
       const updated = await action();
       setExercise(updated);
       setDraft(toDraft(updated));
-      setNotice(done);
+      toast.success(done);
     } catch (cause) {
-      setError(describe(cause));
+      // Lỗi của một thao tác đi bằng toast; `error` chỉ còn giữ lỗi tải trang, thứ khiến
+      // màn hình không vẽ được gì.
+      toast.error(describe(cause));
     } finally {
       setSaving(false);
     }
@@ -176,11 +176,9 @@ export default function ExerciseStudioPage() {
       }
       backHref="/exercises"
       backLabel="Bài code"
-      error={error}
       meta={`${exercise.timeLimitMs} ms · ${Math.round(exercise.memoryLimitKb / 1024)} MB${
         locked ? " · đang chờ duyệt nên không sửa được" : ""
       }`}
-      notice={notice}
       rejectionReason={exercise.rejectionReason}
       slug={exercise.slug}
       status={

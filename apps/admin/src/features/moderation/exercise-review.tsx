@@ -53,8 +53,8 @@ export function ExerciseReview({ id }: { id: string }) {
         <ModerationActions
           id={exercise.id}
           kind="exercises"
-          layout="compact"
           onDone={() => router.push("/moderation/exercises")}
+          size="sm"
           status={exercise.status}
           title={exercise.title}
         />

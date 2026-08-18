@@ -1,15 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { BookOpen, Braces, ExternalLink, Route } from "lucide-react";
+import { BookOpen, Braces, Route } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ManagePage, StatusBadge } from "@codementor/ui";
 import { DIFFICULTY_LABELS, STATUS_LABELS, STATUS_TONES, type Difficulty, type ExerciseStatus } from "@codementor/solve";
 import { FIELD_LABELS, LEVEL_LABELS, type Field, type Level } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { ModerationActions } from "@/features/moderation/moderation-actions";
+import { ModerationActions, ReviewLink } from "@/features/moderation/moderation-actions";
+import { ModerationDrawerBody } from "@/features/moderation/drawer-body";
 import { describeError } from "@/features/moderation/use-moderation";
 import {
   dateTimeFormat,
@@ -175,56 +175,21 @@ export function ModerationQueuePage({ kind }: { kind: ContentKind }) {
       drawer={{
         title: (row) => row.title,
         description: (row) => `${row.slug} · ${row.authorName ?? "không rõ tác giả"}`,
-        body: (row) => (
-          <>
-            <dl className="mb-4 grid gap-3 text-sm">
-              <Field label="Trạng thái">
-                <StatusBadge tone={STATUS_TONES[row.status as ExerciseStatus] ?? "neutral"}>
-                  {STATUS_LABELS[row.status as ExerciseStatus] ?? row.status}
-                </StatusBadge>
-              </Field>
-              <Field label="Tác giả">{row.authorName ?? "—"}</Field>
-              <Field label="Cập nhật">{dateTimeFormat.format(new Date(row.updatedAt))}</Field>
-              {kind === "exercises" && (
-                <Field label="Độ khó">
-                  {DIFFICULTY_LABELS[row.difficulty as Difficulty] ?? row.difficulty ?? "—"}
-                </Field>
-              )}
-              {kind === "courses" && (
-                <Field label="Quy mô">
-                  {row.totalChapters ?? 0} chương · {row.totalLessons ?? 0} bài
-                </Field>
-              )}
-              {kind === "roadmaps" && <Field label="Số khóa">{row.courseCount ?? 0}</Field>}
-            </dl>
-
-            {/* Danh sách không mang theo nội dung, nên quyết định dựa vào riêng nó là quyết
-                định dựa trên tiêu đề. Đường dẫn này là chỗ xem thứ tác giả thực sự gửi. */}
-            <Link
-              className="mb-5 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm hover:bg-muted"
-              href={`${KIND_ROUTES[kind]}/${row.id}`}
-            >
-              <span>
-                <span className="font-medium">Mở trang kiểm tra</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  {kind === "exercises"
-                    ? "Đọc đề, xem testcase và chạy thử qua judge."
-                    : kind === "courses"
-                      ? "Xem cây chương trình và nội dung từng bài học."
-                      : "Xem thứ tự khóa học và trạng thái từng khóa."}
-                </span>
-              </span>
-              <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-            </Link>
-
-            <ModerationActions
-              id={row.id}
-              key={row.id}
-              kind={kind}
-              onDone={() => void load()}
-              status={row.status}
-            />
-          </>
+        width: "wide",
+        body: (row) => <ModerationDrawerBody kind={kind} row={row} />,
+        // Quyết định nằm ở chân drawer cùng với đường sang trang kiểm tra: một hàng nút,
+        // đúng chỗ mắt dừng lại sau khi đọc hết nội dung ở trên.
+        footer: (row) => (
+          <ModerationActions
+            before={<ReviewLink href={`${KIND_ROUTES[kind]}/${row.id}`} />}
+            id={row.id}
+            key={row.id}
+            kind={kind}
+            onDone={() => void load()}
+            size="sm"
+            status={row.status}
+            title={row.title}
+          />
         ),
       }}
       emptyMessage={
@@ -246,11 +211,3 @@ export function ModerationQueuePage({ kind }: { kind: ContentKind }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex gap-3">
-      <dt className="w-24 shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 flex-1 break-words">{children}</dd>
-    </div>
-  );
-}

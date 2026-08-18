@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { ApiClientError } from "@codementor/api-client";
+import { useToast } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi, type ContentKind, type ModerationDecision } from "@/lib/api";
 
@@ -13,28 +14,29 @@ import { moderationApi, type ContentKind, type ModerationDecision } from "@/lib/
  */
 export function useModeration(kind: ContentKind, onDone?: () => void) {
   const request = useAdminApi();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const decide = useCallback(
     async (id: string, decision: ModerationDecision, reason?: string): Promise<boolean> => {
       setBusy(true);
-      setError(null);
       try {
         await moderationApi.decide(request, kind, id, decision, reason?.trim() || undefined);
         onDone?.();
         return true;
       } catch (cause) {
-        setError(describeError(cause));
+        // Thất bại ở đây gần như luôn là 422 "không ở trạng thái ..." vì người khác vừa
+        // quyết định trước — một câu trôi qua được, không phải trạng thái phải giữ lại.
+        toast.error(describeError(cause));
         return false;
       } finally {
         setBusy(false);
       }
     },
-    [kind, onDone, request],
+    [kind, onDone, request, toast],
   );
 
-  return { busy, decide, error, setError };
+  return { busy, decide };
 }
 
 /**

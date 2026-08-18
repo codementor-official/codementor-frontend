@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Info, Save, Send, Tags, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
-import { Button, Card, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { Button, Card, PageHeader, ResizeHandle, StatusBadge, useToast } from "@codementor/ui";
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
@@ -67,6 +67,7 @@ export default function CourseStudioPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
+  const toast = useToast();
   const [tab, setTab] = useState<"curriculum" | "metadata">("curriculum");
   const [course, setCourse] = useState<Course | null>(null);
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -74,7 +75,6 @@ export default function CourseStudioPage() {
   const [selection, setSelection] = useState<Selection>(null);
   const [exercises, setExercises] = useState<ExerciseListItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedSignature, setSavedSignature] = useState("");
 
@@ -121,13 +121,13 @@ export default function CourseStudioPage() {
 
   const run = async (action: () => Promise<Course>, done: string) => {
     setSaving(true);
-    setError(null);
-    setNotice(null);
     try {
       apply(await action());
-      setNotice(done);
+      toast.success(done);
     } catch (cause) {
-      setError(describe(cause));
+      // Lỗi của một thao tác đi bằng toast; `error` chỉ còn giữ lỗi tải trang, thứ khiến
+      // màn hình không vẽ được gì.
+      toast.error(describe(cause));
     } finally {
       setSaving(false);
     }
@@ -223,11 +223,9 @@ export default function CourseStudioPage() {
       }
       backHref="/courses"
       backLabel="Khóa học"
-      error={error}
       meta={`${course.totalChapters} chương · ${course.totalLessons} bài · ${
         course.durationHours ? `${course.durationHours} giờ` : "chưa có thời lượng"
       }`}
-      notice={notice}
       rejectionReason={course.rejectionReason}
       slug={course.slug}
       status={

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Gavel } from "lucide-react";
-import { Button, Modal } from "@codementor/ui";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
+import { Button, Modal, useToast } from "@codementor/ui";
 import { DECISIONS, DECISIONS_FOR } from "@/features/moderation/vocabulary";
 import { useModeration } from "@/features/moderation/use-moderation";
 import type { ContentKind, ModerationDecision } from "@/lib/api";
@@ -14,33 +15,36 @@ export interface ModerationActionsProps {
   status: string;
   /** Gọi sau khi quyết định thành công: nạp lại danh sách, hoặc quay về hàng chờ. */
   onDone: () => void;
-  /**
-   * `compact` cho thanh công cụ hẹp (màn giải bài): một nút mở hộp thoại chứa đúng bộ
-   * điều khiển của `inline`. Không có ô lý do nào bị cắt đi giữa hai kiểu hiển thị —
-   * một nút "Từ chối" không kèm chỗ ghi lý do là nút không bấm được.
-   */
-  layout?: "inline" | "compact";
-  /** Tên nội dung, hiện trên hộp thoại của kiểu `compact`. */
+  /** Tên nội dung, nhắc lại trong hộp xác nhận để thấy mình đang xử lý đúng thứ định xử lý. */
   title?: string;
+  size?: "sm" | "md";
+  /** Nút phụ đứng trước hàng quyết định — chỗ cho liên kết "Mở trang kiểm tra". */
+  before?: React.ReactNode;
 }
 
 /**
  * Bộ nút quyết định của admin.
  *
- * CHÚ Ý khi dùng trong danh sách: truyền `key={id}` ở chỗ gọi. Component giữ ô lý do và
- * bước xác nhận trong state của nó, mà React giữ nguyên instance khi chỉ có prop đổi —
- * không có `key` thì lý do gõ cho nội dung này còn nằm nguyên đó lúc mở nội dung khác, và
- * nó sẽ được gửi đi cùng quyết định tiếp theo.
+ * Việc nào có hậu quả — từ chối, yêu cầu sửa, gỡ khỏi công khai — đi qua một hộp xác nhận
+ * mang theo ô lý do, chứ không phải một ô lý do luôn nằm trong drawer cộng một dòng cảnh
+ * báo hiện lên chỗ khác. Hộp thoại nói rõ chuyện gì sắp xảy ra ngay tại chỗ người dùng
+ * đang nhìn, và đóng nó lại là huỷ — không để lại nửa thao tác nào trên màn hình.
+ *
+ * Duyệt và khôi phục chạy thẳng: chúng mở nội dung ra hoặc trả nó về nháp, và cả hai đều
+ * lùi lại được bằng đúng bộ nút này.
  */
 export function ModerationActions({
   kind,
   id,
   status,
   onDone,
-  layout = "inline",
   title,
+  size = "md",
+  before,
 }: ModerationActionsProps) {
-  const [open, setOpen] = useState(false);
+  const toast = useToast();
+  const { busy, decide } = useModeration(kind, onDone);
+  const [asking, setAsking] = useState<ModerationDecision | null>(null);
   const available = DECISIONS_FOR[status] ?? [];
 
   if (available.length === 0) {
@@ -51,121 +55,134 @@ export function ModerationActions({
     );
   }
 
-  if (layout === "inline") {
-    return <DecisionForm available={available} id={id} kind={kind} onDone={onDone} />;
-  }
+  const run = async (decision: ModerationDecision, reason?: string) => {
+    const ok = await decide(id, decision, reason);
+    if (ok) {
+      toast.success(`${DECISIONS[decision].done}${title ? `: ${title}` : ""}`);
+      setAsking(null);
+    }
+  };
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} size="sm" type="button">
-        <Gavel aria-hidden="true" className="size-3.5" />
-        Quyết định
-      </Button>
-      <Modal
-        description={title}
-        onClose={() => setOpen(false)}
-        open={open}
-        title="Quyết định kiểm duyệt"
-        width="sm"
-      >
-        <DecisionForm
-          available={available}
-          id={id}
-          kind={kind}
-          onDone={() => {
-            setOpen(false);
-            onDone();
-          }}
+      {before}
+      {available.map((decision) => {
+        const meta = DECISIONS[decision];
+        const Icon = meta.icon;
+        return (
+          <Button
+            disabled={busy}
+            key={decision}
+            onClick={() => (meta.asks ? setAsking(decision) : void run(decision))}
+            size={size}
+            title={meta.hint}
+            type="button"
+            variant={meta.variant}
+          >
+            <Icon aria-hidden="true" className={size === "sm" ? "size-3.5" : "size-4"} />
+            {meta.label}
+          </Button>
+        );
+      })}
+
+      {asking && (
+        <DecisionDialog
+          busy={busy}
+          decision={asking}
+          onCancel={() => setAsking(null)}
+          onConfirm={(reason) => void run(asking, reason)}
+          title={title}
         />
-      </Modal>
+      )}
     </>
   );
 }
 
-function DecisionForm({
-  kind,
-  id,
-  available,
-  onDone,
+function DecisionDialog({
+  decision,
+  title,
+  busy,
+  onCancel,
+  onConfirm,
 }: {
-  kind: ContentKind;
-  id: string;
-  available: ModerationDecision[];
-  onDone: () => void;
+  decision: ModerationDecision;
+  title?: string;
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: (reason?: string) => void;
 }) {
-  const { busy, decide, error, setError } = useModeration(kind, onDone);
+  const meta = DECISIONS[decision];
   const [reason, setReason] = useState("");
-  // Chỉ dùng cho `archive`: gỡ một nội dung đang chạy là thay đổi thấy được ngay ở phía
-  // người học, nên nó cần một nhịp dừng mà `approve` không cần.
-  const [confirming, setConfirming] = useState<ModerationDecision | null>(null);
-  const needsReason = available.some((decision) => DECISIONS[decision].requiresReason);
+  const [missing, setMissing] = useState(false);
 
-  const run = async (decision: ModerationDecision) => {
-    const meta = DECISIONS[decision];
+  const confirm = () => {
     if (meta.requiresReason && !reason.trim()) {
-      setError(`Phải nêu lý do khi ${meta.label.toLowerCase()}. Tác giả sẽ đọc đúng câu này.`);
+      setMissing(true);
       return;
     }
-    if (meta.confirm && confirming !== decision) {
-      setConfirming(decision);
-      setError(null);
-      return;
-    }
-    setConfirming(null);
-    await decide(id, decision, meta.requiresReason ? reason : undefined);
+    onConfirm(meta.requiresReason ? reason.trim() : undefined);
   };
 
   return (
-    <div className="grid gap-3">
-      {needsReason && (
-        <div>
-          <label className="mb-1.5 block text-sm font-medium" htmlFor={`reason-${id}`}>
+    <Modal
+      description={title}
+      footer={
+        <>
+          <Button disabled={busy} onClick={onCancel} type="button" variant="outline">
+            Huỷ
+          </Button>
+          <Button disabled={busy} onClick={confirm} type="button" variant={meta.variant === "danger" ? "danger" : "default"}>
+            {busy ? "Đang xử lý…" : meta.label}
+          </Button>
+        </>
+      }
+      onClose={() => !busy && onCancel()}
+      open
+      title={meta.question}
+      width="sm"
+    >
+      <p className="text-sm text-muted-foreground">{meta.consequence}</p>
+
+      {meta.requiresReason && (
+        <div className="mt-4">
+          <label className="mb-1.5 block text-sm font-medium" htmlFor="moderation-reason">
             Lý do
           </label>
           <textarea
-            className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-            id={`reason-${id}`}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Bắt buộc khi từ chối, yêu cầu sửa hoặc gỡ. Tác giả sẽ đọc đúng câu này."
+            autoFocus
+            className="min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
+            id="moderation-reason"
+            onChange={(event) => {
+              setReason(event.target.value);
+              setMissing(false);
+            }}
+            placeholder="Tác giả sẽ đọc đúng câu này. Nói rõ chỗ nào chưa đạt và cần sửa gì."
             value={reason}
           />
+          {/* Lỗi nhập liệu ở lại cạnh ô nhập, không thành toast: nó nói về thứ người dùng
+              đang gõ dở, và biến mất sau bốn giây là biến mất trước khi sửa xong. */}
+          {missing && (
+            <p className="mt-1.5 text-xs text-destructive">
+              Chưa có lý do. Không có nó thì tác giả không biết phải sửa gì.
+            </p>
+          )}
         </div>
       )}
+    </Modal>
+  );
+}
 
-      {error && (
-        <p
-          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-
-      {confirming && (
-        <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
-          {DECISIONS[confirming].hint} Bấm lần nữa để xác nhận.
-        </p>
-      )}
-
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {available.map((decision) => {
-          const meta = DECISIONS[decision];
-          const Icon = meta.icon;
-          return (
-            <Button
-              disabled={busy}
-              key={decision}
-              onClick={() => void run(decision)}
-              title={meta.hint}
-              type="button"
-              variant={meta.variant}
-            >
-              <Icon aria-hidden="true" className="size-4" />
-              {confirming === decision ? `Xác nhận ${meta.label.toLowerCase()}` : meta.label}
-            </Button>
-          );
-        })}
-      </div>
-    </div>
+/** Nút phụ dùng chung ở drawer: mở trang xem nội dung đầy đủ của bản ghi đang chọn. */
+export function ReviewLink({ href, size = "sm" }: { href: string; size?: "sm" | "md" }) {
+  return (
+    <Link
+      className={`mr-auto inline-flex items-center gap-1.5 rounded-md border bg-background font-medium text-foreground transition-colors hover:bg-muted ${
+        size === "sm" ? "h-8 px-2.5 text-xs" : "h-9 px-3 text-sm"
+      }`}
+      href={href}
+    >
+      <ExternalLink aria-hidden="true" className="size-3.5" />
+      Mở trang kiểm tra
+    </Link>
   );
 }

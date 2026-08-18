@@ -5,7 +5,7 @@ import { Award, CalendarDays, Code2, GitBranch, Globe2, MapPin, Pencil, Trophy }
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { submissionHistory } from "@/data/submission-history";
-import { Input, Modal } from "@codementor/ui";
+import { Input, Modal, useToast } from "@codementor/ui";
 
 const heatLevels = Array.from({ length: 91 }, (_, index) => {
   const value = Math.abs(Math.sin(index * 7.321 + 0.8));
@@ -21,8 +21,8 @@ const difficulties = [
 ];
 
 export function ProfileManagementPage() {
+  const toast = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [profile, setProfile] = useState({
     name: "Nguyễn Trần Gia Sĩ",
     handle: "giasi",
@@ -35,7 +35,7 @@ export function ProfileManagementPage() {
   const recent = submissionHistory.slice(0, 5);
 
   function saveProfile() {
-    setSaved(true);
+    toast.success("Đã lưu thay đổi hồ sơ");
     setIsEditing(false);
   }
 
@@ -47,7 +47,6 @@ export function ProfileManagementPage() {
           <h1 className="text-2xl font-bold text-navy">Hồ sơ & thành tích học tập</h1>
           <p className="mt-1 text-sm text-text-muted">Theo dõi quá trình luyện tập, chia sẻ kỹ năng và quản lý thông tin công khai.</p>
         </div>
-        {saved && <span className="text-xs font-semibold text-success">Đã lưu thay đổi hồ sơ</span>}
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)]">

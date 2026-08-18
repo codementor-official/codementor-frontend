@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     "@codementor/types",
     "@codementor/utils",
     "@codementor/editor",
+    "@codementor/solve",
   ],
 };
 

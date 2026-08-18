@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     "@codementor/api-client",
     "@codementor/auth",
     "@codementor/editor",
+    "@codementor/solve",
     "@codementor/types",
     "@codementor/ui",
   ],

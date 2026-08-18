@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { ToastProvider } from "@codementor/ui";
 import { AdminAuthProvider } from "@/features/auth/auth-provider";
 
 const inter = Inter({
@@ -32,7 +33,11 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={inter.variable}>
-        <AdminAuthProvider>{children}</AdminAuthProvider>
+        {/* Toast bọc NGOÀI auth: màn đăng nhập và ranh giới quyền cũng báo lỗi, và một
+            thông báo không hiện được vì nằm ngoài provider là lỗi im lặng. */}
+        <ToastProvider>
+          <AdminAuthProvider>{children}</AdminAuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

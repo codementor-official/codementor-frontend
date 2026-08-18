@@ -2,7 +2,8 @@
 
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
-import { Button, Modal } from "@codementor/ui";
+import { Button } from "./button";
+import { Modal } from "./modal";
 
 /**
  * Nút cho thao tác không lùi lại được: bấm ra hộp xác nhận, xác nhận rồi mới chạy.
