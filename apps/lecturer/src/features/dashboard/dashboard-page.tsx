@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   Loader2,
+  PencilLine,
   Route,
 } from "lucide-react";
 import { PageHeader, StatusBadge } from "@codementor/ui";
@@ -172,6 +173,10 @@ export function LecturerDashboardPage() {
             <StatusByKindChart items={chartItems} />
             <CourseSizeChart courses={courseSizes} />
           </div>
+          <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+            <Drafts items={mine} />
+            <RecentlyPublished items={mine} />
+          </div>
         </div>
       )}
     </PageBody>
@@ -254,7 +259,10 @@ interface Suggestion {
  * dung im lặng không hoạt động như người viết tưởng.
  */
 function Suggestions({ items }: { items: Item[] }) {
-  const staleBefore = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
+  // Đọc đồng hồ trong initializer của state, không phải giữa thân render: `Date.now()` là
+  // hàm không thuần — hai lần render liền nhau cho hai mốc khác nhau, và một gợi ý có thể
+  // hiện rồi biến mất mà không có gì thay đổi thật.
+  const [staleBefore] = useState(() => Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000);
   const suggestions: Suggestion[] = [];
   const hrefOf = (kind: KindKey) => KINDS.find((entry) => entry.key === kind)?.href ?? "/";
 
@@ -311,6 +319,67 @@ function Suggestions({ items }: { items: Item[] }) {
               <span className="min-w-0 flex-1">{suggestion.text}</span>
             </Link>
           </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+/** Bao nhiêu dòng là đủ để nhận ra việc mình đang làm dở mà không thành một danh sách thứ hai. */
+const RECENT_LIMIT = 6;
+
+/**
+ * Bản nháp, mới sửa gần nhất trước.
+ *
+ * Phần "Gợi ý hoàn thiện" chỉ nhắc bản nháp đã bỏ quên hơn hai tuần; những bản đang làm
+ * dở hôm qua thì không có chỗ nào trên bảng điều khiển dẫn tới. Đây là đường quay lại
+ * chúng — câu hỏi "hôm qua tôi đang làm gì" là câu hỏi thường gặp nhất khi mở máy lên.
+ */
+function Drafts({ items }: { items: Item[] }) {
+  const rows = items
+    .filter((item) => item.status === "draft")
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, RECENT_LIMIT);
+
+  // Không có bản nháp nào thì bỏ hẳn khối, không vẽ một danh sách rỗng: một ô trống trông
+  // như dữ liệu chưa tải, còn không có gì ở đó thì rõ ràng là không có gì.
+  if (rows.length === 0) return null;
+
+  return (
+    <Section
+      count={rows.length}
+      description="Chưa gửi duyệt, mới sửa gần nhất trước."
+      icon={PencilLine}
+      title="Đang viết dở"
+    >
+      <ul className="grid gap-2">
+        {rows.map((item) => (
+          <ItemRow item={item} key={`${item.kind}-${item.id}`} />
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+/** Đã công khai. Ở đây để tác giả mở lại được thứ người học đang thấy. */
+function RecentlyPublished({ items }: { items: Item[] }) {
+  const rows = items
+    .filter((item) => item.status === "published")
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, RECENT_LIMIT);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <Section
+      count={rows.length}
+      description="Người học đang thấy những nội dung này."
+      icon={CheckCircle2}
+      title="Đã đăng gần đây"
+    >
+      <ul className="grid gap-2">
+        {rows.map((item) => (
+          <ItemRow item={item} key={`${item.kind}-${item.id}`} />
         ))}
       </ul>
     </Section>
