@@ -98,7 +98,9 @@ export interface CoursePreview {
       title: string;
       type: string;
       durationMinutes: number | null;
+      exerciseId: string | null;
       exerciseTitle: string | null;
+      exerciseStatus: string | null;
       contentRef: string | null;
     }[];
   }[];
@@ -130,8 +132,18 @@ export interface ExercisePreview {
     statement?: string;
     constraints?: string[];
     examples?: { input: string; output: string; explanation?: string }[];
-    testCases?: { visibility: string }[];
-    /** `label` là tên hiển thị ("Python"); `id` là khoá kỹ thuật ("python") dùng khi chấm bài. */
-    languages?: { id: string; label: string }[];
+    testCases?: {
+      order: number;
+      input?: string;
+      args?: unknown[];
+      expected?: unknown;
+      visibility: "public" | "hidden";
+    }[];
+    /**
+     * `label` là tên hiển thị ("Python"); `id` là khoá kỹ thuật ("python") dùng khi chấm bài.
+     * `referenceSolution` chính là lời giải mẫu giảng viên viết trong Studio — admin đọc
+     * đúng thứ được chấm, không phải suy từ đề bài.
+     */
+    languages?: { id: string; label: string; referenceSolution?: string }[];
   } | null;
 }

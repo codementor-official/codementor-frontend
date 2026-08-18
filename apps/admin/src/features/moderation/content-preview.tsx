@@ -71,7 +71,7 @@ function Body({ data, kind, contentId }: { data: unknown; kind: ContentKind; con
   if (kind === "articles") return <ArticleBody article={data as ArticlePreview} />;
   if (kind === "courses") return <CourseBody course={data as CoursePreview} courseId={contentId} />;
   if (kind === "roadmaps") return <RoadmapBody roadmap={data as RoadmapPreview} />;
-  return <ExerciseBody exercise={data as ExercisePreview} />;
+  return <ExerciseSummary exercise={data as ExercisePreview} />;
 }
 
 function ArticleBody({ article }: { article: ArticlePreview }) {
@@ -88,10 +88,11 @@ function ArticleBody({ article }: { article: ArticlePreview }) {
 
       {/* Cùng class `.rich-text` mà trình soạn thảo dùng, nên bản xem trước ở đây và bản
         * người học đọc trông giống nhau — bản xem trước lệch với bản thật thì duyệt bằng
-        * nó cũng bằng không. */}
+        * nó cũng bằng không. Hiện TRỌN VẸN, không giới hạn chiều cao: ngăn kiểm duyệt đã
+        * tự cuộn cả khối, giới hạn thêm một lớp bên trong chỉ khiến bài dài bị cắt oan. */}
       {article.contentHtml ? (
         <div
-          className="rich-text mt-4 max-h-96 overflow-y-auto rounded-lg border border-border p-4"
+          className="rich-text mt-4 rounded-lg border border-border p-4"
           dangerouslySetInnerHTML={{ __html: article.contentHtml }}
         />
       ) : (
@@ -144,13 +145,12 @@ function CourseBody({ course, courseId }: { course: CoursePreview; courseId: str
 }
 
 /**
- * Một dòng bài học, mở ra được để đọc thân bài — chứ không chỉ tiêu đề.
+ * Một dòng bài học, mở ra được ngay tại chỗ — cho cả hai loại.
  *
- * Chỉ bài LÝ THUYẾT mở ra tại chỗ: nội dung của nó (`contentHtml`) là thứ duy nhất một
- * dòng danh sách không thể hiện, và cùng lúc là thứ hay bị bỏ trống nhất — mục "Gợi ý
- * hoàn thiện" bên bảng điều khiển giảng viên đã phải suy nó ra chứ chưa từng hiện ra được.
- * Bài CODE không cần mở: nó đã có màn kiểm duyệt riêng khi tự nó đi qua hàng chờ, và tiêu
- * đề + trạng thái trên dòng này là đủ để biết bài đó dùng được hay chưa.
+ * Bài LÝ THUYẾT mở ra đọc thân bài (`contentHtml`): đây là chỗ hay bị bỏ trống nhất mà
+ * trước kia không màn nào cho thấy. Bài CODE mở ra đọc luôn bài tập nó trỏ tới — đề bài,
+ * test case, lời giải mẫu — như đang mở đúng bài đó trong Studio, không phải suy từ tiêu
+ * đề và trạng thái trên dòng danh sách.
  */
 function LessonRow({
   courseId,
@@ -161,54 +161,74 @@ function LessonRow({
 }) {
   const request = useAdminApi();
   const [open, setOpen] = useState(false);
-  const [content, setContent] = useState<LessonContentPreview | null | undefined>(undefined);
+  const [lessonContent, setLessonContent] = useState<LessonContentPreview | null | undefined>(undefined);
+  const [exercise, setExercise] = useState<ExercisePreview | null | undefined>(undefined);
 
   const isTheory = !lesson.exerciseTitle;
-  const empty = isTheory && lesson.contentRef === null;
+  const emptyTheory = isTheory && lesson.contentRef === null;
 
   useEffect(() => {
-    if (!open || !isTheory || content !== undefined) return;
-    void moderationApi.lessonContent(request, courseId, lesson.id).then(setContent);
-  }, [open, isTheory, content, request, courseId, lesson.id]);
+    if (!open) return;
+    if (isTheory) {
+      if (lessonContent !== undefined) return;
+      void moderationApi.lessonContent(request, courseId, lesson.id).then(setLessonContent);
+    } else if (lesson.exerciseId) {
+      if (exercise !== undefined) return;
+      void moderationApi
+        .detail<ExercisePreview>(request, "exercises", lesson.exerciseId)
+        .then(setExercise)
+        .catch(() => setExercise(null));
+    }
+  }, [open, isTheory, lessonContent, exercise, request, courseId, lesson.id, lesson.exerciseId]);
 
   return (
     <li className="text-xs text-muted-foreground">
       <button
-        className="flex w-full items-center gap-2 rounded py-0.5 text-left hover:text-foreground disabled:cursor-default"
-        disabled={!isTheory}
+        className="flex w-full items-center gap-2 rounded py-0.5 text-left hover:text-foreground"
         onClick={() => setOpen((value) => !value)}
         type="button"
       >
+        {open ? (
+          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+        ) : (
+          <ChevronRight aria-hidden="true" className="size-3.5 shrink-0" />
+        )}
         {isTheory ? (
-          open ? (
-            <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
-          ) : (
-            <ChevronRight aria-hidden="true" className="size-3.5 shrink-0" />
-          )
+          <FileText aria-hidden="true" className="size-3.5 shrink-0" />
         ) : (
           <BookOpen aria-hidden="true" className="size-3.5 shrink-0" />
         )}
-        {isTheory && !open && <FileText aria-hidden="true" className="size-3.5 shrink-0" />}
         <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
         {/* Bài lý thuyết không có `contentRef` là một ô rỗng với học viên — đúng thứ mà
-          * việc duyệt phải bắt được. */}
-        {empty && <span className="shrink-0 text-destructive">chưa có nội dung</span>}
+          * việc duyệt phải bắt được. Bài code chưa công khai thì học viên mở ra cũng
+          * không thấy gì, dù dòng chương trông như đã đủ bài. */}
+        {emptyTheory && <span className="shrink-0 text-destructive">chưa có nội dung</span>}
+        {!isTheory && lesson.exerciseStatus && lesson.exerciseStatus !== "published" && (
+          <span className="shrink-0 text-warning">chưa công khai</span>
+        )}
       </button>
 
-      {open && isTheory && (
-        <div className="mt-1 ml-5">
-          {content === undefined ? (
-            <p className="flex items-center gap-1.5 py-2">
-              <Loader2 aria-hidden="true" className="size-3 animate-spin" />
-              Đang tải…
-            </p>
-          ) : content === null || !content.contentHtml ? (
-            <p className="py-2 text-destructive">Bài học chưa có nội dung.</p>
+      {open && (
+        <div className="mt-1.5 mb-2 ml-5 border-l border-border pl-3">
+          {isTheory ? (
+            lessonContent === undefined ? (
+              <Loading />
+            ) : lessonContent === null || !lessonContent.contentHtml ? (
+              <p className="py-2 text-destructive">Bài học chưa có nội dung.</p>
+            ) : (
+              <div
+                className="rich-text rounded-md border border-border bg-background p-3 text-foreground"
+                dangerouslySetInnerHTML={{ __html: lessonContent.contentHtml }}
+              />
+            )
+          ) : !lesson.exerciseId ? (
+            <p className="py-2 text-destructive">Bài học chưa gắn bài code nào.</p>
+          ) : exercise === undefined ? (
+            <Loading />
+          ) : exercise === null ? (
+            <p className="py-2 text-destructive">Không đọc được bài code này.</p>
           ) : (
-            <div
-              className="rich-text max-h-64 overflow-y-auto rounded-md border border-border bg-background p-3 text-foreground"
-              dangerouslySetInnerHTML={{ __html: content.contentHtml }}
-            />
+            <ExerciseSummary compact exercise={exercise} />
           )}
         </div>
       )}
@@ -262,9 +282,19 @@ function RoadmapBody({ roadmap }: { roadmap: RoadmapPreview }) {
   );
 }
 
-function ExerciseBody({ exercise }: { exercise: ExercisePreview }) {
+/**
+ * Toàn bộ một bài code: đề bài, test case, lời giải mẫu — đúng những gì Studio cho tác
+ * giả xem lúc soạn, không phải bản tóm lược.
+ *
+ * Dùng ở hai chỗ: đứng đầu ngăn kiểm duyệt khi CHÍNH bài code đó đang chờ duyệt, và lồng
+ * bên trong một bài học khi khoá học đang chờ duyệt trỏ tới nó — `compact` chỉ bớt cỡ chữ
+ * tiêu đề, nội dung hiện đủ như nhau ở cả hai nơi vì admin cần đọc thật, không phải liếc qua.
+ */
+function ExerciseSummary({ exercise, compact = false }: { exercise: ExercisePreview; compact?: boolean }) {
   const content = exercise.content ?? {};
   const testCases = content.testCases ?? [];
+  const languagesWithSolution = (content.languages ?? []).filter((lang) => lang.referenceSolution?.trim());
+
   return (
     <div>
       <Facts
@@ -272,14 +302,13 @@ function ExerciseBody({ exercise }: { exercise: ExercisePreview }) {
           ["Dạng bài", exercise.kind],
           ["Độ khó", exercise.difficulty],
           ["Phạm vi", exercise.visibility === "public" ? "công khai" : "trong nhóm"],
-          ["Bộ test", `${testCases.length} ca`],
           ["Ngôn ngữ", (content.languages ?? []).map((item) => item.label).join(", ") || "—"],
         ]}
       />
       {exercise.summary && <Quote label="Tóm tắt">{exercise.summary}</Quote>}
 
       {content.statement ? (
-        <div className="mt-4 max-h-72 overflow-y-auto rounded-lg border border-border p-4 text-sm whitespace-pre-wrap">
+        <div className="mt-4 rounded-lg border border-border p-4 text-sm whitespace-pre-wrap">
           {content.statement}
         </div>
       ) : (
@@ -300,8 +329,67 @@ function ExerciseBody({ exercise }: { exercise: ExercisePreview }) {
           ))}
         </div>
       )}
+
+      {testCases.length > 0 && (
+        <div className="mt-4">
+          <p className={compact ? "text-xs font-medium text-muted-foreground" : "text-sm font-medium"}>
+            Test case ({testCases.length})
+          </p>
+          <ol className="mt-1.5 grid gap-1.5">
+            {[...testCases]
+              .sort((a, b) => a.order - b.order)
+              .map((testCase) => (
+                <li className="rounded-lg border border-border p-2.5 text-xs" key={testCase.order}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">Case {testCase.order}</span>
+                    <StatusBadge tone={testCase.visibility === "public" ? "neutral" : "warning"}>
+                      {testCase.visibility === "public" ? "công khai" : "ẩn"}
+                    </StatusBadge>
+                  </div>
+                  <div className="mt-1.5 grid grid-cols-2 gap-3">
+                    <div className="min-w-0">
+                      <p className="text-muted-foreground">Đầu vào</p>
+                      <pre className="mt-0.5 overflow-x-auto rounded bg-muted px-1.5 py-1 whitespace-pre-wrap">
+                        {formatCaseValue(testCase.input ?? testCase.args)}
+                      </pre>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-muted-foreground">Đầu ra mong đợi</p>
+                      <pre className="mt-0.5 overflow-x-auto rounded bg-muted px-1.5 py-1 whitespace-pre-wrap">
+                        {formatCaseValue(testCase.expected)}
+                      </pre>
+                    </div>
+                  </div>
+                </li>
+              ))}
+          </ol>
+        </div>
+      )}
+
+      {languagesWithSolution.length > 0 && (
+        <div className="mt-4 grid gap-3">
+          {languagesWithSolution.map((lang) => (
+            <div key={lang.id}>
+              <p className={compact ? "text-xs font-medium text-muted-foreground" : "text-sm font-medium"}>
+                Lời giải mẫu — {lang.label}
+              </p>
+              <pre className="mt-1 overflow-x-auto rounded-lg border border-border bg-background p-3 text-xs">
+                {lang.referenceSolution}
+              </pre>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+/** `args` là mảng tham số vị trí ở chế độ chữ ký hàm; `input`/`expected` có thể là chuỗi
+ * hoặc bất kỳ giá trị JSON nào — hiện cả hai dạng đọc được thay vì `[object Object]`. */
+function formatCaseValue(value: unknown): string {
+  if (value === undefined) return "—";
+  if (typeof value === "string") return value;
+  return JSON.stringify(value);
 }
 
 /* ------------------------------------------------------------- Mảnh dùng chung */
@@ -336,6 +424,15 @@ function Empty({ children }: { children: string }) {
   );
 }
 
+function Loading() {
+  return (
+    <p className="flex items-center gap-1.5 py-2">
+      <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+      Đang tải…
+    </p>
+  );
+}
+
 function describe(cause: unknown): string {
   if (cause instanceof ApiClientError) {
     const body = cause.body as { message?: string } | undefined;
@@ -343,4 +440,3 @@ function describe(cause: unknown): string {
   }
   return cause instanceof Error ? cause.message : "lỗi không rõ";
 }
-

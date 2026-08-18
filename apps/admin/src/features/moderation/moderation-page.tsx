@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCheck, PencilLine, ShieldCheck, XCircle } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ManagePage, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Modal, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi } from "@/lib/api";
 import { ContentPreview } from "./content-preview";
@@ -19,6 +19,9 @@ const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeSt
  */
 const STALE_DAYS = 3;
 
+/** Hai quyết định bắt buộc phải kèm lý do — tác giả đọc đúng câu này trong thông báo. */
+type DecisionWithReason = "reject" | "request_changes";
+
 export function ModerationPage() {
   const request = useAdminApi();
   const { items, countByKind, total, loading, failed, refresh } = useModerationQueue();
@@ -28,7 +31,19 @@ export function ModerationPage() {
   const [onlyStale, setOnlyStale] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
+  const [reasonPrompt, setReasonPrompt] = useState<{ row: QueueItem; decision: DecisionWithReason } | null>(
+    null,
+  );
+  const [reasonText, setReasonText] = useState("");
+
+  // Hàng chờ sống ở provider gốc của cả ứng dụng nên nó không refetch khi điều hướng client
+  // -side TỚI trang này lần nữa — bấm vào một thông báo "có bài mới cần duyệt" rồi bị đưa
+  // tới đây với đúng dữ liệu cũ đã tải từ trước là chỗ hỏng đó. Trang này tự xin một lượt
+  // mới mỗi khi được mở, không đợi ai khác nhớ gọi hộ.
+  useEffect(() => {
+    void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Đọc đồng hồ MỘT lần, trong initializer của state chứ không giữa thân render: `Date.now()`
   // lúc render là hàm không thuần — hai lần render liền nhau cho hai mốc khác nhau, và
@@ -51,22 +66,24 @@ export function ModerationPage() {
     });
   }, [items, kind, onlyStale, search, staleBefore]);
 
-  const decide = async (item: QueueItem, decision: ModerationDecision) => {
-    if ((decision === "reject" || decision === "request_changes") && !reason.trim()) {
-      setError("Phải nêu lý do khi từ chối hoặc yêu cầu sửa — tác giả sẽ đọc đúng câu này.");
-      return;
-    }
+  const decide = async (item: QueueItem, decision: ModerationDecision, reason?: string) => {
     setBusy(true);
     setError(null);
     try {
-      await moderationApi.decide(request, item.kind, item.id, decision, reason.trim() || undefined);
-      setReason("");
+      await moderationApi.decide(request, item.kind, item.id, decision, reason?.trim() || undefined);
+      setReasonPrompt(null);
+      setReasonText("");
       await refresh();
     } catch (cause) {
       setError(describe(cause));
     } finally {
       setBusy(false);
     }
+  };
+
+  const submitReason = async () => {
+    if (!reasonPrompt || !reasonText.trim()) return;
+    await decide(reasonPrompt.row, reasonPrompt.decision, reasonText);
   };
 
   const columns = useMemo<ColumnDef<QueueItem, unknown>[]>(
@@ -127,105 +144,134 @@ export function ModerationPage() {
   ).length;
 
   return (
-    <ManagePage
-      activeFilterCount={onlyStale ? 1 : 0}
-      columns={columns}
-      description={
-        total === 0
-          ? "Không còn gì chờ bạn xem."
-          : `${total} mục đang chờ, cũ trước. Mở một mục ra để xem trước nội dung rồi quyết.`
-      }
-      drawer={{
-        title: (row) => row.title,
-        description: (row) =>
-          `${KINDS[row.kind].label} · ${row.authorName ?? "không rõ tác giả"} · gửi lúc ${dateFormat.format(new Date(row.updatedAt))}`,
-        width: "wide",
-        body: (row) => (
-          <div className="grid gap-4">
-            <ContentPreview item={row} />
+    <>
+      <ManagePage
+        activeFilterCount={onlyStale ? 1 : 0}
+        columns={columns}
+        description={
+          total === 0
+            ? "Không còn gì chờ bạn xem."
+            : `${total} mục đang chờ, cũ trước. Mở một mục ra để xem trước nội dung rồi quyết.`
+        }
+        drawer={{
+          title: (row) => row.title,
+          description: (row) =>
+            `${KINDS[row.kind].label} · ${row.authorName ?? "không rõ tác giả"} · gửi lúc ${dateFormat.format(new Date(row.updatedAt))}`,
+          width: "wide",
+          // Không còn ô "Lý do" thường trực: nó chỉ có nghĩa khi từ chối hoặc yêu cầu sửa,
+          // và trước đây choán một khối cố định trên MỌI lượt mở — kể cả lúc chỉ để xem rồi
+          // duyệt. Ngăn này giờ chỉ còn bản xem trước, được hiện trọn vẹn.
+          body: (row) => <ContentPreview item={row} />,
+          footer: (row) => (
+            <>
+              <Button
+                disabled={busy}
+                onClick={() => {
+                  setReasonText("");
+                  setReasonPrompt({ row, decision: "request_changes" });
+                }}
+                type="button"
+                variant="outline"
+              >
+                <PencilLine aria-hidden="true" className="size-4" />
+                Yêu cầu sửa
+              </Button>
+              <Button
+                disabled={busy}
+                onClick={() => {
+                  setReasonText("");
+                  setReasonPrompt({ row, decision: "reject" });
+                }}
+                type="button"
+                variant="ghost"
+              >
+                <XCircle aria-hidden="true" className="size-4" />
+                Từ chối
+              </Button>
+              <Button disabled={busy} onClick={() => void decide(row, "approve")} type="button">
+                <CheckCheck aria-hidden="true" className="size-4" />
+                Duyệt
+              </Button>
+            </>
+          ),
+        }}
+        emptyMessage={
+          items.length > 0
+            ? "Không có mục nào khớp bộ lọc."
+            : "Không có nội dung nào đang chờ duyệt."
+        }
+        error={
+          error ??
+          (failed.length > 0 ? `Không tải được hàng chờ: ${failed.join(", ")}` : null)
+        }
+        filters={
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              checked={onlyStale}
+              className="size-4 accent-primary"
+              onChange={(event) => setOnlyStale(event.target.checked)}
+              type="checkbox"
+            />
+            Chỉ mục chờ quá {STALE_DAYS} ngày
+            {staleCount > 0 && (
+              <StatusBadge tone="danger">{staleCount}</StatusBadge>
+            )}
+          </label>
+        }
+        getRowId={(row) => `${row.kind}:${row.id}`}
+        icon={ShieldCheck}
+        loading={loading}
+        onClearFilters={() => setOnlyStale(false)}
+        onSearchChange={setSearch}
+        rows={filtered}
+        search={search}
+        searchPlaceholder="Tìm theo tiêu đề, slug hoặc tác giả…"
+        tabs={{
+          value: kind,
+          onChange: (value) => setKind(value as ContentKind | "all"),
+          // Số ngay trên tab: nếu không có nó, người dùng phải bấm qua từng loại mới biết
+          // loại nào đang có việc.
+          options: [
+            { value: "all", label: total > 0 ? `Tất cả (${total})` : "Tất cả" },
+            ...CONTENT_KINDS.map((each) => ({
+              value: each,
+              label: countByKind[each] > 0 ? `${KINDS[each].label} (${countByKind[each]})` : KINDS[each].label,
+            })),
+          ],
+        }}
+        title="Hàng chờ duyệt"
+      />
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium" htmlFor="reason">
-                Lý do
-              </label>
-              <textarea
-                className="min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-                id="reason"
-                onChange={(event) => setReason(event.target.value)}
-                placeholder="Bắt buộc khi từ chối hoặc yêu cầu sửa. Tác giả sẽ đọc đúng câu này trong thông báo."
-                value={reason}
-              />
-            </div>
-          </div>
-        ),
-        footer: (row) => (
+      <Modal
+        description={reasonPrompt ? `“${reasonPrompt.row.title}”` : undefined}
+        footer={
           <>
-            <Button
-              disabled={busy}
-              onClick={() => void decide(row, "request_changes")}
-              type="button"
-              variant="outline"
-            >
-              <PencilLine aria-hidden="true" className="size-4" />
-              Yêu cầu sửa
+            <Button disabled={busy} onClick={() => setReasonPrompt(null)} type="button" variant="outline">
+              Huỷ
             </Button>
-            <Button disabled={busy} onClick={() => void decide(row, "reject")} type="button" variant="ghost">
-              <XCircle aria-hidden="true" className="size-4" />
-              Từ chối
-            </Button>
-            <Button disabled={busy} onClick={() => void decide(row, "approve")} type="button">
-              <CheckCheck aria-hidden="true" className="size-4" />
-              Duyệt
+            <Button disabled={busy || !reasonText.trim()} onClick={() => void submitReason()} type="button">
+              {reasonPrompt?.decision === "reject" ? "Từ chối" : "Gửi yêu cầu sửa"}
             </Button>
           </>
-        ),
-      }}
-      emptyMessage={
-        items.length > 0
-          ? "Không có mục nào khớp bộ lọc."
-          : "Không có nội dung nào đang chờ duyệt."
-      }
-      error={
-        error ??
-        (failed.length > 0 ? `Không tải được hàng chờ: ${failed.join(", ")}` : null)
-      }
-      filters={
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            checked={onlyStale}
-            className="size-4 accent-primary"
-            onChange={(event) => setOnlyStale(event.target.checked)}
-            type="checkbox"
-          />
-          Chỉ mục chờ quá {STALE_DAYS} ngày
-          {staleCount > 0 && (
-            <StatusBadge tone="danger">{staleCount}</StatusBadge>
-          )}
+        }
+        onClose={() => setReasonPrompt(null)}
+        open={reasonPrompt !== null}
+        title={reasonPrompt?.decision === "reject" ? "Từ chối nội dung này?" : "Yêu cầu sửa lại"}
+        width="sm"
+      >
+        <label className="mb-1.5 block text-sm font-medium" htmlFor="reason">
+          Lý do
         </label>
-      }
-      getRowId={(row) => `${row.kind}:${row.id}`}
-      icon={ShieldCheck}
-      loading={loading}
-      onClearFilters={() => setOnlyStale(false)}
-      onSearchChange={setSearch}
-      rows={filtered}
-      search={search}
-      searchPlaceholder="Tìm theo tiêu đề, slug hoặc tác giả…"
-      tabs={{
-        value: kind,
-        onChange: (value) => setKind(value as ContentKind | "all"),
-        // Số ngay trên tab: nếu không có nó, người dùng phải bấm qua từng loại mới biết
-        // loại nào đang có việc.
-        options: [
-          { value: "all", label: total > 0 ? `Tất cả (${total})` : "Tất cả" },
-          ...CONTENT_KINDS.map((each) => ({
-            value: each,
-            label: countByKind[each] > 0 ? `${KINDS[each].label} (${countByKind[each]})` : KINDS[each].label,
-          })),
-        ],
-      }}
-      title="Hàng chờ duyệt"
-    />
+        <textarea
+          autoFocus
+          className="min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+          id="reason"
+          onChange={(event) => setReasonText(event.target.value)}
+          placeholder="Bắt buộc. Tác giả sẽ đọc đúng câu này trong thông báo."
+          value={reasonText}
+        />
+      </Modal>
+    </>
   );
 }
 
