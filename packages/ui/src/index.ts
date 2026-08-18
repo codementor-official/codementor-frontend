@@ -30,6 +30,7 @@ export { StatStrip } from "./stat-strip";
 export type { Stat } from "./stat-strip";
 export { StatusBadge } from "./status-badge";
 export { ThemeMenu } from "./theme-menu";
+export { useResolvedTheme } from "./use-resolved-theme";
 export type { DashboardShellProps } from "./dashboard-shell";
 export type { ManagePageProps } from "./manage-page";
 export type { SegmentedTabOption } from "./segmented-tabs";

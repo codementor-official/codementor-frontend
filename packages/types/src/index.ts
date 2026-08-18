@@ -1,3 +1,5 @@
+export * from "./content";
+
 /**
  * Vocabulary shared with the backend. These are not free choices: `Role` mirrors
  * the PostgreSQL `platform_role` enum and the Keycloak realm roles, and `User`

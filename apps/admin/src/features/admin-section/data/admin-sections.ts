@@ -13,25 +13,10 @@ export interface AdminSectionDefinition {
  * định dựa trên nó thì sai mà không ai biết. Bỏ hẳn, tới khi nối được API thật.
  */
 export const adminSections: Record<string, AdminSectionDefinition> = {
-  courses: {
-    description: "Vòng đời khoá học, trạng thái công khai và tín hiệu kiểm duyệt.",
-    eyebrow: "Quản lý",
-    title: "Khoá học",
-  },
-  "learning-paths": {
-    description: "Sắp xếp lộ trình học và theo dõi chất lượng nội dung công khai.",
-    eyebrow: "Quản lý",
-    title: "Lộ trình học",
-  },
   workspaces: {
     description: "Quản trị nhóm học tập, lớp và thành viên.",
     eyebrow: "Quản lý",
     title: "Nhóm học tập",
-  },
-  exercises: {
-    description: "Kiểm duyệt bài tập lập trình, bộ test và các báo cáo nội dung.",
-    eyebrow: "Nội dung",
-    title: "Bài tập",
   },
   documents: {
     description: "Theo dõi tài liệu người dùng tải lên và kết quả xử lý.",

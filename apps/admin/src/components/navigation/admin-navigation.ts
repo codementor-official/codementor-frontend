@@ -37,15 +37,21 @@ export const adminNavigation: AdminNavGroup[] = [
     items: [{ href: "/dashboard", icon: LayoutDashboard, label: "Bảng điều khiển" }],
   },
   {
+    // Bốn mục, không phải một: hàng chờ trả lời "còn gì phải xem hôm nay", còn ba mục kia
+    // là nơi tìm lại thứ đã quyết định rồi — gỡ một khoá lỡ duyệt, duyệt lại một bài đã
+    // từ chối. Trước đây chỉ có hàng chờ, nên hai việc đó không có chỗ nào để bắt đầu.
     label: "Kiểm duyệt",
-    items: [{ href: "/moderation", icon: ShieldCheck, label: "Hàng chờ duyệt" }],
+    items: [
+      { href: "/moderation", icon: ShieldCheck, label: "Hàng chờ duyệt" },
+      { href: "/moderation/exercises", icon: Braces, label: "Bài code" },
+      { href: "/moderation/courses", icon: BookOpen, label: "Khoá học" },
+      { href: "/moderation/roadmaps", icon: Route, label: "Lộ trình" },
+    ],
   },
   {
     label: "Quản lý",
     items: [
       { href: "/users", icon: Users, label: "Người dùng" },
-      { href: "/courses", icon: BookOpen, label: "Khoá học" },
-      { href: "/learning-paths", icon: Route, label: "Lộ trình học" },
       { href: "/workspaces", icon: Network, label: "Nhóm học tập" },
     ],
   },
@@ -53,7 +59,6 @@ export const adminNavigation: AdminNavGroup[] = [
     label: "Nội dung",
     items: [
       { href: "/posts", icon: Newspaper, label: "Bài viết" },
-      { href: "/exercises", icon: Braces, label: "Bài tập" },
       { href: "/documents", icon: FileText, label: "Tài liệu" },
     ],
   },

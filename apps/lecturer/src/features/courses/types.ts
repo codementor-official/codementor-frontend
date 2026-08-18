@@ -1,16 +1,9 @@
 import type { ContentStatus, Level } from "@/features/roadmaps/types";
+import type { LessonType } from "@codementor/types";
 
-export const LESSON_TYPES = ["video", "article", "exercise", "quiz", "challenge", "project"] as const;
-export type LessonType = (typeof LESSON_TYPES)[number];
-
-export const LESSON_TYPE_LABELS: Record<LessonType, string> = {
-  article: "Bài lý thuyết",
-  video: "Video",
-  exercise: "Bài code",
-  quiz: "Trắc nghiệm",
-  challenge: "Thử thách",
-  project: "Dự án",
-};
+// Kiểu bài và nhãn của nó ở `@codementor/types` — màn kiểm duyệt bên admin đọc cùng bảng.
+export { LESSON_TYPES, LESSON_TYPE_LABELS } from "@codementor/types";
+export type { LessonType } from "@codementor/types";
 
 /**
  * Kiểu bài người soạn được phép chọn. Nền tảng mới chạy được hai loại: bài lý thuyết có

@@ -22,7 +22,7 @@ import {
   STATUS_LABELS,
   STATUS_TONES,
   type ExerciseListItem,
-} from "@/features/exercises/types";
+} from "@codementor/solve";
 
 interface Props {
   chapters: DraftChapter[];

@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { PageHeader } from "@codementor/ui";
-import { SolvePreview } from "@/features/exercises/solve-preview";
-import type { Exercise } from "@/features/exercises/types";
+import Link from "next/link";
+import { PageHeader, useResolvedTheme } from "@codementor/ui";
+import { SolvePreview, type Exercise } from "@codementor/solve";
 import { api } from "@/lib/api";
-import { useResolvedTheme } from "@/lib/use-resolved-theme";
 
 export default function SolvePage() {
   const { id } = useParams<{ id: string }>();
@@ -44,5 +43,20 @@ export default function SolvePage() {
     return <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">Đang tải…</p>;
   }
 
-  return <SolvePreview exercise={exercise} theme={theme} />;
+  return (
+    <SolvePreview
+      actions={
+        <Link
+          className="flex h-8 items-center rounded-md border px-2.5 text-xs font-medium"
+          href={`/exercises/${exercise.id}/studio`}
+        >
+          Mở studio
+        </Link>
+      }
+      back={{ href: "/exercises", label: "Bài code" }}
+      exercise={exercise}
+      run={api.judge.run}
+      theme={theme}
+    />
+  );
 }

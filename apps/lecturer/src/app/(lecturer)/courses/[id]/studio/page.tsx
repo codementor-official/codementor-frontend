@@ -20,7 +20,7 @@ import {
   type DraftChapter,
   type LessonContent,
 } from "@/features/courses/types";
-import type { ExerciseListItem } from "@/features/exercises/types";
+import type { ExerciseListItem } from "@codementor/solve";
 import {
   CONTENT_STATUS_LABELS,
   CONTENT_STATUS_TONES,

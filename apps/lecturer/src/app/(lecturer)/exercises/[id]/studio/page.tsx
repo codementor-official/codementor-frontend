@@ -6,11 +6,10 @@ import Link from "next/link";
 import { Play, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
-import { Button, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { Button, PageHeader, ResizeHandle, StatusBadge, useResolvedTheme } from "@codementor/ui";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
-import { useResolvedTheme } from "@/lib/use-resolved-theme";
 import {
   ExerciseBriefForm,
   ExerciseCodeForm,
@@ -21,7 +20,7 @@ import {
   STATUS_TONES,
   type Exercise,
   type ExerciseStatus,
-} from "@/features/exercises/types";
+} from "@codementor/solve";
 import { api } from "@/lib/api";
 
 function toDraft(exercise: Exercise): ExerciseDraft {

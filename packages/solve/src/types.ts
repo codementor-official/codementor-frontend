@@ -1,3 +1,5 @@
+import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES } from "@codementor/types";
+
 export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export const STATUSES = [
   "draft",
@@ -19,27 +21,22 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   hard: "Nâng cao",
 };
 
+/**
+ * Sáu trạng thái đầu dùng chung với khoá học và lộ trình, lấy thẳng từ `@codementor/types`;
+ * `closed` và `hidden` chỉ bài code mới có. Chép lại cả bảng thì một hôm nào đó "Đã gỡ" bên
+ * này và "Đã lưu trữ" bên kia cùng nói về một trạng thái.
+ */
 export const STATUS_LABELS: Record<ExerciseStatus, string> = {
-  draft: "Nháp",
-  pending_review: "Chờ duyệt",
-  changes_requested: "Cần sửa",
-  rejected: "Bị từ chối",
-  published: "Đã công khai",
+  ...CONTENT_STATUS_LABELS,
   closed: "Đã đóng",
   hidden: "Đã ẩn",
-  archived: "Đã gỡ",
 };
 
 /** StatusBadge chỉ có bốn tông; tám trạng thái phải gom về đó. */
 export const STATUS_TONES: Record<ExerciseStatus, "neutral" | "success" | "warning" | "danger"> = {
-  draft: "neutral",
-  pending_review: "warning",
-  changes_requested: "warning",
-  rejected: "danger",
-  published: "success",
+  ...CONTENT_STATUS_TONES,
   closed: "neutral",
   hidden: "neutral",
-  archived: "neutral",
 };
 
 /** Hàng trong bảng — API danh sách không trả thân bài. */
@@ -107,6 +104,29 @@ export interface JudgeSpecPayload {
   returnType: TypeIR;
   judgeMode?: "exact" | "float" | "unordered";
   judgeConfig?: Record<string, number>;
+}
+
+/**
+ * Thân yêu cầu `POST /judge/run`.
+ *
+ * Khai ở đây chứ không ở từng ứng dụng: màn hình giải bài dùng chung phải mô tả được lời
+ * gọi mà nó cần, còn ai gửi lời gọi đó đi (giảng viên qua Kong, admin qua BFF) là chuyện
+ * của ứng dụng.
+ */
+export interface JudgeRunPayload {
+  language: string;
+  sourceCode: string;
+  timeLimitMs: number;
+  memoryLimitKb: number;
+  /** Có mặt = chấm theo chữ ký hàm. Vắng mặt = so chuỗi stdout như trước. */
+  spec?: JudgeSpecPayload;
+  testCases: {
+    order: number;
+    input?: string;
+    args?: unknown[];
+    expected?: unknown;
+    weight?: number;
+  }[];
 }
 
 /**

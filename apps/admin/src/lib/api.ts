@@ -1,11 +1,25 @@
 import type { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
+import type { Exercise, JudgeRunPayload, JudgeRunResult } from "@codementor/solve";
 
 /**
  * Ba loại nội dung, ba service, ba đường dẫn — không có endpoint gộp ở backend, vì một
  * endpoint như thế buộc một service đọc bảng của service khác.
  */
 export type ContentKind = "exercises" | "courses" | "roadmaps";
+
+/**
+ * Các trạng thái admin thao tác được. `draft` không có ở đây và đó là chủ ý: bản nháp là
+ * việc riêng của tác giả, admin nhìn vào chỉ để lộ thứ chưa ai muốn cho xem.
+ */
+export const MODERATION_STATUSES = [
+  "pending_review",
+  "published",
+  "changes_requested",
+  "rejected",
+  "archived",
+] as const;
+export type ModerationStatus = (typeof MODERATION_STATUSES)[number];
 /**
  * `restore` takes archived content back to `draft` so it walks the review flow again —
  * there is no path from archived straight to published, by design.
@@ -17,6 +31,11 @@ export type ModerationDecision =
   | "archive"
   | "restore";
 
+/**
+ * Một dòng hàng chờ. Ba loại nội dung dùng chung kiểu này vì màn danh sách của chúng
+ * giống nhau tới 90%; phần khác nhau là mấy trường tuỳ chọn bên dưới, và mỗi màn chỉ đọc
+ * những trường loại đó thực sự có.
+ */
 export interface QueueItem {
   id: string;
   slug: string;
@@ -26,6 +45,20 @@ export interface QueueItem {
   authorName: string | null;
   /** Do màn admin gắn thêm sau khi gộp ba hàng chờ; API không trả trường này. */
   kind?: ContentKind;
+
+  /** Chỉ bài code. */
+  difficulty?: string;
+  visibility?: string;
+  /** Khoá học và lộ trình. */
+  level?: string;
+  /** Chỉ lộ trình. */
+  field?: string;
+  courseCount?: number;
+  estimatedHours?: number | null;
+  /** Chỉ khoá học. */
+  totalChapters?: number;
+  totalLessons?: number;
+  durationHours?: number | null;
 }
 
 export interface Page<T> {
@@ -50,9 +83,100 @@ async function unwrap<T>(request: Request, path: string, options?: Parameters<Re
   return response?.data as T;
 }
 
+/** Một bài học trong chương, phẳng như backend trả về. */
+export interface CurriculumLesson {
+  id: string;
+  title: string;
+  type: string;
+  durationMinutes: number | null;
+  isPreview: boolean;
+  isOptional: boolean;
+  position: number;
+  contentRef: string | null;
+  exerciseId: string | null;
+  exerciseTitle: string | null;
+  /** Bài code gắn vào chương mà chưa `published` thì học viên gặp một chương trống. */
+  exerciseStatus: string | null;
+}
+
+export interface CurriculumChapter {
+  id: string;
+  title: string;
+  description: string | null;
+  isOptional: boolean;
+  position: number;
+  lessons: CurriculumLesson[];
+}
+
+export interface CourseDetail {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  level: string;
+  durationHours: number | null;
+  prerequisiteNote: string | null;
+  progressionMode: string;
+  status: string;
+  rejectionReason: string | null;
+  publishedAt: string | null;
+  totalChapters: number;
+  totalLessons: number;
+  updatedAt: string;
+  chapters?: CurriculumChapter[];
+}
+
+/** Thân bài lý thuyết, ở MongoDB. `null` khi tác giả chưa viết gì. */
+export interface LessonContent {
+  summary?: string;
+  objectives?: string[];
+  contentHtml?: string;
+  exerciseBrief?: string[];
+}
+
+export interface RoadmapCourse {
+  courseId: string;
+  position: number;
+  isOptional: boolean;
+  title: string;
+  slug: string;
+  status: string;
+  durationHours: number | null;
+}
+
+export interface RoadmapDetail {
+  id: string;
+  slug: string;
+  title: string;
+  shortDescription: string | null;
+  description: string | null;
+  field: string;
+  level: string;
+  coverImageUrl: string | null;
+  estimatedHours: number | null;
+  progressionMode: string;
+  prerequisiteNote: string | null;
+  status: string;
+  rejectionReason: string | null;
+  publishedAt: string | null;
+  updatedAt: string;
+  courses?: RoadmapCourse[];
+}
+
 export const moderationApi = {
-  queue: (request: Request, kind: ContentKind) =>
-    unwrap<Page<QueueItem>>(request, `/${kind}/moderation?limit=50`),
+  /**
+   * Hàng chờ duyệt, và cũng là đường tìm lại thứ đã quyết định rồi.
+   *
+   * Không truyền `status` thì backend trả đúng `pending_review` như trước. Truyền vào thì
+   * nó bỏ ràng buộc đó — nhờ vậy admin mở lại được bài đã duyệt để gỡ, hoặc bài đã từ chối
+   * để duyệt lại, thay vì phải nhờ tác giả gửi lên lần nữa.
+   */
+  queue: (
+    request: Request,
+    kind: ContentKind,
+    params: { status?: string; q?: string; limit?: number } = {},
+  ) => unwrap<Page<QueueItem>>(request, `/${kind}/moderation${search({ limit: 50, ...params })}`),
   decide: (
     request: Request,
     kind: ContentKind,
@@ -64,6 +188,25 @@ export const moderationApi = {
       method: "POST",
       body: { decision, ...(reason ? { reason } : {}) },
     }),
+
+  // ----------------------------------------------------------------- xem nội dung
+  //
+  // Ba đường đọc chi tiết. Admin xem được mọi trạng thái — `owns()` bên backend coi admin
+  // là chủ mọi bản ghi — nên không cần đường riêng cho kiểm duyệt.
+  exercise: (request: Request, id: string) => unwrap<Exercise>(request, `/exercises/${id}`),
+  course: (request: Request, id: string) => unwrap<CourseDetail>(request, `/courses/${id}`),
+  roadmap: (request: Request, id: string) => unwrap<RoadmapDetail>(request, `/roadmaps/${id}`),
+  lessonContent: (request: Request, courseId: string, lessonId: string) =>
+    unwrap<LessonContent | null>(request, `/courses/${courseId}/lessons/${lessonId}/content`),
+
+  /**
+   * Chạy thử đề bằng chính judge chấm bài thật.
+   *
+   * Đây là thao tác kiểm duyệt quan trọng nhất với bài code và là thứ duy nhất không nhìn
+   * bằng mắt được: một đề sai testcase trông y hệt một đề đúng cho tới lúc chạy nó.
+   */
+  judgeRun: (request: Request, body: JudgeRunPayload) =>
+    unwrap<JudgeRunResult>(request, "/judge/run", { method: "POST", body: { ...body } }),
 };
 
 /* ------------------------------------------------------------------- Users */

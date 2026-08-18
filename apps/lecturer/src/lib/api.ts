@@ -6,10 +6,11 @@ import type {
   Exercise,
   ExerciseContent,
   ExerciseListItem,
+  JudgeRunPayload,
   JudgeRunResult,
   JudgeSpecPayload,
   Page,
-} from "@/features/exercises/types";
+} from "@codementor/solve";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
 import type { Course, CourseListItem, LessonContent } from "@/features/courses/types";
 import type { Article, ArticleListItem } from "@/features/articles/types";
@@ -119,21 +120,8 @@ export const api = {
    * sử — giảng viên chỉ muốn biết đề của mình chạy có ra kết quả không.
    */
   judge: {
-    run: (body: {
-      language: string;
-      sourceCode: string;
-      timeLimitMs: number;
-      memoryLimitKb: number;
-      /** Có mặt = chấm theo chữ ký hàm. Vắng mặt = so chuỗi stdout như trước. */
-      spec?: JudgeSpecPayload;
-      testCases: {
-        order: number;
-        input?: string;
-        args?: unknown[];
-        expected?: unknown;
-        weight?: number;
-      }[];
-    }) => unwrap<JudgeRunResult>("/judge/run", { method: "POST", body }),
+    run: (body: JudgeRunPayload) =>
+      unwrap<JudgeRunResult>("/judge/run", { method: "POST", body: { ...body } }),
 
     /**
      * Mã khởi tạo sinh từ chữ ký hàm.

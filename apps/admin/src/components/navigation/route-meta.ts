@@ -16,6 +16,18 @@ const ROUTES: Record<string, RouteMeta> = Object.fromEntries(
   ),
 );
 
+/**
+ * Nhãn cho các đoạn đường KHÔNG phải id, ví dụ `/moderation/exercises`.
+ *
+ * `breadcrumbTrail` chỉ tra bảng cho đoạn đầu tiên; các đoạn sau nó tự "người hoá" từ
+ * slug, và "Exercises" giữa một giao diện tiếng Việt đọc như một chỗ chưa làm xong.
+ */
+const SEGMENT_TITLES: Record<string, string> = {
+  exercises: "Bài code",
+  courses: "Khoá học",
+  roadmaps: "Lộ trình",
+};
+
 export function breadcrumbFor(pathname: string): BreadcrumbItem[] {
-  return breadcrumbTrail(ROUTES, pathname);
+  return breadcrumbTrail(ROUTES, pathname, { titles: SEGMENT_TITLES });
 }

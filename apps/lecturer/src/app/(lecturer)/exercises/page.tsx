@@ -28,7 +28,7 @@ import {
   showValue,
   type ExerciseListItem,
   type ExerciseStatus,
-} from "@/features/exercises/types";
+} from "@codementor/solve";
 
 type Tab = "mine" | "bank";
 
