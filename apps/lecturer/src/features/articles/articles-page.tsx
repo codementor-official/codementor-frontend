@@ -1,5 +1,6 @@
 "use client";
 
+import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Check,
@@ -154,6 +155,7 @@ export function ArticlesPage() {
           <div className="min-w-0">
             <p className="truncate font-medium">{row.original.title}</p>
             <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
+            <ReviewFlag status={row.original.status} />
           </div>
         ),
       },
@@ -396,14 +398,7 @@ function Editor({
 
   return (
     <div className="grid gap-4">
-      {row.status === "changes_requested" || row.status === "rejected" ? (
-        <p
-          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          role="alert"
-        >
-          <strong>Quản trị viên trả bài lại:</strong> {row.rejectionReason ?? "không nêu lý do"}
-        </p>
-      ) : null}
+      <ReviewNotice reason={row.rejectionReason} status={row.status} />
 
       <Field
         hint="Bắt buộc mới đăng được. Câu này cũng chính là nội dung thông báo gửi tới người học."

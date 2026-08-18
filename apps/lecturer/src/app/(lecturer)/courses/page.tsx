@@ -1,5 +1,6 @@
 "use client";
 
+import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -88,6 +89,7 @@ export default function CoursesPage() {
           <div className="min-w-0">
             <p className="truncate font-medium">{row.original.title}</p>
             <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
+            <ReviewFlag status={row.original.status} />
           </div>
         ),
       },
@@ -268,6 +270,7 @@ function CourseDrawerBody({ row }: { row: CourseListItem }) {
         const chapters = course.chapters ?? [];
         return (
           <>
+            <ReviewNotice reason={course.rejectionReason} status={course.status} />
             <DetailMeta>
               <DetailRow label="Slug" value={course.slug} />
               <DetailRow label="Trình độ" value={LEVEL_LABELS[course.level]} />

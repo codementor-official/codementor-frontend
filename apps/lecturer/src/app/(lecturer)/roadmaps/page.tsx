@@ -1,5 +1,6 @@
 "use client";
 
+import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -89,6 +90,7 @@ export default function RoadmapsPage() {
           <div className="min-w-0">
             <p className="truncate font-medium">{row.original.title}</p>
             <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
+            <ReviewFlag status={row.original.status} />
           </div>
         ),
       },
@@ -280,6 +282,7 @@ function RoadmapDrawerBody({ row }: { row: RoadmapListItem }) {
 
         return (
           <>
+            <ReviewNotice reason={roadmap.rejectionReason} status={roadmap.status} />
             <DetailMeta>
               <DetailRow label="Slug" value={roadmap.slug} />
               <DetailRow label="Lĩnh vực" value={FIELD_LABELS[roadmap.field]} />

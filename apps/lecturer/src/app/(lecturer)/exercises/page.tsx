@@ -1,5 +1,6 @@
 "use client";
 
+import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -102,6 +103,7 @@ export default function ExercisesPage() {
               {row.original.slug}
               {row.original.forkedFromId && " · bản fork"}
             </p>
+            <ReviewFlag status={row.original.status} />
           </div>
         ),
       },
@@ -259,6 +261,7 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
 
         return (
           <>
+            <ReviewNotice reason={exercise.rejectionReason} status={exercise.status} />
             <DetailMeta>
               <DetailRow label="Slug" value={exercise.slug} />
               <DetailRow label="Độ khó" value={DIFFICULTY_LABELS[exercise.difficulty]} />
