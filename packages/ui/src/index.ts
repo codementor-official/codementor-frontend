@@ -32,6 +32,7 @@ export { StatStrip } from "./stat-strip";
 export type { Stat } from "./stat-strip";
 export { StatusBadge } from "./status-badge";
 export { ThemeMenu } from "./theme-menu";
+export { UndoToastProvider, useUndoableDelete } from "./undo-toast";
 export type { DashboardShellProps } from "./dashboard-shell";
 export type { ManagePageProps } from "./manage-page";
 export type { SegmentedTabOption } from "./segmented-tabs";

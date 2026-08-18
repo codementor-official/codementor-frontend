@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Info, Save, Send, Tags, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
-import { Button, Card, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { Button, Card, PageHeader, ResizeHandle, StatusBadge, useUndoableDelete } from "@codementor/ui";
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
@@ -76,6 +76,7 @@ export default function CourseStudioPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { scheduleDelete } = useUndoableDelete();
   const [savedSignature, setSavedSignature] = useState("");
 
   const apply = useCallback((loaded: Course) => {
@@ -385,21 +386,25 @@ export default function CourseStudioPage() {
           <div className="lg:col-span-3">
             <DangerZone
               actionLabel="Xoá khóa học này"
-              confirmDescription={`Khóa học “${meta.title || course.slug}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Không hoàn tác được.`}
+              confirmDescription={`Khóa học “${meta.title || course.slug}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Có vài giây để hoàn tác sau khi xác nhận.`}
               confirmTitle="Xoá khóa học này?"
               description={
                 course.status === "published"
                   ? "Khóa học đã công khai thì không xoá được — học viên đang học và tiến độ của họ nằm ở đây. Gỡ công khai trước."
-                  : "Xoá khóa học này cùng toàn bộ chương và bài bên trong. Không hoàn tác được."
+                  : "Xoá khóa học này cùng toàn bộ chương và bài bên trong. Có vài giây để hoàn tác sau khi xác nhận."
               }
               disabled={saving || course.status === "published"}
-              onConfirm={() =>
-                run(async () => {
-                  await api.courses.remove(id);
-                  router.push("/courses");
-                  return course;
-                }, "Đã xoá")
-              }
+              onConfirm={() => {
+                // Lệnh xoá thật hoãn lại vài giây (xem `useUndoableDelete`); điều hướng
+                // về danh sách ngay để không đứng lại một trang sắp không còn gì để sửa.
+                // Dòng này vẫn hiện ở danh sách cho tới khi hộp "Hoàn tác" hết giờ.
+                scheduleDelete({
+                  id,
+                  message: `Đã xoá khoá học "${meta.title || course.slug}".`,
+                  commit: () => api.courses.remove(id),
+                });
+                router.push("/courses");
+              }}
               title="Xoá khóa học"
             />
           </div>

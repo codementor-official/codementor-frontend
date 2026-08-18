@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Play, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
-import { Button, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { Button, PageHeader, ResizeHandle, StatusBadge, useUndoableDelete } from "@codementor/ui";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
@@ -54,6 +54,7 @@ export default function ExerciseStudioPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { scheduleDelete } = useUndoableDelete();
   const theme = useResolvedTheme();
 
   useEffect(() => {
@@ -207,17 +208,18 @@ export default function ExerciseStudioPage() {
             <div className="mt-4">
               <DangerZone
                 actionLabel="Xoá bài này"
-                confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Không hoàn tác được.`}
+                confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}
                 confirmTitle="Xoá bài code này?"
-                description="Xoá bài code này cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Không hoàn tác được."
+                description="Xoá bài code này cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận."
                 disabled={saving}
-                onConfirm={() =>
-                  run(async () => {
-                    await api.exercises.remove(id);
-                    router.push("/exercises");
-                    return exercise;
-                  }, "Đã xoá")
-                }
+                onConfirm={() => {
+                  scheduleDelete({
+                    id,
+                    message: `Đã xoá bài code "${draft.title || exercise.slug}".`,
+                    commit: () => api.exercises.remove(id),
+                  });
+                  router.push("/exercises");
+                }}
                 title="Xoá bài code"
               />
             </div>

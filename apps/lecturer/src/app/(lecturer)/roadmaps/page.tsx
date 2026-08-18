@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, FileText, Pencil, Plus, Route, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Select, StatusBadge, useUndoableDelete } from "@codementor/ui";
 import { ConfirmButton } from "@/components/page/confirm-button";
 import { PageBody } from "@/components/page/page-body";
 import {
@@ -44,6 +44,7 @@ export default function RoadmapsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { pendingIds, scheduleDelete } = useUndoableDelete();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -196,9 +197,15 @@ export default function RoadmapsPage() {
                 {row.status !== "published" && (
                   <ConfirmButton
                     confirmLabel="Xoá lộ trình"
-                    description={`Lộ trình “${row.title}” sẽ bị xoá cùng danh sách khóa học bên trong. Bản thân các khóa học vẫn còn. Không hoàn tác được.`}
+                    description={`Lộ trình “${row.title}” sẽ bị xoá cùng danh sách khóa học bên trong. Bản thân các khóa học vẫn còn. Có vài giây để hoàn tác sau khi xác nhận.`}
                     disabled={busy}
-                    onConfirm={() => act(() => api.roadmaps.remove(row.id))}
+                    onConfirm={() =>
+                      scheduleDelete({
+                        id: row.id,
+                        message: `Đã xoá lộ trình "${row.title}".`,
+                        commit: () => api.roadmaps.remove(row.id),
+                      })
+                    }
                     title="Xoá lộ trình này?"
                   >
                     <Trash2 aria-hidden="true" className="size-4" /> Xoá
@@ -251,7 +258,7 @@ export default function RoadmapsPage() {
           setStatus("");
         }}
         onSearchChange={setSearch}
-        rows={rows}
+        rows={rows.filter((row) => !pendingIds.has(row.id))}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
         tabs={{

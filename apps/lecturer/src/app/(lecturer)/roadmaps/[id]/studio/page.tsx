@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Info, Save, Send, Tags, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
-import { Button, Card, PageHeader, ResizeHandle, StatusBadge } from "@codementor/ui";
+import { Button, Card, PageHeader, ResizeHandle, StatusBadge, useUndoableDelete } from "@codementor/ui";
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
@@ -69,6 +69,7 @@ export default function RoadmapStudioPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { scheduleDelete } = useUndoableDelete();
 
   const apply = useCallback((loaded: Roadmap) => {
     setRoadmap(loaded);
@@ -408,21 +409,22 @@ export default function RoadmapStudioPage() {
           <div className="lg:col-span-3">
             <DangerZone
               actionLabel="Xoá lộ trình này"
-              confirmDescription={`Lộ trình “${draft.title || roadmap.slug}” sẽ bị xoá khỏi hệ thống cùng danh sách khóa học bên trong. Bản thân các khóa học vẫn còn. Không hoàn tác được.`}
+              confirmDescription={`Lộ trình “${draft.title || roadmap.slug}” sẽ bị xoá khỏi hệ thống cùng danh sách khóa học bên trong. Bản thân các khóa học vẫn còn. Có vài giây để hoàn tác sau khi xác nhận.`}
               confirmTitle="Xoá lộ trình này?"
               description={
                 roadmap.status === "published"
                   ? "Lộ trình đã công khai thì không xoá được — học viên đang theo nó. Gỡ công khai trước."
-                  : "Xoá lộ trình này khỏi hệ thống. Danh sách khóa học bên trong sẽ mất, các khóa học thì vẫn còn. Không hoàn tác được."
+                  : "Xoá lộ trình này khỏi hệ thống. Danh sách khóa học bên trong sẽ mất, các khóa học thì vẫn còn. Có vài giây để hoàn tác sau khi xác nhận."
               }
               disabled={saving || roadmap.status === "published"}
-              onConfirm={() =>
-                run(async () => {
-                  await api.roadmaps.remove(id);
-                  router.push("/roadmaps");
-                  return roadmap;
-                }, "Đã xoá")
-              }
+              onConfirm={() => {
+                scheduleDelete({
+                  id,
+                  message: `Đã xoá lộ trình "${draft.title || roadmap.slug}".`,
+                  commit: () => api.roadmaps.remove(id),
+                });
+                router.push("/roadmaps");
+              }}
               title="Xoá lộ trình"
             />
           </div>

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Braces, FileText, FlaskConical, GitFork, Languages, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Select, StatusBadge, useUndoableDelete } from "@codementor/ui";
 import { ApiClientError } from "@codementor/api-client";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -47,6 +47,7 @@ export default function ExercisesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const { pendingIds, scheduleDelete } = useUndoableDelete();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -184,7 +185,13 @@ export default function ExercisesPage() {
               busy={busyId === row.id}
               isMine={row.authorId === user?.id}
               onFork={() => act(row.id, () => api.exercises.fork(row.id))}
-              onRemove={() => act(row.id, () => api.exercises.remove(row.id))}
+              onRemove={() =>
+                scheduleDelete({
+                  id: row.id,
+                  message: `Đã xoá bài code "${row.title}".`,
+                  commit: () => api.exercises.remove(row.id),
+                })
+              }
               onSubmit={() => act(row.id, () => api.exercises.submit(row.id))}
               onWithdraw={() => act(row.id, () => api.exercises.withdraw(row.id))}
               row={row}
@@ -229,7 +236,7 @@ export default function ExercisesPage() {
           setStatus("");
         }}
         onSearchChange={setSearch}
-        rows={rows}
+        rows={rows.filter((row) => !pendingIds.has(row.id))}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
         tabs={{
@@ -391,7 +398,7 @@ function ExerciseDrawerActions({
           {row.status !== "published" && (
             <ConfirmButton
               confirmLabel="Xoá bài code"
-              description={`Bài “${row.title}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Không hoàn tác được.`}
+              description={`Bài “${row.title}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}
               disabled={busy}
               onConfirm={onRemove}
               title="Xoá bài code này?"

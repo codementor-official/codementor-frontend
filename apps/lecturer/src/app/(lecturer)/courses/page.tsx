@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, FileText, ListTree, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Select, StatusBadge, useUndoableDelete } from "@codementor/ui";
 import { ConfirmButton } from "@/components/page/confirm-button";
 import { PageBody } from "@/components/page/page-body";
 import {
@@ -43,6 +43,7 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { pendingIds, scheduleDelete } = useUndoableDelete();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -188,9 +189,17 @@ export default function CoursesPage() {
                 {row.status !== "published" && (
                   <ConfirmButton
                     confirmLabel="Xoá khóa học"
-                    description={`Khóa học “${row.title}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Không hoàn tác được.`}
+                    // Xác nhận vẫn hỏi trước — bấm nhầm vẫn là bấm nhầm — nhưng lệnh xoá
+                    // thật chỉ chạy sau vài giây, đủ để đổi ý lần nữa từ hộp "Hoàn tác".
+                    description={`Khóa học “${row.title}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Có vài giây để hoàn tác sau khi xác nhận.`}
                     disabled={busy}
-                    onConfirm={() => act(() => api.courses.remove(row.id))}
+                    onConfirm={() =>
+                      scheduleDelete({
+                        id: row.id,
+                        message: `Đã xoá khoá học "${row.title}".`,
+                        commit: () => api.courses.remove(row.id),
+                      })
+                    }
                     title="Xoá khóa học này?"
                   >
                     <Trash2 aria-hidden="true" className="size-4" /> Xoá
@@ -243,7 +252,9 @@ export default function CoursesPage() {
           setStatus("");
         }}
         onSearchChange={setSearch}
-        rows={rows}
+        // Ẩn ngay dòng đang chờ xoá thay vì đợi tải lại — khoản này không thay đổi dữ
+        // liệu trên server cho tới khi hộp "Hoàn tác" dưới màn hết giờ.
+        rows={rows.filter((row) => !pendingIds.has(row.id))}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
         tabs={{
