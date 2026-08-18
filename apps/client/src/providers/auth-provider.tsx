@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ApiClientError } from "@codementor/api-client";
-import { accessTokenOf, getUserManager } from "@codementor/auth";
+import { accessTokenOf, currentUser, getUserManager } from "@codementor/auth";
 import type { OidcUser, UserManager } from "@codementor/auth";
 import type { User } from "@codementor/types";
 import { keycloakConfig } from "@/lib/env";
@@ -136,18 +136,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     const userManager = manager();
     // Token trong kho có thể đã quá hạn — nó chỉ sống 5 phút, còn `automaticSilentRenew`
     // chỉ bắt đầu đếm sau khi có user được nạp, nên nó không cứu được lần mở tab đầu tiên.
-    // Gia hạn ngay tại đây qua iframe ẩn; Keycloak trả token mới nếu phiên SSO còn sống,
-    // và ném lỗi nếu không — lúc đó mới thực sự là chưa đăng nhập.
-    void userManager
-      .getUser()
-      .then(async (oidcUser) => {
-        if (!oidcUser?.expired) return oidcUser;
-        try {
-          return await userManager.signinSilent();
-        } catch {
-          return null;
-        }
-      })
+    // `currentUser` gia hạn im lặng trước khi kết luận là chưa đăng nhập; logic đó nằm ở
+    // @codementor/auth vì apps/lecturer cần đúng như vậy và trước đây thì thiếu.
+    void currentUser(userManager)
       .then(applySession);
 
     const onLoaded = (oidcUser: OidcUser) => void applySession(oidcUser);

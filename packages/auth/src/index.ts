@@ -191,6 +191,31 @@ export function accessTokenOf(oidcUser: OidcUser | null): string | null {
   return oidcUser.access_token;
 }
 
+/**
+ * Phiên hiện tại lúc ứng dụng vừa tải, đã gia hạn nếu cần.
+ *
+ * `automaticSilentRenew` chỉ chạy khi trang đang mở và token sắp hết hạn. Nó không giúp gì
+ * cho lần tải nguội với một token ĐÃ hết hạn — mà đó lại là trường hợp thường gặp nhất:
+ * access token của Keycloak sống 5 phút, nên chỉ cần rời tab đi pha cà phê rồi bấm một
+ * liên kết là quay lại màn đăng nhập, dù refresh token còn sống nhiều giờ.
+ *
+ * Vì thế: hết hạn thì thử `signinSilent()` một lần trước khi kết luận là chưa đăng nhập.
+ * Thất bại — refresh token hết hạn thật, hoặc phiên SSO đã bị thu hồi — mới trả null, và
+ * lúc đó quay về đăng nhập là đúng.
+ */
+export async function currentUser(manager: UserManager): Promise<OidcUser | null> {
+  const stored = await manager.getUser();
+  if (stored !== null && !stored.expired) return stored;
+  // Không có gì trong kho thì cũng không có refresh token để đổi — đừng gọi mạng vô ích.
+  if (stored === null) return null;
+
+  try {
+    return await manager.signinSilent();
+  } catch {
+    return null;
+  }
+}
+
 // Re-exported so applications never import oidc-client-ts directly. The choice of
 // OIDC library stays an implementation detail of this package; swapping it would
 // otherwise mean editing every consumer.

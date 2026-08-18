@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { accessTokenOf, getUserManager } from "@codementor/auth";
+import { accessTokenOf, currentUser, getUserManager } from "@codementor/auth";
 import type { OidcUser, UserManager } from "@codementor/auth";
 import type { User } from "@codementor/types";
 import { keycloakConfig } from "@/lib/env";
@@ -84,7 +84,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     };
 
     const userManager = manager();
-    void userManager.getUser().then(applyOidcUser);
+    // `currentUser` chứ không phải `getUser`: token cũ đã hết hạn thì thử gia hạn im lặng
+    // trước, thay vì đá thẳng người dùng về màn đăng nhập. Xem @codementor/auth.
+    void currentUser(userManager).then(applyOidcUser);
 
     const onLoaded = (oidcUser: OidcUser) => void applyOidcUser(oidcUser);
     const onUnloaded = () => void applyOidcUser(null);

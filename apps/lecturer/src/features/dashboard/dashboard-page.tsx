@@ -13,7 +13,6 @@ import {
   Loader2,
   Route,
 } from "lucide-react";
-import { ApiClientError } from "@codementor/api-client";
 import { PageHeader, StatusBadge } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
 import { useAuth } from "@/providers/auth-provider";
@@ -79,29 +78,35 @@ const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeSt
 export function LecturerDashboardPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Item[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState<KindKey[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     const params = { limit: 100 };
-    void Promise.all([
+    // allSettled chứ không phải all: bốn loại nội dung nằm ở hai service khác nhau, và một
+    // service chết không được làm biến mất ba phần còn lại. Với all, exercise-service tắt
+    // là cả trang chỉ còn một dòng lỗi — khoá học, lộ trình, bài viết đều trả về 200 nhưng
+    // không còn chỗ nào vẽ chúng.
+    void Promise.allSettled([
       api.courses.mine(params),
       api.roadmaps.mine(params),
       api.exercises.mine(params),
       api.articles.mine(params),
-    ])
-      .then(([courses, roadmaps, exercises, articles]) => {
-        if (cancelled) return;
-        setItems([
-          ...courses.items.map((row) => toItem(row, "courses")),
-          ...roadmaps.items.map((row) => toItem(row, "roadmaps")),
-          ...exercises.items.map((row) => toItem(row, "exercises")),
-          ...articles.items.map((row) => toItem(row, "articles")),
-        ]);
-      })
-      .catch((cause: unknown) => {
-        if (!cancelled) setError(describe(cause));
+    ]).then((results) => {
+      if (cancelled) return;
+      const collected: Item[] = [];
+      const missing: KindKey[] = [];
+      results.forEach((result, index) => {
+        const kind = KINDS[index]!.key;
+        if (result.status === "fulfilled") {
+          collected.push(...result.value.items.map((row) => toItem(row, kind)));
+        } else {
+          missing.push(kind);
+        }
       });
+      setItems(collected);
+      setUnavailable(missing);
+    });
     return () => {
       cancelled = true;
     };
@@ -115,28 +120,30 @@ export function LecturerDashboardPage() {
         title={`Chào ${user?.displayName ?? ""}`}
       />
 
-      {error !== null && (
+      {unavailable.length > 0 && (
         <p
-          className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
           role="alert"
         >
-          <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          {error}
+          <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+          <span>
+            Chưa đọc được{" "}
+            {unavailable.map((key) => labelOf(key).toLowerCase()).join(", ")}. Những phần khác
+            bên dưới vẫn đúng; con số của phần thiếu hiện là dấu gạch chứ không phải 0.
+          </span>
         </p>
       )}
 
-      {items === null && error === null && (
+      {items === null ? (
         <p className="flex items-center gap-2 py-16 text-sm text-muted-foreground">
           <Loader2 aria-hidden="true" className="size-4 animate-spin" />
           Đang tải nội dung của bạn…
         </p>
-      )}
-
-      {items !== null && (
+      ) : (
         <div className="grid gap-6">
           <NeedsAction items={items} />
           <PendingReview items={items} />
-          <StatusOverview items={items} />
+          <StatusOverview items={items} unavailable={unavailable} />
         </div>
       )}
     </PageBody>
@@ -200,7 +207,13 @@ function PendingReview({ items }: { items: Item[] }) {
   );
 }
 
-function StatusOverview({ items }: { items: Item[] }) {
+function StatusOverview({
+  items,
+  unavailable,
+}: {
+  items: Item[];
+  unavailable: KindKey[];
+}) {
   return (
     <section>
       <h2 className="mb-3 text-base font-semibold">Nội dung của bạn</h2>
@@ -208,6 +221,9 @@ function StatusOverview({ items }: { items: Item[] }) {
         {KINDS.map(({ key, label, href, icon: Icon }) => {
           const mine = items.filter((item) => item.kind === key);
           const published = mine.filter((item) => item.status === "published").length;
+          // Không đọc được thì hiện dấu gạch, không hiện 0: "0 khoá học" là một khẳng định,
+          // và khẳng định sai chỗ này khiến người dùng tưởng mình vừa mất hết nội dung.
+          const missing = unavailable.includes(key);
           return (
             <li key={key}>
               <Link
@@ -218,9 +234,11 @@ function StatusOverview({ items }: { items: Item[] }) {
                   <Icon aria-hidden="true" className="size-4" strokeWidth={1.8} />
                   {label}
                 </span>
-                <span className="text-2xl font-semibold tracking-tight">{mine.length}</span>
+                <span className="text-2xl font-semibold tracking-tight">
+                  {missing ? "—" : mine.length}
+                </span>
                 <span className="text-xs text-muted-foreground">
-                  {published} đã đăng · {mine.length - published} chưa
+                  {missing ? "chưa đọc được" : `${published} đã đăng · ${mine.length - published} chưa`}
                 </span>
               </Link>
             </li>
@@ -253,6 +271,10 @@ function ItemRow({ item }: { item: Item }) {
   );
 }
 
+function labelOf(key: KindKey): string {
+  return KINDS.find((entry) => entry.key === key)?.label ?? key;
+}
+
 function toItem(
   row: { id: string; title: string; status: string; updatedAt: string },
   kind: KindKey,
@@ -260,10 +282,3 @@ function toItem(
   return { id: row.id, title: row.title, status: row.status, updatedAt: row.updatedAt, kind };
 }
 
-function describe(cause: unknown): string {
-  if (cause instanceof ApiClientError) {
-    const body = cause.body as { message?: string } | undefined;
-    return body?.message ?? cause.message;
-  }
-  return cause instanceof Error ? cause.message : "Không tải được nội dung của bạn";
-}
