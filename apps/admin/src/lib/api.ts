@@ -224,7 +224,7 @@ export const usersApi = {
   // tác giả hợp lệ. "Xoá" ở giao diện quản trị nghĩa là tạm khoá.
   create: (
     request: Request,
-    body: { email: string; displayName: string; role: KeycloakRole; temporaryPassword?: string },
+    body: { email: string; displayName: string; role: KeycloakRole; password: string },
   ) => unwrap<ManagedUser>(request, "/users", { method: "POST", body }),
 
   setRole: (request: Request, externalId: string, role: KeycloakRole) =>

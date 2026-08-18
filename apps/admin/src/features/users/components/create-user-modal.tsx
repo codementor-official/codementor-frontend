@@ -52,7 +52,10 @@ export function CreateUserModal({
 
   const passwordTooShort = password.length > 0 && password.length < MIN_PASSWORD;
   const canSubmit =
-    email.trim().length > 0 && displayName.trim().length > 0 && !passwordTooShort && !busy;
+    email.trim().length > 0 &&
+    displayName.trim().length > 0 &&
+    password.length >= MIN_PASSWORD &&
+    !busy;
 
   const submit = async () => {
     setBusy(true);
@@ -62,9 +65,7 @@ export function CreateUserModal({
         email: email.trim(),
         displayName: displayName.trim(),
         role,
-        // Bỏ trống thì Keycloak tự sinh và người dùng đặt lại qua email — đừng gửi chuỗi
-        // rỗng, `@MinLength(12)` sẽ từ chối nó.
-        temporaryPassword: password.trim() || undefined,
+        password,
       });
       setCreated(email.trim());
       onCreated();
@@ -87,7 +88,8 @@ export function CreateUserModal({
       {created !== null ? (
         <div className="grid gap-4">
           <p className="rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm">
-            Đã tạo <strong>{created}</strong> trong Keycloak.
+            Đã tạo <strong>{created}</strong> trong Keycloak. Người này đăng nhập được ngay
+            bằng mật khẩu bạn vừa đặt.
           </p>
           <p className="text-sm text-muted-foreground">
             Tài khoản chưa xuất hiện trong danh sách bên dưới, và đó là bình thường: hồ sơ
@@ -157,9 +159,9 @@ export function CreateUserModal({
           </Field>
 
           <Field
-            hint={`Bỏ trống để Keycloak tự sinh và gửi liên kết đặt lại. Tối thiểu ${MIN_PASSWORD} ký tự.`}
+            hint={`Trao tay cho người dùng — hệ thống không gửi email. Tối thiểu ${MIN_PASSWORD} ký tự.`}
             htmlFor="new-user-password"
-            label="Mật khẩu tạm"
+            label="Mật khẩu"
           >
             <input
               autoComplete="new-password"
