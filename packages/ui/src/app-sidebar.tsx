@@ -9,6 +9,13 @@ export interface AppNavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /**
+   * Số việc đang chờ ở màn hình đó. `0` hoặc bỏ trống thì không vẽ gì.
+   *
+   * Chỉ dùng cho thứ CÓ NGƯỜI PHẢI XỬ LÝ, không phải để khoe kích cỡ dữ liệu: một con
+   * số đỏ trên mọi mục là một con số đỏ không ai còn nhìn.
+   */
+  badge?: number;
 }
 
 /** `label` omitted renders an ungrouped run of links — what a flat nav wants. */
@@ -19,6 +26,11 @@ export interface AppNavGroup {
 
 export interface AppSidebarProps {
   groups: AppNavGroup[];
+  /**
+   * Số việc đang chờ theo `href`. Truyền riêng chứ không nhét vào `groups`: danh sách
+   * điều hướng là hằng số khai một lần, còn con số thì đổi mỗi lần tải lại.
+   */
+  badges?: Record<string, number>;
   /** `usePathname()`. Prefix match, so /courses/123/studio keeps "Khóa học" lit. */
   activePath: string;
   collapsed?: boolean;
@@ -44,6 +56,7 @@ export interface AppSidebarProps {
  */
 export function AppSidebar({
   groups,
+  badges,
   activePath,
   collapsed = false,
   onToggle,
@@ -96,10 +109,11 @@ export function AppSidebar({
               {group.items.map((item) => {
                 const active = activePath === item.href || activePath.startsWith(item.href + "/");
                 const Icon = item.icon;
+                const badge = badges?.[item.href] ?? item.badge ?? 0;
                 return (
                   <Link
                     aria-current={active ? "page" : undefined}
-                    className={`flex h-9 items-center rounded-md text-sm transition-colors ${
+                    className={`relative flex h-9 items-center rounded-md text-sm transition-colors ${
                       narrow ? "justify-center px-0" : "gap-2.5 px-2.5"
                     } ${
                       active
@@ -113,6 +127,19 @@ export function AppSidebar({
                   >
                     <Icon aria-hidden="true" className="size-4.5 shrink-0" strokeWidth={1.8} />
                     {!narrow && <span className="truncate">{item.label}</span>}
+                    {badge > 0 &&
+                      (narrow ? (
+                        // Thu gọn thì không còn chỗ cho con số — chấm đỏ ở góc biểu tượng
+                        // vẫn nói được "có việc", và đó là phần quan trọng hơn.
+                        <span
+                          aria-label={`${badge} mục đang chờ`}
+                          className="absolute top-1.5 right-2.5 size-2 rounded-full bg-destructive"
+                        />
+                      ) : (
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-2xs font-bold text-destructive-foreground">
+                          {badge > 99 ? "99+" : badge}
+                        </span>
+                      ))}
                   </Link>
                 );
               })}

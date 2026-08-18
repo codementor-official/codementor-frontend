@@ -7,6 +7,7 @@ import { AppSidebar } from "@codementor/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { adminNavigation } from "@/components/navigation/admin-navigation";
 import { useAdminAuth } from "@/features/auth/auth-provider";
+import { useModerationQueue } from "@/features/moderation/queue-provider";
 
 interface AdminSidebarProps {
   collapsed: boolean;
@@ -19,6 +20,9 @@ export function AdminSidebar({ collapsed, mobile, onToggle, onClose }: AdminSide
   const pathname = usePathname();
   const { user } = useAdminAuth();
   const compact = collapsed && !mobile;
+  // Con số đỏ trên "Hàng chờ duyệt". Trước đây không có gì báo cho quản trị viên biết có
+  // việc đang chờ — họ phải tự nhớ mở trang đó ra kiểm tra.
+  const { total } = useModerationQueue();
 
   return (
     <AppSidebar
@@ -54,6 +58,7 @@ export function AdminSidebar({ collapsed, mobile, onToggle, onClose }: AdminSide
           )}
         </div>
       }
+      badges={{ "/moderation": total }}
       groups={adminNavigation}
       mobile={mobile}
       onClose={onClose}

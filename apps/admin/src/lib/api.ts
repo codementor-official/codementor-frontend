@@ -1,34 +1,14 @@
 import type { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
 import type { UiNotification } from "@codementor/ui";
+import { KINDS } from "@/features/moderation/types";
+import type { ContentKind, ModerationDecision, QueueItem } from "@/features/moderation/types";
 
 /**
- * Ba loại nội dung, ba service, ba đường dẫn — không có endpoint gộp ở backend, vì một
- * endpoint như thế buộc một service đọc bảng của service khác.
+ * Hàng chờ duyệt. Bốn loại nội dung, bốn service, bốn đường dẫn — không có endpoint gộp
+ * ở backend, vì một endpoint như thế buộc một service đọc bảng của service khác. Bảng
+ * đường dẫn nằm ở `features/moderation/types.ts`, cạnh chỗ hiển thị chúng.
  */
-export type ContentKind = "exercises" | "courses" | "roadmaps";
-/**
- * `restore` takes archived content back to `draft` so it walks the review flow again —
- * there is no path from archived straight to published, by design.
- */
-export type ModerationDecision =
-  | "approve"
-  | "request_changes"
-  | "reject"
-  | "archive"
-  | "restore";
-
-export interface QueueItem {
-  id: string;
-  slug: string;
-  title: string;
-  status: string;
-  updatedAt: string;
-  authorName: string | null;
-  /** Do màn admin gắn thêm sau khi gộp ba hàng chờ; API không trả trường này. */
-  kind?: ContentKind;
-}
-
 export interface Page<T> {
   items: T[];
   nextCursor: string | null;
@@ -36,7 +16,7 @@ export interface Page<T> {
 
 /**
  * Hàm gọi do `useAdminApi()` trả về. Mọi lời gọi đi qua `/api/backend`, nơi BFF gắn
- * access token phía server — trình duyệt không bao giờ cầm token.
+ * access token phía server — trình duyệt không bao giờ cầm nó.
  *
  * Lấy kiểu từ chính `createApiClient` thay vì tự khai lại: khai lại thì hai bên trôi
  * khỏi nhau mà không ai báo.
@@ -53,7 +33,10 @@ async function unwrap<T>(request: Request, path: string, options?: Parameters<Re
 
 export const moderationApi = {
   queue: (request: Request, kind: ContentKind) =>
-    unwrap<Page<QueueItem>>(request, `/${kind}/moderation?limit=50`),
+    unwrap<Page<QueueItem>>(request, `${KINDS[kind].queuePath}?limit=50`),
+  /** Bản đầy đủ, để xem trước trước khi quyết. */
+  detail: <T,>(request: Request, kind: ContentKind, id: string) =>
+    unwrap<T>(request, KINDS[kind].detailPath(id)),
   decide: (
     request: Request,
     kind: ContentKind,
@@ -61,7 +44,7 @@ export const moderationApi = {
     decision: ModerationDecision,
     reason?: string,
   ) =>
-    unwrap<QueueItem>(request, `/${kind}/${id}/moderate`, {
+    unwrap<QueueItem>(request, KINDS[kind].moderatePath(id), {
       method: "POST",
       body: { decision, ...(reason ? { reason } : {}) },
     }),
