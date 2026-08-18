@@ -48,6 +48,18 @@ export const moderationApi = {
       method: "POST",
       body: { decision, ...(reason ? { reason } : {}) },
     }),
+  /**
+   * Thân bài lý thuyết của một bài học, để xem trước bên trong hàng chờ duyệt khoá học.
+   *
+   * Cùng endpoint mà studio giảng viên dùng (`GET /courses/:id/lessons/:lessonId/content`)
+   * — nó không giới hạn `@Roles`, quyền đọc nằm ở use case (`get()` cho phép admin đọc
+   * mọi khoá học bất kể trạng thái), nên không cần đường riêng cho admin.
+   */
+  lessonContent: (request: Request, courseId: string, lessonId: string) =>
+    unwrap<{ summary?: string; contentHtml?: string } | null>(
+      request,
+      `/courses/${courseId}/lessons/${lessonId}/content`,
+    ),
 };
 
 /* ------------------------------------------------------------------- Users */

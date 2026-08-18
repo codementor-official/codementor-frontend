@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, FileText, Loader2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, FileText, Loader2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
@@ -11,6 +11,7 @@ import {
   type ContentKind,
   type CoursePreview,
   type ExercisePreview,
+  type LessonContentPreview,
   type QueueItem,
   type RoadmapPreview,
 } from "./types";
@@ -63,12 +64,12 @@ export function ContentPreview({ item }: { item: QueueItem }) {
     );
   }
 
-  return <Body data={data} kind={item.kind} />;
+  return <Body contentId={item.id} data={data} kind={item.kind} />;
 }
 
-function Body({ data, kind }: { data: unknown; kind: ContentKind }) {
+function Body({ data, kind, contentId }: { data: unknown; kind: ContentKind; contentId: string }) {
   if (kind === "articles") return <ArticleBody article={data as ArticlePreview} />;
-  if (kind === "courses") return <CourseBody course={data as CoursePreview} />;
+  if (kind === "courses") return <CourseBody course={data as CoursePreview} courseId={contentId} />;
   if (kind === "roadmaps") return <RoadmapBody roadmap={data as RoadmapPreview} />;
   return <ExerciseBody exercise={data as ExercisePreview} />;
 }
@@ -100,7 +101,7 @@ function ArticleBody({ article }: { article: ArticlePreview }) {
   );
 }
 
-function CourseBody({ course }: { course: CoursePreview }) {
+function CourseBody({ course, courseId }: { course: CoursePreview; courseId: string }) {
   const chapters = course.chapters ?? [];
   return (
     <div>
@@ -130,22 +131,7 @@ function CourseBody({ course }: { course: CoursePreview }) {
               ) : (
                 <ul className="mt-1.5 grid gap-1">
                   {chapter.lessons.map((lesson) => (
-                    <li
-                      className="flex items-center gap-2 text-xs text-muted-foreground"
-                      key={lesson.id}
-                    >
-                      {lesson.exerciseTitle ? (
-                        <BookOpen aria-hidden="true" className="size-3.5 shrink-0" />
-                      ) : (
-                        <FileText aria-hidden="true" className="size-3.5 shrink-0" />
-                      )}
-                      <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
-                      {/* Bài lý thuyết không có `contentRef` là một ô rỗng với học viên —
-                        * đúng thứ mà việc duyệt phải bắt được. */}
-                      {!lesson.exerciseTitle && lesson.contentRef === null && (
-                        <span className="shrink-0 text-destructive">chưa có nội dung</span>
-                      )}
-                    </li>
+                    <LessonRow courseId={courseId} key={lesson.id} lesson={lesson} />
                   ))}
                 </ul>
               )}
@@ -157,8 +143,85 @@ function CourseBody({ course }: { course: CoursePreview }) {
   );
 }
 
+/**
+ * Một dòng bài học, mở ra được để đọc thân bài — chứ không chỉ tiêu đề.
+ *
+ * Chỉ bài LÝ THUYẾT mở ra tại chỗ: nội dung của nó (`contentHtml`) là thứ duy nhất một
+ * dòng danh sách không thể hiện, và cùng lúc là thứ hay bị bỏ trống nhất — mục "Gợi ý
+ * hoàn thiện" bên bảng điều khiển giảng viên đã phải suy nó ra chứ chưa từng hiện ra được.
+ * Bài CODE không cần mở: nó đã có màn kiểm duyệt riêng khi tự nó đi qua hàng chờ, và tiêu
+ * đề + trạng thái trên dòng này là đủ để biết bài đó dùng được hay chưa.
+ */
+function LessonRow({
+  courseId,
+  lesson,
+}: {
+  courseId: string;
+  lesson: NonNullable<CoursePreview["chapters"]>[number]["lessons"][number];
+}) {
+  const request = useAdminApi();
+  const [open, setOpen] = useState(false);
+  const [content, setContent] = useState<LessonContentPreview | null | undefined>(undefined);
+
+  const isTheory = !lesson.exerciseTitle;
+  const empty = isTheory && lesson.contentRef === null;
+
+  useEffect(() => {
+    if (!open || !isTheory || content !== undefined) return;
+    void moderationApi.lessonContent(request, courseId, lesson.id).then(setContent);
+  }, [open, isTheory, content, request, courseId, lesson.id]);
+
+  return (
+    <li className="text-xs text-muted-foreground">
+      <button
+        className="flex w-full items-center gap-2 rounded py-0.5 text-left hover:text-foreground disabled:cursor-default"
+        disabled={!isTheory}
+        onClick={() => setOpen((value) => !value)}
+        type="button"
+      >
+        {isTheory ? (
+          open ? (
+            <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+          ) : (
+            <ChevronRight aria-hidden="true" className="size-3.5 shrink-0" />
+          )
+        ) : (
+          <BookOpen aria-hidden="true" className="size-3.5 shrink-0" />
+        )}
+        {isTheory && !open && <FileText aria-hidden="true" className="size-3.5 shrink-0" />}
+        <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
+        {/* Bài lý thuyết không có `contentRef` là một ô rỗng với học viên — đúng thứ mà
+          * việc duyệt phải bắt được. */}
+        {empty && <span className="shrink-0 text-destructive">chưa có nội dung</span>}
+      </button>
+
+      {open && isTheory && (
+        <div className="mt-1 ml-5">
+          {content === undefined ? (
+            <p className="flex items-center gap-1.5 py-2">
+              <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+              Đang tải…
+            </p>
+          ) : content === null || !content.contentHtml ? (
+            <p className="py-2 text-destructive">Bài học chưa có nội dung.</p>
+          ) : (
+            <div
+              className="rich-text max-h-64 overflow-y-auto rounded-md border border-border bg-background p-3 text-foreground"
+              dangerouslySetInnerHTML={{ __html: content.contentHtml }}
+            />
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
 function RoadmapBody({ roadmap }: { roadmap: RoadmapPreview }) {
   const courses = roadmap.courses ?? [];
+  // Gửi duyệt lộ trình bị chặn khi còn khoá học chưa công khai (`Roadmap.submit()`), nên
+  // ở đây con số này lẽ ra luôn là 0 — vẫn tính và hiện ra để bắt được trường hợp một
+  // khoá học bị gỡ SAU KHI lộ trình đã vào hàng chờ, thứ mà không màn nào khác báo.
+  const blocking = courses.filter((course) => course.status !== "published").length;
   return (
     <div>
       <Facts
@@ -189,6 +252,11 @@ function RoadmapBody({ roadmap }: { roadmap: RoadmapPreview }) {
             </li>
           ))}
         </ol>
+      )}
+      {blocking > 0 && (
+        <p className="mt-2 text-xs text-warning">
+          {blocking} khoá học trong lộ trình này chưa công khai.
+        </p>
       )}
     </div>
   );

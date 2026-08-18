@@ -104,6 +104,12 @@ export interface CoursePreview {
   }[];
 }
 
+/** Thân bài lý thuyết — cùng hình dạng mà `packages/editor` ghi xuống MongoDB. */
+export interface LessonContentPreview {
+  summary?: string;
+  contentHtml?: string;
+}
+
 export interface RoadmapPreview {
   title: string;
   shortDescription: string | null;
