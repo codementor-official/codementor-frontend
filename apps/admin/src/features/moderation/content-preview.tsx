@@ -273,7 +273,7 @@ function ExerciseBody({ exercise }: { exercise: ExercisePreview }) {
           ["Độ khó", exercise.difficulty],
           ["Phạm vi", exercise.visibility === "public" ? "công khai" : "trong nhóm"],
           ["Bộ test", `${testCases.length} ca`],
-          ["Ngôn ngữ", (content.languages ?? []).map((item) => item.language).join(", ") || "—"],
+          ["Ngôn ngữ", (content.languages ?? []).map((item) => item.label).join(", ") || "—"],
         ]}
       />
       {exercise.summary && <Quote label="Tóm tắt">{exercise.summary}</Quote>}

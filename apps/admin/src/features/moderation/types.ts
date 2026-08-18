@@ -131,6 +131,7 @@ export interface ExercisePreview {
     constraints?: string[];
     examples?: { input: string; output: string; explanation?: string }[];
     testCases?: { visibility: string }[];
-    languages?: { language: string }[];
+    /** `label` là tên hiển thị ("Python"); `id` là khoá kỹ thuật ("python") dùng khi chấm bài. */
+    languages?: { id: string; label: string }[];
   } | null;
 }
