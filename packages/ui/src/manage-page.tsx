@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Download } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { Button } from "./button";
-import { DataTable, TablePagination, useDataTable } from "./data-table";
+import { DataTable, TablePagination, useDataTable, useFittedPageSize } from "./data-table";
 import { exportTableToCsv } from "./export-csv";
 import { FilterBar } from "./filter-bar";
 import { PageHeader } from "./page-header";
@@ -113,6 +113,11 @@ export function ManagePage<TData>({
 
   const table = useDataTable({ data: rows, columns, getRowId, initialSorting, columnVisibility });
 
+  // Bảng cao đúng phần màn hình còn lại thay vì cứng 10 dòng — xem `useFittedPageSize`.
+  const tableRef = useRef<HTMLDivElement>(null);
+  const fittedPageSize = useFittedPageSize(tableRef);
+  useEffect(() => table.setPageSize(fittedPageSize), [table, fittedPageSize]);
+
   return (
     <>
       <PageHeader
@@ -164,12 +169,14 @@ export function ManagePage<TData>({
         </p>
       )}
 
-      <DataTable
-        emptyMessage={loading ? "Đang tải…" : emptyMessage}
-        onRowClick={drawer ? (row) => setSelectedId(getRowId(row)) : undefined}
-        table={table}
-      />
-      <TablePagination table={table} />
+      <div ref={tableRef}>
+        <DataTable
+          emptyMessage={loading ? "Đang tải…" : emptyMessage}
+          onRowClick={drawer ? (row) => setSelectedId(getRowId(row)) : undefined}
+          table={table}
+        />
+        <TablePagination table={table} />
+      </div>
 
       {drawer && selected && (
         <SideDrawer

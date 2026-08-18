@@ -5,7 +5,6 @@ import {
   Braces,
   FileText,
   Flag,
-  GraduationCap,
   LayoutDashboard,
   Network,
   Newspaper,
@@ -45,7 +44,6 @@ export const adminNavigation: AdminNavGroup[] = [
     label: "Quản lý",
     items: [
       { href: "/users", icon: Users, label: "Người dùng" },
-      { href: "/lecturers", icon: GraduationCap, label: "Giảng viên" },
       { href: "/courses", icon: BookOpen, label: "Khoá học" },
       { href: "/learning-paths", icon: Route, label: "Lộ trình học" },
       { href: "/workspaces", icon: Network, label: "Nhóm học tập" },

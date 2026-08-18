@@ -1,6 +1,12 @@
 "use client";
 
-import { type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -69,6 +75,54 @@ const SCROLL_SHADOW: CSSProperties = {
   backgroundRepeat: "no-repeat",
   backgroundAttachment: "local, local, scroll, scroll",
 };
+
+
+/**
+ * Số dòng vừa đúng chỗ còn lại của màn hình.
+ *
+ * Trang quản trị nào cũng đứng trong một khung cao đúng bằng cửa sổ (`AdminShell`), nên
+ * một `pageSize` cố định là sai ở mọi máy trừ đúng một cỡ màn hình: máy nhỏ thì bảng bị
+ * cuộn, máy lớn thì thừa một khoảng trắng bằng nửa trang. Đo khoảng cách từ đỉnh bảng
+ * xuống đáy cửa sổ rồi chia cho chiều cao một dòng.
+ *
+ * `ResizeObserver` trên chính khung bảng chứ không chỉ nghe `resize` của cửa sổ: thu/mở
+ * thanh bên, hiện dải lỗi hay đổi bộ lọc đều làm bảng tụt xuống mà cửa sổ không đổi cỡ.
+ */
+export function useFittedPageSize(ref: RefObject<HTMLElement | null>, fallback = 10): number {
+  const [pageSize, setPageSize] = useState(fallback);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof window === "undefined") return;
+
+    const measure = () => {
+      const top = element.getBoundingClientRect().top;
+      // Trừ phần không phải dòng dữ liệu: hàng tiêu đề, thanh phân trang, lề dưới của
+      // vùng cuộn. Đo bằng số vì cả ba đều là hằng số của bộ giao diện này.
+      const usable = window.innerHeight - top - HEADER_ROW - PAGINATION_BAR - BOTTOM_GUTTER;
+      setPageSize(Math.max(MIN_ROWS, Math.floor(usable / ROW_HEIGHT)));
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(document.body);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [ref]);
+
+  return pageSize;
+}
+
+/** Chiều cao một dòng: `py-2.5` hai phía + một dòng chữ `text-sm`. */
+const ROW_HEIGHT = 41;
+const HEADER_ROW = 37;
+const PAGINATION_BAR = 44;
+const BOTTOM_GUTTER = 24;
+/** Dưới mức này thì bảng thành vô dụng; thà để nó tràn ra ngoài và cuộn. */
+const MIN_ROWS = 5;
 
 export function DataTable<TData>({
   table,

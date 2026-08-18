@@ -8,7 +8,14 @@ export type { RouteMeta } from "./breadcrumb-trail";
 export { Button } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
 export { DashboardShell } from "./dashboard-shell";
-export { DataTable, TableCheckbox, TablePagination, TableToolbar, useDataTable } from "./data-table";
+export {
+  DataTable,
+  TableCheckbox,
+  TablePagination,
+  TableToolbar,
+  useDataTable,
+  useFittedPageSize,
+} from "./data-table";
 export { exportTableToCsv } from "./export-csv";
 export type { ExportableColumnMeta } from "./export-csv";
 export { FilterBar } from "./filter-bar";
