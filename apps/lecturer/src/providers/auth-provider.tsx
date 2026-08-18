@@ -19,6 +19,14 @@ interface AuthContextValue {
   signOut: () => void;
   /** Re-reads the profile after the user edits it. */
   refreshUser: () => Promise<void>;
+  /**
+   * Vé bắt tay WebSocket cho chuông thông báo.
+   *
+   * Phiên ở ứng dụng này giữ access token ngay trong tab (oidc-client-ts), nên không cần
+   * hỏi server như bên client — nhưng vẫn để dạng Promise để chuông dùng chung được cho
+   * cả hai kiểu phiên.
+   */
+  realtimeToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -111,6 +119,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         tokenRef.current = null;
         void manager().signoutRedirect();
       },
+      realtimeToken: async () => tokenRef.current,
       refreshUser: async () => {
         if (tokenRef.current) setUser(await api.me());
       },

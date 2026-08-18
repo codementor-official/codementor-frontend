@@ -22,6 +22,8 @@ export { FilterBar } from "./filter-bar";
 export { Input } from "./input";
 export { ManagePage } from "./manage-page";
 export { Modal } from "./modal";
+export { NotificationBell, useNotifications } from "./notification-bell";
+export type { NotificationSource, UiNotification } from "./notification-bell";
 export { PageHeader } from "./page-header";
 export { SegmentedTabs } from "./segmented-tabs";
 export { Select } from "./select";

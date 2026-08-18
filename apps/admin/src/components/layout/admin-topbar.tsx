@@ -2,26 +2,55 @@
 
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { AppTopbar, Breadcrumb, ThemeMenu } from "@codementor/ui";
+import { AppTopbar, Breadcrumb, NotificationBell, ThemeMenu } from "@codementor/ui";
+import type { NotificationSource } from "@codementor/ui";
 import { breadcrumbFor } from "@/components/navigation/route-meta";
 import { useAdminAuth } from "@/features/auth/auth-provider";
+import { useAdminApi } from "@/features/auth/admin-api";
+import { notificationsApi } from "@/lib/api";
+import { realtimeUrl } from "@/lib/env";
 
 /**
- * Trail, theme, sign out — the same row the other two applications render.
+ * Trail, notifications, theme, sign out — the same row the other two applications render.
  *
- * The ⌘K command palette and the "3 unread" bell that used to live here are gone: the
- * palette listed three labels that navigated nowhere and the badge was a literal 3.
- * They can come back the day they are wired to something. (Chúng vừa được dịch sang tiếng
- * Việt ở nhánh main — bản dịch đó mất theo, vì chính hai control đó bị bỏ.)
+ * The bell is back, and this time it counts something: a lecturer submitting content for
+ * review raises a notification addressed to the `admin` role. The ⌘K palette that used to
+ * sit beside it is still gone — it listed three labels that navigated nowhere.
+ *
+ * The handshake ticket comes from `/api/auth/realtime-token` because this session keeps
+ * its tokens in an HttpOnly cookie; the browser never holds one.
  */
 export function AdminTopbar({ onMobileMenu }: { onMobileMenu: () => void }) {
-  const { logout, user } = useAdminAuth();
+  const { logout, user, authenticated } = useAdminAuth();
+  const request = useAdminApi();
   const pathname = usePathname();
+
+  const notifications: NotificationSource = {
+    list: (params) => notificationsApi.list(request, params),
+    unreadCount: async () => (await notificationsApi.unreadCount(request)).count,
+    markRead: async (id) => {
+      await notificationsApi.markRead(request, id);
+    },
+    markAllRead: async () => {
+      await notificationsApi.markAllRead(request);
+    },
+    realtimeToken: async () => {
+      const response = await fetch("/api/auth/realtime-token", { cache: "no-store" });
+      if (!response.ok) return null;
+      return ((await response.json()) as { token: string }).token;
+    },
+    realtimeUrl,
+  };
 
   return (
     <AppTopbar
       actions={
         <>
+          <NotificationBell
+            emptyHint="Nội dung giảng viên gửi duyệt sẽ xuất hiện ở đây."
+            enabled={authenticated}
+            source={notifications}
+          />
           <ThemeMenu storageKey="codementor-admin-theme" />
           <button
             aria-label={`Đăng xuất ${user?.displayName ?? user?.email ?? "quản trị viên"}`}

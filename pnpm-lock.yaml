@@ -473,6 +473,9 @@ importers:
       react-resizable-panels:
         specifier: ^4.12.2
         version: 4.12.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      socket.io-client:
+        specifier: ^4.8.3
+        version: 4.8.3(supports-color@7.2.0)
     devDependencies:
       '@types/react':
         specifier: ^19

@@ -17,3 +17,9 @@ export const keycloakConfig = createKeycloakPublicConfig({
  * owns which resource.
  */
 export const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+
+/**
+ * realtime-service, nối THẲNG chứ không qua Kong: gateway chưa cấu hình nâng cấp
+ * WebSocket, và đây là kết nối sống lâu chứ không phải request/response cần rate limit.
+ */
+export const realtimeUrl = process.env.NEXT_PUBLIC_REALTIME_URL ?? "http://localhost:3009";

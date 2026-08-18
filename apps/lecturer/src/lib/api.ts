@@ -13,6 +13,7 @@ import type {
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
 import type { Course, CourseListItem, LessonContent } from "@/features/courses/types";
 import type { Article, ArticleListItem } from "@/features/articles/types";
+import type { UiNotification } from "@codementor/ui";
 
 /**
  * The single place that knows a backend URL. Everything below calls the gateway, so
@@ -207,5 +208,19 @@ export const api = {
    */
   tags: {
     list: () => unwrap<Tag[]>("/tags"),
+  },
+
+  /**
+   * Thông báo. Cùng API mà ứng dụng người học đọc — notification-service lọc theo đối
+   * tượng nhận từ token, nên giảng viên chỉ thấy thông báo gửi cho mình hoặc cho tất cả.
+   */
+  notifications: {
+    list: (params: { limit: number; before?: string }) =>
+      unwrap<{ items: UiNotification[]; nextCursor: string | null }>(
+        `/notifications?limit=${params.limit}${params.before ? `&before=${encodeURIComponent(params.before)}` : ""}`,
+      ),
+    unreadCount: () => unwrap<{ count: number }>("/notifications/unread-count"),
+    markRead: (id: string) => unwrap<void>(`/notifications/${id}/read`, { method: "PATCH" }),
+    markAllRead: () => unwrap<{ marked: number }>("/notifications/read-all", { method: "PATCH" }),
   },
 };

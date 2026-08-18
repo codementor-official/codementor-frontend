@@ -1,5 +1,6 @@
 import type { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
+import type { UiNotification } from "@codementor/ui";
 
 /**
  * Ba loại nội dung, ba service, ba đường dẫn — không có endpoint gộp ở backend, vì một
@@ -314,4 +315,25 @@ export interface Tag {
  */
 export const tagsApi = {
   list: (request: Request) => unwrap<Tag[]>(request, "/tags"),
+};
+
+/* ----------------------------------------------------------- Thông báo */
+
+/**
+ * Cùng API mà hai ứng dụng kia đọc. notification-service lọc theo đối tượng nhận lấy từ
+ * token, nên quản trị viên thấy thông báo gửi cho vai trò `admin` và thông báo chung —
+ * không phải hộp thư của tất cả mọi người.
+ */
+export const notificationsApi = {
+  list: (request: Request, params: { limit: number; before?: string }) =>
+    unwrap<{ items: UiNotification[]; nextCursor: string | null }>(
+      request,
+      `/notifications${search({ limit: params.limit, before: params.before })}`,
+    ),
+  unreadCount: (request: Request) =>
+    unwrap<{ count: number }>(request, "/notifications/unread-count"),
+  markRead: (request: Request, id: string) =>
+    unwrap<void>(request, `/notifications/${id}/read`, { method: "PATCH" }),
+  markAllRead: (request: Request) =>
+    unwrap<{ marked: number }>(request, "/notifications/read-all", { method: "PATCH" }),
 };

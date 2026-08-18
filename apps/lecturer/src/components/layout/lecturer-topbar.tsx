@@ -2,24 +2,45 @@
 
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { AppTopbar, Breadcrumb, ThemeMenu } from "@codementor/ui";
+import { AppTopbar, Breadcrumb, NotificationBell, ThemeMenu } from "@codementor/ui";
+import type { NotificationSource } from "@codementor/ui";
 import { breadcrumbFor } from "@/components/navigation/route-meta";
 import { useAuth } from "@/providers/auth-provider";
+import { api } from "@/lib/api";
+import { realtimeUrl } from "@/lib/env";
 
 /**
- * Trail, theme, sign out. No search box and no notification bell: neither has anything
- * behind it, and a control that never does anything teaches people to ignore the whole bar.
+ * Trail, notifications, theme, sign out. Still no search box — nothing is behind it, and
+ * a control that never does anything teaches people to ignore the whole bar.
  *
  * The collapse toggle moved to the sidebar footer, where the thing it collapses is.
  */
 export function LecturerTopbar({ onMobileMenu }: { onMobileMenu: () => void }) {
-  const { signOut } = useAuth();
+  const { signOut, status, realtimeToken } = useAuth();
   const pathname = usePathname();
+
+  const notifications: NotificationSource = {
+    list: (params) => api.notifications.list(params),
+    unreadCount: async () => (await api.notifications.unreadCount()).count,
+    markRead: async (id) => {
+      await api.notifications.markRead(id);
+    },
+    markAllRead: async () => {
+      await api.notifications.markAllRead();
+    },
+    realtimeToken,
+    realtimeUrl,
+  };
 
   return (
     <AppTopbar
       actions={
         <>
+          <NotificationBell
+            emptyHint="Kết quả duyệt nội dung của bạn sẽ xuất hiện ở đây."
+            enabled={status === "authenticated"}
+            source={notifications}
+          />
           <ThemeMenu storageKey="codementor-lecturer-theme" />
           <button
             aria-label="Đăng xuất"
