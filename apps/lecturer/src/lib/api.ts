@@ -217,10 +217,20 @@ export const api = {
   notifications: {
     list: (params: { limit: number; before?: string }) =>
       unwrap<{ items: UiNotification[]; nextCursor: string | null }>(
-        `/notifications?limit=${params.limit}${params.before ? `&before=${encodeURIComponent(params.before)}` : ""}`,
+        `/notifications?limit=${params.limit}${params.before ? `&before=${encodeURIComponent(params.before)}` : ""}&${NOTIFICATION_SCOPE}`,
       ),
-    unreadCount: () => unwrap<{ count: number }>("/notifications/unread-count"),
+    unreadCount: () => unwrap<{ count: number }>(`/notifications/unread-count?${NOTIFICATION_SCOPE}`),
     markRead: (id: string) => unwrap<void>(`/notifications/${id}/read`, { method: "PATCH" }),
-    markAllRead: () => unwrap<{ marked: number }>("/notifications/read-all", { method: "PATCH" }),
+    markAllRead: () =>
+      unwrap<{ marked: number }>(`/notifications/read-all?${NOTIFICATION_SCOPE}`, { method: "PATCH" }),
   },
 };
+
+/**
+ * Những loại thông báo có nghĩa với giảng viên: quyết định trên bài của chính họ, và
+ * thông báo hệ thống. KHÔNG bao gồm "khoá học/bài viết mới ra mắt" — những sự kiện đó
+ * gửi `audienceType: ALL` cho mọi người đã đăng nhập, kể cả giảng viên, nhưng chúng dành
+ * cho người học chứ không phải cho tác giả của chính nội dung đó.
+ */
+const NOTIFICATION_SCOPE =
+  "types=CONTENT_APPROVED,CONTENT_CHANGES_REQUESTED,CONTENT_REJECTED,ADMIN_ANNOUNCEMENT";

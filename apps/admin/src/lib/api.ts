@@ -307,16 +307,35 @@ export const tagsApi = {
  * token, nên quản trị viên thấy thông báo gửi cho vai trò `admin` và thông báo chung —
  * không phải hộp thư của tất cả mọi người.
  */
+/**
+ * Những loại thông báo có nghĩa với quản trị viên: nội dung đang chờ họ duyệt, và thông
+ * báo hệ thống. KHÔNG bao gồm "khoá học/bài viết mới ra mắt" — những sự kiện đó gửi
+ * `audienceType: ALL` cho mọi người đã đăng nhập, kể cả admin, nhưng chúng dành cho người
+ * học chứ không phải cho người vận hành nền tảng.
+ */
+const NOTIFICATION_TYPES = ["CONTENT_REVIEW_REQUESTED", "ADMIN_ANNOUNCEMENT"];
+
 export const notificationsApi = {
   list: (request: Request, params: { limit: number; before?: string }) =>
     unwrap<{ items: UiNotification[]; nextCursor: string | null }>(
       request,
-      `/notifications${search({ limit: params.limit, before: params.before })}`,
+      `/notifications${search({
+        limit: params.limit,
+        before: params.before,
+        types: NOTIFICATION_TYPES.join(","),
+      })}`,
     ),
   unreadCount: (request: Request) =>
-    unwrap<{ count: number }>(request, "/notifications/unread-count"),
+    unwrap<{ count: number }>(
+      request,
+      `/notifications/unread-count${search({ types: NOTIFICATION_TYPES.join(",") })}`,
+    ),
   markRead: (request: Request, id: string) =>
     unwrap<void>(request, `/notifications/${id}/read`, { method: "PATCH" }),
   markAllRead: (request: Request) =>
-    unwrap<{ marked: number }>(request, "/notifications/read-all", { method: "PATCH" }),
+    unwrap<{ marked: number }>(
+      request,
+      `/notifications/read-all${search({ types: NOTIFICATION_TYPES.join(",") })}`,
+      { method: "PATCH" },
+    ),
 };
