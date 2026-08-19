@@ -1,62 +1,21 @@
-export const FIELDS = ["frontend", "backend", "fullstack", "mobile", "data_ai", "foundation"] as const;
-export const LEVELS = ["none", "basic", "intermediate", "experienced"] as const;
-export const MODES = ["linear", "graph", "free"] as const;
-export const CONTENT_STATUSES = [
-  "draft",
-  "pending_review",
-  "changes_requested",
-  "rejected",
-  "published",
-  "archived",
-] as const;
-
-export type Field = (typeof FIELDS)[number];
-export type Level = (typeof LEVELS)[number];
-export type ProgressionMode = (typeof MODES)[number];
-export type ContentStatus = (typeof CONTENT_STATUSES)[number];
-
-export const FIELD_LABELS: Record<Field, string> = {
-  frontend: "Frontend",
-  backend: "Backend",
-  fullstack: "Fullstack",
-  mobile: "Mobile",
-  data_ai: "Data & AI",
-  foundation: "Nền tảng",
-};
-
-export const LEVEL_LABELS: Record<Level, string> = {
-  none: "Chưa có nền",
-  basic: "Cơ bản",
-  intermediate: "Trung cấp",
-  experienced: "Nâng cao",
-};
-
-export const MODE_LABELS: Record<ProgressionMode, string> = {
-  linear: "Tuần tự — phải học đúng thứ tự",
-  graph: "Theo phụ thuộc — mở khi đủ điều kiện",
-  free: "Tự do — mở hết",
-};
-
-export const CONTENT_STATUS_LABELS: Record<ContentStatus, string> = {
-  draft: "Nháp",
-  pending_review: "Chờ duyệt",
-  changes_requested: "Cần sửa",
-  rejected: "Bị từ chối",
-  published: "Đã công khai",
-  archived: "Đã gỡ",
-};
-
-export const CONTENT_STATUS_TONES: Record<
-  ContentStatus,
-  "neutral" | "success" | "warning" | "danger"
-> = {
-  draft: "neutral",
-  pending_review: "warning",
-  changes_requested: "warning",
-  rejected: "danger",
-  published: "success",
-  archived: "neutral",
-};
+/**
+ * Từ vựng dùng chung (lĩnh vực, cấp độ, trạng thái nội dung) đã chuyển sang
+ * `@codementor/types` để màn quản trị và màn giảng viên đọc CÙNG một bảng nhãn.
+ * Xuất lại ở đây nên các file trong app không phải đổi đường import.
+ */
+export {
+  FIELDS,
+  LEVELS,
+  MODES,
+  CONTENT_STATUSES,
+  FIELD_LABELS,
+  LEVEL_LABELS,
+  MODE_LABELS,
+  CONTENT_STATUS_LABELS,
+  CONTENT_STATUS_TONES,
+} from "@codementor/types";
+export type { Field, Level, ProgressionMode, ContentStatus } from "@codementor/types";
+import type { ContentStatus, Field, Level, ProgressionMode } from "@codementor/types";
 
 export interface RoadmapListItem {
   id: string;

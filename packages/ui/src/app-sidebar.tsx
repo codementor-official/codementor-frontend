@@ -31,7 +31,11 @@ export interface AppSidebarProps {
    * điều hướng là hằng số khai một lần, còn con số thì đổi mỗi lần tải lại.
    */
   badges?: Record<string, number>;
-  /** `usePathname()`. Prefix match, so /courses/123/studio keeps "Khóa học" lit. */
+  /**
+   * `usePathname()`. Khớp theo tiền tố, nên /courses/123/studio vẫn làm sáng "Khóa học".
+   * Khi nhiều mục cùng khớp — /moderation và /moderation/exercises — chỉ mục KHỚP DÀI
+   * NHẤT sáng: làm sáng cả hai thì thanh bên nói người dùng đang ở hai chỗ cùng lúc.
+   */
   activePath: string;
   collapsed?: boolean;
   /** Absent hides the collapse control — a sidebar with no width to give. */
@@ -68,6 +72,13 @@ export function AppSidebar({
 }: AppSidebarProps) {
   // The drawer copy is never collapsed: it is already an explicit, temporary surface.
   const narrow = collapsed && !mobile;
+
+  // Mục đang đứng: trong các mục khớp tiền tố, lấy đường dẫn dài nhất.
+  const activeHref = groups
+    .flatMap((group) => group.items)
+    .map((item) => item.href)
+    .filter((href) => activePath === href || activePath.startsWith(href + "/"))
+    .sort((left, right) => right.length - left.length)[0];
 
   return (
     <aside
@@ -107,7 +118,7 @@ export function AppSidebar({
               ))}
             <nav aria-label={group.label} className="flex flex-col gap-0.5">
               {group.items.map((item) => {
-                const active = activePath === item.href || activePath.startsWith(item.href + "/");
+                const active = item.href === activeHref;
                 const Icon = item.icon;
                 const badge = badges?.[item.href] ?? item.badge ?? 0;
                 return (

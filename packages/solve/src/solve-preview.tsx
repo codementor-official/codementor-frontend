@@ -37,9 +37,9 @@ import {
   type Exercise,
   type ExerciseStatus,
   showValue,
+  type JudgeRunPayload,
   type JudgeRunResult,
-} from "@/features/exercises/types";
-import { api } from "@/lib/api";
+} from "./types";
 
 /** Closed union so the content switch below stays exhaustive when a tab is added. */
 type SolveTab = "description" | "code" | "testcase" | "result";
@@ -85,6 +85,20 @@ const INITIAL_PANES: PanesState = {
   console: { tabs: ["testcase", "result"], active: "testcase" },
 };
 
+export interface SolvePreviewProps {
+  exercise: Exercise;
+  theme: "light" | "dark";
+  /**
+   * Cách gọi judge. Tiêm vào chứ không gọi thẳng: giảng viên đi qua Kong bằng token
+   * trong trình duyệt, còn admin đi qua BFF của mình — cùng một màn hình, hai đường mạng.
+   */
+  run: (payload: JudgeRunPayload) => Promise<JudgeRunResult>;
+  /** Nút quay lại trên thanh trên cùng. Mỗi ứng dụng có một chỗ để quay về. */
+  back: { href: string; label: string };
+  /** Chỗ cho hành động riêng của từng ứng dụng: giảng viên mở studio, admin quyết định duyệt. */
+  actions?: ReactNode;
+}
+
 /**
  * The exercise as a learner meets it: statement on the left, editor top right, cases
  * below — the same three-pane split as the web client's solve screen, built on the same
@@ -92,8 +106,12 @@ const INITIAL_PANES: PanesState = {
  *
  * No mascot, no AI assistant, no discussion tab. Those run on sample data in apps/client;
  * bringing them here would show an author invented conversation about their own exercise.
+ *
+ * Dùng chung cho giảng viên (xem thử bài mình soạn) và admin (kiểm tra trước khi duyệt).
+ * Một đề "chạy được" chỉ chứng minh được bằng cách chạy nó, nên hai bên phải là CÙNG một
+ * màn hình: admin từ chối dựa trên thứ khác với thứ tác giả đã xem là từ chối oan.
  */
-export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "light" | "dark" }) {
+export function SolvePreview({ exercise, theme, run, back, actions }: SolvePreviewProps) {
   const [languageId, setLanguageId] = useState(() => exercise.content?.languages?.[0]?.id ?? "");
   const [code, setCode] = useState(() => exercise.content?.languages?.[0]?.starterCode ?? "");
   const [running, setRunning] = useState(false);
@@ -124,11 +142,11 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
     setRunning(true);
     setError(null);
     setResult(null);
-    // Chấm trên TOÀN BỘ case, kể cả case ẩn: giảng viên đang kiểm đề của chính mình, và một
+    // Chấm trên TOÀN BỘ case, kể cả case ẩn: người xem đang kiểm chính cái đề này, và một
     // đề chỉ đúng trên case công khai là đề chưa kiểm được.
     try {
       setResult(
-        await api.judge.run({
+        await run({
           language: languageId,
           sourceCode: code,
           timeLimitMs: exercise.timeLimitMs,
@@ -377,6 +395,8 @@ export function SolvePreview({ exercise, theme }: { exercise: Exercise; theme: "
   return (
     <WorkspaceProvider initialPanes={INITIAL_PANES} tabMeta={TAB_META}>
       <SolveBody
+        actions={actions}
+        back={back}
         disabled={running || !language}
         exercise={exercise}
         onSubmit={submit}
@@ -399,12 +419,16 @@ function SolveBody({
   onSubmit,
   running,
   disabled,
+  back,
+  actions,
 }: {
   exercise: Exercise;
   renderTab: (tab: SolveTab) => ReactNode;
   onSubmit: (openResult: () => void) => void;
   running: boolean;
   disabled: boolean;
+  back: { href: string; label: string };
+  actions?: ReactNode;
 }) {
   const { setActive } = useWorkspace();
   const openResult = () => setActive("console", "result");
@@ -414,10 +438,10 @@ function SolveBody({
         <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-3">
           <Link
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-            href="/exercises"
+            href={back.href}
           >
             <ArrowLeft aria-hidden="true" className="size-4" />
-            Bài code
+            {back.label}
           </Link>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{exercise.title}</span>
           <Button disabled={disabled} onClick={() => onSubmit(openResult)} size="sm" type="button">
@@ -428,12 +452,7 @@ function SolveBody({
             )}
             {running ? "Đang chấm…" : "Chấm bài"}
           </Button>
-          <Link
-            className="flex h-8 items-center rounded-md border px-2.5 text-xs font-medium"
-            href={`/exercises/${exercise.id}/studio`}
-          >
-            Mở studio
-          </Link>
+          {actions}
         </div>
 
         <div className="min-h-0 flex-1">

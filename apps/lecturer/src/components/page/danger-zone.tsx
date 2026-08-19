@@ -1,5 +1,5 @@
 import { Trash2, TriangleAlert } from "lucide-react";
-import { ConfirmButton } from "@/components/page/confirm-button";
+import { ConfirmButton } from "@codementor/ui";
 
 /**
  * Khối cuối trang studio cho thao tác không lùi lại được.

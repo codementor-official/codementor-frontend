@@ -6,17 +6,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Braces, FileText, FlaskConical, GitFork, Languages, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Button, ManagePage, Select, StatusBadge, useUndoableDelete } from "@codementor/ui";
-import { ApiClientError } from "@codementor/api-client";
-import ReactMarkdown from "react-markdown";
-import rehypeHighlight from "rehype-highlight";
 import {
+  Button,
+  ConfirmButton,
   DetailMeta,
   DetailRow,
   DetailSection,
   DrawerDetail,
-} from "@/components/page/drawer-detail";
-import { ConfirmButton } from "@/components/page/confirm-button";
+  ManagePage,
+  Select,
+  StatusBadge,
+  useToast,
+  useUndoableDelete,
+} from "@codementor/ui";
+import { ApiClientError } from "@codementor/api-client";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
 import { PageBody } from "@/components/page/page-body";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
@@ -29,7 +34,7 @@ import {
   showValue,
   type ExerciseListItem,
   type ExerciseStatus,
-} from "@/features/exercises/types";
+} from "@codementor/solve";
 
 type Tab = "mine" | "bank";
 
@@ -39,6 +44,7 @@ export default function ExercisesPage() {
   const router = useRouter();
   const { user } = useAuth();
 
+  const toast = useToast();
   const [tab, setTab] = useState<Tab>("mine");
   const [rows, setRows] = useState<ExerciseListItem[]>([]);
   const [search, setSearch] = useState("");
@@ -75,12 +81,13 @@ export default function ExercisesPage() {
 
   const act = async (id: string, action: () => Promise<unknown>) => {
     setBusyId(id);
-    setError(null);
     try {
       await action();
       await load();
     } catch (cause) {
-      setError(
+      // Xem chú thích cùng chỗ ở màn khóa học: kết quả thao tác là toast, lỗi tải là dải
+      // lỗi dưới tiêu đề.
+      toast.error(
         cause instanceof ApiClientError
           ? describeApiError(cause)
           : cause instanceof Error

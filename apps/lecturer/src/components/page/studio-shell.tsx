@@ -11,7 +11,8 @@ import { SegmentedTabs, type SegmentedTabOption } from "@codementor/ui";
  *
  * The three pages had grown identical copies of the back link, title, status line,
  * rejection notice, error and save-notice blocks — five stacked bordered strips before any
- * content. Here they occupy two rows.
+ * content. Here they occupy one row: kết quả thao tác đã chuyển sang toast, chỉ còn lý do
+ * bị trả về ở lại vì nó là trạng thái chứ không phải thông báo.
  */
 export function StudioShell({
   backHref,
@@ -23,8 +24,6 @@ export function StudioShell({
   actions,
   tabs,
   rejectionReason,
-  error,
-  notice,
   children,
 }: {
   backHref: string;
@@ -37,9 +36,12 @@ export function StudioShell({
   meta?: string;
   actions: ReactNode;
   tabs?: { options: SegmentedTabOption[]; value: string; onChange: (value: string) => void };
+  /**
+   * Lý do bài bị trả về. Ở lại trong tiêu đề chứ KHÔNG thành toast: nó là trạng thái hiện
+   * tại của bản ghi, người soạn cần đọc lại nó suốt lúc đang sửa — còn kết quả một thao
+   * tác ("Đã lưu", "Lưu thất bại") thì trôi qua được và đi bằng `useToast`.
+   */
   rejectionReason?: string | null;
-  error?: string | null;
-  notice?: string | null;
   children: ReactNode;
 }) {
   return (
@@ -71,24 +73,9 @@ export function StudioShell({
           {actions}
         </div>
 
-        {/* Only ever one of these is on screen at a time in practice, so they share the row
-            below the title rather than each claiming a strip of their own. */}
         {rejectionReason && (
           <p className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs text-destructive">
             Lý do bị trả về: {rejectionReason}
-          </p>
-        )}
-        {error && (
-          <p
-            className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs text-destructive"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
-        {notice && (
-          <p className="mt-2 text-xs text-muted-foreground" role="status">
-            {notice}
           </p>
         )}
       </header>

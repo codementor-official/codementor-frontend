@@ -7,6 +7,7 @@ export { breadcrumbTrail } from "./breadcrumb-trail";
 export type { RouteMeta } from "./breadcrumb-trail";
 export { Button } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
+export { ConfirmButton } from "./confirm-button";
 export { DashboardShell } from "./dashboard-shell";
 export {
   DataTable,
@@ -16,6 +17,7 @@ export {
   useDataTable,
   useFittedPageSize,
 } from "./data-table";
+export { DetailMeta, DetailRow, DetailSection, DrawerDetail } from "./drawer-detail";
 export { exportTableToCsv } from "./export-csv";
 export type { ExportableColumnMeta } from "./export-csv";
 export { FilterBar } from "./filter-bar";
@@ -32,7 +34,10 @@ export { StatStrip } from "./stat-strip";
 export type { Stat } from "./stat-strip";
 export { StatusBadge } from "./status-badge";
 export { ThemeMenu } from "./theme-menu";
+export { ToastProvider, useToast } from "./toast";
+export type { ToastApi } from "./toast";
 export { UndoToastProvider, useUndoableDelete } from "./undo-toast";
+export { useResolvedTheme } from "./use-resolved-theme";
 export type { DashboardShellProps } from "./dashboard-shell";
 export type { ManagePageProps } from "./manage-page";
 export type { SegmentedTabOption } from "./segmented-tabs";

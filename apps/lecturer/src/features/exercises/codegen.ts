@@ -1,4 +1,4 @@
-import type { TypeIR } from "@/features/exercises/types";
+import type { TypeIR } from "@codementor/solve";
 
 /**
  * Mã khởi tạo KHÔNG sinh ở đây.

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Braces, Check, FileText, Info, MousePointerClick, Save, Search } from "lucide-react";
 import { RichTextEditor } from "@codementor/editor";
-import { Button, Select, StatusBadge } from "@codementor/ui";
+import { Button, Select, StatusBadge, useToast } from "@codementor/ui";
 import { ListPager, ListSearch, usePagedList } from "@/components/page/paged-list";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
 import { InfoHint } from "@/components/form/info-hint";
@@ -22,7 +22,7 @@ import {
   STATUS_LABELS,
   STATUS_TONES,
   type ExerciseListItem,
-} from "@/features/exercises/types";
+} from "@codementor/solve";
 
 interface Props {
   chapters: DraftChapter[];
@@ -216,7 +216,7 @@ function LessonInspector({
   // tạo này vì thế luôn đúng với bài đang chọn.
   const [loaded, setLoaded] = useState(!needsContent);
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     if (!needsContent || !lesson.id) return;
@@ -239,12 +239,11 @@ function LessonInspector({
   const persist = async () => {
     if (!lesson.id) return;
     setSaving(true);
-    setNotice(null);
     try {
       await saveContent(lesson.id, { contentHtml: html, summary: summary || undefined });
-      setNotice("Đã lưu nội dung");
+      toast.success("Đã lưu nội dung bài");
     } catch (cause) {
-      setNotice(cause instanceof Error ? cause.message : "Lưu nội dung thất bại");
+      toast.error(cause instanceof Error ? cause.message : "Lưu nội dung thất bại");
     } finally {
       setSaving(false);
     }
@@ -378,11 +377,6 @@ function LessonInspector({
                 <Save aria-hidden="true" className="size-3.5" />
                 {saving ? "Đang lưu…" : "Lưu nội dung bài"}
               </Button>
-              {notice && (
-                <span className="text-sm text-muted-foreground" role="status">
-                  {notice}
-                </span>
-              )}
             </div>
           </div>
         </PanelSection>

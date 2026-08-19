@@ -36,7 +36,7 @@ import {
   type IoMode,
   type LanguageConfig,
   type TestCase,
-} from "@/features/exercises/types";
+} from "@codementor/solve";
 import { api } from "@/lib/api";
 
 export interface ExerciseDraft {

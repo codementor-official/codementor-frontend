@@ -20,7 +20,7 @@ import {
   type LearningPreference,
   type StudyDay,
 } from "@/types/learning-preference";
-import { Input } from "@codementor/ui";
+import { Input, useToast } from "@codementor/ui";
 
 const FIELDS = [
   ["frontend", "Frontend"],
@@ -149,6 +149,7 @@ function SettingGroup({
 }
 
 export function SettingsManagementPage() {
+  const toast = useToast();
   const preference = useLearningPreferenceStore((state) => state.preference);
   const updatePreference = useLearningPreferenceStore(
     (state) => state.updatePreference,
@@ -160,13 +161,11 @@ export function SettingsManagementPage() {
   const [email, setEmail] = useState("giasi.nguyen@student.iuh.edu.vn");
   const [emailNotice, setEmailNotice] = useState(true);
   const [publicProfile, setPublicProfile] = useState(false);
-  const [saved, setSaved] = useState("");
   const [isLearningProfileOpen, setIsLearningProfileOpen] = useState(true);
 
-  const save = (message: string) => {
-    setSaved(message);
-    window.setTimeout(() => setSaved(""), 2800);
-  };
+  // Kết quả lưu đi bằng toast: dải chữ cũ nằm ở đầu trang, còn nút Lưu thì ở cuối một
+  // form dài — người bấm không thấy nó, và nó tự tắt sau vài giây ở chỗ không ai nhìn.
+  const save = (message: string) => toast.success(message);
   const toggleMulti = (
     field:
       "interestedFields" | "interestedTechnologies" | "preferredLearningStyle",
@@ -203,11 +202,6 @@ export function SettingsManagementPage() {
           mật tài khoản.
         </p>
       </header>
-      {saved && (
-        <div className="mb-4 rounded-lg border border-primary/20 bg-primary-tint px-4 py-3 text-sm font-medium text-navy">
-          {saved}
-        </div>
-      )}
       <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
         <nav className="h-fit rounded-xl border border-border bg-surface p-2 lg:sticky lg:top-4">
           <div className="space-y-1">

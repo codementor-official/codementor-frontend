@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme-script";
+import { ToastProvider } from "@codementor/ui";
 import { AuthProvider } from "@/providers/auth-provider";
 
 // No `weight` list on purpose. Naming individual weights makes next/font request the
@@ -40,7 +41,9 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <ToastProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

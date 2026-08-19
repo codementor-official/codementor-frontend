@@ -7,15 +7,20 @@ import { useRouter } from "next/navigation";
 import { BookOpen, FileText, ListTree, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ManagePage, Select, StatusBadge, useUndoableDelete } from "@codementor/ui";
-import { ConfirmButton } from "@/components/page/confirm-button";
-import { PageBody } from "@/components/page/page-body";
 import {
+  Button,
+  ConfirmButton,
   DetailMeta,
   DetailRow,
   DetailSection,
   DrawerDetail,
-} from "@/components/page/drawer-detail";
+  ManagePage,
+  Select,
+  StatusBadge,
+  useToast,
+  useUndoableDelete,
+} from "@codementor/ui";
+import { PageBody } from "@/components/page/page-body";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
 import { LESSON_TYPE_LABELS, type CourseListItem } from "@/features/courses/types";
@@ -35,6 +40,7 @@ export default function CoursesPage() {
   const router = useRouter();
   const { user } = useAuth();
 
+  const toast = useToast();
   const [tab, setTab] = useState<Tab>("mine");
   const [rows, setRows] = useState<CourseListItem[]>([]);
   const [search, setSearch] = useState("");
@@ -70,12 +76,13 @@ export default function CoursesPage() {
 
   const act = async (action: () => Promise<unknown>) => {
     setBusy(true);
-    setError(null);
     try {
       await action();
       await load();
     } catch (cause) {
-      setError(describe(cause));
+      // Lỗi của thao tác đi bằng toast; dải lỗi dưới tiêu đề chỉ dành cho lỗi tải danh
+      // sách — thứ vẫn còn đúng khi người dùng nhìn lên.
+      toast.error(describe(cause));
     } finally {
       setBusy(false);
     }

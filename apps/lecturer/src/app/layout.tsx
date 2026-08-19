@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
+import { ToastProvider } from "@codementor/ui";
 import { AuthProvider } from "@/providers/auth-provider";
 import "./globals.css";
 
@@ -37,7 +38,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         />
       </head>
       <body className={inter.variable}>
-        <AuthProvider>{children}</AuthProvider>
+        <ToastProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

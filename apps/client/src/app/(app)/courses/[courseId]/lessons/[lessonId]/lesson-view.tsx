@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@codementor/ui";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
@@ -14,6 +15,7 @@ import { TheoryLesson } from "./theory-lesson";
 const CODE_LESSON_TYPES = new Set(["exercise", "quiz", "challenge", "project"]);
 
 export function LessonView({ courseId, lessonId }: { courseId: string; lessonId: string }) {
+  const toast = useToast();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [content, setContent] = useState<LessonContent | null>(null);
@@ -66,7 +68,12 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
         // next one, and only the server knows — `isAvailable` comes from a SQL function.
         await loadProgress();
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Không lưu được tiến độ");
+        // Ghi tiến độ hỏng phải nói ra — nó từng bị nuốt hoàn toàn: nhánh hiện lỗi chỉ
+        // chạy khi khóa học chưa tải được, nên một lần PUT hỏng để lại trang y như cũ và
+        // người học tin là đã lưu. `error` giữ cho lỗi TẢI, cái này là một thao tác.
+        toast.error(
+          `Không lưu được tiến độ: ${cause instanceof Error ? cause.message : "lỗi không rõ"}`,
+        );
       } finally {
         setSaving(false);
       }
@@ -138,18 +145,6 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
     <div>
       <BreadcrumbTitle slug={courseId} title={course.title} />
       <BreadcrumbTitle slug={lessonId} title={current.title} />
-
-      {/* Lỗi lưu tiến độ từng bị nuốt: nhánh hiển thị lỗi ở trên chỉ chạy khi khóa học
-          chưa tải được, nên một lần PUT hỏng để lại trang y như cũ và người học tin là
-          đã lưu — cho tới lần đăng nhập sau. Ghi tiến độ hỏng phải nói ra. */}
-      {error && (
-        <p
-          role="alert"
-          className="mb-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-xs font-semibold text-danger"
-        >
-          Không lưu được tiến độ: {error}
-        </p>
-      )}
 
       <LessonShell
         course={course}

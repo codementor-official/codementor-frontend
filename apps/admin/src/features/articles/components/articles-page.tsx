@@ -16,7 +16,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { RichTextEditor } from "@codementor/editor";
-import { Button, ManagePage, Modal, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Modal, Select, StatusBadge, useToast } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { articlesApi, tagsApi, type AdminArticle, type Tag } from "@/lib/api";
 
@@ -67,6 +67,7 @@ interface ArticleDraft {
 
 export function ArticlesPage() {
   const request = useAdminApi();
+  const toast = useToast();
   const [rows, setRows] = useState<AdminArticle[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -116,12 +117,13 @@ export function ArticlesPage() {
 
   const act = async (action: () => Promise<unknown>) => {
     setBusy(true);
-    setError(null);
     try {
       await action();
       await load();
     } catch (cause) {
-      setError(describe(cause));
+      // Kết quả một thao tác đi bằng toast. Dải lỗi dưới tiêu đề chỉ còn cho lỗi tải danh
+      // sách — thứ vẫn đang đúng lúc người dùng ngước lên đọc.
+      toast.error(describe(cause));
     } finally {
       setBusy(false);
     }
@@ -174,7 +176,7 @@ export function ArticlesPage() {
    */
   const decide = async (id: string, decision: "approve" | "request_changes" | "reject" | "archive") => {
     if ((decision === "reject" || decision === "request_changes") && !reason.trim()) {
-      setError("Phải nêu lý do khi từ chối hoặc yêu cầu sửa.");
+      toast.error("Phải nêu lý do khi từ chối hoặc yêu cầu sửa.");
       return;
     }
     await act(async () => {
