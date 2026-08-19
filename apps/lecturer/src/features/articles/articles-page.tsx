@@ -3,12 +3,14 @@
 import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Archive,
   Check,
   ExternalLink,
   Eye,
   FilePlus2,
   Newspaper,
   Plus,
+  RotateCcw,
   Save,
   Send,
   Undo2,
@@ -263,7 +265,9 @@ export function ArticlesPage() {
                 Lưu
               </Button>
               {/* Người viết KHÔNG tự đưa bài ra công khai — quyết định đó thuộc về admin,
-                  đúng như khoá học và lộ trình. */}
+                  đúng như khoá học và lộ trình. Bài đã đăng vẫn sửa và gửi duyệt lại được:
+                  bản chỉnh chỉ thay bản đang sống sau khi admin duyệt lại, không âm thầm
+                  cập nhật một bài đang công khai mà không ai xem lại. */}
               {row.status === "pending_review" ? (
                 <Button
                   disabled={busy}
@@ -274,18 +278,38 @@ export function ArticlesPage() {
                   <Undo2 aria-hidden="true" className="size-4" />
                   Rút lại
                 </Button>
+              ) : row.status === "archived" ? (
+                <Button
+                  disabled={busy}
+                  onClick={() => void act(() => api.articles.restore(row.id))}
+                  type="button"
+                  variant="outline"
+                >
+                  <RotateCcw aria-hidden="true" className="size-4" />
+                  Khôi phục
+                </Button>
               ) : (
-                row.status !== "published" &&
-                row.status !== "archived" && (
+                <>
                   <Button
                     disabled={busy}
                     onClick={() => void act(() => api.articles.submit(row.id))}
                     type="button"
                   >
                     <Send aria-hidden="true" className="size-4" />
-                    Gửi duyệt
+                    {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
                   </Button>
-                )
+                  {row.status === "published" && (
+                    <Button
+                      disabled={busy}
+                      onClick={() => void act(() => api.articles.archive(row.id))}
+                      type="button"
+                      variant="ghost"
+                    >
+                      <Archive aria-hidden="true" className="size-4" />
+                      Gỡ xuống
+                    </Button>
+                  )}
+                </>
               )}
             </>
           ),

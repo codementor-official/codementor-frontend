@@ -18,6 +18,10 @@ export async function GET(request: NextRequest) {
     code_challenge: createCodeChallenge(flow.verifier),
     code_challenge_method: "S256",
     nonce: flow.nonce,
+    // Forces the Keycloak form even when an SSO session from another CodeMentor app
+    // (lecturer, or a different admin account) is still alive on this browser — without
+    // it, this silently signs the session in as whoever was last authenticated there.
+    prompt: "login",
     redirect_uri: callbackUri,
     response_mode: "query",
     response_type: "code",

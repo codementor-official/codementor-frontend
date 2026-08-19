@@ -114,7 +114,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       status,
       user,
       error,
-      signIn: () => void manager().signinRedirect(),
+      // `prompt: "login"` forces Keycloak to show the form even when an SSO session from
+      // another CodeMentor app (admin, or a different lecturer account) is still alive —
+      // without it, this silently signs the browser in as whoever was last authenticated.
+      signIn: () => void manager().signinRedirect({ extraQueryParams: { prompt: "login" } }),
       signOut: () => {
         tokenRef.current = null;
         void manager().signoutRedirect();

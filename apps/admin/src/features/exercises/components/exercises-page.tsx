@@ -1,0 +1,368 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Archive, Braces, CheckCheck, PencilLine, RotateCcw, Save, Trash2, XCircle } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ApiClientError } from "@codementor/api-client";
+import { DIFFICULTIES, DIFFICULTY_LABELS, STATUS_LABELS, STATUS_TONES } from "@codementor/solve";
+import { Button, ConfirmButton, ManagePage, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
+import { ContentPreview } from "@/features/moderation/content-preview";
+import { useAdminApi } from "@/features/auth/admin-api";
+import { exercisesApi, moderationApi, type AdminExerciseListItem } from "@/lib/api";
+import { Field } from "@/features/shared/detail-field";
+import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
+
+const STATUS_OPTIONS = ["pending_review", "changes_requested", "rejected", "published", "archived"] as const;
+
+const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
+
+interface ExerciseDraft {
+  id: string;
+  title: string;
+  summary: string;
+  difficulty: string;
+}
+
+export function ExercisesPage() {
+  const request = useAdminApi();
+  const toast = useToast();
+  const lecturers = useLecturerOptions();
+
+  const [rows, setRows] = useState<AdminExerciseListItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [difficulty, setDifficulty] = useState("");
+  const [authorId, setAuthorId] = useState("");
+  const [updatedFrom, setUpdatedFrom] = useState("");
+  const [updatedTo, setUpdatedTo] = useState("");
+  const [view, setView] = useState<ViewMode>("table");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [reason, setReason] = useState("");
+  const [draft, setDraft] = useState<ExerciseDraft | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const page = await exercisesApi.list(request, {
+        q: search.trim() || undefined,
+        status: status || undefined,
+        difficulty: difficulty || undefined,
+        authorId: authorId || undefined,
+        updatedFrom: updatedFrom || undefined,
+        updatedTo: updatedTo || undefined,
+        limit: 50,
+      });
+      setRows(page.items);
+    } catch (cause) {
+      setError(describe(cause));
+    } finally {
+      setLoading(false);
+    }
+  }, [request, search, status, difficulty, authorId, updatedFrom, updatedTo]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => void load(), 300);
+    return () => clearTimeout(timer);
+  }, [load]);
+
+  const act = async (action: () => Promise<unknown>) => {
+    setBusy(true);
+    try {
+      await action();
+      await load();
+    } catch (cause) {
+      toast.error(describe(cause));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const loadDraft = useCallback(
+    async (id: string) => {
+      const detail = await moderationApi.detail<{ title: string; summary: string | null; difficulty: string }>(
+        request,
+        "exercises",
+        id,
+      );
+      setDraft({ id, title: detail.title, summary: detail.summary ?? "", difficulty: detail.difficulty });
+    },
+    [request],
+  );
+
+  const saveDraft = async (id: string) => {
+    if (draft?.id !== id) return;
+    await exercisesApi.update(request, id, {
+      title: draft.title.trim() || undefined,
+      summary: draft.summary.trim() || null,
+      difficulty: draft.difficulty,
+    });
+    toast.success("Đã lưu");
+  };
+
+  const decide = async (
+    id: string,
+    decision: "approve" | "request_changes" | "reject" | "archive" | "restore",
+  ) => {
+    if ((decision === "reject" || decision === "request_changes") && !reason.trim()) {
+      toast.error("Phải nêu lý do khi từ chối hoặc yêu cầu sửa.");
+      return;
+    }
+    await act(async () => {
+      await moderationApi.decide(request, "exercises", id, decision, reason.trim() || undefined);
+      setReason("");
+    });
+  };
+
+  const columns = useMemo<ColumnDef<AdminExerciseListItem, unknown>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Bài code",
+        cell: ({ row }) => (
+          <div className="min-w-0">
+            <p className="truncate font-medium">{row.original.title}</p>
+            <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Trạng thái",
+        cell: ({ row }) => (
+          <StatusBadge tone={STATUS_TONES[row.original.status as keyof typeof STATUS_TONES] ?? "neutral"}>
+            {STATUS_LABELS[row.original.status as keyof typeof STATUS_LABELS] ?? row.original.status}
+          </StatusBadge>
+        ),
+      },
+      {
+        accessorKey: "difficulty",
+        header: "Độ khó",
+        cell: ({ row }) => DIFFICULTY_LABELS[row.original.difficulty as keyof typeof DIFFICULTY_LABELS] ?? row.original.difficulty,
+      },
+      { accessorKey: "authorName", header: "Tác giả", cell: ({ row }) => row.original.authorName ?? "—" },
+      { accessorKey: "kind", header: "Dạng" },
+      {
+        accessorKey: "updatedAt",
+        header: "Cập nhật",
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">{dateFormat.format(new Date(row.original.updatedAt))}</span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const activeFilterCount = [status, difficulty, authorId, updatedFrom, updatedTo].filter(Boolean).length;
+
+  return (
+    <ManagePage
+      activeFilterCount={activeFilterCount}
+      columns={columns}
+      description="Bài code đã gửi duyệt trở lên — bản nháp chưa gửi của giảng viên không hiện ở đây."
+      drawer={{
+        title: (row) => row.title,
+        description: (row) =>
+          `${STATUS_LABELS[row.status as keyof typeof STATUS_LABELS] ?? row.status} · ${row.authorName ?? "không rõ"}`,
+        width: "wide",
+        body: (row) => (
+          <>
+            <ExerciseEditor draft={draft} onChange={setDraft} onLoad={loadDraft} row={row} />
+            {row.status === "pending_review" && (
+              <Field hint="Bắt buộc khi từ chối hoặc yêu cầu sửa. Giảng viên sẽ đọc đúng câu này." label="Lý do">
+                <textarea
+                  className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+                  onChange={(event) => setReason(event.target.value)}
+                  value={reason}
+                />
+              </Field>
+            )}
+            <div className="mt-5 border-t pt-4">
+              <p className="mb-2 text-sm font-medium">Xem trước nội dung</p>
+              <ContentPreview item={{ ...row, kind: "exercises" }} />
+            </div>
+          </>
+        ),
+        footer: (row) => (
+          <>
+            <Button disabled={busy || draft?.id !== row.id} onClick={() => void act(() => saveDraft(row.id))} variant="outline">
+              <Save aria-hidden="true" className="size-4" />
+              Lưu
+            </Button>
+            {row.status !== "published" && (
+              <ConfirmButton
+                confirmLabel="Xoá bài code"
+                description={`Xoá vĩnh viễn "${row.title}". Chỉ xoá được vì bài chưa công khai — nếu đã từng công khai, hãy dùng Gỡ (lưu trữ) thay vì xoá.`}
+                onConfirm={() => act(() => exercisesApi.remove(request, row.id))}
+                title="Xoá bài code này?"
+                variant="outline"
+              >
+                <Trash2 aria-hidden="true" className="size-4" />
+                Xoá
+              </ConfirmButton>
+            )}
+            {row.status === "pending_review" && (
+              <>
+                <Button disabled={busy} onClick={() => void decide(row.id, "request_changes")} variant="outline">
+                  <PencilLine aria-hidden="true" className="size-4" />
+                  Yêu cầu sửa
+                </Button>
+                <Button disabled={busy} onClick={() => void decide(row.id, "reject")} variant="ghost">
+                  <XCircle aria-hidden="true" className="size-4" />
+                  Từ chối
+                </Button>
+                <Button disabled={busy} onClick={() => void decide(row.id, "approve")}>
+                  <CheckCheck aria-hidden="true" className="size-4" />
+                  Duyệt
+                </Button>
+              </>
+            )}
+            {row.status === "published" && (
+              <Button disabled={busy} onClick={() => void decide(row.id, "archive")} variant="ghost">
+                <Archive aria-hidden="true" className="size-4" />
+                Gỡ xuống
+              </Button>
+            )}
+            {row.status === "archived" && (
+              <Button disabled={busy} onClick={() => void decide(row.id, "restore")} variant="outline">
+                <RotateCcw aria-hidden="true" className="size-4" />
+                Khôi phục
+              </Button>
+            )}
+          </>
+        ),
+      }}
+      emptyMessage="Không có bài code nào khớp bộ lọc."
+      error={error}
+      filters={
+        <>
+          <Select
+            label="Trạng thái"
+            onChange={setStatus}
+            options={[{ value: "", label: "Mọi trạng thái" }, ...STATUS_OPTIONS.map((value) => ({ value, label: STATUS_LABELS[value] }))]}
+            value={status}
+          />
+          <Select
+            label="Độ khó"
+            onChange={setDifficulty}
+            options={[{ value: "", label: "Mọi độ khó" }, ...DIFFICULTIES.map((value) => ({ value, label: DIFFICULTY_LABELS[value] }))]}
+            value={difficulty}
+          />
+          <LecturerFilter onChange={setAuthorId} options={lecturers} value={authorId} />
+          <input
+            aria-label="Cập nhật từ ngày"
+            className="h-9 rounded-md border border-border bg-card px-2.5 text-xs font-semibold text-foreground focus:border-foreground"
+            onChange={(event) => setUpdatedFrom(event.target.value)}
+            type="date"
+            value={updatedFrom}
+          />
+          <input
+            aria-label="Cập nhật đến ngày"
+            className="h-9 rounded-md border border-border bg-card px-2.5 text-xs font-semibold text-foreground focus:border-foreground"
+            onChange={(event) => setUpdatedTo(event.target.value)}
+            type="date"
+            value={updatedTo}
+          />
+        </>
+      }
+      getRowId={(row) => row.id}
+      icon={Braces}
+      loading={loading}
+      onClearFilters={() => {
+        setStatus("");
+        setDifficulty("");
+        setAuthorId("");
+        setUpdatedFrom("");
+        setUpdatedTo("");
+      }}
+      onSearchChange={setSearch}
+      rows={rows}
+      search={search}
+      searchPlaceholder="Tìm theo tên hoặc slug…"
+      title="Bài code"
+      view={{ mode: view, onModeChange: setView, renderCard: (row) => <ExerciseCard row={row} /> }}
+    />
+  );
+}
+
+function ExerciseCard({ row }: { row: AdminExerciseListItem }) {
+  return (
+    <div className="flex h-full flex-col gap-2 rounded-lg border bg-card p-4">
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 flex-1 truncate font-medium">{row.title}</p>
+        <StatusBadge tone={STATUS_TONES[row.status as keyof typeof STATUS_TONES] ?? "neutral"}>
+          {STATUS_LABELS[row.status as keyof typeof STATUS_LABELS] ?? row.status}
+        </StatusBadge>
+      </div>
+      <p className="truncate text-xs text-muted-foreground">{row.slug}</p>
+      <p className="text-sm text-muted-foreground">{row.authorName ?? "không rõ tác giả"}</p>
+      <div className="mt-auto flex items-center justify-between pt-2 text-xs text-muted-foreground">
+        <span>{DIFFICULTY_LABELS[row.difficulty as keyof typeof DIFFICULTY_LABELS] ?? row.difficulty}</span>
+        <span>{row.kind}</span>
+      </div>
+    </div>
+  );
+}
+
+function ExerciseEditor({
+  row,
+  draft,
+  onChange,
+  onLoad,
+}: {
+  row: AdminExerciseListItem;
+  draft: ExerciseDraft | null;
+  onChange: (draft: ExerciseDraft) => void;
+  onLoad: (id: string) => Promise<void>;
+}) {
+  useEffect(() => {
+    if (draft?.id !== row.id) void onLoad(row.id);
+  }, [row.id, draft?.id, onLoad]);
+
+  if (draft?.id !== row.id) {
+    return <p className="text-sm text-muted-foreground">Đang tải…</p>;
+  }
+
+  return (
+    <div className="grid gap-4">
+      <Field label="Tiêu đề">
+        <input
+          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+          onChange={(event) => onChange({ ...draft, title: event.target.value })}
+          value={draft.title}
+        />
+      </Field>
+      <Field label="Tóm tắt">
+        <textarea
+          className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+          onChange={(event) => onChange({ ...draft, summary: event.target.value })}
+          value={draft.summary}
+        />
+      </Field>
+      <Field label="Độ khó">
+        <select
+          aria-label="Độ khó"
+          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+          onChange={(event) => onChange({ ...draft, difficulty: event.target.value })}
+          value={draft.difficulty}
+        >
+          {DIFFICULTIES.map((value) => (
+            <option key={value} value={value}>
+              {DIFFICULTY_LABELS[value]}
+            </option>
+          ))}
+        </select>
+      </Field>
+    </div>
+  );
+}
+
+function describe(cause: unknown): string {
+  if (cause instanceof ApiClientError) {
+    const body = cause.body as { message?: string } | undefined;
+    return body?.message ?? cause.message;
+  }
+  return cause instanceof Error ? cause.message : "Thao tác thất bại";
+}

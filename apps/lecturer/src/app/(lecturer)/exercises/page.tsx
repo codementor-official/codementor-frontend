@@ -4,7 +4,20 @@ import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Braces, FileText, FlaskConical, GitFork, Languages, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
+import {
+  Archive,
+  Braces,
+  FileText,
+  FlaskConical,
+  GitFork,
+  Languages,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Send,
+  Trash2,
+  Undo2,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Button,
@@ -199,6 +212,8 @@ export default function ExercisesPage() {
                   commit: () => api.exercises.remove(row.id),
                 })
               }
+              onArchive={() => act(row.id, () => api.exercises.archive(row.id))}
+              onRestore={() => act(row.id, () => api.exercises.restore(row.id))}
               onSubmit={() => act(row.id, () => api.exercises.submit(row.id))}
               onWithdraw={() => act(row.id, () => api.exercises.withdraw(row.id))}
               row={row}
@@ -371,6 +386,8 @@ function ExerciseDrawerActions({
   busy,
   onSubmit,
   onWithdraw,
+  onArchive,
+  onRestore,
   onFork,
   onRemove,
 }: {
@@ -379,6 +396,8 @@ function ExerciseDrawerActions({
   busy: boolean;
   onSubmit: () => void;
   onWithdraw: () => void;
+  onArchive: () => void;
+  onRestore: () => void;
   onFork: () => void;
   onRemove: () => void;
 }) {
@@ -397,10 +416,22 @@ function ExerciseDrawerActions({
             <Button disabled={busy} onClick={onWithdraw} type="button" variant="outline">
               <Undo2 aria-hidden="true" className="size-4" /> Hủy gửi duyệt
             </Button>
-          ) : (
-            <Button disabled={busy} onClick={onSubmit} type="button" variant="outline">
-              <Send aria-hidden="true" className="size-4" /> Gửi duyệt
+          ) : row.status === "archived" ? (
+            <Button disabled={busy} onClick={onRestore} type="button" variant="outline">
+              <RotateCcw aria-hidden="true" className="size-4" /> Khôi phục
             </Button>
+          ) : (
+            <>
+              <Button disabled={busy} onClick={onSubmit} type="button" variant="outline">
+                <Send aria-hidden="true" className="size-4" />
+                {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
+              </Button>
+              {row.status === "published" && (
+                <Button disabled={busy} onClick={onArchive} type="button" variant="ghost">
+                  <Archive aria-hidden="true" className="size-4" /> Gỡ xuống
+                </Button>
+              )}
+            </>
           )}
           {row.status !== "published" && (
             <ConfirmButton

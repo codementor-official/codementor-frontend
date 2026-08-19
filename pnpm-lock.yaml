@@ -78,6 +78,9 @@ importers:
       '@codementor/editor':
         specifier: workspace:*
         version: link:../../packages/editor
+      '@codementor/solve':
+        specifier: workspace:*
+        version: link:../../packages/solve
       '@codementor/types':
         specifier: workspace:*
         version: link:../../packages/types

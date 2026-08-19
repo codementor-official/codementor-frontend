@@ -11,6 +11,7 @@ import { FilterBar } from "./filter-bar";
 import { PageHeader } from "./page-header";
 import { SegmentedTabs, type SegmentedTabOption } from "./segmented-tabs";
 import { SideDrawer } from "./side-drawer";
+import { ViewToggle, type ViewMode } from "./view-toggle";
 
 export interface ManagePageProps<TData> {
   title: string;
@@ -59,6 +60,14 @@ export interface ManagePageProps<TData> {
     footer?: (row: TData) => ReactNode;
     width?: "default" | "wide";
   };
+
+  /** Table/grid toggle — same `rows`, same filter state, same pagination, only the paint
+   * differs. Omit to keep the table-only behavior every existing screen already has. */
+  view?: {
+    mode: ViewMode;
+    onModeChange: (mode: ViewMode) => void;
+    renderCard: (row: TData) => ReactNode;
+  };
 }
 
 /** Tên tệp tải về từ tiêu đề trang. Bỏ dấu tiếng Việt vì tên tệp có dấu hay vỡ khi đi
@@ -105,6 +114,7 @@ export function ManagePage<TData>({
   error = null,
   exportFilename,
   drawer,
+  view,
 }: ManagePageProps<TData>) {
   // Holds the id, not the row. A row object captured here goes stale the moment the
   // list refetches, and the drawer would keep showing values that no longer exist.
@@ -147,16 +157,21 @@ export function ManagePage<TData>({
         title={title}
       />
 
-      {filters !== undefined || search !== undefined ? (
-        <div className="mb-3">
-          <FilterBar
-            activeFilterCount={activeFilterCount}
-            controls={filters}
-            onClearFilters={onClearFilters}
-            onSearchChange={onSearchChange}
-            searchPlaceholder={searchPlaceholder}
-            searchValue={search}
-          />
+      {filters !== undefined || search !== undefined || view ? (
+        <div className="mb-3 flex items-start gap-2">
+          {(filters !== undefined || search !== undefined) && (
+            <div className="min-w-0 flex-1">
+              <FilterBar
+                activeFilterCount={activeFilterCount}
+                controls={filters}
+                onClearFilters={onClearFilters}
+                onSearchChange={onSearchChange}
+                searchPlaceholder={searchPlaceholder}
+                searchValue={search}
+              />
+            </div>
+          )}
+          {view && <ViewToggle mode={view.mode} onChange={view.onModeChange} />}
         </div>
       ) : null}
 
@@ -170,11 +185,21 @@ export function ManagePage<TData>({
       )}
 
       <div ref={tableRef}>
-        <DataTable
-          emptyMessage={loading ? "Đang tải…" : emptyMessage}
-          onRowClick={drawer ? (row) => setSelectedId(getRowId(row)) : undefined}
-          table={table}
-        />
+        {view?.mode === "grid" ? (
+          <CardGrid
+            emptyMessage={loading ? "Đang tải…" : emptyMessage}
+            getRowId={getRowId}
+            onCardClick={drawer ? (row) => setSelectedId(getRowId(row)) : undefined}
+            renderCard={view.renderCard}
+            rows={table.getRowModel().rows.map((row) => row.original)}
+          />
+        ) : (
+          <DataTable
+            emptyMessage={loading ? "Đang tải…" : emptyMessage}
+            onRowClick={drawer ? (row) => setSelectedId(getRowId(row)) : undefined}
+            table={table}
+          />
+        )}
         <TablePagination table={table} />
       </div>
 
@@ -191,5 +216,48 @@ export function ManagePage<TData>({
         </SideDrawer>
       )}
     </>
+  );
+}
+
+/** Lưới thẻ cho `ManagePage`'s `view="grid"` — cùng các hàng đã lọc/phân trang mà bảng
+ * dùng, chỉ khác cách vẽ từng hàng. */
+function CardGrid<TData>({
+  rows,
+  getRowId,
+  renderCard,
+  onCardClick,
+  emptyMessage,
+}: {
+  rows: TData[];
+  getRowId: (row: TData) => string;
+  renderCard: (row: TData) => ReactNode;
+  onCardClick?: (row: TData) => void;
+  emptyMessage: string;
+}) {
+  if (rows.length === 0) {
+    return (
+      <div className="flex h-40 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+        {emptyMessage}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {rows.map((row) =>
+        onCardClick ? (
+          <button
+            className="rounded-lg text-left transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+            key={getRowId(row)}
+            onClick={() => onCardClick(row)}
+            type="button"
+          >
+            {renderCard(row)}
+          </button>
+        ) : (
+          <div key={getRowId(row)}>{renderCard(row)}</div>
+        ),
+      )}
+    </div>
   );
 }

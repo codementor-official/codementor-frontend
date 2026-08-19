@@ -4,7 +4,7 @@ import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, FileText, ListTree, Pencil, Plus, Send, Trash2, Undo2 } from "lucide-react";
+import { Archive, BookOpen, FileText, ListTree, Pencil, Plus, RotateCcw, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {
@@ -183,15 +183,37 @@ export default function CoursesPage() {
                   >
                     <Undo2 aria-hidden="true" className="size-4" /> Hủy gửi duyệt
                   </Button>
-                ) : (
+                ) : row.status === "archived" ? (
                   <Button
                     disabled={busy}
-                    onClick={() => act(() => api.courses.submit(row.id))}
+                    onClick={() => act(() => api.courses.restore(row.id))}
                     type="button"
                     variant="outline"
                   >
-                    <Send aria-hidden="true" className="size-4" /> Gửi duyệt
+                    <RotateCcw aria-hidden="true" className="size-4" /> Khôi phục
                   </Button>
+                ) : (
+                  <>
+                    <Button
+                      disabled={busy}
+                      onClick={() => act(() => api.courses.submit(row.id))}
+                      type="button"
+                      variant="outline"
+                    >
+                      <Send aria-hidden="true" className="size-4" />
+                      {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
+                    </Button>
+                    {row.status === "published" && (
+                      <Button
+                        disabled={busy}
+                        onClick={() => act(() => api.courses.archive(row.id))}
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Archive aria-hidden="true" className="size-4" /> Gỡ xuống
+                      </Button>
+                    )}
+                  </>
                 )}
                 {row.status !== "published" && (
                   <ConfirmButton

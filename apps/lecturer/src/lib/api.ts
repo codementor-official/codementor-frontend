@@ -96,6 +96,8 @@ export const api = {
     fork: (id: string) => unwrap<Exercise>(`/exercises/${id}/fork`, { method: "POST" }),
     submit: (id: string) => unwrap<Exercise>(`/exercises/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Exercise>(`/exercises/${id}/withdraw`, { method: "POST" }),
+    archive: (id: string) => unwrap<Exercise>(`/exercises/${id}/archive`, { method: "POST" }),
+    restore: (id: string) => unwrap<Exercise>(`/exercises/${id}/restore`, { method: "POST" }),
   },
 
   roadmaps: {
@@ -113,6 +115,8 @@ export const api = {
       unwrap<Roadmap>(`/roadmaps/${id}/courses`, { method: "PUT", body: { courses } }),
     submit: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/withdraw`, { method: "POST" }),
+    archive: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/archive`, { method: "POST" }),
+    restore: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/restore`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/roadmaps/${id}`, { method: "DELETE" }),
   },
 
@@ -159,6 +163,8 @@ export const api = {
       }),
     submit: (id: string) => unwrap<Course>(`/courses/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Course>(`/courses/${id}/withdraw`, { method: "POST" }),
+    archive: (id: string) => unwrap<Course>(`/courses/${id}/archive`, { method: "POST" }),
+    restore: (id: string) => unwrap<Course>(`/courses/${id}/restore`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/courses/${id}`, { method: "DELETE" }),
   },
 
@@ -186,6 +192,8 @@ export const api = {
       unwrap<Article>(`/articles/${id}/content`, { method: "PUT", body: { contentHtml } }),
     submit: (id: string) => unwrap<Article>(`/articles/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Article>(`/articles/${id}/withdraw`, { method: "POST" }),
+    archive: (id: string) => unwrap<Article>(`/articles/${id}/archive`, { method: "POST" }),
+    restore: (id: string) => unwrap<Article>(`/articles/${id}/restore`, { method: "POST" }),
   },
 
   /**

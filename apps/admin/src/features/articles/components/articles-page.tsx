@@ -10,6 +10,7 @@ import {
   Newspaper,
   PencilLine,
   Plus,
+  RotateCcw,
   Save,
   XCircle,
 } from "lucide-react";
@@ -174,7 +175,10 @@ export function ArticlesPage() {
    * Quyết định kiểm duyệt. Từ chối và yêu cầu sửa BẮT BUỘC nêu lý do — chặn ngay ở đây
    * thay vì để backend trả 400, vì người duyệt cần biết trước khi bấm chứ không phải sau.
    */
-  const decide = async (id: string, decision: "approve" | "request_changes" | "reject" | "archive") => {
+  const decide = async (
+    id: string,
+    decision: "approve" | "request_changes" | "reject" | "archive" | "restore",
+  ) => {
     if ((decision === "reject" || decision === "request_changes") && !reason.trim()) {
       toast.error("Phải nêu lý do khi từ chối hoặc yêu cầu sửa.");
       return;
@@ -354,6 +358,17 @@ export function ArticlesPage() {
                 >
                   <Archive aria-hidden="true" className="size-4" />
                   Gỡ xuống
+                </Button>
+              )}
+              {row.status === "archived" && (
+                <Button
+                  disabled={busy}
+                  onClick={() => void decide(row.id, "restore")}
+                  type="button"
+                  variant="outline"
+                >
+                  <RotateCcw aria-hidden="true" className="size-4" />
+                  Khôi phục
                 </Button>
               )}
             </>

@@ -233,6 +233,98 @@ export const usersApi = {
     }),
 };
 
+/* ----------------------------------------------------- Course/Roadmap/Exercise */
+
+/** Lọc dùng chung cho ba trang quản lý — cùng hình dạng query mà `/admin` của mỗi
+ * service chấp nhận (xem `ListCoursesQueryDto` và tương đương ở roadmap/exercise). */
+export interface AdminContentQuery extends Record<string, string | number | undefined> {
+  q?: string;
+  status?: string;
+  authorId?: string;
+  updatedFrom?: string;
+  updatedTo?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface AdminCourseListItem {
+  id: string;
+  slug: string;
+  title: string;
+  level: string;
+  status: string;
+  durationHours: number | null;
+  totalChapters: number;
+  totalLessons: number;
+  createdBy: string | null;
+  authorName: string | null;
+  updatedAt: string;
+}
+
+export const coursesApi = {
+  list: (request: Request, query: AdminContentQuery & { level?: string } = {}) =>
+    unwrap<Page<AdminCourseListItem>>(request, `/courses/admin${search(query)}`),
+  update: (
+    request: Request,
+    id: string,
+    body: { title?: string; description?: string | null; level?: string },
+  ) => unwrap<unknown>(request, `/courses/${id}`, { method: "PATCH", body }),
+  remove: (request: Request, id: string) =>
+    unwrap<void>(request, `/courses/${id}`, { method: "DELETE" }),
+};
+
+export interface AdminRoadmapListItem {
+  id: string;
+  slug: string;
+  title: string;
+  field: string;
+  level: string;
+  status: string;
+  estimatedHours: number | null;
+  courseCount: number;
+  createdBy: string | null;
+  authorName: string | null;
+  updatedAt: string;
+}
+
+export const roadmapsApi = {
+  list: (request: Request, query: AdminContentQuery & { field?: string; level?: string } = {}) =>
+    unwrap<Page<AdminRoadmapListItem>>(request, `/roadmaps/admin${search(query)}`),
+  update: (
+    request: Request,
+    id: string,
+    body: { title?: string; description?: string | null; field?: string; level?: string },
+  ) => unwrap<unknown>(request, `/roadmaps/${id}`, { method: "PATCH", body }),
+  remove: (request: Request, id: string) =>
+    unwrap<void>(request, `/roadmaps/${id}`, { method: "DELETE" }),
+};
+
+export interface AdminExerciseListItem {
+  id: string;
+  slug: string;
+  title: string;
+  kind: string;
+  difficulty: string;
+  status: string;
+  visibility: string;
+  authorId: string | null;
+  authorName: string | null;
+  forkedFromId: string | null;
+  updatedAt: string;
+}
+
+export const exercisesApi = {
+  list: (request: Request, query: AdminContentQuery & { kind?: string; difficulty?: string } = {}) =>
+    unwrap<Page<AdminExerciseListItem>>(request, `/exercises/admin${search(query)}`),
+  update: (
+    request: Request,
+    id: string,
+    body: { title?: string; summary?: string | null; difficulty?: string },
+  ) => unwrap<unknown>(request, `/exercises/${id}`, { method: "PATCH", body }),
+  remove: (request: Request, id: string) =>
+    unwrap<void>(request, `/exercises/${id}`, { method: "DELETE" }),
+};
+
 /* ---------------------------------------------------------------- Articles */
 
 export interface AdminArticle {

@@ -224,7 +224,7 @@ export default function CourseStudioPage() {
                   type="button"
                 >
                   <Send aria-hidden="true" className="size-4" />
-                  Gửi duyệt
+                  {course.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
                 </Button>
               </>
             )}
