@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
+import { resolveVideo } from "@codementor/utils";
 import { Card } from "@/components/ui/card";
 import type { LessonContent, LessonProgress } from "@/types/catalogue";
 import type { FlatLesson } from "./lesson-shell";
@@ -59,6 +60,10 @@ export function TheoryLesson({
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   const canFinish = useReadingGate(endRef);
+  const isVideo = lesson.type === "video";
+  // `resolveVideo` trả `null` cho URL rỗng hoặc sai — nên một bài video chưa soạn xong
+  // rơi đúng vào nhánh "chưa có nội dung" bên dưới thay vì vẽ một khung phát rỗng.
+  const video = isVideo ? resolveVideo(content?.media?.url) : null;
   // Stamped in an effect, not during render: `Date.now()` is impure, and under strict mode
   // a render can run twice, which would put the clock start in the wrong place.
   const openedAt = useRef(0);
@@ -95,6 +100,29 @@ export function TheoryLesson({
           </Card>
         )}
 
+        {/* Bài video: khung phát đứng TRƯỚC thân bài, không thay thế nó. Giảng viên vẫn
+          * viết được ghi chú, dàn ý hay mã nguồn kèm theo bên dưới video. */}
+        {video && (
+          <div className="mt-5">
+            {video.kind === "file" ? (
+              <video
+                className="w-full rounded-lg border border-border-soft bg-ink-fixed"
+                controls
+                preload="metadata"
+                src={video.src}
+              />
+            ) : (
+              <iframe
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
+                allowFullScreen
+                className="aspect-video w-full rounded-lg border border-border-soft"
+                src={video.src}
+                title={lesson.title}
+              />
+            )}
+          </div>
+        )}
+
         {content?.contentHtml ? (
           // The body is TipTap output authored in the studio, and `.rich-text` is the same
           // stylesheet the studio previews with — so what the author saw is what renders.
@@ -103,10 +131,17 @@ export function TheoryLesson({
             dangerouslySetInnerHTML={{ __html: content.contentHtml }}
           />
         ) : (
-          <Card className="mt-5 border-dashed p-8 text-center">
-            <p className="text-sm font-semibold text-navy">Bài học chưa có nội dung</p>
-            <p className="mt-1 text-xs text-text-faint">Giảng viên đang biên soạn.</p>
-          </Card>
+          // Bài video có khung phát rồi thì KHÔNG phải "chưa có nội dung": thân bài là
+          // phần thêm, không bắt buộc. Thiếu điều kiện này thì mọi bài video đều hiện
+          // thêm một ô "Giảng viên đang biên soạn" ngay dưới video đang phát được.
+          !video && (
+            <Card className="mt-5 border-dashed p-8 text-center">
+              <p className="text-sm font-semibold text-navy">
+                {isVideo ? "Bài học chưa có video" : "Bài học chưa có nội dung"}
+              </p>
+              <p className="mt-1 text-xs text-text-faint">Giảng viên đang biên soạn.</p>
+            </Card>
+          )
         )}
         <div ref={endRef} aria-hidden />
       </article>

@@ -14,6 +14,7 @@
     "@codementor/editor": "workspace:*",
     "@codementor/types": "workspace:*",
     "@codementor/ui": "workspace:*",
+    "@codementor/utils": "workspace:*",
     "@hookform/resolvers": "^5.5.7",
     "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-table": "^8.21.3",

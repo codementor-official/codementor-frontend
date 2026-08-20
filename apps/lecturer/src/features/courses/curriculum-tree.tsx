@@ -18,7 +18,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Braces, ChevronDown, ChevronRight, FileText, GripVertical, Plus, Trash2 } from "lucide-react";
+import { Braces, ChevronDown, ChevronRight, FileText, GripVertical, Lock, PlayCircle, Plus, Trash2 } from "lucide-react";
 import { Button } from "@codementor/ui";
 import {
   DropIndicator,
@@ -28,6 +28,7 @@ import {
 } from "@/components/sortable";
 import {
   LESSON_TYPE_LABELS,
+  NO_PREREQUISITES,
   bearsExercise,
   newKey,
   type DraftChapter,
@@ -72,12 +73,26 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
   const collisionDetection = useCallback(
     (args: Parameters<CollisionDetection>[0]) => {
       const draggingLesson = args.active.data.current?.chapterKey !== undefined;
-      if (!draggingLesson) return closestCenter(args);
+      const chapterKeys = new Set(chapters.map((chapter) => chapter.key));
+
+      if (!draggingLesson) {
+        // Symmetric to the lesson-drag filter below: a chapter's own sortable node spans
+        // its whole card, lesson rows included, so an UNFILTERED closestCenter resolves a
+        // chapter drop onto whichever lesson row the cursor happens to be nearest — a
+        // lesson key `over.id` that `onDragEnd`'s chapter branch can't match against
+        // `chapters`, so the drop silently no-ops. Chapters only ever reorder against
+        // other chapters, so lesson rows are never valid targets here at all.
+        return closestCenter({
+          ...args,
+          droppableContainers: args.droppableContainers.filter((container) =>
+            chapterKeys.has(String(container.id)),
+          ),
+        });
+      }
 
       const emptyChapterKeys = new Set(
         chapters.filter((chapter) => chapter.lessons.length === 0).map((chapter) => chapter.key),
       );
-      const chapterKeys = new Set(chapters.map((chapter) => chapter.key));
 
       return closestCenter({
         ...args,
@@ -128,6 +143,7 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
       exerciseId: null,
       exerciseTitle: null,
       contentRef: null,
+      prerequisites: NO_PREREQUISITES,
     };
     onChange(
       chapters.map((chapter) =>
@@ -310,7 +326,7 @@ function DragPreview({ activeId, chapters }: { activeId: string; chapters: Draft
   for (const candidate of chapters) {
     const lesson = candidate.lessons.find((item) => item.key === activeId);
     if (!lesson) continue;
-    const Icon = bearsExercise(lesson.type) ? Braces : FileText;
+    const Icon = bearsExercise(lesson.type) ? Braces : lesson.type === "video" ? PlayCircle : FileText;
     return (
       <p className="flex items-center gap-1.5 px-3 py-2 text-sm">
         <Icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
@@ -423,7 +439,7 @@ function SortableChapter({
           strategy={verticalListSortingStrategy}
         >
           <ChapterDropZone chapterKey={chapter.key} empty={chapter.lessons.length === 0}>
-            {chapter.lessons.map((lesson) => (
+            {chapter.lessons.map((lesson, lessonIndex) => (
               <SortableLesson
                 chapterKey={chapter.key}
                 disabled={disabled}
@@ -431,6 +447,7 @@ function SortableChapter({
                 lesson={lesson}
                 onRemove={onRemoveLesson}
                 onSelect={onSelect}
+                position={lessonIndex + 1}
                 selection={selection}
               />
             ))}
@@ -495,6 +512,7 @@ function SortableLesson({
   disabled,
   onSelect,
   onRemove,
+  position,
 }: {
   lesson: DraftLesson;
   chapterKey: string;
@@ -502,6 +520,8 @@ function SortableLesson({
   disabled?: boolean;
   onSelect: (selection: Selection) => void;
   onRemove: (chapterKey: string, lessonKey: string) => void;
+  /** Số thứ tự TRONG CHƯƠNG, đúng như học viên thấy ở mục lục. */
+  position: number;
 }) {
   // Chương của bài đi kèm theo `data` để lúc thả biết nguồn và đích.
   const { setNodeRef, style, handleProps, className, dropEdge } = useSortableRow({
@@ -513,7 +533,7 @@ function SortableLesson({
     selection?.kind === "lesson" &&
     selection.lessonKey === lesson.key &&
     selection.chapterKey === chapterKey;
-  const Icon = bearsExercise(lesson.type) ? Braces : FileText;
+  const Icon = bearsExercise(lesson.type) ? Braces : lesson.type === "video" ? PlayCircle : FileText;
 
   return (
     <li
@@ -538,11 +558,25 @@ function SortableLesson({
         onClick={() => onSelect({ kind: "lesson", chapterKey, lessonKey: lesson.key })}
         type="button"
       >
+        <span className="text-muted-foreground">Bài {position}.</span>{" "}
         {lesson.title || "Bài chưa đặt tên"}
         <span className="ml-2 text-xs text-muted-foreground">
           {LESSON_TYPE_LABELS[lesson.type]}
         </span>
       </button>
+      {/* Điều kiện mở khoá hiện ngay trên CÂY, không chỉ trong panel bên phải: nếu phải
+        * bấm vào từng bài mới biết bài nào khoá bài nào thì cả đồ thị phụ thuộc là thứ
+        * không ai nhìn thấy, và người soạn không có cách nào kiểm lại tổng thể. */}
+      {lesson.prerequisites.lessonIds.length > 0 && (
+        <span
+          className="flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
+          title={`Mở sau khi hoàn thành ${lesson.prerequisites.rule === "ALL" ? "tất cả" : "1 trong"} ${lesson.prerequisites.lessonIds.length} bài`}
+        >
+          <Lock aria-hidden="true" className="size-3" />
+          {lesson.prerequisites.rule === "ALL" ? "cần" : "1 trong"}{" "}
+          {lesson.prerequisites.lessonIds.length}
+        </span>
+      )}
       <button
         aria-label="Xoá bài"
         className="shrink-0 text-muted-foreground hover:text-destructive"

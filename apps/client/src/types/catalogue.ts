@@ -91,6 +91,16 @@ export interface CourseLesson {
   isOptional: boolean;
   position: number;
   exerciseId: string | null;
+  /**
+   * Điều kiện mở bài, để GIẢI THÍCH một ổ khoá — không phải để quyết định nó.
+   *
+   * Việc "bài này đã mở chưa" luôn là `LessonProgress.isAvailable`, do `fn_lesson_available`
+   * trả lời ở CSDL. Đọc mảng này rồi tự tính ra khoá/mở sẽ cho ra một luật thứ hai chạy
+   * song song với luật thật, và hai luật đó sẽ lệch nhau vào đúng ngày ai đó sửa một bên.
+   *
+   * Khoá học lưu trước khi có tính năng này không trả trường này.
+   */
+  prerequisites?: { rule: "ALL" | "ANY"; lessonIds: string[] };
 }
 
 /** `GET /courses/:id/lessons/:lessonId/content` — the TipTap body from MongoDB. */
@@ -99,6 +109,14 @@ export interface LessonContent {
   objectives?: string[];
   contentHtml?: string;
   exerciseBrief?: string[];
+  /**
+   * Video của bài, khi `lesson.type === "video"`.
+   *
+   * Không có trường nguồn phát: `resolveVideo` ở `@codementor/utils` nhận diện
+   * YouTube/Vimeo/tệp trực tiếp từ chính URL, và studio giảng viên dùng đúng hàm đó để
+   * xem trước — nên thứ giảng viên duyệt qua là thứ học viên nhận.
+   */
+  media?: { url: string; durationSeconds?: number; captionsUrl?: string };
 }
 
 export type ProgressStatus = "not_started" | "in_progress" | "completed";
@@ -116,6 +134,17 @@ export interface CourseEnrollment {
   startedAt: string;
   completedAt: string | null;
   lastActivityAt: string | null;
+}
+
+/** `GET /courses/enrollments/mine` — enrolment plus enough of the course to render a card. */
+export interface EnrolledCourse extends CourseEnrollment {
+  title: string;
+  slug: string;
+  level: string;
+  coverImageUrl: string | null;
+  durationHours: number | null;
+  totalChapters: number;
+  totalLessons: number;
 }
 
 export interface LessonProgress {

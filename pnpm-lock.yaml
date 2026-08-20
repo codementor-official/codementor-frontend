@@ -151,6 +151,9 @@ importers:
       '@codementor/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@codementor/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@hookform/resolvers':
         specifier: ^5.5.7
         version: 5.5.7(@standard-schema/spec@1.1.0)(react-hook-form@7.83.0(react@19.2.4))(zod@4.4.3)

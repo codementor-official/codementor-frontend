@@ -12,7 +12,13 @@ import type {
   Page,
 } from "@codementor/solve";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
-import type { Course, CourseListItem, LessonContent } from "@/features/courses/types";
+import type {
+  Course,
+  CourseListItem,
+  LessonContent,
+  PresignedUpload,
+  VideoUploadConfig,
+} from "@/features/courses/types";
 import type { Article, ArticleListItem } from "@/features/articles/types";
 import type { UiNotification } from "@codementor/ui";
 
@@ -96,7 +102,8 @@ export const api = {
     fork: (id: string) => unwrap<Exercise>(`/exercises/${id}/fork`, { method: "POST" }),
     submit: (id: string) => unwrap<Exercise>(`/exercises/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Exercise>(`/exercises/${id}/withdraw`, { method: "POST" }),
-    archive: (id: string) => unwrap<Exercise>(`/exercises/${id}/archive`, { method: "POST" }),
+    requestRemoval: (id: string, reason: string) =>
+      unwrap<Exercise>(`/exercises/${id}/request-removal`, { method: "POST", body: { reason } }),
     restore: (id: string) => unwrap<Exercise>(`/exercises/${id}/restore`, { method: "POST" }),
   },
 
@@ -115,7 +122,8 @@ export const api = {
       unwrap<Roadmap>(`/roadmaps/${id}/courses`, { method: "PUT", body: { courses } }),
     submit: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/withdraw`, { method: "POST" }),
-    archive: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/archive`, { method: "POST" }),
+    requestRemoval: (id: string, reason: string) =>
+      unwrap<Roadmap>(`/roadmaps/${id}/request-removal`, { method: "POST", body: { reason } }),
     restore: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/restore`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/roadmaps/${id}`, { method: "DELETE" }),
   },
@@ -161,9 +169,22 @@ export const api = {
         method: "PUT",
         body: content as Record<string, unknown>,
       }),
+
+    /** Kho video đã cấu hình chưa. Studio hỏi một lần rồi tắt/bật ô tải lên theo đó. */
+    videoUploadConfig: () => unwrap<VideoUploadConfig>("/courses/video-upload/config"),
+    videoUploadUrl: (
+      id: string,
+      lessonId: string,
+      body: { filename: string; contentType: string; sizeBytes: number },
+    ) =>
+      unwrap<PresignedUpload>(`/courses/${id}/lessons/${lessonId}/video-upload-url`, {
+        method: "POST",
+        body,
+      }),
     submit: (id: string) => unwrap<Course>(`/courses/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Course>(`/courses/${id}/withdraw`, { method: "POST" }),
-    archive: (id: string) => unwrap<Course>(`/courses/${id}/archive`, { method: "POST" }),
+    requestRemoval: (id: string, reason: string) =>
+      unwrap<Course>(`/courses/${id}/request-removal`, { method: "POST", body: { reason } }),
     restore: (id: string) => unwrap<Course>(`/courses/${id}/restore`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/courses/${id}`, { method: "DELETE" }),
   },
@@ -192,7 +213,8 @@ export const api = {
       unwrap<Article>(`/articles/${id}/content`, { method: "PUT", body: { contentHtml } }),
     submit: (id: string) => unwrap<Article>(`/articles/${id}/submit`, { method: "POST" }),
     withdraw: (id: string) => unwrap<Article>(`/articles/${id}/withdraw`, { method: "POST" }),
-    archive: (id: string) => unwrap<Article>(`/articles/${id}/archive`, { method: "POST" }),
+    requestRemoval: (id: string, reason: string) =>
+      unwrap<Article>(`/articles/${id}/request-removal`, { method: "POST", body: { reason } }),
     restore: (id: string) => unwrap<Article>(`/articles/${id}/restore`, { method: "POST" }),
   },
 
@@ -227,6 +249,12 @@ export const api = {
  * thông báo hệ thống. KHÔNG bao gồm "khoá học/bài viết mới ra mắt" — những sự kiện đó
  * gửi `audienceType: ALL` cho mọi người đã đăng nhập, kể cả giảng viên, nhưng chúng dành
  * cho người học chứ không phải cho tác giả của chính nội dung đó.
+ *
+ * `CONTENT_ARCHIVED` và `REMOVAL_REQUEST_DENIED` trước đây vắng mặt, và đó là một lỗ thật
+ * chứ không phải lựa chọn: notification-service vẫn gửi cả hai cho đúng tác giả, chỉ là
+ * bộ lọc này chặn lại trước khi tới chuông. Hệ quả là hai kết cục quan trọng nhất của một
+ * yêu cầu xin gỡ — được duyệt, hoặc bị từ chối — không bao giờ hiện ra, và tác giả chỉ
+ * biết nội dung mình đã biến mất bằng cách tự mở trang ra xem.
  */
 const NOTIFICATION_SCOPE =
-  "types=CONTENT_APPROVED,CONTENT_CHANGES_REQUESTED,CONTENT_REJECTED,ADMIN_ANNOUNCEMENT";
+  "types=CONTENT_APPROVED,CONTENT_CHANGES_REQUESTED,CONTENT_REJECTED,CONTENT_ARCHIVED,REMOVAL_REQUEST_DENIED,ADMIN_ANNOUNCEMENT";
