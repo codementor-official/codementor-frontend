@@ -22,7 +22,7 @@ export function AdminSidebar({ collapsed, mobile, onToggle, onClose }: AdminSide
   const compact = collapsed && !mobile;
   // Con số đỏ trên "Hàng chờ duyệt". Trước đây không có gì báo cho quản trị viên biết có
   // việc đang chờ — họ phải tự nhớ mở trang đó ra kiểm tra.
-  const { total } = useModerationQueue();
+  const { pendingTotal: total } = useModerationQueue();
 
   return (
     <AppSidebar

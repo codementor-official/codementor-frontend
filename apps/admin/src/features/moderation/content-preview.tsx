@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, ChevronDown, ChevronRight, FileText, Loader2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, FileText, Inbox, Loader2, PlayCircle } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { StatusBadge } from "@codementor/ui";
+import { resolveVideo } from "@codementor/utils";
+import { Button, StatusBadge, useToast } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi } from "@/lib/api";
 import {
@@ -64,17 +65,101 @@ export function ContentPreview({ item }: { item: QueueItem }) {
     );
   }
 
-  return <Body contentId={item.id} data={data} kind={item.kind} />;
+  const removable = data as { removalRequested?: boolean; rejectionReason?: string | null };
+  const asking = item.status === "published" && removable.removalRequested === true;
+
+  return (
+    <>
+      {/* Thẻ yêu cầu gỡ đứng TRƯỚC nội dung: khi mở một request ra, câu hỏi đầu tiên là
+        * "ai xin gỡ cái gì, vì sao", còn bản thân nội dung là thứ để đối chiếu sau đó. */}
+      {asking && (
+        <RemovalRequestCard
+          author={item.authorName}
+          reason={removable.rejectionReason ?? ""}
+          requestedAt={item.updatedAt}
+          title={item.title}
+        />
+      )}
+      {/* `hideReason` khi đang xin gỡ: `rejectionReason` lúc này CHÍNH LÀ lý do xin gỡ,
+        * và thẻ ở trên đã in nó ra rồi. Không chặn thì cùng một câu hiện hai lần trong
+        * hai khối viền vàng giống hệt nhau — đúng chỗ nhìn vào thấy rối và trùng. */}
+      <Body contentId={item.id} data={data} hideReason={asking} kind={item.kind} />
+    </>
+  );
 }
 
-function Body({ data, kind, contentId }: { data: unknown; kind: ContentKind; contentId: string }) {
-  if (kind === "articles") return <ArticleBody article={data as ArticlePreview} />;
-  if (kind === "courses") return <CourseBody course={data as CoursePreview} courseId={contentId} />;
-  if (kind === "roadmaps") return <RoadmapBody roadmap={data as RoadmapPreview} />;
-  return <ExerciseSummary exercise={data as ExercisePreview} />;
+const requestDateFormat = new Intl.DateTimeFormat("vi-VN", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+/**
+ * Một yêu cầu xin gỡ, đọc được trong một lượt nhìn: nội dung nào, ai gửi, vì sao, lúc
+ * nào, đang ở trạng thái gì.
+ *
+ * KHÔNG có nút bấm ở đây. Trước kia khối này tự mang hai nút Duyệt/Từ chối, rồi ngăn kéo
+ * lại có thêm hai nút y hệt ở chân — người duyệt thấy cùng một hành động hai lần và
+ * không biết hai nút đó có khác nhau không. Hành động thuộc về chân ngăn kéo, giống mọi
+ * khay khác; khối này chỉ trả lời "chuyện gì đang xảy ra".
+ */
+function RemovalRequestCard({
+  title,
+  author,
+  reason,
+  requestedAt,
+}: {
+  title: string;
+  author: string | null;
+  reason: string;
+  requestedAt: string;
+}) {
+  return (
+    <section className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <Inbox aria-hidden="true" className="size-4 shrink-0 text-warning" />
+        <h3 className="text-xs font-bold tracking-wide uppercase text-warning">Yêu cầu gỡ nội dung</h3>
+        <StatusBadge tone="warning">Chờ quyết định</StatusBadge>
+      </div>
+
+      <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
+        <dt className="text-muted-foreground">Nội dung</dt>
+        <dd className="font-medium">{title}</dd>
+
+        <dt className="text-muted-foreground">Người gửi</dt>
+        <dd>{author ?? "không rõ"}</dd>
+
+        <dt className="text-muted-foreground">Thời gian gửi</dt>
+        <dd>{requestDateFormat.format(new Date(requestedAt))}</dd>
+
+        <dt className="text-muted-foreground">Lý do</dt>
+        <dd className="whitespace-pre-line">{reason.trim() || "không nêu"}</dd>
+      </dl>
+
+      <p className="mt-2.5 text-xs text-muted-foreground">
+        Nội dung vẫn đang công khai và học viên vẫn dùng bình thường cho tới khi bạn quyết.
+      </p>
+    </section>
+  );
 }
 
-function ArticleBody({ article }: { article: ArticlePreview }) {
+function Body({
+  data,
+  kind,
+  contentId,
+  hideReason,
+}: {
+  data: unknown;
+  kind: ContentKind;
+  contentId: string;
+  hideReason: boolean;
+}) {
+  if (kind === "articles") return <ArticleBody article={data as ArticlePreview} hideReason={hideReason} />;
+  if (kind === "courses") return <CourseBody course={data as CoursePreview} courseId={contentId} hideReason={hideReason} />;
+  if (kind === "roadmaps") return <RoadmapBody hideReason={hideReason} roadmap={data as RoadmapPreview} />;
+  return <ExerciseSummary exercise={data as ExercisePreview} hideReason={hideReason} />;
+}
+
+function ArticleBody({ article, hideReason }: { article: ArticlePreview; hideReason: boolean }) {
   return (
     <div>
       <Facts
@@ -83,6 +168,7 @@ function ArticleBody({ article }: { article: ArticlePreview }) {
           ["Thời gian đọc", article.readMinutes ? `${article.readMinutes} phút` : "—"],
         ]}
       />
+      <ReasonNote hidden={hideReason} reason={article.rejectionReason} />
       {article.excerpt && <Quote label="Tóm tắt">{article.excerpt}</Quote>}
       {article.takeaway && <Quote label="Điều đọng lại">{article.takeaway}</Quote>}
 
@@ -102,7 +188,7 @@ function ArticleBody({ article }: { article: ArticlePreview }) {
   );
 }
 
-function CourseBody({ course, courseId }: { course: CoursePreview; courseId: string }) {
+function CourseBody({ course, courseId, hideReason }: { course: CoursePreview; courseId: string; hideReason: boolean }) {
   const chapters = course.chapters ?? [];
   return (
     <div>
@@ -113,6 +199,7 @@ function CourseBody({ course, courseId }: { course: CoursePreview; courseId: str
           ["Nội dung", `${course.totalChapters} chương · ${course.totalLessons} bài`],
         ]}
       />
+      <ReasonNote hidden={hideReason} reason={course.rejectionReason} />
       {course.description && <Quote label="Mô tả">{course.description}</Quote>}
 
       {chapters.length === 0 ? (
@@ -164,8 +251,12 @@ function LessonRow({
   const [lessonContent, setLessonContent] = useState<LessonContentPreview | null | undefined>(undefined);
   const [exercise, setExercise] = useState<ExercisePreview | null | undefined>(undefined);
 
+  const isVideo = lesson.type === "video";
   const isTheory = !lesson.exerciseTitle;
   const emptyTheory = isTheory && lesson.contentRef === null;
+  // Video của bài nằm trong cùng document MongoDB với thân bài, nên nó đi về cùng lượt
+  // đọc `lessonContent` — không có nhánh nạp riêng.
+  const video = isVideo ? resolveVideo(lessonContent?.media?.url) : null;
 
   useEffect(() => {
     if (!open) return;
@@ -193,7 +284,9 @@ function LessonRow({
         ) : (
           <ChevronRight aria-hidden="true" className="size-3.5 shrink-0" />
         )}
-        {isTheory ? (
+        {isVideo ? (
+          <PlayCircle aria-hidden="true" className="size-3.5 shrink-0" />
+        ) : isTheory ? (
           <FileText aria-hidden="true" className="size-3.5 shrink-0" />
         ) : (
           <BookOpen aria-hidden="true" className="size-3.5 shrink-0" />
@@ -213,6 +306,21 @@ function LessonRow({
           {isTheory ? (
             lessonContent === undefined ? (
               <Loading />
+            ) : isVideo ? (
+              // Bài video phải XEM ĐƯỢC ngay trong hàng chờ. Duyệt một bài video mà chỉ
+              // nhìn thấy tiêu đề là duyệt một đường dẫn chưa ai mở thử.
+              video === null ? (
+                <p className="py-2 text-destructive">Bài học chưa có video.</p>
+              ) : video.kind === "file" ? (
+                <video className="w-full rounded-md border border-border bg-black" controls preload="metadata" src={video.src} />
+              ) : (
+                <iframe
+                  allowFullScreen
+                  className="aspect-video w-full rounded-md border border-border"
+                  src={video.src}
+                  title={lesson.title}
+                />
+              )
             ) : lessonContent === null || !lessonContent.contentHtml ? (
               <p className="py-2 text-destructive">Bài học chưa có nội dung.</p>
             ) : (
@@ -236,7 +344,7 @@ function LessonRow({
   );
 }
 
-function RoadmapBody({ roadmap }: { roadmap: RoadmapPreview }) {
+function RoadmapBody({ roadmap, hideReason }: { roadmap: RoadmapPreview; hideReason: boolean }) {
   const courses = roadmap.courses ?? [];
   // Gửi duyệt lộ trình bị chặn khi còn khoá học chưa công khai (`Roadmap.submit()`), nên
   // ở đây con số này lẽ ra luôn là 0 — vẫn tính và hiện ra để bắt được trường hợp một
@@ -251,6 +359,7 @@ function RoadmapBody({ roadmap }: { roadmap: RoadmapPreview }) {
           ["Thời lượng", roadmap.estimatedHours ? `${roadmap.estimatedHours} giờ` : "—"],
         ]}
       />
+      <ReasonNote hidden={hideReason} reason={roadmap.rejectionReason} />
       {roadmap.shortDescription && <Quote label="Mô tả ngắn">{roadmap.shortDescription}</Quote>}
       {roadmap.description && <Quote label="Mô tả">{roadmap.description}</Quote>}
 
@@ -259,17 +368,7 @@ function RoadmapBody({ roadmap }: { roadmap: RoadmapPreview }) {
       ) : (
         <ol className="mt-4 grid gap-1.5">
           {courses.map((course, index) => (
-            <li
-              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
-              key={course.courseId}
-            >
-              <span className="text-muted-foreground">{index + 1}.</span>
-              <span className="min-w-0 flex-1 truncate">{course.title}</span>
-              {course.isOptional && <span className="text-xs text-muted-foreground">tuỳ chọn</span>}
-              <StatusBadge tone={course.status === "published" ? "success" : "warning"}>
-                {course.status === "published" ? "đã đăng" : course.status}
-              </StatusBadge>
-            </li>
+            <RoadmapCourseRow course={course} index={index} key={course.courseId} />
           ))}
         </ol>
       )}
@@ -283,6 +382,65 @@ function RoadmapBody({ roadmap }: { roadmap: RoadmapPreview }) {
 }
 
 /**
+ * Một khoá trong lộ trình, mở ra được ngay tại chỗ — cùng kiểu mở-và-tải mà `LessonRow`
+ * dùng cho bài học trong khoá học. Admin duyệt lộ trình cần đọc được TRỌN nội dung từng
+ * khoá (mô tả, chương, bài, loại bài) trước khi quyết, không chỉ thấy mỗi cái tên.
+ */
+function RoadmapCourseRow({
+  course,
+  index,
+}: {
+  course: NonNullable<RoadmapPreview["courses"]>[number];
+  index: number;
+}) {
+  const request = useAdminApi();
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<CoursePreview | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!open || detail !== undefined) return;
+    void moderationApi
+      .detail<CoursePreview>(request, "courses", course.courseId)
+      .then(setDetail)
+      .catch(() => setDetail(null));
+  }, [open, detail, request, course.courseId]);
+
+  return (
+    <li className="rounded-lg border border-border text-sm">
+      <button
+        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted"
+        onClick={() => setOpen((value) => !value)}
+        type="button"
+      >
+        {open ? (
+          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronRight aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+        )}
+        <span className="text-muted-foreground">{index + 1}.</span>
+        <span className="min-w-0 flex-1 truncate">{course.title}</span>
+        {course.isOptional && <span className="text-xs text-muted-foreground">tuỳ chọn</span>}
+        <StatusBadge tone={course.status === "published" ? "success" : "warning"}>
+          {course.status === "published" ? "đã đăng" : course.status}
+        </StatusBadge>
+      </button>
+
+      {open && (
+        <div className="border-t border-border bg-background px-3 py-3">
+          {detail === undefined ? (
+            <Loading />
+          ) : detail === null ? (
+            <p className="py-2 text-xs text-destructive">Không đọc được khoá học này.</p>
+          ) : (
+            <CourseBody course={detail} courseId={course.courseId} hideReason={false} />
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/**
  * Toàn bộ một bài code: đề bài, test case, lời giải mẫu — đúng những gì Studio cho tác
  * giả xem lúc soạn, không phải bản tóm lược.
  *
@@ -290,7 +448,7 @@ function RoadmapBody({ roadmap }: { roadmap: RoadmapPreview }) {
  * bên trong một bài học khi khoá học đang chờ duyệt trỏ tới nó — `compact` chỉ bớt cỡ chữ
  * tiêu đề, nội dung hiện đủ như nhau ở cả hai nơi vì admin cần đọc thật, không phải liếc qua.
  */
-function ExerciseSummary({ exercise, compact = false }: { exercise: ExercisePreview; compact?: boolean }) {
+function ExerciseSummary({ exercise, compact = false, hideReason = false }: { exercise: ExercisePreview; compact?: boolean; hideReason?: boolean }) {
   const content = exercise.content ?? {};
   const testCases = content.testCases ?? [];
   const languagesWithSolution = (content.languages ?? []).filter((lang) => lang.referenceSolution?.trim());
@@ -305,6 +463,7 @@ function ExerciseSummary({ exercise, compact = false }: { exercise: ExercisePrev
           ["Ngôn ngữ", (content.languages ?? []).map((item) => item.label).join(", ") || "—"],
         ]}
       />
+      {!compact && <ReasonNote hidden={hideReason} reason={exercise.rejectionReason} />}
       {exercise.summary && <Quote label="Tóm tắt">{exercise.summary}</Quote>}
 
       {content.statement ? (
@@ -404,6 +563,23 @@ function Facts({ items }: { items: [string, string][] }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+/**
+ * Lý do từ chối/yêu cầu sửa/gỡ — MỘT ô dùng chung cho mọi quyết định, kể cả khi giảng
+ * viên tự gỡ nội dung đang công khai của họ (bắt buộc nêu lý do, xem `ReasonButton` bên
+ * app giảng viên). Admin cần đọc được câu này ngay khi mở xem trước, không phải đoán vì
+ * sao nội dung không còn ở trạng thái ban đầu.
+ */
+function ReasonNote({ reason, hidden = false }: { reason: string | null; hidden?: boolean }) {
+  // `hidden` khi đang có yêu cầu xin gỡ: cùng một ô `rejection_reason` phục vụ hai nghĩa
+  // (lý do bị trả lại, và lý do tác giả xin gỡ), nên khối kia đã in thì khối này phải im.
+  if (!reason || hidden) return null;
+  return (
+    <p className="mt-3 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
+      <strong>Lý do:</strong> {reason}
+    </p>
   );
 }
 

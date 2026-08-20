@@ -14,23 +14,25 @@ import { moderationApi } from "@/lib/api";
 import { CONTENT_KINDS, KINDS, type ContentKind, type QueueItem } from "./types";
 
 interface QueueState {
-  items: QueueItem[];
-  /** Số mục đang chờ theo loại, để vẽ số trên tab. */
-  countByKind: Record<ContentKind, number>;
-  total: number;
+  /** Số mục ĐANG CHỜ theo loại, để vẽ số trên tab và trên thanh bên. */
+  pendingByKind: Record<ContentKind, number>;
+  pendingTotal: number;
   loading: boolean;
   /** Tên những hàng chờ không đọc được, nếu có. */
   failed: string[];
-  refresh: () => Promise<void>;
+  refreshPending: () => Promise<void>;
 }
 
 const QueueContext = createContext<QueueState | null>(null);
 
 /**
- * Một lần đọc hàng chờ, hai nơi dùng: con số đỏ trên thanh bên và chính màn kiểm duyệt.
+ * Con số "còn bao nhiêu việc chờ tôi" — dùng ở thanh bên và ở tab của màn kiểm duyệt.
  *
- * Để mỗi bên tự gọi API thì con số trên thanh bên sẽ đứng yên sau khi duyệt xong một mục
- * — người dùng vừa xử lý xong vẫn thấy "còn 5 việc", và cách duy nhất để nó đúng là F5.
+ * CHỈ đếm `pending_review`, và đó là toàn bộ lý do provider này tồn tại ở gốc ứng dụng.
+ * Danh sách hiển thị của màn kiểm duyệt KHÔNG lấy từ đây: màn đó đọc theo khay đang chọn
+ * (Đang chờ / Đã duyệt / Đã từ chối) và tự giữ dữ liệu của mình. Nhét cả ba khay vào đây
+ * sẽ khiến con số đỏ trên thanh bên đổi theo tab người dùng đang mở — nó phải luôn là
+ * "còn bao nhiêu việc chờ", không phải "đang xem bao nhiêu dòng".
  */
 export function ModerationQueueProvider({ children }: { children: ReactNode }) {
   const request = useAdminApi();
@@ -45,7 +47,7 @@ export function ModerationQueueProvider({ children }: { children: ReactNode }) {
    * service khác. `allSettled` chứ không `all` — một service chết thì ba hàng chờ còn lại
    * vẫn phải xem được, và tên hàng chờ hỏng phải hiện ra chứ không lặng lẽ thành "trống".
    */
-  const refresh = useCallback(async () => {
+  const refreshPending = useCallback(async () => {
     setLoading(true);
     const results = await Promise.allSettled(
       CONTENT_KINDS.map((kind) => moderationApi.queue(request, kind)),
@@ -62,24 +64,22 @@ export function ModerationQueueProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Cũ trước: hàng chờ là hàng chờ, ai gửi sớm được xem trước.
-    collected.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
     setItems(collected);
     setFailed(broken);
     setLoading(false);
   }, [request]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void refreshPending();
+  }, [refreshPending]);
 
   const value = useMemo<QueueState>(() => {
-    const countByKind = Object.fromEntries(
+    const pendingByKind = Object.fromEntries(
       CONTENT_KINDS.map((kind) => [kind, items.filter((item) => item.kind === kind).length]),
     ) as Record<ContentKind, number>;
 
-    return { items, countByKind, total: items.length, loading, failed, refresh };
-  }, [items, loading, failed, refresh]);
+    return { pendingByKind, pendingTotal: items.length, loading, failed, refreshPending };
+  }, [items, loading, failed, refreshPending]);
 
   return <QueueContext.Provider value={value}>{children}</QueueContext.Provider>;
 }
@@ -91,12 +91,11 @@ export function ModerationQueueProvider({ children }: { children: ReactNode }) {
 export function useModerationQueue(): QueueState {
   return (
     useContext(QueueContext) ?? {
-      items: [],
-      countByKind: { articles: 0, courses: 0, roadmaps: 0, exercises: 0 },
-      total: 0,
+      pendingByKind: { articles: 0, courses: 0, roadmaps: 0, exercises: 0 },
+      pendingTotal: 0,
       loading: false,
       failed: [],
-      refresh: async () => {},
+      refreshPending: async () => {},
     }
   );
 }

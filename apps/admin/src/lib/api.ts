@@ -32,8 +32,15 @@ async function unwrap<T>(request: Request, path: string, options?: Parameters<Re
 }
 
 export const moderationApi = {
-  queue: (request: Request, kind: ContentKind) =>
-    unwrap<Page<QueueItem>>(request, `${KINDS[kind].queuePath}?limit=50`),
+  /**
+   * `status` bỏ trống = đang chờ duyệt, hành vi cũ. Truyền vào để xem lại những gì ĐÃ
+   * quyết — bốn service đều nhận `?status=` ở đúng đường dẫn này.
+   */
+  queue: (request: Request, kind: ContentKind, status?: string) =>
+    unwrap<Page<QueueItem>>(
+      request,
+      `${KINDS[kind].queuePath}?limit=50${status ? `&status=${status}` : ""}`,
+    ),
   /** Bản đầy đủ, để xem trước trước khi quyết. */
   detail: <T,>(request: Request, kind: ContentKind, id: string) =>
     unwrap<T>(request, KINDS[kind].detailPath(id)),
@@ -48,6 +55,9 @@ export const moderationApi = {
       method: "POST",
       body: { decision, ...(reason ? { reason } : {}) },
     }),
+  /** Từ chối yêu cầu xin gỡ của tác giả — nội dung vẫn giữ nguyên `published`. */
+  denyRemoval: (request: Request, kind: ContentKind, id: string) =>
+    unwrap<QueueItem>(request, KINDS[kind].denyRemovalPath(id), { method: "POST" }),
   /**
    * Thân bài lý thuyết của một bài học, để xem trước bên trong hàng chờ duyệt khoá học.
    *
@@ -56,10 +66,31 @@ export const moderationApi = {
    * mọi khoá học bất kể trạng thái), nên không cần đường riêng cho admin.
    */
   lessonContent: (request: Request, courseId: string, lessonId: string) =>
-    unwrap<{ summary?: string; contentHtml?: string } | null>(
+    unwrap<{ summary?: string; contentHtml?: string; media?: { url: string } } | null>(
       request,
       `/courses/${courseId}/lessons/${lessonId}/content`,
     ),
+
+  /**
+   * Lịch sử kiểm duyệt của MỘT nội dung: ai đã quyết gì, lúc nào, vì sao.
+   *
+   * Cùng bảng `audit_logs` mà drawer tài khoản đọc — `ModerationAuditConsumer` bên
+   * core-service ghi một dòng cho mỗi quyết định, kể cả những lần hoàn tác. Nhờ vậy
+   * "admin lỡ bấm rồi sửa lại" vẫn để lại dấu vết thay vì biến mất cùng trạng thái cũ.
+   */
+  history: (request: Request, kind: ContentKind, id: string) =>
+    unwrap<AuditLogEntry[]>(
+      request,
+      `/audit-logs${search({ targetType: AUDIT_TARGET_TYPE[kind], targetId: id, limit: 20 })}`,
+    ),
+};
+
+/** Khớp `TARGET_TYPE` ở `moderation-audit.consumer.ts` — lệch nhau là lịch sử ra rỗng. */
+const AUDIT_TARGET_TYPE: Record<ContentKind, string> = {
+  articles: "article",
+  courses: "course",
+  roadmaps: "roadmap",
+  exercises: "exercise",
 };
 
 /* ------------------------------------------------------------------- Users */
@@ -258,6 +289,8 @@ export interface AdminCourseListItem {
   totalLessons: number;
   createdBy: string | null;
   authorName: string | null;
+  /** Tác giả đang xin gỡ nội dung này và chờ admin quyết — xem `QueueItem.removalRequested`. */
+  removalRequested: boolean;
   updatedAt: string;
 }
 
@@ -284,6 +317,8 @@ export interface AdminRoadmapListItem {
   courseCount: number;
   createdBy: string | null;
   authorName: string | null;
+  /** Tác giả đang xin gỡ nội dung này và chờ admin quyết — xem `QueueItem.removalRequested`. */
+  removalRequested: boolean;
   updatedAt: string;
 }
 
@@ -309,6 +344,8 @@ export interface AdminExerciseListItem {
   visibility: string;
   authorId: string | null;
   authorName: string | null;
+  /** Tác giả đang xin gỡ nội dung này và chờ admin quyết — xem `QueueItem.removalRequested`. */
+  removalRequested: boolean;
   forkedFromId: string | null;
   updatedAt: string;
 }
@@ -337,6 +374,8 @@ export interface AdminArticle {
   readMinutes: number | null;
   authorId: string | null;
   authorName: string | null;
+  /** Tác giả đang xin gỡ nội dung này và chờ admin quyết — xem `QueueItem.removalRequested`. */
+  removalRequested: boolean;
   tagName: string | null;
   publishedAt: string | null;
   createdAt: string;
@@ -417,7 +456,14 @@ export const tagsApi = {
  * `audienceType: ALL` cho mọi người đã đăng nhập, kể cả admin, nhưng chúng dành cho người
  * học chứ không phải cho người vận hành nền tảng.
  */
-const NOTIFICATION_TYPES = ["CONTENT_REVIEW_REQUESTED", "ADMIN_ANNOUNCEMENT"];
+const NOTIFICATION_TYPES = [
+  "CONTENT_REVIEW_REQUESTED",
+  // Tác giả xin gỡ một nội dung đang công khai — cũng là việc chờ quản trị viên quyết,
+  // và nó KHÔNG rơi vào hàng chờ duyệt (nội dung vẫn `published`), nên thiếu dòng này thì
+  // yêu cầu xin gỡ không xuất hiện ở bất kỳ đâu trong giao diện quản trị.
+  "CONTENT_REMOVAL_REQUESTED",
+  "ADMIN_ANNOUNCEMENT",
+];
 
 export const notificationsApi = {
   list: (request: Request, params: { limit: number; before?: string }) =>
