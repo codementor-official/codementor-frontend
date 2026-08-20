@@ -39,6 +39,7 @@ const CLIENT_URL = process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000"
 /** Bản nháp đang sửa trong drawer, nạp riêng vì danh sách không mang thân bài. */
 interface Draft {
   id: string;
+  title: string;
   excerpt: string;
   takeaway: string;
   readMinutes: string;
@@ -120,6 +121,7 @@ export function ArticlesPage() {
     const detail = await api.articles.detail(id);
     setDraft({
       id,
+      title: detail.title,
       excerpt: detail.excerpt ?? "",
       takeaway: detail.takeaway ?? "",
       readMinutes: detail.readMinutes ? String(detail.readMinutes) : "",
@@ -132,6 +134,7 @@ export function ArticlesPage() {
     async (id: string) => {
       if (draft?.id !== id) return;
       await api.articles.update(id, {
+        title: draft.title.trim() || undefined,
         excerpt: draft.excerpt.trim() || undefined,
         takeaway: draft.takeaway.trim() || undefined,
         readMinutes: draft.readMinutes ? Number(draft.readMinutes) : undefined,
@@ -432,6 +435,15 @@ function Editor({
         removalRequested={row.status === "published" && row.rejectionReason !== null}
         status={row.status}
       />
+
+      <Field label="Tiêu đề">
+        <input
+          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+          onChange={(event) => onChange({ ...draft, title: event.target.value })}
+          placeholder="Nhập tiêu đề bài viết…"
+          value={draft.title}
+        />
+      </Field>
 
       <Field
         error={maxLength(draft.excerpt, 500, "Tóm tắt")}
