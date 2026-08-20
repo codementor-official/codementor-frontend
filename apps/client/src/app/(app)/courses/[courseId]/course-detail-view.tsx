@@ -20,6 +20,7 @@ import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { describeLock, explainLock } from "@/lib/lesson-unlock";
 import type { CourseDetail, CourseProgress } from "@/types/catalogue";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -142,22 +143,30 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
             </Card>
           ) : (
             <ul className="flex flex-col gap-3">
-              {course.chapters.map((chapter) => (
+              {[...course.chapters]
+                .sort((a, b) => a.position - b.position)
+                .map((chapter, chapterIndex) => (
                 <li key={chapter.id}>
                   <Card className="overflow-hidden">
                     <div className="flex items-baseline justify-between gap-3 border-b border-border-soft bg-bg px-4 py-3">
+                      {/* Đánh số theo VỊ TRÍ trong danh sách đã sắp, không theo `position`
+                        * thô: xoá một chương giữa chừng để lại khoảng trống ở `position`,
+                        * và học viên sẽ đọc được "Chương 1, Chương 3". */}
                       <h3 className="text-sm font-bold text-navy">
-                        {chapter.position}. {chapter.title}
+                        Chương {chapterIndex + 1}: {chapter.title}
                       </h3>
                       <span className="shrink-0 text-2xs text-text-faint">
                         {chapter.lessons.length} bài
                       </span>
                     </div>
                     <ul className="divide-y divide-border-soft">
-                      {chapter.lessons.map((lesson) => {
+                      {[...chapter.lessons]
+                        .sort((a, b) => a.position - b.position)
+                        .map((lesson, lessonIndex) => {
                         const Icon = LESSON_ICON[lesson.type] ?? FileText;
                         const state = progressByLesson.get(lesson.id);
                         const locked = state?.isAvailable === false;
+                        const reason = locked ? explainLock(course, lesson, progressByLesson) : null;
                         const body = (
                           <>
                             {state?.status === "completed" ? (
@@ -167,7 +176,10 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                             ) : (
                               <Icon className="h-4 w-4 shrink-0 text-text-faint" />
                             )}
-                            <span className="min-w-0 flex-1 truncate text-sm text-text">{lesson.title}</span>
+                            <span className="min-w-0 flex-1 truncate text-sm text-text">
+                              <span className="text-text-faint">Bài {lessonIndex + 1}.</span>{" "}
+                              {lesson.title}
+                            </span>
                             {lesson.durationMinutes !== null && (
                               <span className="shrink-0 text-2xs text-text-faint">
                                 {lesson.durationMinutes} phút
@@ -180,8 +192,21 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                             {/* Locked lessons are not links: the server refuses them, so a
                               * click would only teach that the app says no at random. */}
                             {locked ? (
-                              <div className="flex cursor-not-allowed items-center gap-3 px-4 py-2.5 opacity-60">
-                                {body}
+                              <div className="cursor-not-allowed px-4 py-2.5 opacity-70">
+                                <div className="flex items-center gap-3">{body}</div>
+                                {/* Ổ khoá không kèm điều kiện thì học viên chỉ biết là
+                                  * "chưa mở", không biết phải làm gì để mở. */}
+                                <p className="mt-1 pl-7 text-2xs text-text-faint">
+                                  {describeLock(reason)}
+                                  {reason && (
+                                    <span className="font-semibold text-text-muted">
+                                      {" "}
+                                      {reason.missing
+                                        .map((item) => `${item.number} — ${item.title}`)
+                                        .join("; ")}
+                                    </span>
+                                  )}
+                                </p>
                               </div>
                             ) : (
                               <Link

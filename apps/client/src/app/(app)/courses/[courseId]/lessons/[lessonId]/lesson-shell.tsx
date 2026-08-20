@@ -124,6 +124,15 @@ export function LessonShell({
             const Icon = LESSON_ICON[lesson.type] ?? FileText;
             const showsChapter =
               position === 0 || lessons[position - 1].chapterPosition !== lesson.chapterPosition;
+            // Đếm lại từ 1 ở mỗi chương, và đếm theo vị trí trong danh sách đã sắp chứ
+            // không theo `position` thô — xoá một bài giữa chừng để lại khoảng trống ở
+            // `position`, và mục lục sẽ hiện "Bài 1, Bài 3".
+            const chapterNumber =
+              new Set(lessons.slice(0, position + 1).map((each) => each.chapterPosition)).size;
+            const lessonNumber =
+              position -
+              lessons.findIndex((each) => each.chapterPosition === lesson.chapterPosition) +
+              1;
 
             const row = (
               <span className="flex items-center gap-2">
@@ -135,7 +144,9 @@ export function LessonShell({
                   <Circle className="h-3.5 w-3.5 shrink-0 text-text-faint" />
                 )}
                 <Icon className="h-3.5 w-3.5 shrink-0 text-text-faint" />
-                <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="text-text-faint">Bài {lessonNumber}.</span> {lesson.title}
+                </span>
               </span>
             );
 
@@ -143,7 +154,7 @@ export function LessonShell({
               <li key={lesson.id}>
                 {showsChapter && (
                   <p className="mt-3 mb-1 px-2 text-2xs font-bold tracking-wide text-text-faint uppercase">
-                    {lesson.chapterTitle}
+                    Chương {chapterNumber}: {lesson.chapterTitle}
                   </p>
                 )}
                 {locked ? (

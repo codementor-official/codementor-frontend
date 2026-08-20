@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { describeLock, explainLock } from "@/lib/lesson-unlock";
 import type { CourseDetail, CourseProgress, LessonContent, LessonProgress } from "@/types/catalogue";
 import { ExerciseLesson } from "./exercise-lesson";
 import { LessonShell, flattenLessons, type FlatLesson } from "./lesson-shell";
@@ -124,15 +125,33 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
   // Locked is decided by the server, so honour it here too rather than rendering a body the
   // learner is not meant to see yet.
   if (currentProgress?.isAvailable === false) {
+    const reason = explainLock(course, current, progressByLesson);
     return (
       <div>
         <BreadcrumbTitle slug={courseId} title={course.title} />
         <BreadcrumbTitle slug={lessonId} title={current.title} />
         <Card className="border-dashed p-10 text-center">
           <p className="text-sm font-semibold text-navy">Bài học chưa mở</p>
-          <p className="mt-1 text-xs text-text-muted">
-            Hoàn thành các bài trước đó trong khóa học để mở bài này.
-          </p>
+          <p className="mt-1 text-xs text-text-muted">{describeLock(reason)}</p>
+          {/* Kể tên bài còn thiếu, và cho bấm thẳng vào: học viên đọc xong câu này thì
+            * việc tiếp theo của họ luôn là mở đúng một trong những bài đó. */}
+          {reason && (
+            <ul className="mx-auto mt-2.5 flex max-w-md flex-col gap-1.5">
+              {reason.missing.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    href={`/courses/${courseId}/lessons/${item.id}`}
+                    className="flex items-center justify-between gap-3 rounded-md border border-border-soft px-3 py-2 text-left text-xs transition-colors hover:bg-bg"
+                  >
+                    <span className="text-text-faint">{item.number}</span>
+                    <span className="min-w-0 flex-1 truncate font-semibold text-navy">
+                      {item.title}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
           <Link href={`/courses/${courseId}`} className="mt-3 inline-block text-xs font-semibold text-primary hover:underline">
             Xem nội dung khóa học
           </Link>
