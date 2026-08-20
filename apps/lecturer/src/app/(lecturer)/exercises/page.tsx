@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Archive,
+  BookOpen,
   Braces,
   FileText,
   FlaskConical,
@@ -17,6 +18,7 @@ import {
   Send,
   Trash2,
   Undo2,
+  TriangleAlert,
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -27,6 +29,7 @@ import {
   DetailSection,
   DrawerDetail,
   ManagePage,
+  Modal,
   ReasonButton,
   Select,
   StatusBadge,
@@ -291,8 +294,17 @@ export default function ExercisesPage() {
 
 function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
   return (
-    <DrawerDetail key={row.id} load={() => api.exercises.get(row.id)}>
-      {(exercise) => {
+    <DrawerDetail
+      key={row.id}
+      load={async () => {
+        const [exercise, refs] = await Promise.all([
+          api.exercises.get(row.id),
+          api.exercises.references(row.id).catch(() => ({ courses: [] })),
+        ]);
+        return { exercise, referencingCourses: refs.courses };
+      }}
+    >
+      {({ exercise, referencingCourses }) => {
         const languages = exercise.content?.languages ?? [];
         const publicCases = (exercise.content?.testCases ?? []).filter(
           (testCase) => testCase.visibility === "public",
@@ -388,6 +400,19 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
                 </p>
               )}
             </DetailSection>
+
+            {referencingCourses.length > 0 && (
+              <DetailSection icon={BookOpen} title={`Đang dùng trong khoá học (${referencingCourses.length})`}>
+                <ul className="grid gap-2">
+                  {referencingCourses.map((c) => (
+                    <li className="flex items-center justify-between rounded-md border p-3" key={c.id}>
+                      <span className="text-sm font-medium">{c.title}</span>
+                      <span className="text-xs text-muted-foreground">/{c.slug}</span>
+                    </li>
+                  ))}
+                </ul>
+              </DetailSection>
+            )}
           </>
         );
       }}
@@ -457,15 +482,7 @@ function ExerciseDrawerActions({
             </>
           )}
           {row.status !== "published" && (
-            <ConfirmButton
-              confirmLabel="Xoá bài code"
-              description={`Bài “${row.title}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}
-              disabled={busy}
-              onConfirm={onRemove}
-              title="Xoá bài code này?"
-            >
-              <Trash2 aria-hidden="true" className="size-4" /> Xoá
-            </ConfirmButton>
+            <DeleteExerciseButton busy={busy} onRemove={onRemove} row={row} />
           )}
           <Link
             className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground"
@@ -482,6 +499,99 @@ function ExerciseDrawerActions({
         >
           <FlaskConical aria-hidden="true" className="size-4" /> Xem & giải thử
         </Link>
+      )}
+    </>
+  );
+}
+
+function DeleteExerciseButton({
+  row,
+  busy,
+  onRemove,
+}: {
+  row: ExerciseListItem;
+  busy: boolean;
+  onRemove: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [references, setReferences] = useState<{ id: string; title: string; slug: string }[] | null>(null);
+
+  const handleOpen = async () => {
+    setChecking(true);
+    try {
+      const refs = await api.exercises.references(row.id);
+      setReferences(refs.courses);
+      setOpen(true);
+    } catch {
+      // Fallback cho phép xoá nếu lỗi mạng
+      setReferences([]);
+      setOpen(true);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  return (
+    <>
+      <Button disabled={busy || checking} onClick={handleOpen} type="button" variant="danger">
+        <Trash2 aria-hidden="true" className="size-4" /> {checking ? "Đang xử lý..." : "Xóa"}
+      </Button>
+
+      {references && (
+        <Modal
+          footer={
+            <div className="flex justify-end gap-2">
+              {references.length > 0 ? (
+                <Button onClick={() => setOpen(false)} type="button" variant="outline">
+                  Đóng
+                </Button>
+              ) : (
+                <>
+                  <Button onClick={() => setOpen(false)} type="button" variant="outline">
+                    Huỷ
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setOpen(false);
+                      onRemove();
+                    }}
+                    type="button"
+                    variant="danger"
+                  >
+                    Xoá bài code
+                  </Button>
+                </>
+              )}
+            </div>
+          }
+          onClose={() => setOpen(false)}
+          open={open}
+          title={references.length > 0 ? "Không thể xóa bài code" : "Xóa bài code này?"}
+          width="sm"
+        >
+          {references.length > 0 ? (
+            <div className="space-y-4">
+              <p className="flex items-start gap-2.5 text-sm text-destructive">
+                <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                <span>Bài code này đang được gắn trong các khóa học dưới đây. Bạn phải gỡ nó khỏi chương trình học trước khi xoá.</span>
+              </p>
+              <ul className="grid gap-2">
+                {references.map((c) => (
+                  <li className="flex flex-col gap-0.5 rounded-md border p-3" key={c.id}>
+                    <span className="text-sm font-medium">{c.title}</span>
+                    <span className="text-xs text-muted-foreground">/{c.slug}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="flex items-start gap-2.5 text-sm text-muted-foreground">
+              <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-destructive" />
+              <span>Bài “{row.title}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Có vài giây để hoàn tác sau khi xác nhận.</span>
+            </p>
+          )}
+        </Modal>
       )}
     </>
   );

@@ -4,7 +4,21 @@ import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/pag
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, BookOpen, FileText, ListTree, Pencil, Plus, RotateCcw, Send, Trash2, Undo2 } from "lucide-react";
+import {
+  Archive,
+  BookOpen,
+  Eye,
+  EyeOff,
+  FileText,
+  ListTree,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Send,
+  Trash2,
+  TriangleAlert,
+  Undo2,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {
@@ -15,6 +29,7 @@ import {
   DetailSection,
   DrawerDetail,
   ManagePage,
+  Modal,
   ReasonButton,
   Select,
   StatusBadge,
@@ -219,13 +234,9 @@ export default function CoursesPage() {
                   </>
                 )}
                 {row.status !== "published" && (
-                  <ConfirmButton
-                    confirmLabel="Xoá khóa học"
-                    // Xác nhận vẫn hỏi trước — bấm nhầm vẫn là bấm nhầm — nhưng lệnh xoá
-                    // thật chỉ chạy sau vài giây, đủ để đổi ý lần nữa từ hộp "Hoàn tác".
-                    description={`Khóa học “${row.title}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Có vài giây để hoàn tác sau khi xác nhận.`}
-                    disabled={busy}
-                    onConfirm={() =>
+                  <DeleteCourseButton
+                    busy={busy}
+                    onRemove={() =>
                       scheduleDelete({
                         id: row.id,
                         message: `Đã xoá khoá học "${row.title}".`,
@@ -234,10 +245,8 @@ export default function CoursesPage() {
                         onError: (error) => toast.error(describe(error)),
                       })
                     }
-                    title="Xoá khóa học này?"
-                  >
-                    <Trash2 aria-hidden="true" className="size-4" /> Xoá
-                  </ConfirmButton>
+                    row={row}
+                  />
                 )}
                 <Link
                   className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground"
@@ -311,8 +320,17 @@ export default function CoursesPage() {
 
 function CourseDrawerBody({ row }: { row: CourseListItem }) {
   return (
-    <DrawerDetail key={row.id} load={() => api.courses.get(row.id)}>
-      {(course) => {
+    <DrawerDetail
+      key={row.id}
+      load={async () => {
+        const [course, refs] = await Promise.all([
+          api.courses.get(row.id),
+          api.courses.references(row.id).catch(() => ({ roadmaps: [] })),
+        ]);
+        return { course, referencingRoadmaps: refs.roadmaps };
+      }}
+    >
+      {({ course, referencingRoadmaps }) => {
         const chapters = course.chapters ?? [];
         return (
           <>
@@ -379,6 +397,19 @@ function CourseDrawerBody({ row }: { row: CourseListItem }) {
                 </ol>
               )}
             </DetailSection>
+
+            {referencingRoadmaps.length > 0 && (
+              <DetailSection icon={BookOpen} title={`Đang dùng trong lộ trình (${referencingRoadmaps.length})`}>
+                <ul className="grid gap-2">
+                  {referencingRoadmaps.map((r) => (
+                    <li className="flex items-center justify-between rounded-md border p-3" key={r.id}>
+                      <span className="text-sm font-medium">{r.title}</span>
+                      <span className="text-xs text-muted-foreground">/{r.slug}</span>
+                    </li>
+                  ))}
+                </ul>
+              </DetailSection>
+            )}
           </>
         );
       }}
@@ -392,4 +423,97 @@ function describe(cause: unknown): string {
     return body?.message ?? cause.message;
   }
   return cause instanceof Error ? cause.message : "Thao tác thất bại";
+}
+
+function DeleteCourseButton({
+  row,
+  busy,
+  onRemove,
+}: {
+  row: CourseListItem;
+  busy: boolean;
+  onRemove: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [references, setReferences] = useState<{ id: string; title: string; slug: string }[] | null>(null);
+
+  const handleOpen = async () => {
+    setChecking(true);
+    try {
+      const refs = await api.courses.references(row.id);
+      setReferences(refs.roadmaps);
+      setOpen(true);
+    } catch {
+      // Fallback
+      setReferences([]);
+      setOpen(true);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  return (
+    <>
+      <Button disabled={busy || checking} onClick={handleOpen} type="button" variant="danger">
+        <Trash2 aria-hidden="true" className="size-4" /> {checking ? "Đang xử lý..." : "Xóa"}
+      </Button>
+
+      {references && (
+        <Modal
+          footer={
+            <div className="flex justify-end gap-2">
+              {references.length > 0 ? (
+                <Button onClick={() => setOpen(false)} type="button" variant="outline">
+                  Đóng
+                </Button>
+              ) : (
+                <>
+                  <Button onClick={() => setOpen(false)} type="button" variant="outline">
+                    Huỷ
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setOpen(false);
+                      onRemove();
+                    }}
+                    type="button"
+                    variant="danger"
+                  >
+                    Xoá khóa học
+                  </Button>
+                </>
+              )}
+            </div>
+          }
+          onClose={() => setOpen(false)}
+          open={open}
+          title={references.length > 0 ? "Không thể xóa khóa học" : "Xóa khóa học này?"}
+          width="sm"
+        >
+          {references.length > 0 ? (
+            <div className="space-y-4">
+              <p className="flex items-start gap-2.5 text-sm text-destructive">
+                <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                <span>Khóa học này đang được gắn trong các lộ trình dưới đây. Bạn phải gỡ nó khỏi chương trình lộ trình trước khi xoá.</span>
+              </p>
+              <ul className="grid gap-2">
+                {references.map((r) => (
+                  <li className="flex flex-col gap-0.5 rounded-md border p-3" key={r.id}>
+                    <span className="text-sm font-medium">{r.title}</span>
+                    <span className="text-xs text-muted-foreground">/{r.slug}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="flex items-start gap-2.5 text-sm text-muted-foreground">
+              <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-destructive" />
+              <span>Khóa học “{row.title}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Có vài giây để hoàn tác sau khi xác nhận.</span>
+            </p>
+          )}
+        </Modal>
+      )}
+    </>
+  );
 }

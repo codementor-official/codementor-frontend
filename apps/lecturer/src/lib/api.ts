@@ -89,6 +89,7 @@ export const api = {
     mine: (params: ListExercisesParams = {}) =>
       unwrap<Page<ExerciseListItem>>(`/exercises/mine${query({ ...params })}`),
     get: (id: string) => unwrap<Exercise>(`/exercises/${id}`),
+    references: (id: string) => unwrap<{ courses: { id: string; title: string; slug: string }[] }>(`/exercises/${id}/references`),
     create: (body: { title: string; kind: string; difficulty: string; summary?: string | null }) =>
       unwrap<Exercise>("/exercises", { method: "POST", body }),
     update: (id: string, body: Record<string, unknown>) =>
@@ -155,6 +156,7 @@ export const api = {
     mine: (params: ListExercisesParams = {}) =>
       unwrap<Page<CourseListItem>>(`/courses/mine${query({ ...params })}`),
     get: (id: string) => unwrap<Course>(`/courses/${id}`),
+    references: (id: string) => unwrap<{ roadmaps: { id: string; title: string; slug: string }[] }>(`/courses/${id}/references`),
     create: (body: { title: string; level: string }) =>
       unwrap<Course>("/courses", { method: "POST", body }),
     update: (id: string, body: Record<string, unknown>) =>
