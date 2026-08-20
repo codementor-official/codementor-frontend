@@ -27,6 +27,8 @@ export { Modal } from "./modal";
 export { NotificationBell, useNotifications } from "./notification-bell";
 export type { NotificationSource, UiNotification } from "./notification-bell";
 export { PageHeader } from "./page-header";
+export { ReasonButton } from "./reason-button";
+export { RejectDialogButton } from "./reject-dialog-button";
 export { SegmentedTabs } from "./segmented-tabs";
 export { Select } from "./select";
 export type { SelectOption } from "./select";
