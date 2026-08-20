@@ -181,7 +181,8 @@ export const api = {
         method: "POST",
         body,
       }),
-    submit: (id: string) => unwrap<Course>(`/courses/${id}/submit`, { method: "POST" }),
+    submit: (id: string, note?: string) =>
+      unwrap<Course>(`/courses/${id}/submit`, { method: "POST", body: note ? { note } : {} }),
     withdraw: (id: string) => unwrap<Course>(`/courses/${id}/withdraw`, { method: "POST" }),
     requestRemoval: (id: string, reason: string) =>
       unwrap<Course>(`/courses/${id}/request-removal`, { method: "POST", body: { reason } }),

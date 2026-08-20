@@ -129,6 +129,8 @@ export interface ArticlePreview {
   rejectionReason: string | null;
   /** `true` khi tác giả đang xin gỡ bài này (đang `published`) và chờ admin duyệt. */
   removalRequested: boolean;
+  /** Ghi chú tác giả gửi kèm lần duyệt này — chỉ có khi đang `pending_review`. */
+  submitNote?: string | null;
 }
 
 export interface CoursePreview {
@@ -140,6 +142,7 @@ export interface CoursePreview {
   totalLessons: number;
   rejectionReason: string | null;
   removalRequested: boolean;
+  submitNote?: string | null;
   chapters?: {
     id: string;
     title: string;
@@ -174,6 +177,7 @@ export interface RoadmapPreview {
   estimatedHours: number | null;
   rejectionReason: string | null;
   removalRequested: boolean;
+  submitNote?: string | null;
   courses?: { courseId: string; title: string; status: string; isOptional: boolean }[];
 }
 
@@ -185,6 +189,7 @@ export interface ExercisePreview {
   visibility: string;
   rejectionReason: string | null;
   removalRequested: boolean;
+  submitNote?: string | null;
   content?: {
     statement?: string;
     constraints?: string[];

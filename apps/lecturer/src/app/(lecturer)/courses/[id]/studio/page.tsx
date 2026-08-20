@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   PageHeader,
+  ReasonButton,
   ResizeHandle,
   StatusBadge,
   useToast,
@@ -274,15 +275,33 @@ export default function CourseStudioPage() {
                   <Save aria-hidden="true" className="size-4" />
                   {saving ? "Đang lưu…" : "Lưu"}
                 </Button>
-                <Button
-                  disabled={saving || blocker !== undefined}
-                  onClick={() => run(() => api.courses.submit(id), "Đã gửi duyệt")}
-                  title={blocker}
-                  type="button"
-                >
-                  <Send aria-hidden="true" className="size-4" />
-                  {course.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
-                </Button>
+                {/* Gửi LẠI thì hỏi đã sửa gì — người duyệt đã đọc bản trước, câu đó là
+                    thứ duy nhất cho họ biết cần xem lại chỗ nào. Lần gửi đầu từ bản nháp
+                    thì không hỏi: chưa có quyết định nào để giải thích. */}
+                {course.requiresSubmitNote ? (
+                  <ReasonButton
+                    confirmLabel="Gửi duyệt lại"
+                    description="Người duyệt đã xem bản trước. Nói ngắn gọn bạn vừa sửa gì."
+                    disabled={saving || blocker !== undefined}
+                    onConfirm={(note) => run(() => api.courses.submit(id, note), "Đã gửi duyệt")}
+                    placeholder="Đã bổ sung mô tả và sửa lại nội dung chương 2 theo góp ý."
+                    title="Gửi duyệt lại"
+                    variant="default"
+                  >
+                    <Send aria-hidden="true" className="size-4" />
+                    Gửi duyệt lại
+                  </ReasonButton>
+                ) : (
+                  <Button
+                    disabled={saving || blocker !== undefined}
+                    onClick={() => run(() => api.courses.submit(id), "Đã gửi duyệt")}
+                    title={blocker}
+                    type="button"
+                  >
+                    <Send aria-hidden="true" className="size-4" />
+                    Gửi duyệt
+                  </Button>
+                )}
               </>
             )}
             {/* Nút bị khoá mà không nói vì sao là chỗ người dùng bấm mãi rồi bỏ cuộc. */}

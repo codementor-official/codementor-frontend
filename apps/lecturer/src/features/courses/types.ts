@@ -106,6 +106,10 @@ export interface Course {
   createdBy: string | null;
   rejectionReason: string | null;
   removalRequested: boolean;
+  /** Ghi chú tác giả gửi kèm lần duyệt đang chờ. */
+  submitNote: string | null;
+  /** `true` khi lần gửi duyệt tới là gửi LẠI — backend bắt buộc phải có ghi chú. */
+  requiresSubmitNote: boolean;
   publishedAt: string | null;
   totalChapters: number;
   totalLessons: number;

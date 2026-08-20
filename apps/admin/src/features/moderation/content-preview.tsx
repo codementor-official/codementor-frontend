@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, ChevronDown, ChevronRight, FileText, Inbox, Loader2, PlayCircle } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, FileText, Inbox, Loader2, MessageSquare, PlayCircle } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { resolveVideo } from "@codementor/utils";
 import { Button, StatusBadge, useToast } from "@codementor/ui";
@@ -65,8 +65,14 @@ export function ContentPreview({ item }: { item: QueueItem }) {
     );
   }
 
-  const removable = data as { removalRequested?: boolean; rejectionReason?: string | null };
+  const removable = data as {
+    removalRequested?: boolean;
+    rejectionReason?: string | null;
+    submitNote?: string | null;
+  };
   const asking = item.status === "published" && removable.removalRequested === true;
+  // Ghi chú chỉ tồn tại trong lúc chờ duyệt — sau khi quyết, ô đó mang nghĩa khác.
+  const note = item.status === "pending_review" ? removable.submitNote?.trim() : null;
 
   return (
     <>
@@ -80,10 +86,22 @@ export function ContentPreview({ item }: { item: QueueItem }) {
           title={item.title}
         />
       )}
+      {/* Tác giả đã nói họ sửa gì — đọc trước khi mở nội dung ra so, vì đó là thứ duy
+        * nhất cho biết cần xem lại chỗ nào ở một bản đã từng bị trả lại. */}
+      {note && (
+        <section className="mb-4 rounded-lg border border-border bg-muted/40 p-3">
+          <div className="mb-1.5 flex items-center gap-2">
+            <MessageSquare aria-hidden="true" className="size-4 shrink-0 text-primary" />
+            <h3 className="text-xs font-bold tracking-wide uppercase">Ghi chú của tác giả</h3>
+          </div>
+          <p className="text-sm whitespace-pre-line">{note}</p>
+        </section>
+      )}
+
       {/* `hideReason` khi đang xin gỡ: `rejectionReason` lúc này CHÍNH LÀ lý do xin gỡ,
         * và thẻ ở trên đã in nó ra rồi. Không chặn thì cùng một câu hiện hai lần trong
         * hai khối viền vàng giống hệt nhau — đúng chỗ nhìn vào thấy rối và trùng. */}
-      <Body contentId={item.id} data={data} hideReason={asking} kind={item.kind} />
+      <Body contentId={item.id} data={data} hideReason={asking || note !== null} kind={item.kind} />
     </>
   );
 }
