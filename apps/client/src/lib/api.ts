@@ -11,6 +11,7 @@ import type {
   CourseEnrollment,
   CourseProgress,
   CourseSummary,
+  EnrolledCourse,
   ExerciseDetail,
   ExerciseSummary,
   LessonContent,
@@ -82,6 +83,9 @@ export const api = {
     catalogue: (params: CatalogueParams = {}) =>
       unwrap<Page<CourseSummary>>(`/courses${query(params)}`),
     detail: (id: string) => unwrap<CourseDetail>(`/courses/${id}`),
+
+    /** "Khoá học của tôi" — every course I'm enrolled in, most recently active first. */
+    mine: () => unwrap<EnrolledCourse[]>("/courses/enrollments/mine"),
 
     enroll: (id: string, viaRoadmapId?: string) =>
       unwrap<CourseEnrollment>(`/courses/${id}/enroll`, {

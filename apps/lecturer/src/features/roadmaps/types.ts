@@ -56,6 +56,7 @@ export interface Roadmap {
   status: ContentStatus;
   createdBy: string | null;
   rejectionReason: string | null;
+  removalRequested: boolean;
   publishedAt: string | null;
   updatedAt: string;
   courses?: RoadmapCourseItem[];

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
+import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +27,7 @@ import {
   DetailSection,
   DrawerDetail,
   ManagePage,
+  ReasonButton,
   Select,
   StatusBadge,
   useToast,
@@ -212,7 +213,7 @@ export default function ExercisesPage() {
                   commit: () => api.exercises.remove(row.id),
                 })
               }
-              onArchive={() => act(row.id, () => api.exercises.archive(row.id))}
+              onRequestRemoval={(reason) => act(row.id, () => api.exercises.requestRemoval(row.id, reason))}
               onRestore={() => act(row.id, () => api.exercises.restore(row.id))}
               onSubmit={() => act(row.id, () => api.exercises.submit(row.id))}
               onWithdraw={() => act(row.id, () => api.exercises.withdraw(row.id))}
@@ -257,6 +258,7 @@ export default function ExercisesPage() {
           setDifficulty("");
           setStatus("");
         }}
+        onRefresh={load}
         onSearchChange={setSearch}
         rows={rows.filter((row) => !pendingIds.has(row.id))}
         search={search}
@@ -291,6 +293,11 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
         return (
           <>
             <ReviewNotice reason={exercise.rejectionReason} status={exercise.status} />
+            <RemovalPendingNotice
+              reason={exercise.rejectionReason}
+              removalRequested={exercise.removalRequested}
+              status={exercise.status}
+            />
             <DetailMeta>
               <DetailRow label="Slug" value={exercise.slug} />
               <DetailRow label="Độ khó" value={DIFFICULTY_LABELS[exercise.difficulty]} />
@@ -386,7 +393,7 @@ function ExerciseDrawerActions({
   busy,
   onSubmit,
   onWithdraw,
-  onArchive,
+  onRequestRemoval,
   onRestore,
   onFork,
   onRemove,
@@ -396,7 +403,7 @@ function ExerciseDrawerActions({
   busy: boolean;
   onSubmit: () => void;
   onWithdraw: () => void;
-  onArchive: () => void;
+  onRequestRemoval: (reason: string) => void;
   onRestore: () => void;
   onFork: () => void;
   onRemove: () => void;
@@ -427,9 +434,16 @@ function ExerciseDrawerActions({
                 {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
               </Button>
               {row.status === "published" && (
-                <Button disabled={busy} onClick={onArchive} type="button" variant="ghost">
-                  <Archive aria-hidden="true" className="size-4" /> Gỡ xuống
-                </Button>
+                <ReasonButton
+                  confirmLabel="Gửi yêu cầu"
+                  description="Bài code vẫn công khai cho tới khi quản trị viên duyệt yêu cầu này. Quản trị viên sẽ đọc được đúng lý do bạn nêu."
+                  disabled={busy}
+                  onConfirm={onRequestRemoval}
+                  placeholder="Vì sao bạn muốn gỡ bài code này xuống?"
+                  title="Xin gỡ bài code đang công khai?"
+                >
+                  <Archive aria-hidden="true" className="size-4" /> Xin gỡ xuống
+                </ReasonButton>
               )}
             </>
           )}

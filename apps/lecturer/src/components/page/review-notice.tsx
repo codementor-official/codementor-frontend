@@ -48,3 +48,28 @@ export function ReviewNotice({ status, reason }: { status: string; reason: strin
     </p>
   );
 }
+
+/**
+ * Bạn đã xin gỡ nội dung đang công khai này — vẫn `published` cho tới khi admin quyết.
+ * Không còn nút "Gỡ xuống" nào khác xuất hiện trong lúc chờ, nhưng bản thân trạng thái
+ * chờ đó phải hiện ra, nếu không giảng viên sẽ tưởng yêu cầu đã biến mất.
+ */
+export function RemovalPendingNotice({
+  status,
+  removalRequested,
+  reason,
+}: {
+  status: string;
+  removalRequested: boolean;
+  reason: string | null;
+}) {
+  if (status !== "published" || !removalRequested) return null;
+  return (
+    <p
+      className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
+      role="status"
+    >
+      <strong>Đang chờ quản trị viên duyệt gỡ.</strong> {reason?.trim() ? `Lý do bạn nêu: ${reason}` : ""}
+    </p>
+  );
+}

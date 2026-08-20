@@ -275,6 +275,9 @@ export function UsersPage() {
         setRole("");
         setStatus("");
       }}
+      /* Không truyền `cursor`: làm mới là đọc lại TRANG ĐẦU với đúng bộ lọc đang có,
+         không phải tải thêm trang tiếp theo. */
+      onRefresh={() => load()}
       onSearchChange={setSearch}
       rows={rows}
       search={search}

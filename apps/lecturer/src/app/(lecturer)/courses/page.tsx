@@ -1,6 +1,6 @@
 "use client";
 
-import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
+import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ import {
   DetailSection,
   DrawerDetail,
   ManagePage,
+  ReasonButton,
   Select,
   StatusBadge,
   useToast,
@@ -204,14 +205,16 @@ export default function CoursesPage() {
                       {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
                     </Button>
                     {row.status === "published" && (
-                      <Button
+                      <ReasonButton
+                        confirmLabel="Gửi yêu cầu"
+                        description="Khóa học vẫn công khai cho tới khi quản trị viên duyệt yêu cầu này. Quản trị viên sẽ đọc được đúng lý do bạn nêu."
                         disabled={busy}
-                        onClick={() => act(() => api.courses.archive(row.id))}
-                        type="button"
-                        variant="ghost"
+                        onConfirm={(reason) => act(() => api.courses.requestRemoval(row.id, reason))}
+                        placeholder="Vì sao bạn muốn gỡ khóa học này xuống?"
+                        title="Xin gỡ khóa học đang công khai?"
                       >
-                        <Archive aria-hidden="true" className="size-4" /> Gỡ xuống
-                      </Button>
+                        <Archive aria-hidden="true" className="size-4" /> Xin gỡ xuống
+                      </ReasonButton>
                     )}
                   </>
                 )}
@@ -280,6 +283,7 @@ export default function CoursesPage() {
           setLevel("");
           setStatus("");
         }}
+        onRefresh={load}
         onSearchChange={setSearch}
         // Ẩn ngay dòng đang chờ xoá thay vì đợi tải lại — khoản này không thay đổi dữ
         // liệu trên server cho tới khi hộp "Hoàn tác" dưới màn hết giờ.
@@ -311,6 +315,11 @@ function CourseDrawerBody({ row }: { row: CourseListItem }) {
         return (
           <>
             <ReviewNotice reason={course.rejectionReason} status={course.status} />
+            <RemovalPendingNotice
+              reason={course.rejectionReason}
+              removalRequested={course.removalRequested}
+              status={course.status}
+            />
             <DetailMeta>
               <DetailRow label="Slug" value={course.slug} />
               <DetailRow label="Trình độ" value={LEVEL_LABELS[course.level]} />

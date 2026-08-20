@@ -1,27 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, BookOpen, CheckCheck, PencilLine, RotateCcw, Save, Trash2, XCircle } from "lucide-react";
+import { Archive, BookOpen, CheckCheck, RotateCcw, Trash2, XCircle } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@codementor/types";
-import { Button, ConfirmButton, ManagePage, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
+import { Button, ConfirmButton, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { coursesApi, moderationApi, usersApi, type AdminCourseListItem } from "@/lib/api";
-import { Field } from "@/features/shared/detail-field";
+import { coursesApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
+import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
 
 const STATUS_OPTIONS = ["pending_review", "changes_requested", "rejected", "published", "archived"] as const;
 
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
-
-interface CourseDraft {
-  id: string;
-  title: string;
-  description: string;
-  level: string;
-}
 
 export function CoursesPage() {
   const request = useAdminApi();
@@ -39,8 +32,6 @@ export function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [reason, setReason] = useState("");
-  const [draft, setDraft] = useState<CourseDraft | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,41 +71,8 @@ export function CoursesPage() {
     }
   };
 
-  const loadDraft = useCallback(
-    async (id: string) => {
-      const detail = await moderationApi.detail<{ title: string; description: string | null; level: string }>(
-        request,
-        "courses",
-        id,
-      );
-      setDraft({ id, title: detail.title, description: detail.description ?? "", level: detail.level });
-    },
-    [request],
-  );
-
-  const saveDraft = async (id: string) => {
-    if (draft?.id !== id) return;
-    await coursesApi.update(request, id, {
-      title: draft.title.trim() || undefined,
-      description: draft.description.trim() || null,
-      level: draft.level,
-    });
-    toast.success("Đã lưu");
-  };
-
-  const decide = async (
-    id: string,
-    decision: "approve" | "request_changes" | "reject" | "archive" | "restore",
-  ) => {
-    if ((decision === "reject" || decision === "request_changes") && !reason.trim()) {
-      toast.error("Phải nêu lý do khi từ chối hoặc yêu cầu sửa.");
-      return;
-    }
-    await act(async () => {
-      await moderationApi.decide(request, "courses", id, decision, reason.trim() || undefined);
-      setReason("");
-    });
-  };
+  const decide = (id: string, decision: ModerationDecision, reason?: string) =>
+    act(() => moderationApi.decide(request, "courses", id, decision, reason));
 
   const columns = useMemo<ColumnDef<AdminCourseListItem, unknown>[]>(
     () => [
@@ -167,34 +125,13 @@ export function CoursesPage() {
         description: (row) =>
           `${CONTENT_STATUS_LABELS[row.status as keyof typeof CONTENT_STATUS_LABELS] ?? row.status} · ${row.authorName ?? "không rõ"}`,
         width: "wide",
-        body: (row) => (
-          <>
-            <CourseEditor draft={draft} onChange={setDraft} onLoad={loadDraft} row={row} />
-            {row.status === "pending_review" && (
-              <Field hint="Bắt buộc khi từ chối hoặc yêu cầu sửa. Giảng viên sẽ đọc đúng câu này." label="Lý do">
-                <textarea
-                  className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-                  onChange={(event) => setReason(event.target.value)}
-                  value={reason}
-                />
-              </Field>
-            )}
-            <div className="mt-5 border-t pt-4">
-              <p className="mb-2 text-sm font-medium">Xem trước nội dung</p>
-              <ContentPreview item={{ ...row, kind: "courses" }} />
-            </div>
-          </>
-        ),
+        body: (row) => <ContentPreview item={{ ...row, kind: "courses" }} />,
         footer: (row) => (
           <>
-            <Button disabled={busy || draft?.id !== row.id} onClick={() => void act(() => saveDraft(row.id))} variant="outline">
-              <Save aria-hidden="true" className="size-4" />
-              Lưu
-            </Button>
             {row.status !== "published" && (
               <ConfirmButton
                 confirmLabel="Xoá khoá học"
-                description={`Xoá vĩnh viễn "${row.title}". Chỉ xoá được vì khoá học chưa công khai — nếu đã từng công khai, hãy dùng Gỡ (lưu trữ) thay vì xoá.`}
+                description={`Xoá vĩnh viễn "${row.title}". Chỉ xoá được vì khoá học chưa công khai — nếu đã từng công khai, hãy dùng Thu hồi thay vì xoá.`}
                 onConfirm={() => act(() => coursesApi.remove(request, row.id))}
                 title="Xoá khoá học này?"
                 variant="outline"
@@ -205,14 +142,21 @@ export function CoursesPage() {
             )}
             {row.status === "pending_review" && (
               <>
-                <Button disabled={busy} onClick={() => void decide(row.id, "request_changes")} variant="outline">
-                  <PencilLine aria-hidden="true" className="size-4" />
-                  Yêu cầu sửa
-                </Button>
-                <Button disabled={busy} onClick={() => void decide(row.id, "reject")} variant="ghost">
+                <RejectDialogButton
+                  decisions={[
+                    { value: "request_changes", label: "Yêu cầu sửa" },
+                    { value: "reject", label: "Từ chối" },
+                  ]}
+                  description="Giảng viên sẽ nhận được đúng lý do này."
+                  disabled={busy}
+                  onConfirm={(decision, reason) => decide(row.id, decision as ModerationDecision, reason)}
+                  placeholder="Vì sao cần sửa hoặc từ chối?"
+                  title="Từ chối / yêu cầu sửa khoá học"
+                  variant="ghost"
+                >
                   <XCircle aria-hidden="true" className="size-4" />
-                  Từ chối
-                </Button>
+                  Từ chối / Yêu cầu sửa
+                </RejectDialogButton>
                 <Button disabled={busy} onClick={() => void decide(row.id, "approve")}>
                   <CheckCheck aria-hidden="true" className="size-4" />
                   Duyệt
@@ -220,10 +164,18 @@ export function CoursesPage() {
               </>
             )}
             {row.status === "published" && (
-              <Button disabled={busy} onClick={() => void decide(row.id, "archive")} variant="ghost">
+              <ReasonButton
+                confirmLabel="Thu hồi"
+                description="Khoá học sẽ rời khỏi danh mục công khai. Giảng viên sẽ nhận được đúng lý do này."
+                disabled={busy}
+                onConfirm={(reason) => decide(row.id, "archive", reason)}
+                placeholder="Vì sao thu hồi khoá học đang công khai này?"
+                title="Thu hồi khoá học đang công khai?"
+                variant="ghost"
+              >
                 <Archive aria-hidden="true" className="size-4" />
-                Gỡ xuống
-              </Button>
+                Thu hồi
+              </ReasonButton>
             )}
             {row.status === "archived" && (
               <Button disabled={busy} onClick={() => void decide(row.id, "restore")} variant="outline">
@@ -277,6 +229,7 @@ export function CoursesPage() {
         setUpdatedFrom("");
         setUpdatedTo("");
       }}
+      onRefresh={load}
       onSearchChange={setSearch}
       rows={rows}
       search={search}
@@ -304,59 +257,6 @@ function CourseCard({ row }: { row: AdminCourseListItem }) {
           {row.totalChapters} chương · {row.totalLessons} bài
         </span>
       </div>
-    </div>
-  );
-}
-
-function CourseEditor({
-  row,
-  draft,
-  onChange,
-  onLoad,
-}: {
-  row: AdminCourseListItem;
-  draft: CourseDraft | null;
-  onChange: (draft: CourseDraft) => void;
-  onLoad: (id: string) => Promise<void>;
-}) {
-  useEffect(() => {
-    if (draft?.id !== row.id) void onLoad(row.id);
-  }, [row.id, draft?.id, onLoad]);
-
-  if (draft?.id !== row.id) {
-    return <p className="text-sm text-muted-foreground">Đang tải…</p>;
-  }
-
-  return (
-    <div className="grid gap-4">
-      <Field label="Tiêu đề">
-        <input
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, title: event.target.value })}
-          value={draft.title}
-        />
-      </Field>
-      <Field label="Mô tả">
-        <textarea
-          className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, description: event.target.value })}
-          value={draft.description}
-        />
-      </Field>
-      <Field label="Trình độ">
-        <select
-          aria-label="Trình độ"
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, level: event.target.value })}
-          value={draft.level}
-        >
-          {LEVELS.map((value) => (
-            <option key={value} value={value}>
-              {LEVEL_LABELS[value]}
-            </option>
-          ))}
-        </select>
-      </Field>
     </div>
   );
 }

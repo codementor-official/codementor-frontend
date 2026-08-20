@@ -1,6 +1,6 @@
 "use client";
 
-import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
+import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ import {
   DetailSection,
   DrawerDetail,
   ManagePage,
+  ReasonButton,
   Select,
   StatusBadge,
   useToast,
@@ -212,14 +213,16 @@ export default function RoadmapsPage() {
                       {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
                     </Button>
                     {row.status === "published" && (
-                      <Button
+                      <ReasonButton
+                        confirmLabel="Gửi yêu cầu"
+                        description="Lộ trình vẫn công khai cho tới khi quản trị viên duyệt yêu cầu này. Quản trị viên sẽ đọc được đúng lý do bạn nêu."
                         disabled={busy}
-                        onClick={() => act(() => api.roadmaps.archive(row.id))}
-                        type="button"
-                        variant="ghost"
+                        onConfirm={(reason) => act(() => api.roadmaps.requestRemoval(row.id, reason))}
+                        placeholder="Vì sao bạn muốn gỡ lộ trình này xuống?"
+                        title="Xin gỡ lộ trình đang công khai?"
                       >
-                        <Archive aria-hidden="true" className="size-4" /> Gỡ xuống
-                      </Button>
+                        <Archive aria-hidden="true" className="size-4" /> Xin gỡ xuống
+                      </ReasonButton>
                     )}
                   </>
                 )}
@@ -286,6 +289,7 @@ export default function RoadmapsPage() {
           setField("");
           setStatus("");
         }}
+        onRefresh={load}
         onSearchChange={setSearch}
         rows={rows.filter((row) => !pendingIds.has(row.id))}
         search={search}
@@ -319,6 +323,11 @@ function RoadmapDrawerBody({ row }: { row: RoadmapListItem }) {
         return (
           <>
             <ReviewNotice reason={roadmap.rejectionReason} status={roadmap.status} />
+            <RemovalPendingNotice
+              reason={roadmap.rejectionReason}
+              removalRequested={roadmap.removalRequested}
+              status={roadmap.status}
+            />
             <DetailMeta>
               <DetailRow label="Slug" value={roadmap.slug} />
               <DetailRow label="Lĩnh vực" value={FIELD_LABELS[roadmap.field]} />

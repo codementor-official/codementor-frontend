@@ -212,6 +212,7 @@ export interface Exercise extends Omit<ExerciseListItem, "authorName"> {
   timeLimitMs: number;
   memoryLimitKb: number;
   rejectionReason: string | null;
+  removalRequested: boolean;
   publishedAt: string | null;
   content?: ExerciseContent | null;
 }

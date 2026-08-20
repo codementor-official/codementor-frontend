@@ -1,27 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, Braces, CheckCheck, PencilLine, RotateCcw, Save, Trash2, XCircle } from "lucide-react";
+import { Archive, Braces, CheckCheck, RotateCcw, Trash2, XCircle } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { DIFFICULTIES, DIFFICULTY_LABELS, STATUS_LABELS, STATUS_TONES } from "@codementor/solve";
-import { Button, ConfirmButton, ManagePage, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
+import { Button, ConfirmButton, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { exercisesApi, moderationApi, type AdminExerciseListItem } from "@/lib/api";
-import { Field } from "@/features/shared/detail-field";
+import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
 
 const STATUS_OPTIONS = ["pending_review", "changes_requested", "rejected", "published", "archived"] as const;
 
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
-
-interface ExerciseDraft {
-  id: string;
-  title: string;
-  summary: string;
-  difficulty: string;
-}
 
 export function ExercisesPage() {
   const request = useAdminApi();
@@ -39,8 +32,6 @@ export function ExercisesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [reason, setReason] = useState("");
-  const [draft, setDraft] = useState<ExerciseDraft | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,41 +71,8 @@ export function ExercisesPage() {
     }
   };
 
-  const loadDraft = useCallback(
-    async (id: string) => {
-      const detail = await moderationApi.detail<{ title: string; summary: string | null; difficulty: string }>(
-        request,
-        "exercises",
-        id,
-      );
-      setDraft({ id, title: detail.title, summary: detail.summary ?? "", difficulty: detail.difficulty });
-    },
-    [request],
-  );
-
-  const saveDraft = async (id: string) => {
-    if (draft?.id !== id) return;
-    await exercisesApi.update(request, id, {
-      title: draft.title.trim() || undefined,
-      summary: draft.summary.trim() || null,
-      difficulty: draft.difficulty,
-    });
-    toast.success("Đã lưu");
-  };
-
-  const decide = async (
-    id: string,
-    decision: "approve" | "request_changes" | "reject" | "archive" | "restore",
-  ) => {
-    if ((decision === "reject" || decision === "request_changes") && !reason.trim()) {
-      toast.error("Phải nêu lý do khi từ chối hoặc yêu cầu sửa.");
-      return;
-    }
-    await act(async () => {
-      await moderationApi.decide(request, "exercises", id, decision, reason.trim() || undefined);
-      setReason("");
-    });
-  };
+  const decide = (id: string, decision: ModerationDecision, reason?: string) =>
+    act(() => moderationApi.decide(request, "exercises", id, decision, reason));
 
   const columns = useMemo<ColumnDef<AdminExerciseListItem, unknown>[]>(
     () => [
@@ -167,34 +125,13 @@ export function ExercisesPage() {
         description: (row) =>
           `${STATUS_LABELS[row.status as keyof typeof STATUS_LABELS] ?? row.status} · ${row.authorName ?? "không rõ"}`,
         width: "wide",
-        body: (row) => (
-          <>
-            <ExerciseEditor draft={draft} onChange={setDraft} onLoad={loadDraft} row={row} />
-            {row.status === "pending_review" && (
-              <Field hint="Bắt buộc khi từ chối hoặc yêu cầu sửa. Giảng viên sẽ đọc đúng câu này." label="Lý do">
-                <textarea
-                  className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-                  onChange={(event) => setReason(event.target.value)}
-                  value={reason}
-                />
-              </Field>
-            )}
-            <div className="mt-5 border-t pt-4">
-              <p className="mb-2 text-sm font-medium">Xem trước nội dung</p>
-              <ContentPreview item={{ ...row, kind: "exercises" }} />
-            </div>
-          </>
-        ),
+        body: (row) => <ContentPreview item={{ ...row, kind: "exercises" }} />,
         footer: (row) => (
           <>
-            <Button disabled={busy || draft?.id !== row.id} onClick={() => void act(() => saveDraft(row.id))} variant="outline">
-              <Save aria-hidden="true" className="size-4" />
-              Lưu
-            </Button>
             {row.status !== "published" && (
               <ConfirmButton
                 confirmLabel="Xoá bài code"
-                description={`Xoá vĩnh viễn "${row.title}". Chỉ xoá được vì bài chưa công khai — nếu đã từng công khai, hãy dùng Gỡ (lưu trữ) thay vì xoá.`}
+                description={`Xoá vĩnh viễn "${row.title}". Chỉ xoá được vì bài chưa công khai — nếu đã từng công khai, hãy dùng Thu hồi thay vì xoá.`}
                 onConfirm={() => act(() => exercisesApi.remove(request, row.id))}
                 title="Xoá bài code này?"
                 variant="outline"
@@ -205,14 +142,21 @@ export function ExercisesPage() {
             )}
             {row.status === "pending_review" && (
               <>
-                <Button disabled={busy} onClick={() => void decide(row.id, "request_changes")} variant="outline">
-                  <PencilLine aria-hidden="true" className="size-4" />
-                  Yêu cầu sửa
-                </Button>
-                <Button disabled={busy} onClick={() => void decide(row.id, "reject")} variant="ghost">
+                <RejectDialogButton
+                  decisions={[
+                    { value: "request_changes", label: "Yêu cầu sửa" },
+                    { value: "reject", label: "Từ chối" },
+                  ]}
+                  description="Tác giả sẽ nhận được đúng lý do này."
+                  disabled={busy}
+                  onConfirm={(decision, reason) => decide(row.id, decision as ModerationDecision, reason)}
+                  placeholder="Vì sao cần sửa hoặc từ chối?"
+                  title="Từ chối / yêu cầu sửa bài code"
+                  variant="ghost"
+                >
                   <XCircle aria-hidden="true" className="size-4" />
-                  Từ chối
-                </Button>
+                  Từ chối / Yêu cầu sửa
+                </RejectDialogButton>
                 <Button disabled={busy} onClick={() => void decide(row.id, "approve")}>
                   <CheckCheck aria-hidden="true" className="size-4" />
                   Duyệt
@@ -220,10 +164,18 @@ export function ExercisesPage() {
               </>
             )}
             {row.status === "published" && (
-              <Button disabled={busy} onClick={() => void decide(row.id, "archive")} variant="ghost">
+              <ReasonButton
+                confirmLabel="Thu hồi"
+                description="Bài code sẽ rời khỏi kho công khai. Tác giả sẽ nhận được đúng lý do này."
+                disabled={busy}
+                onConfirm={(reason) => decide(row.id, "archive", reason)}
+                placeholder="Vì sao thu hồi bài code đang công khai này?"
+                title="Thu hồi bài code đang công khai?"
+                variant="ghost"
+              >
                 <Archive aria-hidden="true" className="size-4" />
-                Gỡ xuống
-              </Button>
+                Thu hồi
+              </ReasonButton>
             )}
             {row.status === "archived" && (
               <Button disabled={busy} onClick={() => void decide(row.id, "restore")} variant="outline">
@@ -277,6 +229,7 @@ export function ExercisesPage() {
         setUpdatedFrom("");
         setUpdatedTo("");
       }}
+      onRefresh={load}
       onSearchChange={setSearch}
       rows={rows}
       search={search}
@@ -302,59 +255,6 @@ function ExerciseCard({ row }: { row: AdminExerciseListItem }) {
         <span>{DIFFICULTY_LABELS[row.difficulty as keyof typeof DIFFICULTY_LABELS] ?? row.difficulty}</span>
         <span>{row.kind}</span>
       </div>
-    </div>
-  );
-}
-
-function ExerciseEditor({
-  row,
-  draft,
-  onChange,
-  onLoad,
-}: {
-  row: AdminExerciseListItem;
-  draft: ExerciseDraft | null;
-  onChange: (draft: ExerciseDraft) => void;
-  onLoad: (id: string) => Promise<void>;
-}) {
-  useEffect(() => {
-    if (draft?.id !== row.id) void onLoad(row.id);
-  }, [row.id, draft?.id, onLoad]);
-
-  if (draft?.id !== row.id) {
-    return <p className="text-sm text-muted-foreground">Đang tải…</p>;
-  }
-
-  return (
-    <div className="grid gap-4">
-      <Field label="Tiêu đề">
-        <input
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, title: event.target.value })}
-          value={draft.title}
-        />
-      </Field>
-      <Field label="Tóm tắt">
-        <textarea
-          className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, summary: event.target.value })}
-          value={draft.summary}
-        />
-      </Field>
-      <Field label="Độ khó">
-        <select
-          aria-label="Độ khó"
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, difficulty: event.target.value })}
-          value={draft.difficulty}
-        >
-          {DIFFICULTIES.map((value) => (
-            <option key={value} value={value}>
-              {DIFFICULTY_LABELS[value]}
-            </option>
-          ))}
-        </select>
-      </Field>
     </div>
   );
 }
