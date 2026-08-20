@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Download } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { Button } from "./button";
@@ -51,6 +51,20 @@ export interface ManagePageProps<TData> {
 
   /** Tên tệp khi xuất CSV, không kèm đuôi. Bỏ trống thì suy từ `title`. */
   exportFilename?: string;
+
+  /**
+   * Nạp lại đúng bảng này. Bỏ trống thì không có nút — màn nào không tự đọc dữ liệu
+   * (danh sách tĩnh) thì một nút làm mới là lời hứa suông.
+   *
+   * Ở ĐÂY chứ không ở từng màn, cùng lý do như nút "Xuất Excel" ngay bên cạnh: mọi bảng
+   * quản trị đều dựng từ component này, nên thêm một bảng mới là có sẵn nút làm mới với
+   * đúng vị trí, đúng trạng thái quay, đúng nhãn — không phải nhớ, và không thể lệch.
+   *
+   * Nơi gọi KHÔNG được xoá bộ lọc hay quay về trang 1: hàm này chỉ đọc lại dữ liệu với
+   * đúng bộ lọc đang có. Người dùng bấm làm mới là để thấy dữ liệu mới của thứ họ đang
+   * xem, không phải để bắt đầu lại.
+   */
+  onRefresh?: () => void | Promise<unknown>;
 
   /** Right-hand drawer contents for the selected row. Absent means rows are not clickable. */
   drawer?: {
@@ -113,6 +127,7 @@ export function ManagePage<TData>({
   loading = false,
   error = null,
   exportFilename,
+  onRefresh,
   drawer,
   view,
 }: ManagePageProps<TData>) {
@@ -135,6 +150,7 @@ export function ManagePage<TData>({
           // Nút xuất nằm ở ĐÂY chứ không phải ở từng màn: mọi màn quản trị đều dựng từ
           // component này, nên thêm một bảng mới là có sẵn nút xuất, không phải nhớ.
           <div className="flex items-center gap-2">
+            {onRefresh && <RefreshButton onRefresh={onRefresh} />}
             <Button
               disabled={rows.length === 0}
               onClick={() => exportTableToCsv(table, exportFilename ?? slugify(title))}
@@ -216,6 +232,37 @@ export function ManagePage<TData>({
         </SideDrawer>
       )}
     </>
+  );
+}
+
+/**
+ * Nút nạp lại một bảng.
+ *
+ * Trạng thái quay là của RIÊNG nút, không lấy từ `loading` của trang: `loading` cũng bật
+ * lên ở lần tải đầu và sau mỗi lần đổi bộ lọc, nên dùng nó ở đây sẽ khiến nút quay tít
+ * vào những lúc người dùng không hề bấm gì.
+ *
+ * Nó cũng không dựng lại bảng: `rows` giữ nguyên trong lúc nạp, nên bảng không nháy trắng
+ * rồi hiện lại. Đó là điểm khác biệt cả tính năng này tồn tại vì nó — F5 cả trang thì
+ * bộ lọc, ô tìm kiếm, trang hiện tại và ngăn chi tiết đang mở đều mất sạch.
+ */
+function RefreshButton({ onRefresh }: { onRefresh: () => void | Promise<unknown> }) {
+  const [busy, setBusy] = useState(false);
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      await onRefresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Button aria-label="Làm mới" disabled={busy} onClick={() => void run()} type="button" variant="outline">
+      <RefreshCw aria-hidden="true" className={`size-4 ${busy ? "animate-spin" : ""}`} />
+      {busy ? "Đang tải…" : "Làm mới"}
+    </Button>
   );
 }
 
