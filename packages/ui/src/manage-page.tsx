@@ -136,6 +136,16 @@ export function ManagePage<TData>({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? (rows.find((row) => getRowId(row) === selectedId) ?? null) : null;
 
+  // Khi dòng đang mở biến khỏi danh sách (bị lọc bởi pendingIds hoặc đã bị xoá thật),
+  // xoá luôn selectedId để drawer không mở lại nếu dòng tái xuất hiện trong mảng rows
+  // (trường hợp pendingIds hết thời gian nhưng rows chưa kịp nạp lại — dòng cũ vẫn nằm
+  // trong state cũ của trang cha).
+  useEffect(() => {
+    if (selectedId && !selected) {
+      setSelectedId(null);
+    }
+  }, [selectedId, selected]);
+
   const table = useDataTable({ data: rows, columns, getRowId, initialSorting, columnVisibility });
 
   // Bảng cao đúng phần màn hình còn lại thay vì cứng 10 dòng — xem `useFittedPageSize`.

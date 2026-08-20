@@ -230,6 +230,8 @@ export default function CoursesPage() {
                         id: row.id,
                         message: `Đã xoá khoá học "${row.title}".`,
                         commit: () => api.courses.remove(row.id),
+                        onCommit: () => void load(),
+                        onError: (error) => toast.error(describe(error)),
                       })
                     }
                     title="Xoá khóa học này?"

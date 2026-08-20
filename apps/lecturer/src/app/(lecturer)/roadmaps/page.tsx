@@ -236,6 +236,8 @@ export default function RoadmapsPage() {
                         id: row.id,
                         message: `Đã xoá lộ trình "${row.title}".`,
                         commit: () => api.roadmaps.remove(row.id),
+                        onCommit: () => void load(),
+                        onError: (error) => toast.error(describe(error)),
                       })
                     }
                     title="Xoá lộ trình này?"

@@ -211,6 +211,15 @@ export default function ExercisesPage() {
                   id: row.id,
                   message: `Đã xoá bài code "${row.title}".`,
                   commit: () => api.exercises.remove(row.id),
+                  onCommit: () => void load(),
+                  onError: (cause) =>
+                    toast.error(
+                      cause instanceof ApiClientError
+                        ? describeApiError(cause)
+                        : cause instanceof Error
+                          ? cause.message
+                          : "Xoá thất bại",
+                    ),
                 })
               }
               onRequestRemoval={(reason) => act(row.id, () => api.exercises.requestRemoval(row.id, reason))}

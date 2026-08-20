@@ -20,6 +20,8 @@ interface PendingDelete {
   message: string;
   expiresAt: number;
   commit: () => void | Promise<unknown>;
+  onCommit?: () => void;
+  onError?: (error: unknown) => void;
 }
 
 interface UndoToastState {
@@ -30,7 +32,15 @@ interface UndoToastState {
    * Bấm "Hoàn tác" trong lúc đó thì `commit` không bao giờ chạy — khác hẳn xác nhận trước
    * khi xoá, đây là cơ hội đổi ý SAU khi đã xác nhận.
    */
-  scheduleDelete: (input: { id: string; message: string; commit: () => void | Promise<unknown> }) => void;
+  scheduleDelete: (input: {
+    id: string;
+    message: string;
+    commit: () => void | Promise<unknown>;
+    /** Chạy SAU KHI `commit` xong — trang gọi `load()` ở đây để bảng không hiện lại dòng cũ. */
+    onCommit?: () => void;
+    /** Chạy khi `commit` thất bại — trang hiện toast lỗi ở đây. */
+    onError?: (error: unknown) => void;
+  }) => void;
 }
 
 const UndoToastContext = createContext<UndoToastState | null>(null);
@@ -51,14 +61,20 @@ export function UndoToastProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const scheduleDelete = useCallback<UndoToastState["scheduleDelete"]>(({ id, message, commit }) => {
+  const scheduleDelete = useCallback<UndoToastState["scheduleDelete"]>(({ id, message, commit, onCommit, onError }) => {
     const expiresAt = Date.now() + DEFAULT_DURATION_MS;
-    setPending((current) => [...current.filter((item) => item.id !== id), { id, message, expiresAt, commit }]);
+    setPending((current) => [...current.filter((item) => item.id !== id), { id, message, expiresAt, commit, onCommit, onError }]);
 
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       timers.current.delete(id);
       setPending((current) => current.filter((item) => item.id !== id));
-      void commit();
+      try {
+        await commit();
+      } catch (error) {
+        onError?.(error);
+      } finally {
+        onCommit?.();
+      }
     }, DEFAULT_DURATION_MS);
     // Gọi lại cùng id (vd. xoá rồi xoá tiếp một dòng khác trùng id do render lại) thì huỷ
     // hẹn giờ cũ trước — nếu không, bản ghi có thể bị xoá hai lần.
