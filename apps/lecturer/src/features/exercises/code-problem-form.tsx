@@ -38,6 +38,7 @@ import {
   type TestCase,
 } from "@codementor/solve";
 import { api } from "@/lib/api";
+import { integer, slug as slugRule, text } from "@codementor/utils";
 
 export interface ExerciseDraft {
   slug: string;
@@ -83,7 +84,7 @@ export function ExerciseBriefForm({ value, onChange, readOnly = false, slugLocke
           title="Thông tin chung"
         />
 
-        <Field htmlFor="title" label="Tiêu đề">
+        <Field error={text(value.title, 200, "Tiêu đề")} htmlFor="title" label="Tiêu đề">
           <input
             className={inputClassName}
             id="title"
@@ -98,6 +99,8 @@ export function ExerciseBriefForm({ value, onChange, readOnly = false, slugLocke
               ? "Đã công khai nên không đổi được — đường dẫn đã phát ra ngoài."
               : "Phần định danh trong đường dẫn. Chỉ đổi được khi chưa công khai."
           }
+          // Slug đã khoá thì không phải lỗi của người đang sửa — đừng tô đỏ thứ họ không đổi được.
+          error={slugLocked ? undefined : slugRule(value.slug)}
           htmlFor="slug"
           label="Slug"
         >
@@ -110,7 +113,12 @@ export function ExerciseBriefForm({ value, onChange, readOnly = false, slugLocke
           />
         </Field>
 
-        <Field htmlFor="summary" label="Tóm tắt" hint="Một dòng hiện ở danh sách.">
+        <Field
+          error={value.summary.trim().length > 500 ? "Tóm tắt tối đa 500 ký tự" : undefined}
+          htmlFor="summary"
+          label="Tóm tắt"
+          hint="Một dòng hiện ở danh sách."
+        >
           <input
             className={inputClassName}
             id="summary"
@@ -135,7 +143,11 @@ export function ExerciseBriefForm({ value, onChange, readOnly = false, slugLocke
             </select>
           </Field>
 
-          <Field htmlFor="estimatedMinutes" label="Thời lượng ước tính (phút)">
+          <Field
+            error={integer(value.estimatedMinutes, "Thời lượng", { min: 1, max: 100000 })}
+            htmlFor="estimatedMinutes"
+            label="Thời lượng ước tính (phút)"
+          >
             <input
               className={inputClassName}
               id="estimatedMinutes"

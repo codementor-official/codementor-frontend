@@ -22,6 +22,7 @@ import { Field, inputClassName, textareaClassName } from "@/components/form/fiel
 import { CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
 import type { CourseListItem } from "@/features/courses/types";
 import { api } from "@/lib/api";
+import { isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
 import {
   CONTENT_STATUS_LABELS,
   CONTENT_STATUS_TONES,
@@ -174,6 +175,19 @@ export default function RoadmapStudioPage() {
   const locked = roadmap.status === "pending_review";
   const patch = (partial: Partial<Draft>) => setDraft({ ...draft, ...partial });
 
+  // Cùng giới hạn mà `UpdateRoadmapDto` áp ở backend — form chặn sớm, backend vẫn là nơi quyết.
+  const errors: Record<string, FieldError> = {
+    title: text(draft.title, 200, "Tiêu đề"),
+    slug: slugRule(draft.slug),
+    shortDescription:
+      draft.shortDescription.trim().length > 500 ? "Mô tả ngắn tối đa 500 ký tự" : undefined,
+    description: draft.description.trim().length > 5000 ? "Mô tả tối đa 5000 ký tự" : undefined,
+    coverImageUrl: url(draft.coverImageUrl, "Ảnh bìa"),
+    prerequisiteNote:
+      draft.prerequisiteNote.trim().length > 1000 ? "Ghi chú tối đa 1000 ký tự" : undefined,
+  };
+  const blocker = isClean(errors) ? undefined : "Còn ô chưa hợp lệ ở thông tin lộ trình";
+
   return (
     <>
     {unsavedDialog}
@@ -193,7 +207,7 @@ export default function RoadmapStudioPage() {
             ) : (
               <>
                 <Button
-                  disabled={saving}
+                  disabled={saving || blocker !== undefined}
                   onClick={() =>
                     run(
                       async () => {
@@ -223,6 +237,7 @@ export default function RoadmapStudioPage() {
                       "Đã lưu",
                     )
                   }
+                  title={blocker}
                   type="button"
                   variant="outline"
                 >
@@ -230,8 +245,9 @@ export default function RoadmapStudioPage() {
                   {saving ? "Đang lưu…" : "Lưu"}
                 </Button>
                 <Button
-                  disabled={saving}
+                  disabled={saving || blocker !== undefined}
                   onClick={() => run(() => api.roadmaps.submit(id), "Đã gửi duyệt")}
+                  title={blocker}
                   type="button"
                 >
                   <Send aria-hidden="true" className="size-4" />
@@ -294,7 +310,8 @@ export default function RoadmapStudioPage() {
             title="Thông tin lộ trình"
           />
 
-          <Field htmlFor="title" label="Tiêu đề">
+          <Field error={errors.title}
+            htmlFor="title" label="Tiêu đề">
             <input
               className={inputClassName}
               id="title"
@@ -309,6 +326,7 @@ export default function RoadmapStudioPage() {
                 ? "Đã công khai nên không đổi được — đường dẫn đã phát ra ngoài."
                 : "Phần định danh trong đường dẫn. Chỉ đổi được khi chưa công khai."
             }
+            error={errors.slug}
             htmlFor="slug"
             label="Slug"
           >
@@ -321,7 +339,8 @@ export default function RoadmapStudioPage() {
             />
           </Field>
 
-          <Field htmlFor="shortDescription" hint="Một dòng hiện ở danh mục." label="Mô tả ngắn">
+          <Field error={errors.shortDescription}
+            htmlFor="shortDescription" hint="Một dòng hiện ở danh mục." label="Mô tả ngắn">
             <input
               className={inputClassName}
               id="shortDescription"
@@ -330,7 +349,8 @@ export default function RoadmapStudioPage() {
             />
           </Field>
 
-          <Field htmlFor="description" hint="Bắt buộc có thì mới gửi duyệt được." label="Mô tả">
+          <Field error={errors.description}
+            htmlFor="description" hint="Bắt buộc có thì mới gửi duyệt được." label="Mô tả">
             <textarea
               className={textareaClassName}
               id="description"
@@ -339,7 +359,8 @@ export default function RoadmapStudioPage() {
             />
           </Field>
 
-          <Field htmlFor="coverImageUrl" hint="http:// hoặc https://" label="Ảnh bìa (URL)">
+          <Field error={errors.coverImageUrl}
+            htmlFor="coverImageUrl" hint="http:// hoặc https://" label="Ảnh bìa (URL)">
             <input
               className={inputClassName}
               id="coverImageUrl"
@@ -349,7 +370,8 @@ export default function RoadmapStudioPage() {
             />
           </Field>
 
-          <Field htmlFor="prerequisiteNote" label="Ghi chú điều kiện tiên quyết">
+          <Field error={errors.prerequisiteNote}
+            htmlFor="prerequisiteNote" label="Ghi chú điều kiện tiên quyết">
             <textarea
               className={textareaClassName}
               id="prerequisiteNote"

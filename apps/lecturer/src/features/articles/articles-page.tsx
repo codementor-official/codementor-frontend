@@ -1,6 +1,6 @@
 "use client";
 
-import { ReviewFlag, ReviewNotice } from "@/components/page/review-notice";
+import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Archive,
@@ -19,7 +19,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { RichTextEditor } from "@codementor/editor";
-import { Button, ManagePage, Modal, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Modal, ReasonButton, Select, StatusBadge } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
 import { api, type Tag } from "@/lib/api";
 import {
@@ -28,6 +28,7 @@ import {
   ARTICLE_STATUS_TONES,
   type ArticleListItem,
 } from "@/features/articles/types";
+import { integer, maxLength } from "@codementor/utils";
 
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
 const timeFormat = new Intl.DateTimeFormat("vi-VN", { timeStyle: "short" });
@@ -299,15 +300,17 @@ export function ArticlesPage() {
                     {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
                   </Button>
                   {row.status === "published" && (
-                    <Button
+                    <ReasonButton
+                      confirmLabel="Gửi yêu cầu"
+                      description="Bài viết vẫn công khai cho tới khi quản trị viên duyệt yêu cầu này. Quản trị viên sẽ đọc được đúng lý do bạn nêu."
                       disabled={busy}
-                      onClick={() => void act(() => api.articles.archive(row.id))}
-                      type="button"
-                      variant="ghost"
+                      onConfirm={(reason) => act(() => api.articles.requestRemoval(row.id, reason))}
+                      placeholder="Vì sao bạn muốn gỡ bài viết này xuống?"
+                      title="Xin gỡ bài viết đang công khai?"
                     >
                       <Archive aria-hidden="true" className="size-4" />
-                      Gỡ xuống
-                    </Button>
+                      Xin gỡ xuống
+                    </ReasonButton>
                   )}
                 </>
               )}
@@ -333,6 +336,7 @@ export function ArticlesPage() {
         getRowId={(row) => row.id}
         loading={loading}
         onClearFilters={() => setStatus("")}
+        onRefresh={load}
         onSearchChange={setSearch}
         rows={rows}
         search={search}
@@ -423,8 +427,14 @@ function Editor({
   return (
     <div className="grid gap-4">
       <ReviewNotice reason={row.rejectionReason} status={row.status} />
+      <RemovalPendingNotice
+        reason={row.rejectionReason}
+        removalRequested={row.status === "published" && row.rejectionReason !== null}
+        status={row.status}
+      />
 
       <Field
+        error={maxLength(draft.excerpt, 500, "Tóm tắt")}
         hint="Bắt buộc mới đăng được. Câu này cũng chính là nội dung thông báo gửi tới người học."
         label="Tóm tắt"
       >
@@ -435,7 +445,7 @@ function Editor({
         />
       </Field>
 
-      <Field label="Điểm rút ra">
+      <Field error={maxLength(draft.takeaway, 500, "Điểm rút ra")} label="Điểm rút ra">
         <textarea
           className="min-h-16 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
           onChange={(event) => onChange({ ...draft, takeaway: event.target.value })}
@@ -465,7 +475,10 @@ function Editor({
         </select>
       </Field>
 
-      <Field label="Thời gian đọc (phút)">
+      <Field
+        error={integer(draft.readMinutes, "Thời gian đọc", { min: 1, max: 1000 })}
+        label="Thời gian đọc (phút)"
+      >
         <input
           className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
           inputMode="numeric"
@@ -490,10 +503,13 @@ function Editor({
 function Field({
   label,
   hint,
+  error,
   children,
 }: {
   label: string;
   hint?: string;
+  /** Lỗi hiện thẳng dưới ô — đó là thứ đang chặn việc lưu, không giấu vào tooltip. */
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -501,6 +517,11 @@ function Field({
       <label className="mb-1.5 block text-sm font-medium">{label}</label>
       {hint && <p className="mb-1.5 text-xs text-muted-foreground">{hint}</p>}
       {children}
+      {error && (
+        <p className="mt-1.5 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

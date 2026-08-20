@@ -38,6 +38,7 @@ import {
   MODE_LABELS,
 } from "@/features/roadmaps/types";
 import { api } from "@/lib/api";
+import { integer, isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
 
 interface Meta {
   slug: string;
@@ -57,6 +58,24 @@ interface Meta {
  */
 function signature(meta: Meta, chapters: DraftChapter[]): string {
   return JSON.stringify([meta, toPayload(chapters)]);
+}
+
+/**
+ * Lỗi của từng ô trong tab "Thông tin khóa học".
+ *
+ * `description` KHÔNG bắt buộc để lưu nhưng bắt buộc để gửi duyệt — đó là luật của
+ * `Course.submit`, và ép nó ngay lúc lưu sẽ chặn cả việc lưu dở một bản nháp. Nên nó
+ * được kiểm riêng ở `submitBlockers` bên dưới.
+ */
+function validateMeta(meta: Meta): Record<string, FieldError> {
+  return {
+    title: text(meta.title, 200, "Tiêu đề"),
+    slug: slugRule(meta.slug),
+    description: meta.description.trim().length > 5000 ? "Mô tả tối đa 5000 ký tự" : undefined,
+    coverImageUrl: url(meta.coverImageUrl, "Ảnh bìa"),
+    prerequisiteNote:
+      meta.prerequisiteNote.trim().length > 1000 ? "Ghi chú tối đa 1000 ký tự" : undefined,
+  };
 }
 
 function toMeta(course: Course): Meta {
@@ -176,6 +195,57 @@ export default function CourseStudioPage() {
   const locked = course.status === "pending_review";
   const patchMeta = (partial: Partial<Meta>) => setMeta({ ...meta, ...partial });
 
+  const metaErrors = validateMeta(meta);
+  const metaValid = isClean(metaErrors);
+  // Bài học cũng phải hợp lệ: cây được ghi trong cùng một lệnh với metadata, nên một bài
+  // thiếu tiêu đề sẽ làm hỏng cả lượt lưu — và thông báo trả về từ backend chỉ nói "bài 2
+  // của chương 1", tức là người soạn phải tự đi tìm.
+  const lessonProblem = chapters.flatMap((chapter, chapterIndex) =>
+    chapter.lessons.flatMap((lesson, lessonIndex) => {
+      const where = `Chương ${chapterIndex + 1} · Bài ${lessonIndex + 1}`;
+      const problem =
+        text(lesson.title, 200, `Tiêu đề bài ở ${where}`) ??
+        integer(lesson.durationMinutes, `Thời lượng ở ${where}`, { min: 1, max: 100000 });
+      return problem ? [problem] : [];
+    }),
+  )[0];
+  const chapterProblem = chapters.flatMap((chapter, chapterIndex) => {
+    const problem = text(chapter.title, 200, `Tiêu đề chương ${chapterIndex + 1}`);
+    return problem ? [problem] : [];
+  })[0];
+
+  const blocker = metaValid ? (chapterProblem ?? lessonProblem) : "Còn ô chưa hợp lệ ở tab “Thông tin khóa học”";
+
+  // Metadata trước, cây sau: cây trả về đã kèm số chương/bài do trigger cập nhật, nên
+  // nó phải là câu trả lời cuối cùng. Dùng chung cho nút "Lưu" và `ensureLessonId`.
+  const saveAll = async (): Promise<Course> => {
+    await api.courses.update(id, {
+      ...(meta.slug !== course.slug ? { slug: meta.slug } : {}),
+      title: meta.title,
+      description: meta.description || null,
+      coverImageUrl: meta.coverImageUrl || null,
+      level: meta.level,
+      progressionMode: meta.progressionMode,
+      prerequisiteNote: meta.prerequisiteNote || null,
+    });
+    return api.courses.saveCurriculum(id, toPayload(chapters));
+  };
+
+  /**
+   * Bài lý thuyết mới tạo chưa có `id` — thân bài lưu ở MongoDB, cần `id` thật trước khi
+   * ghi được. Trước đây người soạn phải TỰ bấm "Lưu" ở đầu trang rồi chọn lại đúng bài mới
+   * viết được; giờ soạn nội dung ngay, và bấm "Lưu nội dung bài" tự lưu cây trước nếu cần.
+   */
+  const ensureLessonId = async (chapterIndex: number, lessonIndex: number): Promise<string> => {
+    const existing = chapters[chapterIndex]?.lessons[lessonIndex]?.id;
+    if (existing) return existing;
+    const saved = await saveAll();
+    apply(saved);
+    const newId = saved.chapters?.[chapterIndex]?.lessons[lessonIndex]?.id;
+    if (!newId) throw new Error("Không lưu được bài học — thử bấm Lưu ở đầu trang.");
+    return newId;
+  };
+
   return (
     <>
     {unsavedDialog}
@@ -195,23 +265,9 @@ export default function CourseStudioPage() {
             ) : (
               <>
                 <Button
-                  disabled={saving}
-                  onClick={() =>
-                    run(async () => {
-                      // Metadata trước, cây sau: cây trả về đã kèm số chương/bài do
-                      // trigger cập nhật, nên nó phải là câu trả lời cuối cùng.
-                      await api.courses.update(id, {
-                        ...(meta.slug !== course.slug ? { slug: meta.slug } : {}),
-                        title: meta.title,
-                        description: meta.description || null,
-                        coverImageUrl: meta.coverImageUrl || null,
-                        level: meta.level,
-                        progressionMode: meta.progressionMode,
-                        prerequisiteNote: meta.prerequisiteNote || null,
-                      });
-                      return api.courses.saveCurriculum(id, toPayload(chapters));
-                    }, "Đã lưu")
-                  }
+                  disabled={saving || blocker !== undefined}
+                  onClick={() => run(saveAll, "Đã lưu")}
+                  title={blocker}
                   type="button"
                   variant="outline"
                 >
@@ -219,14 +275,21 @@ export default function CourseStudioPage() {
                   {saving ? "Đang lưu…" : "Lưu"}
                 </Button>
                 <Button
-                  disabled={saving}
+                  disabled={saving || blocker !== undefined}
                   onClick={() => run(() => api.courses.submit(id), "Đã gửi duyệt")}
+                  title={blocker}
                   type="button"
                 >
                   <Send aria-hidden="true" className="size-4" />
                   {course.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
                 </Button>
               </>
+            )}
+            {/* Nút bị khoá mà không nói vì sao là chỗ người dùng bấm mãi rồi bỏ cuộc. */}
+            {blocker && !locked && (
+              <p className="w-full text-sm text-destructive" role="alert">
+                {blocker}
+              </p>
             )}
           </div>
       }
@@ -275,10 +338,13 @@ export default function CourseStudioPage() {
             <div className="h-full overflow-y-auto p-3">
               <Inspector
                 chapters={chapters}
+                courseId={id}
                 disabled={locked}
+                ensureLessonId={ensureLessonId}
                 exercises={exercises}
                 loadContent={loadContent}
                 onChange={setChapters}
+                progressionMode={meta.progressionMode}
                 saveContent={saveContent}
                 selection={selection}
               />
@@ -295,7 +361,8 @@ export default function CourseStudioPage() {
               title="Thông tin khóa học"
             />
 
-            <Field htmlFor="title" label="Tiêu đề">
+            <Field error={metaErrors.title}
+              htmlFor="title" label="Tiêu đề">
               <input
                 className={inputClassName}
                 id="title"
@@ -310,6 +377,7 @@ export default function CourseStudioPage() {
                   ? "Đã công khai nên không đổi được."
                   : "Phần định danh trong đường dẫn."
               }
+              error={metaErrors.slug}
               htmlFor="slug"
               label="Slug"
             >
@@ -322,7 +390,8 @@ export default function CourseStudioPage() {
               />
             </Field>
 
-            <Field htmlFor="description" hint="Bắt buộc có để gửi duyệt." label="Mô tả">
+            <Field error={metaErrors.description}
+              htmlFor="description" hint="Bắt buộc có để gửi duyệt." label="Mô tả">
               <textarea
                 className={textareaClassName}
                 id="description"
@@ -331,7 +400,8 @@ export default function CourseStudioPage() {
               />
             </Field>
 
-            <Field htmlFor="coverImageUrl" hint="http:// hoặc https://" label="Ảnh bìa (URL)">
+            <Field error={metaErrors.coverImageUrl}
+              htmlFor="coverImageUrl" hint="http:// hoặc https://" label="Ảnh bìa (URL)">
               <input
                 className={inputClassName}
                 id="coverImageUrl"
@@ -341,7 +411,8 @@ export default function CourseStudioPage() {
               />
             </Field>
 
-            <Field htmlFor="prerequisiteNote" label="Ghi chú điều kiện tiên quyết">
+            <Field error={metaErrors.prerequisiteNote}
+              htmlFor="prerequisiteNote" label="Ghi chú điều kiện tiên quyết">
               <textarea
                 className={textareaClassName}
                 id="prerequisiteNote"
