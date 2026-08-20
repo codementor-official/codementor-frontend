@@ -418,20 +418,7 @@ export default function RoadmapStudioPage() {
             </select>
           </Field>
 
-          <Field htmlFor="progressionMode" label="Cách mở khóa">
-            <select
-              className={inputClassName}
-              id="progressionMode"
-              onChange={(event) => patch({ progressionMode: event.target.value })}
-              value={draft.progressionMode}
-            >
-              {MODES.map((value) => (
-                <option key={value} value={value}>
-                  {MODE_LABELS[value]}
-                </option>
-              ))}
-            </select>
-          </Field>
+
         </Card>
 
           <div className="lg:col-span-3">

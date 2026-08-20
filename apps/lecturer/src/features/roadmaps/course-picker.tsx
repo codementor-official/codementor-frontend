@@ -97,15 +97,6 @@ export function PickedCourses({ picked, onChange, disabled }: Omit<Props, "avail
                     onRemove={() =>
                       onChange(picked.filter((item) => item.courseId !== course.courseId))
                     }
-                    onToggleOptional={() =>
-                      onChange(
-                        picked.map((item) =>
-                          item.courseId === course.courseId
-                            ? { ...item, isOptional: !item.isOptional }
-                            : item,
-                        ),
-                      )
-                    }
                   />
                 ))}
               </ol>
@@ -237,13 +228,11 @@ function SortablePicked({
   index,
   disabled,
   onRemove,
-  onToggleOptional,
 }: {
   course: PickedCourse;
   index: number;
   disabled?: boolean;
   onRemove: () => void;
-  onToggleOptional: () => void;
 }) {
   const { setNodeRef, style, handleProps, className, dropEdge } = useSortableRow({
     id: course.courseId,
@@ -275,16 +264,6 @@ function SortablePicked({
         </p>
       </div>
 
-      <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-        <input
-          checked={course.isOptional}
-          className="size-3.5 accent-primary"
-          disabled={disabled}
-          onChange={onToggleOptional}
-          type="checkbox"
-        />
-        tùy chọn
-      </label>
 
       {/* Lộ trình chỉ gửi duyệt được khi mọi khóa học đã công khai — hiện trạng thái
           ngay ở đây để tác giả thấy vướng chỗ nào trước khi bấm gửi. */}
