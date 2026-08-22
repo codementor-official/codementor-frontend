@@ -683,7 +683,7 @@ export default function CourseStudioPage() {
             </Field>
           </Card>
 
-          <div className="lg:col-span-3">
+          <div className="mt-6 border-t border-border pt-6 lg:col-span-3">
             <DangerZone
               actionLabel="Xoá khóa học này"
               confirmDescription={`Khóa học “${meta.title || course.slug}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Có vài giây để hoàn tác sau khi xác nhận.`}

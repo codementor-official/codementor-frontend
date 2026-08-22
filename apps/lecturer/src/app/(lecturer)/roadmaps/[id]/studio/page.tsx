@@ -421,7 +421,7 @@ export default function RoadmapStudioPage() {
 
         </Card>
 
-          <div className="lg:col-span-3">
+          <div className="mt-6 border-t border-border pt-6 lg:col-span-3">
             <DangerZone
               actionLabel="Xoá lộ trình này"
               confirmDescription={`Lộ trình “${draft.title || roadmap.slug}” sẽ bị xoá khỏi hệ thống cùng danh sách khóa học bên trong. Bản thân các khóa học vẫn còn. Có vài giây để hoàn tác sau khi xác nhận.`}

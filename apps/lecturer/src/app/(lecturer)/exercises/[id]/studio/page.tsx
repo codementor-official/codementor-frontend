@@ -208,7 +208,7 @@ export default function ExerciseStudioPage() {
               value={draft}
             />
 
-            <div className="mt-4">
+            <div className="mt-6 border-t border-border pt-6">
               <DangerZone
                 actionLabel="Xoá bài này"
                 confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}
