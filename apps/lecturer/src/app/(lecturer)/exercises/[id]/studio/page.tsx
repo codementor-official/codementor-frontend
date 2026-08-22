@@ -11,6 +11,7 @@ import {
   PageHeader,
   ResizeHandle,
   StatusBadge,
+  buttonClassName,
   useResolvedTheme,
   useToast,
   useUndoableDelete,
@@ -148,10 +149,7 @@ export default function ExerciseStudioPage() {
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-muted"
-              href={`/exercises/${id}/solve`}
-            >
+            <Link className={buttonClassName("outline")} href={`/exercises/${id}/solve`}>
               <Play aria-hidden="true" className="size-4" />
               Giải thử
             </Link>

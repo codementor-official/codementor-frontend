@@ -5,7 +5,7 @@ export { Breadcrumb } from "./breadcrumb";
 export type { BreadcrumbItem } from "./breadcrumb";
 export { breadcrumbTrail } from "./breadcrumb-trail";
 export type { RouteMeta } from "./breadcrumb-trail";
-export { Button } from "./button";
+export { Button, buttonClassName } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
 export { ConfirmButton } from "./confirm-button";
 export { DashboardShell } from "./dashboard-shell";

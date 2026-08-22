@@ -19,7 +19,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { RichTextEditor } from "@codementor/editor";
-import { Button, ManagePage, Modal, ReasonButton, Select, StatusBadge } from "@codementor/ui";
+import { Button, ManagePage, Modal, ReasonButton, Select, StatusBadge, buttonClassName } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
 import { api, type Tag } from "@/lib/api";
 import {
@@ -249,12 +249,7 @@ export function ArticlesPage() {
                 Xem trước
               </Button>
               {row.status === "published" && (
-                <a
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                  href={`${CLIENT_URL}/articles/${row.slug}`}
-                  rel="noreferrer"
-                  target="_blank"
-                >
+                <a className={buttonClassName("outline")} href={`${CLIENT_URL}/articles/${row.slug}`} rel="noreferrer" target="_blank">
                   <ExternalLink aria-hidden="true" className="size-4" />
                   Xem trên client
                 </a>

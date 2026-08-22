@@ -33,6 +33,7 @@ import {
   ReasonButton,
   Select,
   StatusBadge,
+  buttonClassName,
   useToast,
   useUndoableDelete,
 } from "@codementor/ui";
@@ -484,19 +485,13 @@ function ExerciseDrawerActions({
           {row.status !== "published" && (
             <DeleteExerciseButton busy={busy} onRemove={onRemove} row={row} />
           )}
-          <Link
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground"
-            href={`/exercises/${row.id}/studio`}
-          >
+          <Link className={buttonClassName()} href={`/exercises/${row.id}/studio`}>
             <Pencil aria-hidden="true" className="size-4" /> Mở studio
           </Link>
         </>
       )}
       {!isMine && (
-        <Link
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium"
-          href={`/exercises/${row.id}/solve`}
-        >
+        <Link className={buttonClassName("outline")} href={`/exercises/${row.id}/solve`}>
           <FlaskConical aria-hidden="true" className="size-4" /> Xem & giải thử
         </Link>
       )}

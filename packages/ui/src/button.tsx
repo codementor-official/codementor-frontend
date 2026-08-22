@@ -23,6 +23,19 @@ const sizeClasses: Record<ButtonSize, string> = {
   md: "h-9 px-3 text-sm",
 };
 
+/**
+ * Các class mà `Button` vẽ ra, dùng lại cho chỗ hiếm hoi cần TRÔNG GIỐNG một nút mà không
+ * PHẢI là một `<button>` — ví dụ `<Link>` điều hướng sang trang khác. Luôn khớp với `Button`
+ * vì `Button` gọi thẳng hàm này, không phải hai bảng class riêng dễ trôi dần.
+ */
+export function buttonClassName(
+  variant: ButtonVariant = "default",
+  size: ButtonSize = "md",
+  className = "",
+): string {
+  return `inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+}
+
 export function Button({
   className = "",
   type = "button",
@@ -30,11 +43,5 @@ export function Button({
   size = "md",
   ...props
 }: ButtonProps) {
-  return (
-    <button
-      className={`inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
-      type={type}
-      {...props}
-    />
-  );
+  return <button className={buttonClassName(variant, size, className)} type={type} {...props} />;
 }

@@ -339,14 +339,9 @@ function DragPreview({ activeId, chapters }: { activeId: string; chapters: Draft
 
 function MenuItem({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return (
-    <button
-      className="flex h-8 w-full items-center rounded-md px-2 text-left text-sm hover:bg-muted"
-      onClick={onClick}
-      role="menuitem"
-      type="button"
-    >
+    <Button className="w-full justify-start" onClick={onClick} role="menuitem" size="sm" variant="ghost">
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -402,18 +397,18 @@ function SortableChapter({
         >
           <GripVertical aria-hidden="true" className="size-4" />
         </button>
-        <button
+        <Button
           aria-label={collapsed ? "Mở chương" : "Thu gọn chương"}
-          className="text-muted-foreground hover:text-foreground"
           onClick={() => onToggle(chapter.key)}
-          type="button"
+          size="sm"
+          variant="ghost"
         >
           {collapsed ? (
             <ChevronRight aria-hidden="true" className="size-4" />
           ) : (
             <ChevronDown aria-hidden="true" className="size-4" />
           )}
-        </button>
+        </Button>
         <button
           className="min-w-0 flex-1 truncate text-left text-sm font-medium"
           onClick={() => onSelect({ kind: "chapter", chapterKey: chapter.key })}
@@ -422,15 +417,16 @@ function SortableChapter({
           {index + 1}. {chapter.title || "Chương chưa đặt tên"}
         </button>
         <span className="shrink-0 text-xs text-muted-foreground">{chapter.lessons.length} bài</span>
-        <button
+        <Button
           aria-label="Xoá chương"
-          className="shrink-0 text-muted-foreground hover:text-destructive"
+          className="shrink-0"
           disabled={disabled}
           onClick={() => onRemoveChapter(chapter.key)}
-          type="button"
+          size="sm"
+          variant="danger"
         >
           <Trash2 aria-hidden="true" className="size-3.5" />
-        </button>
+        </Button>
       </div>
 
       {!collapsed && (
@@ -452,14 +448,10 @@ function SortableChapter({
               />
             ))}
             <li className="px-6 pt-1">
-              <button
-                className="text-xs text-muted-foreground hover:text-foreground"
-                disabled={disabled}
-                onClick={() => onAddLesson(chapter.key, "article")}
-                type="button"
-              >
-                + Thêm bài
-              </button>
+              <Button disabled={disabled} onClick={() => onAddLesson(chapter.key, "article")} size="sm" variant="ghost">
+                <Plus aria-hidden="true" className="size-3.5" />
+                Thêm bài
+              </Button>
             </li>
           </ChapterDropZone>
         </SortableContext>
@@ -577,15 +569,16 @@ function SortableLesson({
           {lesson.prerequisites.lessonIds.length}
         </span>
       )}
-      <button
+      <Button
         aria-label="Xoá bài"
-        className="shrink-0 text-muted-foreground hover:text-destructive"
+        className="shrink-0"
         disabled={disabled}
         onClick={() => onRemove(chapterKey, lesson.key)}
-        type="button"
+        size="sm"
+        variant="danger"
       >
         <Trash2 aria-hidden="true" className="size-3.5" />
-      </button>
+      </Button>
     </li>
   );
 }
