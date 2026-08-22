@@ -6,6 +6,7 @@ import { Info, Save, Send, Tags, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import {
+  BreadcrumbTitle,
   Button,
   Card,
   PageHeader,
@@ -191,6 +192,7 @@ export default function RoadmapStudioPage() {
   return (
     <>
     {unsavedDialog}
+    <BreadcrumbTitle slug={id} title={draft.title || roadmap.slug} />
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">

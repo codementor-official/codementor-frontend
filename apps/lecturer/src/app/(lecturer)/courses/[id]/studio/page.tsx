@@ -6,6 +6,7 @@ import { Info, Save, Send, Tags, TriangleAlert, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import {
+  BreadcrumbTitle,
   Button,
   Card,
   Modal,
@@ -406,6 +407,7 @@ export default function CourseStudioPage() {
   return (
     <>
     {unsavedDialog}
+    <BreadcrumbTitle slug={id} title={meta.title || course.slug} />
     <Modal
       description={
         pendingDraft

@@ -7,6 +7,7 @@ import { Play, Save, Send, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import {
+  BreadcrumbTitle,
   Button,
   PageHeader,
   ResizeHandle,
@@ -146,6 +147,7 @@ export default function ExerciseStudioPage() {
   return (
     <>
     {unsavedDialog}
+    <BreadcrumbTitle slug={id} title={draft.title || exercise.slug} />
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">
