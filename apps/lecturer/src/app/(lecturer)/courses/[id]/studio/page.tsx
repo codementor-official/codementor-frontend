@@ -33,14 +33,7 @@ import {
   type LessonContent,
 } from "@/features/courses/types";
 import type { ExerciseListItem } from "@codementor/solve";
-import {
-  CONTENT_STATUS_LABELS,
-  CONTENT_STATUS_TONES,
-  LEVELS,
-  LEVEL_LABELS,
-  MODES,
-  MODE_LABELS,
-} from "@/features/roadmaps/types";
+import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@/features/roadmaps/types";
 import { api } from "@/lib/api";
 import { integer, isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
 
@@ -285,6 +278,11 @@ export default function CourseStudioPage() {
 
   // Metadata trước, cây sau: cây trả về đã kèm số chương/bài do trigger cập nhật, nên
   // nó phải là câu trả lời cuối cùng. Dùng chung cho nút "Lưu" và `ensureLessonId`.
+  //
+  // Một lượt lưu là đủ: "cho học trước" chỉ là một cờ boolean trên từng bài, không cần
+  // id thật ở đầu nào cả (khác điều kiện mở khoá tự chọn trước đây, vốn phải trỏ tới id
+  // bài khác nên một bài mới tạo trong CHÍNH lượt lưu này phải chờ lượt thứ hai mới có id
+  // để trỏ tới). Backend tự suy toàn bộ cạnh phụ thuộc từ thứ tự chương/bài.
   const saveAll = async (): Promise<Course> => {
     await api.courses.update(id, {
       ...(meta.slug !== course.slug ? { slug: meta.slug } : {}),
@@ -295,32 +293,7 @@ export default function CourseStudioPage() {
       progressionMode: meta.progressionMode,
       prerequisiteNote: meta.prerequisiteNote || null,
     });
-    const firstPass = await api.courses.saveCurriculum(id, toPayload(chapters));
-
-    // Một bài mới tạo trong CHÍNH lượt lưu này chưa có `id` lúc `toPayload` ở trên chạy,
-    // nên nó bỏ qua điều kiện mở khoá của bài đó — backend đòi id thật ở cả hai đầu cạnh
-    // (xem `toPayload`). Bài đó giờ đã có id thật từ `firstPass`; ghép điều kiện người
-    // soạn đã chọn (còn nguyên trong `chapters`, đúng VỊ TRÍ vì lượt lưu trên không sắp
-    // xếp lại gì) vào cây vừa có id rồi lưu thêm một lượt, để không âm thầm mất nó.
-    const withFreshIds = toDraft(firstPass.chapters ?? []);
-    const hasNewPrereqs = chapters.some((chapter, chapterIndex) =>
-      chapter.lessons.some(
-        (lesson, lessonIndex) =>
-          lesson.id === undefined &&
-          lesson.prerequisites.lessonIds.length > 0 &&
-          withFreshIds[chapterIndex]?.lessons[lessonIndex]?.id !== undefined,
-      ),
-    );
-    if (!hasNewPrereqs) return firstPass;
-
-    const merged = withFreshIds.map((chapter, chapterIndex) => ({
-      ...chapter,
-      lessons: chapter.lessons.map((lesson, lessonIndex) => ({
-        ...lesson,
-        prerequisites: chapters[chapterIndex]?.lessons[lessonIndex]?.prerequisites ?? lesson.prerequisites,
-      })),
-    }));
-    return api.courses.saveCurriculum(id, toPayload(merged));
+    return api.courses.saveCurriculum(id, toPayload(chapters));
   };
 
   /**
@@ -526,7 +499,6 @@ export default function CourseStudioPage() {
                 loadContent={loadContent}
                 onChange={setChapters}
                 onContentBlockerChange={setContentBlocker}
-                progressionMode={meta.progressionMode}
                 saveContent={saveContent}
                 selection={selection}
               />
@@ -626,18 +598,21 @@ export default function CourseStudioPage() {
               </select>
             </Field>
 
-            <Field htmlFor="progressionMode" label="Cách mở khóa">
+            <Field
+              hint="Tuần tự: bài mở lần lượt theo thứ tự, trừ bài đánh dấu “Cho học trước”. Tự do: học viên vào bài nào cũng được."
+              htmlFor="progressionMode"
+              label="Cách mở khóa"
+            >
               <select
                 className={inputClassName}
                 id="progressionMode"
                 onChange={(event) => patchMeta({ progressionMode: event.target.value })}
-                value={meta.progressionMode}
+                // Khóa cũ có thể vẫn ở "linear" (giá trị mặc định trước đây) — cùng ý
+                // nghĩa với "Tuần tự" bây giờ, lưu lần tới sẽ tự ghi lại thành "graph".
+                value={meta.progressionMode === "free" ? "free" : "graph"}
               >
-                {MODES.map((value) => (
-                  <option key={value} value={value}>
-                    {MODE_LABELS[value]}
-                  </option>
-                ))}
+                <option value="graph">Tuần tự</option>
+                <option value="free">Tự do</option>
               </select>
             </Field>
           </Card>

@@ -18,8 +18,8 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Braces, ChevronDown, ChevronRight, FileText, GripVertical, Lock, PlayCircle, Plus, Trash2 } from "lucide-react";
-import { Button } from "@codementor/ui";
+import { Braces, ChevronDown, ChevronRight, FileText, GripVertical, PlayCircle, Plus, Trash2, Unlock } from "lucide-react";
+import { Button, Modal } from "@codementor/ui";
 import {
   DropIndicator,
   SortableOverlay,
@@ -28,7 +28,6 @@ import {
 } from "@/components/sortable";
 import {
   LESSON_TYPE_LABELS,
-  NO_PREREQUISITES,
   bearsExercise,
   newKey,
   type DraftChapter,
@@ -60,6 +59,11 @@ interface Props {
 export function CurriculumTree({ chapters, onChange, selection, onSelect, disabled }: Props) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState<{ x: number; y: number; chapterKey?: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<
+    | { kind: "chapter"; chapterKey: string; title: string }
+    | { kind: "lesson"; chapterKey: string; lessonKey: string; title: string }
+    | null
+  >(null);
 
   /**
    * While a lesson is in flight, chapters are only candidates when they are empty.
@@ -143,7 +147,7 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
       exerciseId: null,
       exerciseTitle: null,
       contentRef: null,
-      prerequisites: NO_PREREQUISITES,
+      earlyAccess: false,
     };
     onChange(
       chapters.map((chapter) =>
@@ -169,6 +173,33 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
       ),
     );
     onSelect(null);
+  };
+
+  /**
+   * Xoá chương/bài không lùi lại được — kéo thả sai vị trí thì còn "Ctrl+Z" trong đầu
+   * người dùng (bấm lại là về), xoá nhầm thì mất thật. Cả hai đường bấm (nút trên hàng,
+   * mục trong menu chuột phải) đều đi qua đây thay vì gọi thẳng `removeChapter`/
+   * `removeLesson`, nên chỉ có MỘT hộp xác nhận cho cả cây.
+   */
+  const requestRemoveChapter = (chapterKey: string) => {
+    const chapter = chapters.find((item) => item.key === chapterKey);
+    setConfirmDelete({
+      kind: "chapter",
+      chapterKey,
+      title: chapter?.title || "Chương chưa đặt tên",
+    });
+  };
+
+  const requestRemoveLesson = (chapterKey: string, lessonKey: string) => {
+    const lesson = chapters
+      .find((item) => item.key === chapterKey)
+      ?.lessons.find((item) => item.key === lessonKey);
+    setConfirmDelete({
+      kind: "lesson",
+      chapterKey,
+      lessonKey,
+      title: lesson?.title || "Bài chưa đặt tên",
+    });
   };
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -265,8 +296,8 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
                   key={chapter.key}
                   onAddLesson={addLesson}
                   onContextMenu={(x, y) => setMenu({ x, y, chapterKey: chapter.key })}
-                  onRemoveChapter={removeChapter}
-                  onRemoveLesson={removeLesson}
+                  onRemoveChapter={requestRemoveChapter}
+                  onRemoveLesson={requestRemoveLesson}
                   onSelect={onSelect}
                   onToggle={toggle}
                   selection={selection}
@@ -301,12 +332,46 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
                 <MenuItem onClick={() => addLesson(menu.chapterKey!, "exercise")}>
                   Thêm ô bài code
                 </MenuItem>
-                <MenuItem onClick={() => removeChapter(menu.chapterKey!)}>Xoá chương này</MenuItem>
+                <MenuItem onClick={() => requestRemoveChapter(menu.chapterKey!)}>
+                  Xoá chương này
+                </MenuItem>
               </>
             )}
           </div>
         </>
       )}
+
+      <Modal
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setConfirmDelete(null)} type="button" variant="outline">
+              Huỷ
+            </Button>
+            <Button
+              onClick={() => {
+                if (!confirmDelete) return;
+                if (confirmDelete.kind === "chapter") removeChapter(confirmDelete.chapterKey);
+                else removeLesson(confirmDelete.chapterKey, confirmDelete.lessonKey);
+                setConfirmDelete(null);
+              }}
+              type="button"
+              variant="danger"
+            >
+              Xoá
+            </Button>
+          </div>
+        }
+        onClose={() => setConfirmDelete(null)}
+        open={confirmDelete !== null}
+        title={confirmDelete?.kind === "chapter" ? "Xoá chương này?" : "Xoá bài này?"}
+        width="sm"
+      >
+        <p className="text-sm text-muted-foreground">
+          {confirmDelete?.kind === "chapter"
+            ? `Chương "${confirmDelete.title}" và toàn bộ bài bên trong sẽ bị xoá. Không hoàn tác được.`
+            : `Bài "${confirmDelete?.title}" sẽ bị xoá. Không hoàn tác được.`}
+        </p>
+      </Modal>
     </div>
   );
 }
@@ -417,16 +482,15 @@ function SortableChapter({
           {index + 1}. {chapter.title || "Chương chưa đặt tên"}
         </button>
         <span className="shrink-0 text-xs text-muted-foreground">{chapter.lessons.length} bài</span>
-        <Button
+        <button
           aria-label="Xoá chương"
-          className="shrink-0"
+          className="shrink-0 text-muted-foreground hover:text-destructive"
           disabled={disabled}
           onClick={() => onRemoveChapter(chapter.key)}
-          size="sm"
-          variant="danger"
+          type="button"
         >
           <Trash2 aria-hidden="true" className="size-3.5" />
-        </Button>
+        </button>
       </div>
 
       {!collapsed && (
@@ -556,29 +620,27 @@ function SortableLesson({
           {LESSON_TYPE_LABELS[lesson.type]}
         </span>
       </button>
-      {/* Điều kiện mở khoá hiện ngay trên CÂY, không chỉ trong panel bên phải: nếu phải
-        * bấm vào từng bài mới biết bài nào khoá bài nào thì cả đồ thị phụ thuộc là thứ
-        * không ai nhìn thấy, và người soạn không có cách nào kiểm lại tổng thể. */}
-      {lesson.prerequisites.lessonIds.length > 0 && (
+      {/* Ngoại lệ hiện ngay trên CÂY, không chỉ trong panel bên phải: đa số bài giờ đây
+        * đều bị gác tuần tự ngầm định, nên đáng chú ý là bài nào KHÔNG bị gác — không
+        * phải liệt kê từng điều kiện như trước. */}
+      {lesson.earlyAccess && (
         <span
           className="flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
-          title={`Mở sau khi hoàn thành ${lesson.prerequisites.rule === "ALL" ? "tất cả" : "1 trong"} ${lesson.prerequisites.lessonIds.length} bài`}
+          title="Cho học trước — mở ngay, không cần hoàn thành bài/chương liền trước"
         >
-          <Lock aria-hidden="true" className="size-3" />
-          {lesson.prerequisites.rule === "ALL" ? "cần" : "1 trong"}{" "}
-          {lesson.prerequisites.lessonIds.length}
+          <Unlock aria-hidden="true" className="size-3" />
+          học trước
         </span>
       )}
-      <Button
+      <button
         aria-label="Xoá bài"
-        className="shrink-0"
+        className="shrink-0 text-muted-foreground hover:text-destructive"
         disabled={disabled}
         onClick={() => onRemove(chapterKey, lesson.key)}
-        size="sm"
-        variant="danger"
+        type="button"
       >
         <Trash2 aria-hidden="true" className="size-3.5" />
-      </Button>
+      </button>
     </li>
   );
 }

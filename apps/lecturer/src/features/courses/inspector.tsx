@@ -6,10 +6,8 @@ import {
   Check,
   FileText,
   Info,
-  Lock,
   MousePointerClick,
   Search,
-  TriangleAlert,
   Upload,
   Video,
 } from "lucide-react";
@@ -21,13 +19,11 @@ import { Field, inputClassName, textareaClassName } from "@/components/form/fiel
 import { InfoHint } from "@/components/form/info-hint";
 import {
   LESSON_TYPE_LABELS,
-  PREREQUISITE_RULE_LABELS,
   SELECTABLE_LESSON_TYPES,
   bearsExercise,
   type DraftChapter,
   type DraftLesson,
   type LessonContent,
-  type PrerequisiteRule,
   type VideoUploadConfig,
 } from "@/features/courses/types";
 import { api } from "@/lib/api";
@@ -40,30 +36,6 @@ import {
   type ExerciseListItem,
 } from "@codementor/solve";
 
-/** Một bài khác trong cùng khóa học, đã đánh số sẵn để chọn làm điều kiện. */
-export interface LessonRef {
-  id: string;
-  label: string;
-}
-
-/**
- * Mọi bài ĐÃ LƯU trong khóa, đánh số theo đúng cách học viên nhìn thấy ở mục lục.
- *
- * Bài chưa lưu không có mặt: cạnh điều kiện cần id thật ở cả hai đầu, và chọn được một
- * bài chưa tồn tại chỉ dẫn tới một lỗi lúc bấm Lưu.
- */
-function lessonRefs(chapters: DraftChapter[], exceptKey: string): LessonRef[] {
-  return chapters.flatMap((chapter, chapterIndex) =>
-    chapter.lessons
-      .map((lesson, lessonIndex) => ({ lesson, lessonIndex }))
-      .filter(({ lesson }) => lesson.id !== undefined && lesson.key !== exceptKey)
-      .map(({ lesson, lessonIndex }) => ({
-        id: lesson.id as string,
-        label: `Chương ${chapterIndex + 1} · Bài ${lessonIndex + 1} — ${lesson.title || "chưa đặt tên"}`,
-      })),
-  );
-}
-
 /** Cho trang cha gọi hàm lưu thân bài đang mở, từ nút "Lưu" chung ở đầu trang. */
 export type ContentSaveRef = { current: ((lessonId: string) => Promise<void>) | null };
 
@@ -74,8 +46,6 @@ interface Props {
   selection: Selection;
   onChange: (chapters: DraftChapter[]) => void;
   disabled?: boolean;
-  /** Điều kiện mở khoá chỉ chạy ở chế độ `graph`; panel cảnh báo khi khóa đang ở chế độ khác. */
-  progressionMode: string;
   /** Bài code để gắn vào ô. Chỉ nạp khi thật sự cần — studio không phải màn duyệt bài. */
   exercises: ExerciseListItem[];
   loadContent: (lessonId: string) => Promise<LessonContent | null>;
@@ -124,19 +94,28 @@ function ToggleRow({
   checked,
   label,
   hint,
+  disabled,
   onChange,
 }: {
   checked: boolean;
   label: string;
   hint?: string;
+  /** Riêng với fieldset bao ngoài: có ô mất tác dụng vì lý do khác (chương đầu tiên,
+   * chương chưa có bài) chứ không phải vì cả trang đang khoá. */
+  disabled?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
     <div className="flex items-center gap-1.5 rounded-lg border px-3 py-2 hover:bg-muted/40">
-      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-sm">
+      <label
+        className={`flex min-w-0 flex-1 items-center gap-2.5 text-sm ${
+          disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+        }`}
+      >
         <input
           checked={checked}
           className="size-4 shrink-0 accent-primary"
+          disabled={disabled}
           onChange={(event) => onChange(event.target.checked)}
           type="checkbox"
         />
@@ -161,7 +140,6 @@ export function Inspector({
   selection,
   onChange,
   disabled,
-  progressionMode,
   exercises,
   loadContent,
   saveContent,
@@ -236,6 +214,26 @@ export function Inspector({
               label="Chương tùy chọn"
               onChange={(checked) => patchChapter({ isOptional: checked })}
             />
+
+            <ToggleRow
+              checked={chapter.lessons[0]?.earlyAccess ?? false}
+              disabled={chapterIndex === 0 || chapter.lessons.length === 0}
+              hint={
+                chapterIndex === 0
+                  ? "Chương đầu tiên luôn mở sẵn, không cần cờ này."
+                  : chapter.lessons.length === 0
+                    ? "Thêm bài vào chương rồi mới đặt được."
+                    : "Học viên vào chương này ngay, không cần hoàn thành chương trước đó."
+              }
+              label="Cho học trước"
+              onChange={(checked) =>
+                patchChapter({
+                  lessons: chapter.lessons.map((lesson, index) =>
+                    index === 0 ? { ...lesson, earlyAccess: checked } : lesson,
+                  ),
+                })
+              }
+            />
           </div>
         </PanelSection>
       </fieldset>
@@ -254,7 +252,6 @@ export function Inspector({
 
   return (
     <LessonInspector
-      candidates={lessonRefs(chapters, lesson.key)}
       chapterIndex={chapterIndex}
       contentSaveRef={contentSaveRef}
       courseId={courseId}
@@ -267,7 +264,6 @@ export function Inspector({
       loadContent={loadContent}
       onContentBlockerChange={onContentBlockerChange}
       onPatch={patchLesson}
-      progressionMode={progressionMode}
       saveContent={saveContent}
     />
   );
@@ -281,8 +277,6 @@ function LessonInspector({
   loadContent,
   saveContent,
   ensureLessonId,
-  candidates,
-  progressionMode,
   chapterIndex,
   lessonIndex,
   courseId,
@@ -296,14 +290,16 @@ function LessonInspector({
   loadContent: (lessonId: string) => Promise<LessonContent | null>;
   saveContent: (lessonId: string, content: LessonContent) => Promise<void>;
   ensureLessonId: () => Promise<string>;
-  candidates: LessonRef[];
-  progressionMode: string;
   chapterIndex: number;
   lessonIndex: number;
   courseId: string;
   contentSaveRef: ContentSaveRef;
   onContentBlockerChange: (blocker: string | undefined) => void;
 }) {
+  // Bài đầu tiên của cả khóa học không có gì đứng trước để yêu cầu — "cho học trước"
+  // không có tác dụng gì với riêng nó. Xem `deriveLessonSources` ở backend.
+  const isFirstLessonOfCourse = chapterIndex === 0 && lessonIndex === 0;
+
   // Ô bài code không có thân bài riêng. Bài lý thuyết thì LUÔN soạn được ngay — kể cả
   // trước khi có `id` thật — chỉ việc NẠP nội dung cũ mới cần đợi id (bài mới thì
   // không có gì để nạp).
@@ -444,7 +440,7 @@ function LessonInspector({
             </Field>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-3">
             <ToggleRow
               checked={lesson.isPreview}
               hint="Bài mở cho cả người chưa ghi danh khóa học — dùng làm bài nếm thử."
@@ -457,22 +453,19 @@ function LessonInspector({
               label="Bài tùy chọn"
               onChange={(checked) => onPatch({ isOptional: checked })}
             />
+            <ToggleRow
+              checked={lesson.earlyAccess}
+              disabled={isFirstLessonOfCourse}
+              hint={
+                isFirstLessonOfCourse
+                  ? "Bài đầu tiên của khóa học luôn mở sẵn, không cần cờ này."
+                  : "Học viên vào bài này ngay, không cần hoàn thành bài liền trước."
+              }
+              label="Cho học trước"
+              onChange={(checked) => onPatch({ earlyAccess: checked })}
+            />
           </div>
         </div>
-      </PanelSection>
-
-      <PanelSection
-        hint="Bài này chỉ mở ra cho học viên sau khi họ hoàn thành những bài được chọn ở đây."
-        icon={Lock}
-        title="Điều kiện mở khoá"
-      >
-        <PrerequisitePicker
-          candidates={candidates}
-          disabled={disabled}
-          onChange={(prerequisites) => onPatch({ prerequisites })}
-          progressionMode={progressionMode}
-          value={lesson.prerequisites}
-        />
       </PanelSection>
 
       {bearsExercise(lesson.type) ? (
@@ -751,117 +744,6 @@ function VideoPlayer({ video }: { video: ResolvedVideo }) {
       src={video.src}
       title="Xem trước video bài học"
     />
-  );
-}
-
-/**
- * Chọn những bài phải hoàn thành trước, và luật gom chúng lại.
- *
- * Hai luật là đủ cho mọi hình dạng đề bài yêu cầu — `Bài 1 → Bài 2 → [3,4,5] → Bài 6`
- * dựng bằng: 2 phụ thuộc 1; 3, 4, 5 mỗi bài phụ thuộc 2; 6 phụ thuộc {3,4,5} luật ALL.
- * Rẽ nhánh song song là hệ quả tự nhiên chứ không cần khai báo riêng: ba bài cùng chỉ
- * phụ thuộc bài 2 thì mở cùng lúc và học thứ tự nào cũng được.
- *
- * Không có ô tìm kiếm: một khóa học có hàng trăm bài thì danh sách này cuộn, nhưng chọn
- * điều kiện là việc nhìn vào MỤC LỤC — thứ tự chương/bài chính là thứ giúp tìm, và một ô
- * lọc sẽ giấu mất bối cảnh đó.
- */
-function PrerequisitePicker({
-  value,
-  candidates,
-  onChange,
-  disabled,
-  progressionMode,
-}: {
-  value: { rule: PrerequisiteRule; lessonIds: string[] };
-  candidates: LessonRef[];
-  onChange: (next: { rule: PrerequisiteRule; lessonIds: string[] }) => void;
-  disabled?: boolean;
-  progressionMode: string;
-}) {
-  const chosen = new Set(value.lessonIds);
-
-  const toggle = (id: string) => {
-    const next = new Set(chosen);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    // Giữ đúng thứ tự mục lục thay vì thứ tự bấm: danh sách hiện ra phải đọc như mục lục.
-    onChange({
-      rule: value.rule,
-      lessonIds: candidates.filter((item) => next.has(item.id)).map((item) => item.id),
-    });
-  };
-
-  // Bài chưa lưu KHÔNG ẩn cả panel đi. Ẩn là cách chắc chắn nhất để người soạn không bao
-  // giờ biết tính năng này tồn tại: bài vừa thêm nào cũng chưa có id, nên lần đầu mở
-  // studio ra họ chỉ thấy một dòng chữ xám. Panel vẫn hiện, chỉ khoá lại và nói rõ vì sao.
-  if (candidates.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
-        Khóa học chưa có bài nào khác đã lưu để làm điều kiện. Thêm bài rồi bấm “Lưu” ở đầu
-        trang, sau đó quay lại đây để chọn.
-      </p>
-    );
-  }
-
-  return (
-    <div className="grid gap-3">
-      {/* Điều kiện chỉ được `fn_lesson_available` đọc ở chế độ graph. Soạn xong mà khóa
-          học đang ở chế độ khác thì nó nằm im — nói ra ngay tại đây, không để người soạn
-          tự phát hiện bằng cách mở bằng tài khoản học viên. */}
-      {progressionMode !== "graph" && (
-        <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
-          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber-600" />
-          <span>
-            Khóa học đang ở chế độ mở khoá{" "}
-            <strong>{progressionMode === "linear" ? "Tuần tự" : "Tự do"}</strong>, nên những
-            điều kiện dưới đây chưa có tác dụng. Đổi sang <strong>Theo phụ thuộc</strong> ở tab
-            “Thông tin khóa học” để dùng.
-          </span>
-        </p>
-      )}
-
-      <Field htmlFor="prerequisite-rule" label="Luật">
-        <select
-          className={inputClassName}
-          id="prerequisite-rule"
-          disabled={disabled}
-          onChange={(event) =>
-            onChange({ rule: event.target.value as PrerequisiteRule, lessonIds: value.lessonIds })
-          }
-          value={value.rule}
-        >
-          {(Object.keys(PREREQUISITE_RULE_LABELS) as PrerequisiteRule[]).map((rule) => (
-            <option key={rule} value={rule}>
-              {PREREQUISITE_RULE_LABELS[rule]}
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      <ul className="grid max-h-72 gap-1.5 overflow-y-auto rounded-lg border p-1.5">
-        {candidates.map((item) => (
-          <li key={item.id}>
-            <label className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-muted/40">
-              <input
-                checked={chosen.has(item.id)}
-                className="size-4 shrink-0 accent-primary"
-                disabled={disabled}
-                onChange={() => toggle(item.id)}
-                type="checkbox"
-              />
-              <span className="min-w-0 truncate">{item.label}</span>
-            </label>
-          </li>
-        ))}
-      </ul>
-
-      <p className="text-sm text-muted-foreground">
-        {chosen.size === 0
-          ? "Chưa có điều kiện — bài này mở ngay từ đầu."
-          : `Mở khi học viên hoàn thành ${value.rule === "ALL" ? "cả" : "ít nhất 1 trong"} ${chosen.size} bài đã chọn.`}
-      </p>
-    </div>
   );
 }
 
