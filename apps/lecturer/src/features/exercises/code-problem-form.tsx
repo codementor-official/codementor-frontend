@@ -707,11 +707,18 @@ export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "l
             {isFunction ? (
               // Không cho sửa: mã khởi tạo phải khớp chính xác chữ ký mà driver sẽ gọi. Sửa
               // được là mở đường cho một bài mà học viên không thể nào giải đúng.
-              <pre className="overflow-x-auto rounded-md border bg-muted/40 p-3 font-mono text-xs">
-                {language.starterCode ||
+              <CodeEditor
+                height={150}
+                language={language.monaco ?? language.id}
+                onChange={() => {}}
+                readOnly
+                theme={theme}
+                value={
+                  language.starterCode ||
                   unsupported[language.id] ||
-                  "// đang sinh từ chữ ký hàm…"}
-              </pre>
+                  "// đang sinh từ chữ ký hàm…"
+                }
+              />
             ) : (
               <CodeEditor
                 height={150}

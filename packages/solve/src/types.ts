@@ -320,3 +320,15 @@ export const FUNCTION_MODE_LANGUAGES = [
 export function supportsFunctionMode(languageId: string): boolean {
   return (FUNCTION_MODE_LANGUAGES as readonly string[]).includes(languageId);
 }
+
+/** Đuôi file hiển thị trên chip tên file. `language.id` không phải lúc nào cũng là đuôi
+ * file — `python` là `.py`, `javascript` là `.js`. Chỉ liệt kê chỗ khác nhau. */
+const FILE_EXTENSIONS: Record<string, string> = {
+  python: "py",
+  javascript: "js",
+  typescript: "ts",
+};
+
+export function fileExtension(languageId: string): string {
+  return FILE_EXTENSIONS[languageId] ?? languageId;
+}
