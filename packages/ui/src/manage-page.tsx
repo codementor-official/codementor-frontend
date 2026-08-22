@@ -66,6 +66,13 @@ export interface ManagePageProps<TData> {
    */
   onRefresh?: () => void | Promise<unknown>;
 
+  /**
+   * Id mở drawer sẵn ngay khi trang tải — dùng khi điều hướng tới từ nơi khác đã biết
+   * trước bản ghi nào cần xem (ví dụ một breadcrumb trỏ về danh sách vì bản ghi không có
+   * trang riêng). Chỉ đọc lúc khởi tạo; đổi giá trị sau đó không tự mở lại drawer.
+   */
+  initialSelectedId?: string | null;
+
   /** Right-hand drawer contents for the selected row. Absent means rows are not clickable. */
   drawer?: {
     title: (row: TData) => string;
@@ -128,12 +135,13 @@ export function ManagePage<TData>({
   error = null,
   exportFilename,
   onRefresh,
+  initialSelectedId = null,
   drawer,
   view,
 }: ManagePageProps<TData>) {
   // Holds the id, not the row. A row object captured here goes stale the moment the
   // list refetches, and the drawer would keep showing values that no longer exist.
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId);
   const selected = selectedId ? (rows.find((row) => getRowId(row) === selectedId) ?? null) : null;
 
   // Khi dòng đang mở biến khỏi danh sách (bị lọc bởi pendingIds hoặc đã bị xoá thật),

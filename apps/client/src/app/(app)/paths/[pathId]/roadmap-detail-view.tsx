@@ -2,13 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Clock, Loader2, Map } from "lucide-react";
+import { Loader2, Map as MapIcon, User } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
+import { EntityCard } from "@/components/entity-card";
 import { api } from "@/lib/api";
-import type { RoadmapDetail } from "@/types/catalogue";
+import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { levelToDifficulty } from "@/lib/catalogue/level";
+import type { CourseDetail, RoadmapDetail } from "@/types/catalogue";
+
+/** Two initials from the title — the backend sends no thumbnail for a course. */
+function tileFor(title: string): string {
+  const words = title.trim().split(/\s+/);
+  return (words[0]?.[0] ?? "?").concat(words[1]?.[0] ?? "").toUpperCase();
+}
 
 const LEVEL_LABEL: Record<string, string> = {
   none: "Chưa có nền",
@@ -29,6 +38,10 @@ const FIELD_LABEL: Record<string, string> = {
 export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
   const [roadmap, setRoadmap] = useState<RoadmapDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Chi tiết từng khóa — thumbnail, tác giả, mô tả — không nằm trong payload lộ trình
+  // (`RoadmapDetail.courses` chỉ có id/vị trí/tiêu đề/thời lượng), nên tải thêm cho mỗi
+  // khóa. `allSettled`: một khóa bị gỡ hay lỗi tải không được kéo sập cả danh sách.
+  const [courseDetails, setCourseDetails] = useState<Map<string, CourseDetail>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +55,24 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
       cancelled = true;
     };
   }, [roadmapId]);
+
+  useEffect(() => {
+    if (!roadmap) return;
+    let cancelled = false;
+    Promise.allSettled(roadmap.courses.map((course) => api.courses.detail(course.courseId))).then(
+      (results) => {
+        if (cancelled) return;
+        const byId = new Map<string, CourseDetail>();
+        results.forEach((result) => {
+          if (result.status === "fulfilled") byId.set(result.value.id, result.value);
+        });
+        setCourseDetails(byId);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [roadmap]);
 
   if (error) {
     return (
@@ -70,7 +101,11 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
   return (
     <div>
       <BreadcrumbTitle slug={roadmapId} title={roadmap.title} />
-      <PageHeader icon={Map} title={roadmap.title} subtitle={roadmap.description ?? undefined} />
+      <PageHeader icon={MapIcon} title={roadmap.title} subtitle={roadmap.shortDescription ?? undefined} />
+
+      {roadmap.description && (
+        <p className="mb-4 max-w-prose text-sm leading-relaxed text-text-muted">{roadmap.description}</p>
+      )}
 
       <StatStrip
         className="mb-5"
@@ -95,29 +130,35 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
             </Card>
           ) : (
             <ul className="flex flex-col gap-3">
-              {courses.map((course) => (
-                <li key={course.courseId}>
-                  <Link href={`/courses/${course.courseId}`} className="block">
-                    <Card interactive className="flex items-center gap-3.5 p-4">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-navy font-mono text-sm font-bold text-on-ink">
-                        {course.position}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-semibold text-navy">{course.title}</h3>
-                        <p className="mt-0.5 flex items-center gap-2 text-2xs text-text-faint">
-                          {course.durationHours !== null && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" /> {course.durationHours} giờ
-                            </span>
-                          )}
-                          {course.isOptional && <span>· Tự chọn</span>}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-text-faint" />
-                    </Card>
-                  </Link>
-                </li>
-              ))}
+              {courses.map((course) => {
+                const detail = courseDetails.get(course.courseId);
+                return (
+                  // Số thứ tự đứng NGOÀI thẻ, không đè lên thumbnail — `eyebrow` của
+                  // EntityCard vốn để trong ảnh bìa, nhưng cùng góc với avatar chữ cái của
+                  // `tile` thì hai nhãn chồng lên nhau trên một banner thấp (`tileHeight="sm"`).
+                  <li key={course.courseId} className="flex items-start gap-3">
+                    <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy font-mono text-xs font-bold text-on-ink">
+                      {course.position}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <EntityCard
+                        tileHeight="sm"
+                        tile={tileFor(course.title)}
+                        coverImage={detail?.coverImageUrl ?? placeholderCoverUrl(course.slug)}
+                        kind={{ icon: User, label: detail?.authorName ?? "CodeMentor" }}
+                        title={course.title}
+                        description={detail?.description ?? "Chưa có mô tả cho khóa học này."}
+                        difficulty={detail ? levelToDifficulty(detail.level) : undefined}
+                        tags={course.isOptional ? ["Tự chọn"] : []}
+                        stats={
+                          course.durationHours !== null ? [{ label: "giờ", value: course.durationHours }] : []
+                        }
+                        href={`/courses/${course.courseId}`}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

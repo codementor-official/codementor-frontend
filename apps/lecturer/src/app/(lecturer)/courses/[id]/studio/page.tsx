@@ -6,6 +6,7 @@ import { Info, Save, Send, Tags, TriangleAlert, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import {
+  BreadcrumbTitle,
   Button,
   Card,
   Modal,
@@ -21,6 +22,7 @@ import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
+import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import { CurriculumTree, type Selection } from "@/features/courses/curriculum-tree";
 import { Inspector, type ContentSaveRef } from "@/features/courses/inspector";
 import {
@@ -31,14 +33,7 @@ import {
   type LessonContent,
 } from "@/features/courses/types";
 import type { ExerciseListItem } from "@codementor/solve";
-import {
-  CONTENT_STATUS_LABELS,
-  CONTENT_STATUS_TONES,
-  LEVELS,
-  LEVEL_LABELS,
-  MODES,
-  MODE_LABELS,
-} from "@/features/roadmaps/types";
+import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@/features/roadmaps/types";
 import { api } from "@/lib/api";
 import { integer, isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
 
@@ -87,47 +82,6 @@ function remapSelection(
   );
   const nextLesson = lessonIndex >= 0 ? nextChapter.lessons[lessonIndex] : undefined;
   return nextLesson ? { kind: "lesson", chapterKey: nextChapter.key, lessonKey: nextLesson.key } : null;
-}
-
-interface StoredDraft {
-  meta: Meta;
-  chapters: DraftChapter[];
-  savedAt: number;
-}
-
-function draftStorageKey(courseId: string): string {
-  return `codementor:lecturer:course-draft:${courseId}`;
-}
-
-/**
- * Khôi phục nháp là tiện ích thêm, không phải đường lưu chính — hỏng ở bất kỳ bước nào
- * (hết dung lượng, trình duyệt chặn localStorage, tab ẩn danh) chỉ có nghĩa là không
- * khôi phục được, đường "Lưu" ở đầu trang vẫn hoạt động bình thường.
- */
-function readDraft(courseId: string): StoredDraft | null {
-  try {
-    const raw = window.localStorage.getItem(draftStorageKey(courseId));
-    return raw ? (JSON.parse(raw) as StoredDraft) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeDraft(courseId: string, meta: Meta, chapters: DraftChapter[]): void {
-  try {
-    const draft: StoredDraft = { meta, chapters, savedAt: Date.now() };
-    window.localStorage.setItem(draftStorageKey(courseId), JSON.stringify(draft));
-  } catch {
-    // ignore — xem readDraft
-  }
-}
-
-function clearDraft(courseId: string): void {
-  try {
-    window.localStorage.removeItem(draftStorageKey(courseId));
-  } catch {
-    // ignore — xem readDraft
-  }
 }
 
 /**
@@ -189,7 +143,7 @@ export default function CourseStudioPage() {
   const contentSaveRef = useRef<ContentSaveRef["current"]>(null);
   // Nháp phát hiện trong localStorage lúc mở trang, còn chờ người dùng chọn khôi phục
   // hay bỏ qua — xem effect nạp khóa học bên dưới và ô thoại render ở cuối component.
-  const [pendingDraft, setPendingDraft] = useState<StoredDraft | null>(null);
+  const [pendingDraft, setPendingDraft] = useState<StoredDraft<{ meta: Meta; chapters: DraftChapter[] }> | null>(null);
 
   const apply = useCallback((loaded: Course) => {
     const nextMeta = toMeta(loaded);
@@ -209,10 +163,10 @@ export default function CourseStudioPage() {
         if (cancelled) return;
         apply(loaded);
         // Nháp cũ trùng với bản vừa tải thì không hỏi gì cả — dọn luôn cho gọn.
-        const draft = readDraft(id);
+        const draft = readDraft<{ meta: Meta; chapters: DraftChapter[] }>(draftStorageKey("course", id));
         if (!draft) return;
-        if (signature(draft.meta, draft.chapters) === signature(toMeta(loaded), toDraft(loaded.chapters ?? []))) {
-          clearDraft(id);
+        if (signature(draft.value.meta, draft.value.chapters) === signature(toMeta(loaded), toDraft(loaded.chapters ?? []))) {
+          clearDraft(draftStorageKey("course", id));
         } else {
           setPendingDraft(draft);
         }
@@ -228,14 +182,11 @@ export default function CourseStudioPage() {
   // Ghi nháp mỗi khi có thay đổi chưa lưu, xoá khi khớp lại bản đã lưu (vừa tải xong,
   // hoặc vừa lưu thành công). Đủ nhanh cho một bản nháp cỡ vài chục bài — không cần
   // debounce cho `localStorage.setItem` ở quy mô này.
-  useEffect(() => {
-    if (!meta) return;
-    if (signature(meta, chapters) === savedSignature) {
-      clearDraft(id);
-      return;
-    }
-    writeDraft(id, meta, chapters);
-  }, [id, meta, chapters, savedSignature]);
+  useDraftAutosave(
+    draftStorageKey("course", id),
+    { meta: meta as Meta, chapters },
+    { ready: meta !== null, dirty: Boolean(meta) && signature(meta as Meta, chapters) !== savedSignature },
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -327,6 +278,11 @@ export default function CourseStudioPage() {
 
   // Metadata trước, cây sau: cây trả về đã kèm số chương/bài do trigger cập nhật, nên
   // nó phải là câu trả lời cuối cùng. Dùng chung cho nút "Lưu" và `ensureLessonId`.
+  //
+  // Một lượt lưu là đủ: "cho học trước" chỉ là một cờ boolean trên từng bài, không cần
+  // id thật ở đầu nào cả (khác điều kiện mở khoá tự chọn trước đây, vốn phải trỏ tới id
+  // bài khác nên một bài mới tạo trong CHÍNH lượt lưu này phải chờ lượt thứ hai mới có id
+  // để trỏ tới). Backend tự suy toàn bộ cạnh phụ thuộc từ thứ tự chương/bài.
   const saveAll = async (): Promise<Course> => {
     await api.courses.update(id, {
       ...(meta.slug !== course.slug ? { slug: meta.slug } : {}),
@@ -337,32 +293,7 @@ export default function CourseStudioPage() {
       progressionMode: meta.progressionMode,
       prerequisiteNote: meta.prerequisiteNote || null,
     });
-    const firstPass = await api.courses.saveCurriculum(id, toPayload(chapters));
-
-    // Một bài mới tạo trong CHÍNH lượt lưu này chưa có `id` lúc `toPayload` ở trên chạy,
-    // nên nó bỏ qua điều kiện mở khoá của bài đó — backend đòi id thật ở cả hai đầu cạnh
-    // (xem `toPayload`). Bài đó giờ đã có id thật từ `firstPass`; ghép điều kiện người
-    // soạn đã chọn (còn nguyên trong `chapters`, đúng VỊ TRÍ vì lượt lưu trên không sắp
-    // xếp lại gì) vào cây vừa có id rồi lưu thêm một lượt, để không âm thầm mất nó.
-    const withFreshIds = toDraft(firstPass.chapters ?? []);
-    const hasNewPrereqs = chapters.some((chapter, chapterIndex) =>
-      chapter.lessons.some(
-        (lesson, lessonIndex) =>
-          lesson.id === undefined &&
-          lesson.prerequisites.lessonIds.length > 0 &&
-          withFreshIds[chapterIndex]?.lessons[lessonIndex]?.id !== undefined,
-      ),
-    );
-    if (!hasNewPrereqs) return firstPass;
-
-    const merged = withFreshIds.map((chapter, chapterIndex) => ({
-      ...chapter,
-      lessons: chapter.lessons.map((lesson, lessonIndex) => ({
-        ...lesson,
-        prerequisites: chapters[chapterIndex]?.lessons[lessonIndex]?.prerequisites ?? lesson.prerequisites,
-      })),
-    }));
-    return api.courses.saveCurriculum(id, toPayload(merged));
+    return api.courses.saveCurriculum(id, toPayload(chapters));
   };
 
   /**
@@ -406,6 +337,7 @@ export default function CourseStudioPage() {
   return (
     <>
     {unsavedDialog}
+    <BreadcrumbTitle href={`/courses?open=${id}`} slug={id} title={meta.title || course.slug} />
     <Modal
       description={
         pendingDraft
@@ -416,7 +348,7 @@ export default function CourseStudioPage() {
         <div className="flex justify-end gap-2">
           <Button
             onClick={() => {
-              clearDraft(id);
+              clearDraft(draftStorageKey("course", id));
               setPendingDraft(null);
             }}
             type="button"
@@ -427,8 +359,8 @@ export default function CourseStudioPage() {
           <Button
             onClick={() => {
               if (!pendingDraft) return;
-              setMeta(pendingDraft.meta);
-              setChapters(pendingDraft.chapters);
+              setMeta(pendingDraft.value.meta);
+              setChapters(pendingDraft.value.chapters);
               setSelection(null);
               setPendingDraft(null);
             }}
@@ -439,7 +371,7 @@ export default function CourseStudioPage() {
         </div>
       }
       onClose={() => {
-        clearDraft(id);
+        clearDraft(draftStorageKey("course", id));
         setPendingDraft(null);
       }}
       open={pendingDraft !== null}
@@ -567,7 +499,6 @@ export default function CourseStudioPage() {
                 loadContent={loadContent}
                 onChange={setChapters}
                 onContentBlockerChange={setContentBlocker}
-                progressionMode={meta.progressionMode}
                 saveContent={saveContent}
                 selection={selection}
               />
@@ -667,23 +598,26 @@ export default function CourseStudioPage() {
               </select>
             </Field>
 
-            <Field htmlFor="progressionMode" label="Cách mở khóa">
+            <Field
+              hint="Tuần tự: bài mở lần lượt theo thứ tự, trừ bài đánh dấu “Cho học trước”. Tự do: học viên vào bài nào cũng được."
+              htmlFor="progressionMode"
+              label="Cách mở khóa"
+            >
               <select
                 className={inputClassName}
                 id="progressionMode"
                 onChange={(event) => patchMeta({ progressionMode: event.target.value })}
-                value={meta.progressionMode}
+                // Khóa cũ có thể vẫn ở "linear" (giá trị mặc định trước đây) — cùng ý
+                // nghĩa với "Tuần tự" bây giờ, lưu lần tới sẽ tự ghi lại thành "graph".
+                value={meta.progressionMode === "free" ? "free" : "graph"}
               >
-                {MODES.map((value) => (
-                  <option key={value} value={value}>
-                    {MODE_LABELS[value]}
-                  </option>
-                ))}
+                <option value="graph">Tuần tự</option>
+                <option value="free">Tự do</option>
               </select>
             </Field>
           </Card>
 
-          <div className="lg:col-span-3">
+          <div className="mt-6 border-t border-border pt-6 lg:col-span-3">
             <DangerZone
               actionLabel="Xoá khóa học này"
               confirmDescription={`Khóa học “${meta.title || course.slug}” sẽ bị xoá cùng toàn bộ chương và bài bên trong. Có vài giây để hoàn tác sau khi xác nhận.`}

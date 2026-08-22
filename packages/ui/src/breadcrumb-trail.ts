@@ -11,6 +11,20 @@ export interface RouteMeta {
   parent?: string;
 }
 
+/**
+ * A dynamic-segment crumb whose destination is NOT the cumulative path.
+ *
+ * The default `href` (built by joining every segment walked so far) assumes a page exists
+ * at that path — true for a list ("/courses") but not for a record's own id, which has no
+ * standalone route, only "/courses/<id>/studio". A page that registers one of these routes
+ * the crumb back to where it actually leads (its list, with the record's drawer open)
+ * instead of a 404.
+ */
+export interface BreadcrumbTitleEntry {
+  label: string;
+  href?: string;
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** A slug with no registered title still has to read as words, not as a URL fragment. */
@@ -39,7 +53,10 @@ export function breadcrumbTrail(
   {
     titles = {},
     transparent = [],
-  }: { titles?: Record<string, string>; transparent?: readonly string[] } = {},
+  }: {
+    titles?: Record<string, string | BreadcrumbTitleEntry>;
+    transparent?: readonly string[];
+  } = {},
 ): BreadcrumbItem[] {
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) return [];
@@ -63,12 +80,14 @@ export function breadcrumbTrail(
   for (const segment of segments.slice(1)) {
     href += `/${segment}`;
     if (skip.has(segment)) continue;
-    const title = titles[segment];
+    const entry = titles[segment];
+    const title = typeof entry === "string" ? entry : entry?.label;
     // An id nobody registered a title for is noise: "Khóa học › 3f2a1c…" tells the reader
     // less than "Khóa học › Studio". Pages that know the real name register it and it
     // shows up here instead.
     if (!title && UUID.test(segment)) continue;
-    items.push({ label: title ?? humanizeSlug(segment), href });
+    const overrideHref = typeof entry === "object" ? entry.href : undefined;
+    items.push({ label: title ?? humanizeSlug(segment), href: overrideHref ?? href });
   }
 
   // The current page is announced, not linked.

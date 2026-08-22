@@ -3,17 +3,59 @@
 import { useToast } from "@codementor/ui";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, PartyPopper } from "lucide-react";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { describeLock, explainLock } from "@/lib/lesson-unlock";
+import { describeLock, explainLock, isLessonLocked, missingRequiredLessons } from "@/lib/lesson-unlock";
 import type { CourseDetail, CourseProgress, LessonContent, LessonProgress } from "@/types/catalogue";
 import { ExerciseLesson } from "./exercise-lesson";
 import { LessonShell, flattenLessons, type FlatLesson } from "./lesson-shell";
 import { TheoryLesson } from "./theory-lesson";
 
 const CODE_LESSON_TYPES = new Set(["exercise", "quiz", "challenge", "project"]);
+
+/**
+ * Nút cuối khóa. Không tự đánh dấu gì — chỉ soi `progressByLesson` (đã tải rồi, không gọi
+ * API mới) xem còn bài bắt buộc nào (không tùy chọn, không thuộc chương tùy chọn) chưa
+ * xong, và nói thẳng ra nếu có. Xong hết thì điều hướng về trang khóa học kèm cờ ăn mừng —
+ * bản thân việc chuyển `enrollment.status` sang "completed" là trigger CSDL lo, không phải
+ * nút này.
+ */
+function CompleteCourseButton({
+  course,
+  courseId,
+  progressByLesson,
+}: {
+  course: CourseDetail;
+  courseId: string;
+  progressByLesson: Map<string, LessonProgress>;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+
+  const finish = () => {
+    const missing = missingRequiredLessons(course, progressByLesson);
+    if (missing.length > 0) {
+      toast.error(
+        `Còn ${missing.length} bài học bắt buộc chưa hoàn thành: ${missing.map((lesson) => lesson.number).join(", ")}`,
+      );
+      return;
+    }
+    router.push(`/courses/${courseId}?completed=1`);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={finish}
+      className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-xs font-semibold text-on-ink transition-colors hover:bg-primary-hover"
+    >
+      <PartyPopper className="h-3.5 w-3.5" /> Hoàn thành khóa học
+    </button>
+  );
+}
 
 export function LessonView({ courseId, lessonId }: { courseId: string; lessonId: string }) {
   const toast = useToast();
@@ -122,9 +164,10 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
   const currentProgress = progressByLesson.get(current.id);
   const enrolled = progress.enrollment !== null && progress.enrollment.status !== "dropped";
 
-  // Locked is decided by the server, so honour it here too rather than rendering a body the
-  // learner is not meant to see yet.
-  if (currentProgress?.isAvailable === false) {
+  // Locked is decided by `isLessonLocked` (server `isAvailable` once enrolled, `isPreview`
+  // otherwise) — honour it here too rather than rendering a body the learner is not meant
+  // to see yet.
+  if (isLessonLocked(current, currentProgress, enrolled)) {
     const reason = explainLock(course, current, progressByLesson);
     return (
       <div>
@@ -170,7 +213,12 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
         lessons={lessons}
         progressByLesson={progressByLesson}
         current={current}
-        footer={null}
+        enrolled={enrolled}
+        footer={
+          enrolled && lessons.length > 0 && lessons[lessons.length - 1].id === current.id ? (
+            <CompleteCourseButton course={course} courseId={courseId} progressByLesson={progressByLesson} />
+          ) : null
+        }
       >
         {CODE_LESSON_TYPES.has(current.type) ? (
           <ExerciseLesson

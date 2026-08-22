@@ -3,14 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Play, Save, Send, Undo2 } from "lucide-react";
+import { Play, Save, Send, TriangleAlert, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import {
+  BreadcrumbTitle,
   Button,
+  Modal,
   PageHeader,
   ResizeHandle,
   StatusBadge,
+  buttonClassName,
   useResolvedTheme,
   useToast,
   useUndoableDelete,
@@ -18,6 +21,7 @@ import {
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
+import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import {
   ExerciseBriefForm,
   ExerciseCodeForm,
@@ -63,6 +67,9 @@ export default function ExerciseStudioPage() {
   const [saving, setSaving] = useState(false);
   const { scheduleDelete } = useUndoableDelete();
   const theme = useResolvedTheme();
+  // Nháp phát hiện trong localStorage lúc mở trang, còn chờ người dùng chọn khôi phục
+  // hay bỏ qua — xem effect nạp bài bên dưới và ô thoại render ở cuối component.
+  const [pendingDraft, setPendingDraft] = useState<StoredDraft<ExerciseDraft> | null>(null);
 
   useEffect(() => {
     // Cờ hủy: rời trang trước khi request về thì response cũ không được ghi đè state
@@ -72,8 +79,17 @@ export default function ExerciseStudioPage() {
       .get(id)
       .then((loaded) => {
         if (cancelled) return;
+        const nextDraft = toDraft(loaded);
         setExercise(loaded);
-        setDraft(toDraft(loaded));
+        setDraft(nextDraft);
+
+        const stored = readDraft<ExerciseDraft>(draftStorageKey("exercise", id));
+        if (!stored) return;
+        if (JSON.stringify(stored.value) === JSON.stringify(nextDraft)) {
+          clearDraft(draftStorageKey("exercise", id));
+        } else {
+          setPendingDraft(stored);
+        }
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(describe(cause));
@@ -121,9 +137,13 @@ export default function ExerciseStudioPage() {
     }, "Đã lưu");
 
   // Trước early return: hook phải chạy ở mọi lần render.
-  const unsavedDialog = useUnsavedGuard(
-    Boolean(exercise && draft) && JSON.stringify(draft) !== JSON.stringify(toDraft(exercise as Exercise)),
-  );
+  const dirty =
+    Boolean(exercise && draft) && JSON.stringify(draft) !== JSON.stringify(toDraft(exercise as Exercise));
+  useDraftAutosave(draftStorageKey("exercise", id), draft as ExerciseDraft, {
+    ready: Boolean(exercise && draft),
+    dirty,
+  });
+  const unsavedDialog = useUnsavedGuard(dirty);
 
   if (error && !exercise) {
     return (
@@ -145,13 +165,55 @@ export default function ExerciseStudioPage() {
   return (
     <>
     {unsavedDialog}
+    <BreadcrumbTitle href={`/exercises?open=${id}`} slug={id} title={draft.title || exercise.slug} />
+    <Modal
+      description={
+        pendingDraft
+          ? `Bản nháp từ ${new Date(pendingDraft.savedAt).toLocaleString("vi-VN")}, chưa kịp lưu vào hệ thống.`
+          : undefined
+      }
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button
+            onClick={() => {
+              clearDraft(draftStorageKey("exercise", id));
+              setPendingDraft(null);
+            }}
+            type="button"
+            variant="outline"
+          >
+            Bỏ qua
+          </Button>
+          <Button
+            onClick={() => {
+              if (!pendingDraft) return;
+              setDraft(pendingDraft.value);
+              setPendingDraft(null);
+            }}
+            type="button"
+          >
+            Khôi phục thay đổi
+          </Button>
+        </div>
+      }
+      onClose={() => {
+        clearDraft(draftStorageKey("exercise", id));
+        setPendingDraft(null);
+      }}
+      open={pendingDraft !== null}
+      title="Phát hiện thay đổi chưa lưu"
+      width="sm"
+    >
+      <p className="flex items-start gap-2.5 text-sm text-muted-foreground">
+        <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+        Trang có vẻ đã bị tải lại hoặc mất mạng trước khi kịp lưu. Khôi phục để tiếp tục từ
+        chỗ đang dở, hoặc bỏ qua để dùng đúng bản đã lưu trên hệ thống.
+      </p>
+    </Modal>
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-muted"
-              href={`/exercises/${id}/solve`}
-            >
+            <Link className={buttonClassName("outline")} href={`/exercises/${id}/solve`}>
               <Play aria-hidden="true" className="size-4" />
               Giải thử
             </Link>
@@ -210,7 +272,7 @@ export default function ExerciseStudioPage() {
               value={draft}
             />
 
-            <div className="mt-4">
+            <div className="mt-6 border-t border-border pt-6">
               <DangerZone
                 actionLabel="Xoá bài này"
                 confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}

@@ -87,20 +87,15 @@ export interface CourseLesson {
   title: string;
   type: string;
   durationMinutes: number | null;
+  /**
+   * "Cho học trước": bài mở cho MỌI người kể cả chưa ghi danh khóa học, và không cần bài/
+   * chương liền trước hoàn thành. Xem `explainLock` ở `lib/lesson-unlock.ts` cho luật gác
+   * cửa suy ra từ trường này cộng thứ tự chương/bài.
+   */
   isPreview: boolean;
   isOptional: boolean;
   position: number;
   exerciseId: string | null;
-  /**
-   * Điều kiện mở bài, để GIẢI THÍCH một ổ khoá — không phải để quyết định nó.
-   *
-   * Việc "bài này đã mở chưa" luôn là `LessonProgress.isAvailable`, do `fn_lesson_available`
-   * trả lời ở CSDL. Đọc mảng này rồi tự tính ra khoá/mở sẽ cho ra một luật thứ hai chạy
-   * song song với luật thật, và hai luật đó sẽ lệch nhau vào đúng ngày ai đó sửa một bên.
-   *
-   * Khoá học lưu trước khi có tính năng này không trả trường này.
-   */
-  prerequisites?: { rule: "ALL" | "ANY"; lessonIds: string[] };
 }
 
 /** `GET /courses/:id/lessons/:lessonId/content` — the TipTap body from MongoDB. */

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
+  Asterisk,
   BookOpen,
   Check,
   Clock,
@@ -14,13 +16,14 @@ import {
   PlayCircle,
   RotateCcw,
   Trophy,
+  Unlock,
 } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { describeLock, explainLock } from "@/lib/lesson-unlock";
+import { describeLock, explainLock, isLessonLocked } from "@/lib/lesson-unlock";
 import type { CourseDetail, CourseProgress } from "@/types/catalogue";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -45,11 +48,59 @@ function flatLessons(course: CourseDetail) {
     .flatMap((chapter) => [...chapter.lessons].sort((a, b) => a.position - b.position));
 }
 
+const CONFETTI_COLORS = ["#f59e0b", "#ef4444", "#3b82f6", "#22c55e", "#a855f7", "#ec4899"];
+
+/** Vãi confetti một lượt rồi thôi — không lặp, không theo dõi gì sau khi rơi hết màn hình. */
+function ConfettiBurst() {
+  const [pieces] = useState(() =>
+    Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.4,
+      duration: 2.2 + Math.random() * 1.2,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    })),
+  );
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
+      {pieces.map((piece) => (
+        <span
+          key={piece.id}
+          className="animate-confetti-fall absolute -top-2.5 h-2.5 w-1.5 rounded-[1px]"
+          style={{
+            left: `${piece.left}%`,
+            backgroundColor: piece.color,
+            animationDelay: `${piece.delay}s`,
+            animationDuration: `${piece.duration}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function CourseDetailView({ courseId }: { courseId: string }) {
+  const router = useRouter();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
+  // `?completed=1` lands here right after the "Hoàn thành khóa học" button on the last
+  // lesson. Read it from `location` in a lazy initializer rather than `useSearchParams`, so
+  // this component doesn't need a `<Suspense>` boundary just for a one-off celebration flag.
+  const [showConfetti, setShowConfetti] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("completed") === "1",
+  );
+
+  // Strip the query param immediately so a refresh doesn't replay the celebration, and
+  // clear the flag once the animation has had time to finish.
+  useEffect(() => {
+    if (!showConfetti) return;
+    router.replace(`/courses/${courseId}`, { scroll: false });
+    const timer = setTimeout(() => setShowConfetti(false), 3200);
+    return () => clearTimeout(timer);
+  }, [showConfetti, router, courseId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,6 +165,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
 
   return (
     <div>
+      {showConfetti && <ConfettiBurst />}
       <BreadcrumbTitle slug={courseId} title={course.title} />
       <PageHeader icon={BookOpen} title={course.title} subtitle={course.description ?? undefined} />
 
@@ -152,8 +204,20 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                       {/* Đánh số theo VỊ TRÍ trong danh sách đã sắp, không theo `position`
                         * thô: xoá một chương giữa chừng để lại khoảng trống ở `position`,
                         * và học viên sẽ đọc được "Chương 1, Chương 3". */}
-                      <h3 className="text-sm font-bold text-navy">
-                        Chương {chapterIndex + 1}: {chapter.title}
+                      <h3 className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-navy">
+                        <span className="truncate">
+                          Chương {chapterIndex + 1}: {chapter.title}
+                        </span>
+                        {/* Tùy chọn chỉ đáng nói khi đã ghi danh: người chưa học chưa có gì
+                          * để "tính là hoàn thành" cả, nên cờ này chưa có ý nghĩa với họ. */}
+                        {chapter.isOptional && enrolled && (
+                          <span
+                            className="shrink-0"
+                            title="Chương tùy chọn — bỏ qua được mà vẫn tính là hoàn thành khóa học"
+                          >
+                            <Asterisk aria-hidden="true" className="size-3.5 text-text-faint" />
+                          </span>
+                        )}
                       </h3>
                       <span className="shrink-0 text-2xs text-text-faint">
                         {chapter.lessons.length} bài
@@ -165,7 +229,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                         .map((lesson, lessonIndex) => {
                         const Icon = LESSON_ICON[lesson.type] ?? FileText;
                         const state = progressByLesson.get(lesson.id);
-                        const locked = state?.isAvailable === false;
+                        const locked = isLessonLocked(lesson, state, enrolled);
                         const reason = locked ? explainLock(course, lesson, progressByLesson) : null;
                         const body = (
                           <>
@@ -180,6 +244,26 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                               <span className="text-text-faint">Bài {lessonIndex + 1}.</span>{" "}
                               {lesson.title}
                             </span>
+                            {/* Cho học trước: luôn đáng nói, kể cả chưa ghi danh — đó chính
+                              * là đối tượng nó nhắm tới, người còn đang cân nhắc có học hay
+                              * không. Tùy chọn thì ngược lại, chỉ đáng nói khi đã ghi danh —
+                              * xem chú thích cùng cờ này ở tiêu đề chương. */}
+                            {lesson.isPreview && (
+                              <span
+                                className="shrink-0"
+                                title="Cho học trước — xem được ngay, không cần ghi danh hay hoàn thành bài trước đó"
+                              >
+                                <Unlock aria-hidden="true" className="size-3.5 text-text-faint" />
+                              </span>
+                            )}
+                            {lesson.isOptional && enrolled && (
+                              <span
+                                className="shrink-0"
+                                title="Bài tùy chọn — bỏ qua được mà vẫn tính là hoàn thành khóa học"
+                              >
+                                <Asterisk aria-hidden="true" className="size-3.5 text-text-faint" />
+                              </span>
+                            )}
                             {lesson.durationMinutes !== null && (
                               <span className="shrink-0 text-2xs text-text-faint">
                                 {lesson.durationMinutes} phút

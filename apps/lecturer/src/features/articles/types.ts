@@ -53,3 +53,14 @@ export const ARTICLE_STATUS_TONES: Record<
   published: "success",
   archived: "neutral",
 };
+
+/** Bản nháp đang sửa ở studio bài viết. */
+export interface Draft {
+  title: string;
+  excerpt: string;
+  takeaway: string;
+  readMinutes: string;
+  /** "" = chưa chọn chủ đề. */
+  tagId: string;
+  contentHtml: string;
+}
