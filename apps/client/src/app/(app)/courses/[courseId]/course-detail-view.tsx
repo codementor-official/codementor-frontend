@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  Asterisk,
   BookOpen,
   Check,
   Clock,
@@ -14,6 +15,7 @@ import {
   PlayCircle,
   RotateCcw,
   Trophy,
+  Unlock,
 } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
@@ -152,8 +154,20 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                       {/* Đánh số theo VỊ TRÍ trong danh sách đã sắp, không theo `position`
                         * thô: xoá một chương giữa chừng để lại khoảng trống ở `position`,
                         * và học viên sẽ đọc được "Chương 1, Chương 3". */}
-                      <h3 className="text-sm font-bold text-navy">
-                        Chương {chapterIndex + 1}: {chapter.title}
+                      <h3 className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-navy">
+                        <span className="truncate">
+                          Chương {chapterIndex + 1}: {chapter.title}
+                        </span>
+                        {/* Tùy chọn chỉ đáng nói khi đã ghi danh: người chưa học chưa có gì
+                          * để "tính là hoàn thành" cả, nên cờ này chưa có ý nghĩa với họ. */}
+                        {chapter.isOptional && enrolled && (
+                          <span
+                            className="shrink-0"
+                            title="Chương tùy chọn — bỏ qua được mà vẫn tính là hoàn thành khóa học"
+                          >
+                            <Asterisk aria-hidden="true" className="size-3.5 text-text-faint" />
+                          </span>
+                        )}
                       </h3>
                       <span className="shrink-0 text-2xs text-text-faint">
                         {chapter.lessons.length} bài
@@ -180,6 +194,26 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                               <span className="text-text-faint">Bài {lessonIndex + 1}.</span>{" "}
                               {lesson.title}
                             </span>
+                            {/* Cho học trước: luôn đáng nói, kể cả chưa ghi danh — đó chính
+                              * là đối tượng nó nhắm tới, người còn đang cân nhắc có học hay
+                              * không. Tùy chọn thì ngược lại, chỉ đáng nói khi đã ghi danh —
+                              * xem chú thích cùng cờ này ở tiêu đề chương. */}
+                            {lesson.isPreview && (
+                              <span
+                                className="shrink-0"
+                                title="Cho học trước — xem được ngay, không cần ghi danh hay hoàn thành bài trước đó"
+                              >
+                                <Unlock aria-hidden="true" className="size-3.5 text-text-faint" />
+                              </span>
+                            )}
+                            {lesson.isOptional && enrolled && (
+                              <span
+                                className="shrink-0"
+                                title="Bài tùy chọn — bỏ qua được mà vẫn tính là hoàn thành khóa học"
+                              >
+                                <Asterisk aria-hidden="true" className="size-3.5 text-text-faint" />
+                              </span>
+                            )}
                             {lesson.durationMinutes !== null && (
                               <span className="shrink-0 text-2xs text-text-faint">
                                 {lesson.durationMinutes} phút
