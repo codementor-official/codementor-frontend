@@ -47,6 +47,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   // would be pointless churn.
   const tokenRef = useRef<string | null>(null);
   const managerRef = useRef<UserManager | null>(null);
+  // `sub` của danh tính đang áp dụng cho tab này. Dùng để nhận ra một lần
+  // `userLoaded` từ gia hạn nền (automaticSilentRenew) trả về MỘT NGƯỜI KHÁC — tức
+  // một tab khác vừa đăng nhập đổi tài khoản trên cookie SSO dùng chung của Keycloak
+  // — thay vì âm thầm tiếp tục chạy dưới danh tính mới đó.
+  const userIdRef = useRef<string | null>(null);
 
   const manager = () => {
     // Resolved lazily because UserManager touches window.sessionStorage, which does
@@ -61,7 +66,17 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
     const applyOidcUser = async (oidcUser: OidcUser | null) => {
       const token = accessTokenOf(oidcUser);
+
+      // Một lần đăng nhập THẬT (qua trang callback, sau full page reload) luôn thấy
+      // `userIdRef.current` là null vì tab vừa mount lại — nên guard này chỉ chặn
+      // đúng trường hợp cần chặn: gia hạn nền trong MỘT tab đang sống trả về sub khác.
+      if (token && userIdRef.current && oidcUser?.profile.sub !== userIdRef.current) {
+        void manager().removeUser();
+        return;
+      }
+
       tokenRef.current = token;
+      userIdRef.current = token ? (oidcUser?.profile.sub ?? null) : null;
 
       if (!token) {
         setUser(null);
@@ -69,11 +84,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         return;
       }
 
-      // Back to "loading" before fetching the profile, not after. Redeeming the
-      // authorization code resolves before the profile does, and the callback page
-      // navigates to a guarded route immediately; leaving the status at "anonymous"
-      // during that gap makes the guard bounce the user to /login and straight back.
-      setStatus("loading");
+      // Chỉ hiện màn "loading" khi thật sự chuyển trạng thái (tải trang lần đầu, vừa
+      // đăng nhập, vừa hồi phục sau đăng xuất) — KHÔNG cho một lần gia hạn nền của
+      // automaticSilentRenew (mỗi ~5 phút, do access token Keycloak sống 300s) khi
+      // phiên vẫn còn hợp lệ. Trước đây bước này luôn đặt lại "loading", nên mỗi lần
+      // gia hạn nền là RequireLecturer xoá trắng cả trang để hiện "Đang tải…" rồi
+      // hiện lại — đúng cảnh người dùng thấy app "tự F5" giữa lúc đang thao tác.
+      setStatus((current) => (current === "authenticated" ? current : "loading"));
 
       try {
         // The profile comes from the backend, never from token claims. The token
@@ -85,6 +102,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         // A valid token with a rejected profile means a suspended or deleted
         // account. Staying "authenticated" would show an empty console instead.
         tokenRef.current = null;
+        userIdRef.current = null;
         setUser(null);
         setStatus("anonymous");
         setError(cause instanceof Error ? cause.message : "Không tải được hồ sơ");
@@ -118,9 +136,26 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       // another CodeMentor app (admin, or a different lecturer account) is still alive —
       // without it, this silently signs the browser in as whoever was last authenticated.
       signIn: () => void manager().signinRedirect({ extraQueryParams: { prompt: "login" } }),
+      /**
+       * Thu hồi token của RIÊNG app này qua back-channel (`revokeTokens`) rồi xoá
+       * khỏi kho local — KHÔNG gọi `signoutRedirect()`.
+       *
+       * `signoutRedirect()` là front-channel `end_session` thật: nó xoá cookie SSO
+       * dùng chung ở `id.codementor.cloud`, và Keycloak thu hồi TOÀN BỘ phiên người
+       * dùng — kể cả client-session của apps/client (khi đăng nhập popup) và
+       * apps/admin đang mở ở tab khác. Vậy nên trước đây đăng xuất ở lecturer đá luôn
+       * hai app kia ra khỏi phiên. `prompt: "login"` ở `signIn` đã buộc luôn hiện form
+       * đăng nhập bất kể cookie SSO còn sống hay không, nên không cần dựa vào việc xoá
+       * cookie đó để "an toàn" — chỉ cần token của app này chết là đủ.
+       */
       signOut: () => {
         tokenRef.current = null;
-        void manager().signoutRedirect();
+        userIdRef.current = null;
+        const userManager = manager();
+        void userManager
+          .revokeTokens()
+          .catch(() => undefined)
+          .then(() => userManager.removeUser());
       },
       realtimeToken: async () => tokenRef.current,
       refreshUser: async () => {

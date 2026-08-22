@@ -77,6 +77,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   // token của nó nằm trong cookie HttpOnly và chỉ server đọc được.
   const tokenRef = useRef<string | null>(null);
   const managerRef = useRef<UserManager | null>(null);
+  // `sub` của danh tính popup đang áp dụng cho tab này (null nếu đang ở phiên mật
+  // khẩu hoặc chưa đăng nhập). Dùng để nhận ra một lần `userLoaded` từ gia hạn nền
+  // (automaticSilentRenew) trả về MỘT NGƯỜI KHÁC — một tab khác (kể cả apps/lecturer,
+  // apps/admin) vừa đăng nhập đổi tài khoản trên cookie SSO dùng chung của Keycloak —
+  // thay vì âm thầm tiếp tục chạy dưới danh tính mới đó.
+  const oidcUserIdRef = useRef<string | null>(null);
+  // Bật ngay trước khi tự tay gọi signinPopup: lần userLoaded do CHÍNH tab này chủ
+  // động đổi danh tính (bấm nút đăng nhập popup lần nữa) không đi qua guard ở trên —
+  // khác với gia hạn nền, đây là hành động người dùng vừa chọn.
+  const explicitPopupSignInRef = useRef(false);
 
   const manager = () => {
     // Resolved lazily because UserManager touches window.sessionStorage, which does
@@ -92,13 +102,28 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
    * Hồ sơ luôn lấy từ backend, không bao giờ từ claim của token.
    */
   const applySession = useCallback(async (oidcUser: OidcUser | null) => {
-    tokenRef.current = accessTokenOf(oidcUser);
+    const explicit = explicitPopupSignInRef.current;
+    explicitPopupSignInRef.current = false;
+    const token = accessTokenOf(oidcUser);
 
-    // Back to "loading" before fetching the profile, not after. Redeeming the
-    // authorization code resolves before the profile does, and the callback page
-    // navigates to a guarded route immediately; leaving the status at "anonymous"
-    // during that gap makes the guard bounce the user to /login and straight back.
-    setStatus("loading");
+    // Một lần userLoaded từ gia hạn nền (automaticSilentRenew) trả về sub khác với
+    // danh tính popup đang có — tức tab khác vừa đăng nhập đổi tài khoản trên cookie
+    // SSO dùng chung — thì bỏ phiên popup này thay vì âm thầm chạy dưới danh tính mới.
+    // Bỏ qua khi `explicit`: đây là lúc chính tab này vừa chủ động gọi signinPopup.
+    if (!explicit && token && oidcUserIdRef.current && oidcUser?.profile.sub !== oidcUserIdRef.current) {
+      void manager().removeUser();
+      return;
+    }
+
+    tokenRef.current = token;
+    oidcUserIdRef.current = token ? (oidcUser?.profile.sub ?? null) : null;
+
+    // Chỉ hiện màn "loading" khi thật sự chuyển trạng thái (tải trang lần đầu, vừa
+    // đăng nhập, vừa hồi phục sau đăng xuất) — KHÔNG cho một lần gia hạn nền của
+    // automaticSilentRenew khi phiên popup vẫn còn hợp lệ, để tránh xoá trắng trang
+    // rồi hiện lại giữa lúc người dùng đang thao tác (xem lecturer/auth-provider.tsx
+    // cho cùng lỗi ở dạng nặng hơn, vì lecturer không có phiên mật khẩu dự phòng).
+    setStatus((current) => (current === "authenticated" ? current : "loading"));
 
     if (!tokenRef.current && !(await hasPasswordSession())) {
       setUser(null);
@@ -125,6 +150,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         return;
       }
       tokenRef.current = null;
+      oidcUserIdRef.current = null;
       setUser(null);
       setStatus("anonymous");
     }
@@ -225,11 +251,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           // run inside the popup) posts the result back — see CallbackPage. Its
           // `userLoaded` event fires on this manager instance just like a redirect
           // would, so the effect above picks the session up the same way.
+          explicitPopupSignInRef.current = true;
           await manager().signinPopup({
             extraQueryParams: { kc_idp_hint: provider },
             popupWindowFeatures: { width: 480, height: 640, popup: true },
           });
         } catch (cause) {
+          explicitPopupSignInRef.current = false;
           // The user closing the popup themselves surfaces as a plain rejection —
           // not worth alarming them with an "error".
           const message = cause instanceof Error ? cause.message : String(cause);
@@ -239,30 +267,30 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         }
       },
       /**
-       * Đăng xuất phải kết thúc CẢ HAI phía, nếu không lần bấm "Đăng nhập" kế tiếp sẽ
-       * lặng lẽ khôi phục tài khoản cũ:
+       * Đăng xuất phải thu hồi token của RIÊNG app này, nếu không lần bấm "Đăng nhập"
+       * kế tiếp sẽ lặng lẽ khôi phục tài khoản cũ:
        *
-       *   1. Phiên CodeMentor — cookie BFF (thu hồi refresh token ở Keycloak) và
-       *      token trong tab của oidc-client-ts.
-       *   2. Phiên SSO của Keycloak — cookie ở id.codementor.cloud, chỉ chết khi
-       *      trình duyệt thực sự ghé end_session. Đăng nhập bằng mật khẩu không tạo
-       *      cookie này (không có điều hướng nào tới Keycloak), nên chỉ phiên popup
-       *      mới cần chuyến đi đó.
+       *   1. Phiên mật khẩu — cookie BFF, thu hồi refresh token ở Keycloak qua
+       *      back-channel (`endKeycloakSession`, chạy trong route `/api/auth/logout`).
+       *   2. Phiên popup — token trong tab của oidc-client-ts, thu hồi qua back-channel
+       *      (`revokeTokens`) rồi xoá khỏi kho local.
        *
-       * Không đụng tới phiên Google/Facebook của người dùng: end_session chỉ kết thúc
-       * phiên ở Keycloak, họ vẫn đăng nhập Gmail/Facebook bình thường.
+       * KHÔNG gọi `signoutRedirect()`: đó là front-channel `end_session` thật, xoá
+       * cookie SSO dùng chung ở id.codementor.cloud và khiến Keycloak thu hồi TOÀN BỘ
+       * phiên người dùng — kể cả apps/lecturer và apps/admin đang mở ở tab khác. Không
+       * đụng tới phiên Google/Facebook của người dùng: chỉ token phía CodeMentor bị
+       * thu hồi, họ vẫn đăng nhập Gmail/Facebook bình thường.
        */
       signOut: async () => {
         tokenRef.current = null;
+        oidcUserIdRef.current = null;
         await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
 
-        const oidcUser = await manager().getUser();
+        const userManager = manager();
+        const oidcUser = await userManager.getUser();
         if (oidcUser) {
-          // signoutRedirect gửi id_token_hint, xoá user khỏi sessionStorage rồi quay
-          // về post_logout_redirect_uri (/login). Trang này bị thay nên không cần
-          // dọn state sau đó.
-          await manager().signoutRedirect();
-          return;
+          await userManager.revokeTokens().catch(() => undefined);
+          await userManager.removeUser();
         }
 
         setUser(null);
