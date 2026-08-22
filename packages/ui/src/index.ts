@@ -4,7 +4,7 @@ export { AppTopbar } from "./app-topbar";
 export { Breadcrumb } from "./breadcrumb";
 export type { BreadcrumbItem } from "./breadcrumb";
 export { breadcrumbTrail } from "./breadcrumb-trail";
-export type { RouteMeta } from "./breadcrumb-trail";
+export type { BreadcrumbTitleEntry, RouteMeta } from "./breadcrumb-trail";
 export { BreadcrumbTitle, setBreadcrumbTitle, useBreadcrumbTitles } from "./breadcrumb-title-store";
 export { Button, buttonClassName } from "./button";
 export { Card, CardContent, CardHeader } from "./card";

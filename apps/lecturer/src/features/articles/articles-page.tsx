@@ -1,9 +1,9 @@
 "use client";
 
 import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
   ExternalLink,
@@ -55,7 +55,20 @@ const CLIENT_URL = process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000"
  * (`mustEdit`), không phải do màn này ẩn nút.
  */
 export function ArticlesPage() {
+  return (
+    <Suspense fallback={null}>
+      <ArticlesPageContent />
+    </Suspense>
+  );
+}
+
+/** `useSearchParams` đòi một `Suspense` bao ngoài — xem cùng lý do ở courses/roadmaps/
+ * exercises page.tsx. */
+function ArticlesPageContent() {
   const router = useRouter();
+  // Breadcrumb ở studio trỏ về đây kèm id vì bản ghi không có trang riêng — mở sẵn drawer
+  // của đúng bài viết đó thay vì chỉ về danh sách trống trơn.
+  const openId = useSearchParams().get("open");
   const [rows, setRows] = useState<ArticleListItem[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -171,6 +184,7 @@ export function ArticlesPage() {
           </Button>
         }
         activeFilterCount={status ? 1 : 0}
+        initialSelectedId={openId}
         icon={Newspaper}
         columns={columns}
         description="Bài viết của bạn. Gửi duyệt để quản trị viên xem xét; bài được duyệt lần đầu sẽ gửi thông báo tới toàn bộ người học."

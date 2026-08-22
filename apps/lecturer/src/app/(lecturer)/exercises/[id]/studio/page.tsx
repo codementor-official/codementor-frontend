@@ -165,7 +165,7 @@ export default function ExerciseStudioPage() {
   return (
     <>
     {unsavedDialog}
-    <BreadcrumbTitle slug={id} title={draft.title || exercise.slug} />
+    <BreadcrumbTitle href={`/exercises?open=${id}`} slug={id} title={draft.title || exercise.slug} />
     <Modal
       description={
         pendingDraft

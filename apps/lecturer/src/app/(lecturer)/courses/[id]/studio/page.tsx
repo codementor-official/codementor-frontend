@@ -364,7 +364,7 @@ export default function CourseStudioPage() {
   return (
     <>
     {unsavedDialog}
-    <BreadcrumbTitle slug={id} title={meta.title || course.slug} />
+    <BreadcrumbTitle href={`/courses?open=${id}`} slug={id} title={meta.title || course.slug} />
     <Modal
       description={
         pendingDraft

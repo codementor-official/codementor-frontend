@@ -1,9 +1,9 @@
 "use client";
 
 import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Archive, BookOpen, FileText, Pencil, Plus, RotateCcw, Route, Send, Trash2, Undo2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
@@ -40,8 +40,19 @@ type Tab = "mine" | "catalogue";
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
 
 export default function RoadmapsPage() {
+  return (
+    <Suspense fallback={null}>
+      <RoadmapsPageContent />
+    </Suspense>
+  );
+}
+
+function RoadmapsPageContent() {
   const router = useRouter();
   const { user } = useAuth();
+  // Breadcrumb ở studio trỏ về đây kèm id vì bản ghi không có trang riêng — mở sẵn drawer
+  // của đúng lộ trình đó thay vì chỉ về danh sách trống trơn.
+  const openId = useSearchParams().get("open");
 
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("mine");
@@ -174,6 +185,7 @@ export default function RoadmapsPage() {
           </Button>
         }
         activeFilterCount={[field, status].filter(Boolean).length}
+        initialSelectedId={openId}
         icon={Route}
         columns={columns}
         drawer={{

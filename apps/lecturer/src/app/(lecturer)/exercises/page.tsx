@@ -1,9 +1,9 @@
 "use client";
 
 import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
   BookOpen,
@@ -59,8 +59,19 @@ type Tab = "mine" | "bank";
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
 
 export default function ExercisesPage() {
+  return (
+    <Suspense fallback={null}>
+      <ExercisesPageContent />
+    </Suspense>
+  );
+}
+
+function ExercisesPageContent() {
   const router = useRouter();
   const { user } = useAuth();
+  // Breadcrumb ở studio trỏ về đây kèm id vì bản ghi không có trang riêng — mở sẵn drawer
+  // của đúng bài code đó thay vì chỉ về danh sách trống trơn.
+  const openId = useSearchParams().get("open");
 
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("mine");
@@ -198,6 +209,7 @@ export default function ExercisesPage() {
           </Button>
         }
         activeFilterCount={[difficulty, status].filter(Boolean).length}
+        initialSelectedId={openId}
         icon={Braces}
         columns={columns}
         drawer={{

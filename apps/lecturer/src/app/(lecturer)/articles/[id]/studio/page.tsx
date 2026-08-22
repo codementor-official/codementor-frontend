@@ -138,7 +138,11 @@ export default function ArticleStudioPage() {
   return (
     <>
       {unsavedDialog}
-      <BreadcrumbTitle slug={id} title={draft.title || "Bài viết chưa đặt tên"} />
+      <BreadcrumbTitle
+        href={`/articles?open=${id}`}
+        slug={id}
+        title={draft.title || "Bài viết chưa đặt tên"}
+      />
 
       <Modal
         description={

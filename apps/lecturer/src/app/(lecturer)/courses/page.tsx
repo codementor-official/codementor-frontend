@@ -1,9 +1,9 @@
 "use client";
 
 import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
   BookOpen,
@@ -54,8 +54,24 @@ type Tab = "mine" | "catalogue";
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
 
 export default function CoursesPage() {
+  return (
+    <Suspense fallback={null}>
+      <CoursesPageContent />
+    </Suspense>
+  );
+}
+
+/**
+ * `useSearchParams` đòi một `Suspense` bao ngoài — tách phần nội dung ra khỏi export mặc
+ * định thay vì bọc cả trang, để không kéo theo cả bảng dữ liệu vào lần render đầu chờ đọc
+ * query string.
+ */
+function CoursesPageContent() {
   const router = useRouter();
   const { user } = useAuth();
+  // Breadcrumb ở studio trỏ về đây kèm id vì bản ghi không có trang riêng — mở sẵn drawer
+  // của đúng khoá học đó thay vì chỉ về danh sách trống trơn.
+  const openId = useSearchParams().get("open");
 
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("mine");
@@ -181,6 +197,7 @@ export default function CoursesPage() {
           </Button>
         }
         activeFilterCount={[level, status].filter(Boolean).length}
+        initialSelectedId={openId}
         icon={BookOpen}
         columns={columns}
         drawer={{

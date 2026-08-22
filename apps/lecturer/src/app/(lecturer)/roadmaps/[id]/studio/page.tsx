@@ -285,7 +285,7 @@ export default function RoadmapStudioPage() {
   return (
     <>
     {unsavedDialog}
-    <BreadcrumbTitle slug={id} title={draft.title || roadmap.slug} />
+    <BreadcrumbTitle href={`/roadmaps?open=${id}`} slug={id} title={draft.title || roadmap.slug} />
     <Modal
       description={
         pendingDraft
