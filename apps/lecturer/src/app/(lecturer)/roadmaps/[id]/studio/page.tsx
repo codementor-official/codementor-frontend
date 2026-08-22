@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Info, Save, Send, Tags, Undo2 } from "lucide-react";
+import { Info, Save, Send, Tags, TriangleAlert, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import {
   BreadcrumbTitle,
   Button,
   Card,
+  Modal,
   PageHeader,
   ResizeHandle,
   StatusBadge,
@@ -20,6 +21,7 @@ import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
+import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import { CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
 import type { CourseListItem } from "@/features/courses/types";
 import { api } from "@/lib/api";
@@ -80,6 +82,9 @@ export default function RoadmapStudioPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { scheduleDelete } = useUndoableDelete();
+  // Nháp phát hiện trong localStorage lúc mở trang, còn chờ người dùng chọn khôi phục
+  // hay bỏ qua — xem effect nạp lộ trình bên dưới và ô thoại render ở cuối component.
+  const [pendingDraft, setPendingDraft] = useState<StoredDraft<{ draft: Draft; picked: PickedCourse[] }> | null>(null);
 
   const apply = useCallback((loaded: Roadmap) => {
     setRoadmap(loaded);
@@ -102,6 +107,22 @@ export default function RoadmapStudioPage() {
       .then((loaded) => {
         if (cancelled) return;
         apply(loaded);
+
+        const freshDraft = toDraft(loaded);
+        const freshPicked: PickedCourse[] = (loaded.courses ?? []).map((course) => ({
+          courseId: course.courseId,
+          title: course.title,
+          status: course.status,
+          durationHours: course.durationHours,
+          isOptional: course.isOptional,
+        }));
+        const stored = readDraft<{ draft: Draft; picked: PickedCourse[] }>(draftStorageKey("roadmap", id));
+        if (!stored) return;
+        if (signature(stored.value.draft, stored.value.picked) === signature(freshDraft, freshPicked)) {
+          clearDraft(draftStorageKey("roadmap", id));
+        } else {
+          setPendingDraft(stored);
+        }
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(describe(cause));
@@ -143,20 +164,24 @@ export default function RoadmapStudioPage() {
   };
 
   // Trước early return: hook phải chạy ở mọi lần render.
-  const unsavedDialog = useUnsavedGuard(
+  const dirty =
     Boolean(roadmap && draft) &&
-      signature(draft as Draft, picked) !==
-        signature(
-          toDraft(roadmap as Roadmap),
-          ((roadmap as Roadmap).courses ?? []).map((course) => ({
-            courseId: course.courseId,
-            title: course.title,
-            status: course.status,
-            durationHours: course.durationHours,
-            isOptional: course.isOptional,
-          })),
-        ),
-  );
+    signature(draft as Draft, picked) !==
+      signature(
+        toDraft(roadmap as Roadmap),
+        ((roadmap as Roadmap).courses ?? []).map((course) => ({
+          courseId: course.courseId,
+          title: course.title,
+          status: course.status,
+          durationHours: course.durationHours,
+          isOptional: course.isOptional,
+        })),
+      );
+  useDraftAutosave(draftStorageKey("roadmap", id), { draft: draft as Draft, picked }, {
+    ready: Boolean(roadmap && draft),
+    dirty,
+  });
+  const unsavedDialog = useUnsavedGuard(dirty);
 
   if (error && !roadmap) {
     return (
@@ -193,6 +218,51 @@ export default function RoadmapStudioPage() {
     <>
     {unsavedDialog}
     <BreadcrumbTitle slug={id} title={draft.title || roadmap.slug} />
+    <Modal
+      description={
+        pendingDraft
+          ? `Bản nháp từ ${new Date(pendingDraft.savedAt).toLocaleString("vi-VN")}, chưa kịp lưu vào hệ thống.`
+          : undefined
+      }
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button
+            onClick={() => {
+              clearDraft(draftStorageKey("roadmap", id));
+              setPendingDraft(null);
+            }}
+            type="button"
+            variant="outline"
+          >
+            Bỏ qua
+          </Button>
+          <Button
+            onClick={() => {
+              if (!pendingDraft) return;
+              setDraft(pendingDraft.value.draft);
+              setPicked(pendingDraft.value.picked);
+              setPendingDraft(null);
+            }}
+            type="button"
+          >
+            Khôi phục thay đổi
+          </Button>
+        </div>
+      }
+      onClose={() => {
+        clearDraft(draftStorageKey("roadmap", id));
+        setPendingDraft(null);
+      }}
+      open={pendingDraft !== null}
+      title="Phát hiện thay đổi chưa lưu"
+      width="sm"
+    >
+      <p className="flex items-start gap-2.5 text-sm text-muted-foreground">
+        <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+        Trang có vẻ đã bị tải lại hoặc mất mạng trước khi kịp lưu. Khôi phục để tiếp tục từ
+        chỗ đang dở, hoặc bỏ qua để dùng đúng bản đã lưu trên hệ thống.
+      </p>
+    </Modal>
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">

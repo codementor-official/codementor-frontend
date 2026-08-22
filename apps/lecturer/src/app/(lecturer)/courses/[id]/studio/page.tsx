@@ -22,6 +22,7 @@ import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
+import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import { CurriculumTree, type Selection } from "@/features/courses/curriculum-tree";
 import { Inspector, type ContentSaveRef } from "@/features/courses/inspector";
 import {
@@ -90,47 +91,6 @@ function remapSelection(
   return nextLesson ? { kind: "lesson", chapterKey: nextChapter.key, lessonKey: nextLesson.key } : null;
 }
 
-interface StoredDraft {
-  meta: Meta;
-  chapters: DraftChapter[];
-  savedAt: number;
-}
-
-function draftStorageKey(courseId: string): string {
-  return `codementor:lecturer:course-draft:${courseId}`;
-}
-
-/**
- * Khôi phục nháp là tiện ích thêm, không phải đường lưu chính — hỏng ở bất kỳ bước nào
- * (hết dung lượng, trình duyệt chặn localStorage, tab ẩn danh) chỉ có nghĩa là không
- * khôi phục được, đường "Lưu" ở đầu trang vẫn hoạt động bình thường.
- */
-function readDraft(courseId: string): StoredDraft | null {
-  try {
-    const raw = window.localStorage.getItem(draftStorageKey(courseId));
-    return raw ? (JSON.parse(raw) as StoredDraft) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeDraft(courseId: string, meta: Meta, chapters: DraftChapter[]): void {
-  try {
-    const draft: StoredDraft = { meta, chapters, savedAt: Date.now() };
-    window.localStorage.setItem(draftStorageKey(courseId), JSON.stringify(draft));
-  } catch {
-    // ignore — xem readDraft
-  }
-}
-
-function clearDraft(courseId: string): void {
-  try {
-    window.localStorage.removeItem(draftStorageKey(courseId));
-  } catch {
-    // ignore — xem readDraft
-  }
-}
-
 /**
  * Lỗi của từng ô trong tab "Thông tin khóa học".
  *
@@ -190,7 +150,7 @@ export default function CourseStudioPage() {
   const contentSaveRef = useRef<ContentSaveRef["current"]>(null);
   // Nháp phát hiện trong localStorage lúc mở trang, còn chờ người dùng chọn khôi phục
   // hay bỏ qua — xem effect nạp khóa học bên dưới và ô thoại render ở cuối component.
-  const [pendingDraft, setPendingDraft] = useState<StoredDraft | null>(null);
+  const [pendingDraft, setPendingDraft] = useState<StoredDraft<{ meta: Meta; chapters: DraftChapter[] }> | null>(null);
 
   const apply = useCallback((loaded: Course) => {
     const nextMeta = toMeta(loaded);
@@ -210,10 +170,10 @@ export default function CourseStudioPage() {
         if (cancelled) return;
         apply(loaded);
         // Nháp cũ trùng với bản vừa tải thì không hỏi gì cả — dọn luôn cho gọn.
-        const draft = readDraft(id);
+        const draft = readDraft<{ meta: Meta; chapters: DraftChapter[] }>(draftStorageKey("course", id));
         if (!draft) return;
-        if (signature(draft.meta, draft.chapters) === signature(toMeta(loaded), toDraft(loaded.chapters ?? []))) {
-          clearDraft(id);
+        if (signature(draft.value.meta, draft.value.chapters) === signature(toMeta(loaded), toDraft(loaded.chapters ?? []))) {
+          clearDraft(draftStorageKey("course", id));
         } else {
           setPendingDraft(draft);
         }
@@ -229,14 +189,11 @@ export default function CourseStudioPage() {
   // Ghi nháp mỗi khi có thay đổi chưa lưu, xoá khi khớp lại bản đã lưu (vừa tải xong,
   // hoặc vừa lưu thành công). Đủ nhanh cho một bản nháp cỡ vài chục bài — không cần
   // debounce cho `localStorage.setItem` ở quy mô này.
-  useEffect(() => {
-    if (!meta) return;
-    if (signature(meta, chapters) === savedSignature) {
-      clearDraft(id);
-      return;
-    }
-    writeDraft(id, meta, chapters);
-  }, [id, meta, chapters, savedSignature]);
+  useDraftAutosave(
+    draftStorageKey("course", id),
+    { meta: meta as Meta, chapters },
+    { ready: meta !== null, dirty: Boolean(meta) && signature(meta as Meta, chapters) !== savedSignature },
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -418,7 +375,7 @@ export default function CourseStudioPage() {
         <div className="flex justify-end gap-2">
           <Button
             onClick={() => {
-              clearDraft(id);
+              clearDraft(draftStorageKey("course", id));
               setPendingDraft(null);
             }}
             type="button"
@@ -429,8 +386,8 @@ export default function CourseStudioPage() {
           <Button
             onClick={() => {
               if (!pendingDraft) return;
-              setMeta(pendingDraft.meta);
-              setChapters(pendingDraft.chapters);
+              setMeta(pendingDraft.value.meta);
+              setChapters(pendingDraft.value.chapters);
               setSelection(null);
               setPendingDraft(null);
             }}
@@ -441,7 +398,7 @@ export default function CourseStudioPage() {
         </div>
       }
       onClose={() => {
-        clearDraft(id);
+        clearDraft(draftStorageKey("course", id));
         setPendingDraft(null);
       }}
       open={pendingDraft !== null}
