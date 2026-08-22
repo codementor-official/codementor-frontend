@@ -12,6 +12,24 @@ import type { CourseDetail, CourseLesson, LessonProgress } from "@/types/catalog
  * tính mặc định và chỉ có "cho học trước" (`isPreview`) làm ngoại lệ.
  */
 
+/**
+ * Một bài có xem được không — luật DUY NHẤT mọi nơi trong app phải hỏi, thay vì tự đọc
+ * `isAvailable` rồi quên mất trường hợp chưa ghi danh.
+ *
+ * Chưa ghi danh: chỉ bài `isPreview` xem được, bất kể `isAvailable` từ server nói gì — dữ
+ * liệu cũ (từ thời còn điều kiện mở khác) có thể để `isAvailable = true` tràn lan, và luật
+ * ở đây không tin nó khi chưa ghi danh. Đã ghi danh: tin thẳng `isAvailable`, đúng luật
+ * tuần tự backend gác.
+ */
+export function isLessonLocked(
+  lesson: Pick<CourseLesson, "isPreview">,
+  progress: Pick<LessonProgress, "isAvailable"> | undefined,
+  enrolled: boolean,
+): boolean {
+  if (!enrolled) return !lesson.isPreview;
+  return progress?.isAvailable === false;
+}
+
 export interface LessonNumbering {
   id: string;
   /** "Chương 1 · Bài 2" — cách học viên nhìn thấy bài ở mục lục. */
@@ -95,4 +113,23 @@ export function describeLock(reason: LockReason | null): string {
   return reason.total > 1
     ? "Hoàn thành tất cả các bài sau để mở bài này:"
     : "Hoàn thành bài sau để mở bài này:";
+}
+
+/**
+ * Bài bắt buộc còn thiếu để tính là hoàn thành khóa học — mặc định TOÀN BỘ bài, trừ bài
+ * (hoặc cả chương) đánh dấu tùy chọn. Dùng khi bấm "Hoàn thành khóa học" ở bài cuối; server
+ * tự chuyển `enrollment.status` sang "completed" qua trigger khi đủ, hàm này chỉ đọc lại
+ * đúng tiến độ đã tải để nói trước cho học viên biết còn thiếu bài nào.
+ */
+export function missingRequiredLessons(
+  course: CourseDetail,
+  progressByLesson: Map<string, LessonProgress>,
+): LessonNumbering[] {
+  const numbering = numberLessons(course);
+  return course.chapters
+    .filter((chapter) => !chapter.isOptional)
+    .flatMap((chapter) => chapter.lessons.filter((lesson) => !lesson.isOptional))
+    .filter((lesson) => progressByLesson.get(lesson.id)?.status !== "completed")
+    .map((lesson) => numbering.get(lesson.id))
+    .filter((entry): entry is LessonNumbering => entry !== undefined);
 }
