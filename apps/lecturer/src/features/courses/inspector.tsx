@@ -216,20 +216,18 @@ export function Inspector({
             />
 
             <ToggleRow
-              checked={chapter.lessons[0]?.earlyAccess ?? false}
-              disabled={chapterIndex === 0 || chapter.lessons.length === 0}
+              checked={chapter.lessons[0]?.isPreview ?? false}
+              disabled={chapter.lessons.length === 0}
               hint={
-                chapterIndex === 0
-                  ? "Chương đầu tiên luôn mở sẵn, không cần cờ này."
-                  : chapter.lessons.length === 0
-                    ? "Thêm bài vào chương rồi mới đặt được."
-                    : "Học viên vào chương này ngay, không cần hoàn thành chương trước đó."
+                chapter.lessons.length === 0
+                  ? "Thêm bài vào chương rồi mới đặt được."
+                  : "Ai cũng vào được chương này ngay, kể cả chưa ghi danh khóa học — không cần hoàn thành chương trước đó."
               }
               label="Cho học trước"
               onChange={(checked) =>
                 patchChapter({
                   lessons: chapter.lessons.map((lesson, index) =>
-                    index === 0 ? { ...lesson, earlyAccess: checked } : lesson,
+                    index === 0 ? { ...lesson, isPreview: checked } : lesson,
                   ),
                 })
               }
@@ -296,10 +294,6 @@ function LessonInspector({
   contentSaveRef: ContentSaveRef;
   onContentBlockerChange: (blocker: string | undefined) => void;
 }) {
-  // Bài đầu tiên của cả khóa học không có gì đứng trước để yêu cầu — "cho học trước"
-  // không có tác dụng gì với riêng nó. Xem `deriveLessonSources` ở backend.
-  const isFirstLessonOfCourse = chapterIndex === 0 && lessonIndex === 0;
-
   // Ô bài code không có thân bài riêng. Bài lý thuyết thì LUÔN soạn được ngay — kể cả
   // trước khi có `id` thật — chỉ việc NẠP nội dung cũ mới cần đợi id (bài mới thì
   // không có gì để nạp).
@@ -440,13 +434,7 @@ function LessonInspector({
             </Field>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-3">
-            <ToggleRow
-              checked={lesson.isPreview}
-              hint="Bài mở cho cả người chưa ghi danh khóa học — dùng làm bài nếm thử."
-              label="Cho học thử miễn phí"
-              onChange={(checked) => onPatch({ isPreview: checked })}
-            />
+          <div className="grid gap-2 sm:grid-cols-2">
             <ToggleRow
               checked={lesson.isOptional}
               hint="Học viên bỏ qua được mà khóa học vẫn tính là hoàn thành."
@@ -454,15 +442,10 @@ function LessonInspector({
               onChange={(checked) => onPatch({ isOptional: checked })}
             />
             <ToggleRow
-              checked={lesson.earlyAccess}
-              disabled={isFirstLessonOfCourse}
-              hint={
-                isFirstLessonOfCourse
-                  ? "Bài đầu tiên của khóa học luôn mở sẵn, không cần cờ này."
-                  : "Học viên vào bài này ngay, không cần hoàn thành bài liền trước."
-              }
+              checked={lesson.isPreview}
+              hint="Ai cũng xem được ngay, kể cả chưa ghi danh khóa học, và không cần hoàn thành bài liền trước."
               label="Cho học trước"
-              onChange={(checked) => onPatch({ earlyAccess: checked })}
+              onChange={(checked) => onPatch({ isPreview: checked })}
             />
           </div>
         </div>

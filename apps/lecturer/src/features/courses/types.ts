@@ -49,6 +49,13 @@ export interface StoredLesson {
   title: string;
   type: LessonType;
   durationMinutes: number | null;
+  /**
+   * "Cho học trước": bài mở cho MỌI người kể cả chưa ghi danh khóa học, và không cần
+   * bài/chương liền trước hoàn thành. Từng là hai cờ riêng ("cho học thử" + "cho học
+   * trước") — gộp vì cờ thứ hai luôn kéo theo cờ nhất: người chưa ghi danh không có tiến
+   * độ nào để "đã xong bài trước", nên một bài mở cho họ đương nhiên không thể còn đòi
+   * thứ tự.
+   */
   isPreview: boolean;
   isOptional: boolean;
   position: number;
@@ -57,8 +64,6 @@ export interface StoredLesson {
   exerciseTitle: string | null;
   exerciseStatus: string | null;
   exerciseAuthorId: string | null;
-  /** "Cho học trước": bài mở ngay, không cần bài/chương liền trước hoàn thành. */
-  earlyAccess: boolean;
 }
 
 export interface StoredChapter {
@@ -134,13 +139,12 @@ export interface DraftLesson {
   title: string;
   type: LessonType;
   durationMinutes: string;
+  /** "Cho học trước" — xem `StoredLesson.isPreview`. */
   isPreview: boolean;
   isOptional: boolean;
   exerciseId: string | null;
   exerciseTitle: string | null;
   contentRef: string | null;
-  /** "Cho học trước": bài mở ngay, không cần bài/chương liền trước hoàn thành. */
-  earlyAccess: boolean;
 }
 
 export interface DraftChapter {
@@ -187,8 +191,6 @@ export function toDraft(chapters: StoredChapter[]): DraftChapter[] {
       exerciseId: lesson.exerciseId,
       exerciseTitle: lesson.exerciseTitle,
       contentRef: lesson.contentRef,
-      // Khoá học lưu trước khi có tính năng này không có trường này trong phản hồi.
-      earlyAccess: lesson.earlyAccess ?? false,
     })),
   }));
 }
@@ -207,7 +209,6 @@ export function toPayload(chapters: DraftChapter[]) {
       isPreview: lesson.isPreview,
       isOptional: lesson.isOptional,
       exerciseId: bearsExercise(lesson.type) ? lesson.exerciseId : null,
-      earlyAccess: lesson.earlyAccess,
     })),
   }));
 }

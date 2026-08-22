@@ -147,7 +147,6 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
       exerciseId: null,
       exerciseTitle: null,
       contentRef: null,
-      earlyAccess: false,
     };
     onChange(
       chapters.map((chapter) =>
@@ -623,10 +622,10 @@ function SortableLesson({
       {/* Ngoại lệ hiện ngay trên CÂY, không chỉ trong panel bên phải: đa số bài giờ đây
         * đều bị gác tuần tự ngầm định, nên đáng chú ý là bài nào KHÔNG bị gác — không
         * phải liệt kê từng điều kiện như trước. */}
-      {lesson.earlyAccess && (
+      {lesson.isPreview && (
         <span
           className="flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
-          title="Cho học trước — mở ngay, không cần hoàn thành bài/chương liền trước"
+          title="Cho học trước — mở cho mọi người kể cả chưa ghi danh, không cần hoàn thành bài/chương liền trước"
         >
           <Unlock aria-hidden="true" className="size-3" />
           học trước
