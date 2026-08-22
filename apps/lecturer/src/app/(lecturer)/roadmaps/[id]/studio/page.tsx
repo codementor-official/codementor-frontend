@@ -6,6 +6,16 @@ import { Info, Save, Send, Tags, TriangleAlert, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import {
   BreadcrumbTitle,
   Button,
   Card,
@@ -22,7 +32,8 @@ import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
 import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
-import { CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
+import { SortableOverlay } from "@/components/sortable";
+import { addCourse, CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
 import type { CourseListItem } from "@/features/courses/types";
 import { api } from "@/lib/api";
 import { isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
@@ -182,6 +193,12 @@ export default function RoadmapStudioPage() {
     dirty,
   });
   const unsavedDialog = useUnsavedGuard(dirty);
+  // Cũng phải chạy trước early return — dùng ở DndContext bên dưới, sau chỗ trang có thể
+  // return sớm khi đang tải hoặc lỗi.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   if (error && !roadmap) {
     return (
@@ -213,6 +230,31 @@ export default function RoadmapStudioPage() {
       draft.prerequisiteNote.trim().length > 1000 ? "Ghi chú tối đa 1000 ký tự" : undefined,
   };
   const blocker = isClean(errors) ? undefined : "Còn ô chưa hợp lệ ở thông tin lộ trình";
+
+  /**
+   * Một `DndContext` cho cả hai pane: kéo từ "Kho khóa học" thả VÀO BẤT KỲ ĐÂU trong pane lộ
+   * trình thì thêm vào cuối (giống hệt nút "+"); kéo trong pane lộ trình thì vẫn là sắp xếp
+   * lại như trước. Chỉ "Kho khóa học" đăng ký `useDroppable`/`useDraggable`, nên `over` khác
+   * null LUÔN LUÔN thuộc phía lộ trình — không cần kiểm thêm over.id.
+   */
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over) return;
+    const activeId = String(active.id);
+
+    if (activeId.startsWith("pool:")) {
+      const courseId = activeId.slice("pool:".length);
+      const course = available.find((item) => item.id === courseId);
+      if (!course || picked.some((item) => item.courseId === courseId)) return;
+      setPicked(addCourse(picked, course));
+      return;
+    }
+
+    if (active.id === over.id) return;
+    const from = picked.findIndex((course) => course.courseId === active.id);
+    const to = picked.findIndex((course) => course.courseId === over.id);
+    if (from < 0 || to < 0) return;
+    setPicked(arrayMove(picked, from, to));
+  };
 
   return (
     <>
@@ -352,26 +394,29 @@ export default function RoadmapStudioPage() {
       title={draft.title || "Lộ trình chưa đặt tên"}
     >
       {tab === "courses" ? (
-        <Group orientation="horizontal" className="h-full">
-          <Panel id="picked" defaultSize="55%" minSize="25%" className="min-h-0">
-            <div className="h-full overflow-y-auto p-3">
-              <PickedCourses disabled={locked} onChange={setPicked} picked={picked} />
-            </div>
-          </Panel>
+        <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd} sensors={sensors}>
+          <Group orientation="horizontal" className="h-full">
+            <Panel id="picked" defaultSize="55%" minSize="25%" className="min-h-0">
+              <div className="h-full overflow-y-auto p-3">
+                <PickedCourses disabled={locked} onChange={setPicked} picked={picked} />
+              </div>
+            </Panel>
 
-          <ResizeHandle orientation="horizontal" />
+            <ResizeHandle orientation="horizontal" />
 
-          <Panel id="library" defaultSize="45%" minSize="20%" className="min-h-0">
-            <div className="h-full overflow-y-auto p-3">
-              <CourseLibrary
-                available={available}
-                disabled={locked}
-                onChange={setPicked}
-                picked={picked}
-              />
-            </div>
-          </Panel>
-        </Group>
+            <Panel id="library" defaultSize="45%" minSize="20%" className="min-h-0">
+              <div className="h-full overflow-y-auto p-3">
+                <CourseLibrary
+                  available={available}
+                  disabled={locked}
+                  onChange={setPicked}
+                  picked={picked}
+                />
+              </div>
+            </Panel>
+          </Group>
+          <RoadmapDragOverlay available={available} picked={picked} />
+        </DndContext>
       ) : (
         <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
@@ -520,6 +565,21 @@ export default function RoadmapStudioPage() {
       )}
     </StudioShell>
     </>
+  );
+}
+
+function RoadmapDragOverlay({ picked, available }: { picked: PickedCourse[]; available: CourseListItem[] }) {
+  return (
+    <SortableOverlay>
+      {(activeId) => {
+        if (activeId.startsWith("pool:")) {
+          const course = available.find((item) => item.id === activeId.slice("pool:".length));
+          return course ? <p className="px-3 py-2 text-sm font-medium">{course.title}</p> : null;
+        }
+        const course = picked.find((item) => item.courseId === activeId);
+        return course ? <p className="px-3 py-2 text-sm font-medium">{course.title}</p> : null;
+      }}
+    </SortableOverlay>
   );
 }
 
