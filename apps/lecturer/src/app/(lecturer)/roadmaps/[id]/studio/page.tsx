@@ -12,6 +12,7 @@ import {
   closestCenter,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
@@ -232,6 +233,23 @@ export default function RoadmapStudioPage() {
   const blocker = isClean(errors) ? undefined : "Còn ô chưa hợp lệ ở thông tin lộ trình";
 
   /**
+   * `closestCenter` không phân biệt vùng thả cha (pane) với hàng con của chính nó — cả hai
+   * cùng đăng ký droppable, nên một cú kéo-sắp-xếp-lại gần tâm pane có thể trúng nhầm pane
+   * thay vì đúng hàng. Lọc trước theo nguồn kéo: kéo từ kho chỉ nhắm "picked-pane" (luôn
+   * thêm vào cuối, không cần biết hàng nào), kéo để sắp xếp lại thì loại "picked-pane" ra,
+   * chỉ để các hàng cạnh tranh với nhau — giống cách curriculum-tree.tsx lọc theo chương/bài.
+   */
+  const collisionDetection: CollisionDetection = (args) => {
+    const draggingFromPool = String(args.active.id).startsWith("pool:");
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter((container) =>
+        draggingFromPool ? container.id === "picked-pane" : container.id !== "picked-pane",
+      ),
+    });
+  };
+
+  /**
    * Một `DndContext` cho cả hai pane: kéo từ "Kho khóa học" thả VÀO BẤT KỲ ĐÂU trong pane lộ
    * trình thì thêm vào cuối (giống hệt nút "+"); kéo trong pane lộ trình thì vẫn là sắp xếp
    * lại như trước. Chỉ "Kho khóa học" đăng ký `useDroppable`/`useDraggable`, nên `over` khác
@@ -394,7 +412,7 @@ export default function RoadmapStudioPage() {
       title={draft.title || "Lộ trình chưa đặt tên"}
     >
       {tab === "courses" ? (
-        <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd} sensors={sensors}>
+        <DndContext collisionDetection={collisionDetection} onDragEnd={onDragEnd} sensors={sensors}>
           <Group orientation="horizontal" className="h-full">
             <Panel id="picked" defaultSize="55%" minSize="25%" className="min-h-0">
               <div className="h-full overflow-y-auto p-3">
