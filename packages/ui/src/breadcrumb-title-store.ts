@@ -31,7 +31,7 @@ function getSnapshot(): Record<string, string> {
 }
 
 export function useBreadcrumbTitles(): Record<string, string> {
-  return useSyncExternalStore(subscribe, getSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 /**

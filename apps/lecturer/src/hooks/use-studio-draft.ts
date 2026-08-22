@@ -19,7 +19,21 @@ export function draftStorageKey(kind: string, id: string): string {
 export function readDraft<T>(storageKey: string): StoredDraft<T> | null {
   try {
     const raw = window.localStorage.getItem(storageKey);
-    return raw ? (JSON.parse(raw) as StoredDraft<T>) : null;
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    // Một bản nháp có shape cũ (từ trước nhánh này, phẳng {meta, chapters, savedAt}) vẫn là
+    // JSON hợp lệ nhưng thiếu `.value` — phải chặn ở đây, không thì gọi `.value.meta` ở nơi
+    // đọc sẽ ném lỗi bị `.catch` nuốt mất, và người dùng mất nháp cũ mà không biết vì sao.
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "value" in parsed &&
+      "savedAt" in parsed &&
+      typeof (parsed as { savedAt: unknown }).savedAt === "number"
+    ) {
+      return parsed as StoredDraft<T>;
+    }
+    return null;
   } catch {
     return null;
   }

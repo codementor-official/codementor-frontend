@@ -1,6 +1,6 @@
 "use client";
 
-import { ReviewFlag } from "@/components/page/review-notice";
+import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -252,6 +252,12 @@ function ArticleDrawerBody({ row }: { row: ArticleListItem }) {
     <DrawerDetail key={row.id} load={() => api.articles.detail(row.id)}>
       {(article) => (
         <>
+          <ReviewNotice reason={article.rejectionReason} status={article.status} />
+          <RemovalPendingNotice
+            reason={article.rejectionReason}
+            removalRequested={article.status === "published" && article.rejectionReason !== null}
+            status={article.status}
+          />
           <DetailMeta>
             <DetailRow label="Slug" value={article.slug} />
             <DetailRow label="Trạng thái" value={ARTICLE_STATUS_LABELS[article.status] ?? article.status} />
@@ -276,8 +282,8 @@ function ArticleDrawerBody({ row }: { row: ArticleListItem }) {
           )}
 
           <DetailSection icon={Newspaper} title="Nội dung">
-            {article.contentHtml.replace(/<[^>]*>/g, "").trim().length > 0 ? (
-              <div className="rich-text text-sm" dangerouslySetInnerHTML={{ __html: article.contentHtml }} />
+            {(article.contentHtml ?? "").replace(/<[^>]*>/g, "").trim().length > 0 ? (
+              <div className="rich-text text-sm" dangerouslySetInnerHTML={{ __html: article.contentHtml ?? "" }} />
             ) : (
               <p className="text-sm text-muted-foreground">Chưa có nội dung.</p>
             )}

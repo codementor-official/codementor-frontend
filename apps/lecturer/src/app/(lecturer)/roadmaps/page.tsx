@@ -18,6 +18,7 @@ import {
   ReasonButton,
   Select,
   StatusBadge,
+  buttonClassName,
   useToast,
   useUndoableDelete,
 } from "@codementor/ui";
@@ -246,7 +247,7 @@ export default function RoadmapsPage() {
                   </ConfirmButton>
                 )}
                 <Link
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground"
+                  className={buttonClassName()}
                   href={`/roadmaps/${row.id}/studio`}
                 >
                   <Pencil aria-hidden="true" className="size-4" /> Mở studio

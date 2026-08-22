@@ -10,6 +10,7 @@ import {
   KeyboardSensor,
   PointerSensor,
   closestCenter,
+  pointerWithin,
   useSensor,
   useSensors,
   type CollisionDetection,
@@ -235,17 +236,24 @@ export default function RoadmapStudioPage() {
   /**
    * `closestCenter` không phân biệt vùng thả cha (pane) với hàng con của chính nó — cả hai
    * cùng đăng ký droppable, nên một cú kéo-sắp-xếp-lại gần tâm pane có thể trúng nhầm pane
-   * thay vì đúng hàng. Lọc trước theo nguồn kéo: kéo từ kho chỉ nhắm "picked-pane" (luôn
-   * thêm vào cuối, không cần biết hàng nào), kéo để sắp xếp lại thì loại "picked-pane" ra,
+   * thay vì đúng hàng. Lọc trước theo nguồn kéo: kéo để sắp xếp lại thì loại "picked-pane" ra,
    * chỉ để các hàng cạnh tranh với nhau — giống cách curriculum-tree.tsx lọc theo chương/bài.
+   *
+   * Kéo từ kho thì KHÔNG dùng `closestCenter`: với đúng một candidate ("picked-pane"), nó luôn
+   * trả candidate đó bất kể con trỏ đang ở đâu — thả ở bất kỳ đâu cũng bị tính là thả vào pane,
+   * và highlight "rê tới để thả" của pane bật sáng suốt lúc kéo thay vì chỉ lúc rê tới. Dùng
+   * `pointerWithin` — trả rỗng khi con trỏ thực sự chưa nằm trong pane, đúng nghĩa "đã thả vào".
    */
   const collisionDetection: CollisionDetection = (args) => {
-    const draggingFromPool = String(args.active.id).startsWith("pool:");
+    if (String(args.active.id).startsWith("pool:")) {
+      return pointerWithin({
+        ...args,
+        droppableContainers: args.droppableContainers.filter((container) => container.id === "picked-pane"),
+      });
+    }
     return closestCenter({
       ...args,
-      droppableContainers: args.droppableContainers.filter((container) =>
-        draggingFromPool ? container.id === "picked-pane" : container.id !== "picked-pane",
-      ),
+      droppableContainers: args.droppableContainers.filter((container) => container.id !== "picked-pane"),
     });
   };
 
