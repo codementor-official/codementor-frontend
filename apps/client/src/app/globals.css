@@ -347,24 +347,6 @@ html {
   animation: notification-in var(--duration-normal, 240ms) var(--ease-standard);
 }
 
-/* Hoàn thành khóa học: một mảnh confetti rơi từ trên xuống, xoay dần, tắt dần cuối đường —
- * mỗi mảnh tự đặt `left`/màu/độ trễ/thời lượng riêng qua inline style, keyframe chỉ lo di
- * chuyển thẳng đứng. */
-@keyframes confetti-fall {
-  0% {
-    opacity: 1;
-    transform: translateY(0) rotate(0deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(100vh) rotate(540deg);
-  }
-}
-
-@utility animate-confetti-fall {
-  animation: confetti-fall linear forwards;
-}
-
 /* Motion is decoration here — every one of these animations is safe to drop entirely. */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -384,10 +366,6 @@ html {
   }
   .mascot-sprite-idle {
     animation: none;
-  }
-  .animate-confetti-fall {
-    animation: none;
-    opacity: 0;
   }
 }
 

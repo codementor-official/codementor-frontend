@@ -9,7 +9,7 @@ import type { Chapter, Course, Lesson } from "@/types/roadmap";
 type LessonLocation = { chapter: Chapter; chapterIndex: number; lessonIndex: number; flatIndex: number };
 
 function lessonHref(roadmapSlug: string, courseSlug: string, lessonId: string) {
-  return `/paths/${roadmapSlug}/courses/${courseSlug}/learn/${lessonId}`;
+  return `/roadmaps/${roadmapSlug}/courses/${courseSlug}/learn/${lessonId}`;
 }
 
 function lessonTargetHref(roadmapSlug: string, course: Course, lesson: Lesson) {
@@ -56,7 +56,7 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-surface">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-navy px-4 py-3 text-on-ink sm:px-5">
-        <Link href={`/paths/${roadmapSlug}/courses/${course.slug}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-on-ink/80 hover:text-on-ink">
+        <Link href={`/roadmaps/${roadmapSlug}/courses/${course.slug}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-on-ink/80 hover:text-on-ink">
           <ChevronLeft className="h-4 w-4" /> Quay lại khóa học
         </Link>
         <span className="hidden h-4 w-px bg-on-ink/20 sm:block" />

@@ -16,32 +16,32 @@ const trail = (pathname: string, titles?: Record<string, string>) =>
 assert.deepEqual(trail("/dashboard"), ["Tổng quan"]);
 
 // A second-level page chains back to the dashboard.
-assert.deepEqual(trail("/paths"), ["Tổng quan→/dashboard", "Lộ trình"]);
+assert.deepEqual(trail("/roadmaps"), ["Tổng quan→/dashboard", "Lộ trình"]);
 
 // Dynamic segment with no registered title falls back to a readable slug.
-assert.deepEqual(trail("/paths/frontend-developer"), [
+assert.deepEqual(trail("/roadmaps/frontend-developer"), [
   "Tổng quan→/dashboard",
-  "Lộ trình→/paths",
+  "Lộ trình→/roadmaps",
   "Frontend developer",
 ]);
 
 // ...and uses the real title once the page registers it.
-assert.deepEqual(trail("/paths/frontend-developer", { "frontend-developer": "Frontend Developer" }), [
+assert.deepEqual(trail("/roadmaps/frontend-developer", { "frontend-developer": "Frontend Developer" }), [
   "Tổng quan→/dashboard",
-  "Lộ trình→/paths",
+  "Lộ trình→/roadmaps",
   "Frontend Developer",
 ]);
 
 // "courses" is a collection segment, not a place — it gets no crumb of its own.
 assert.deepEqual(
-  trail("/paths/frontend-developer/courses/html-co-ban", {
+  trail("/roadmaps/frontend-developer/courses/html-co-ban", {
     "frontend-developer": "Frontend Developer",
     "html-co-ban": "HTML cơ bản",
   }),
   [
     "Tổng quan→/dashboard",
-    "Lộ trình→/paths",
-    "Frontend Developer→/paths/frontend-developer",
+    "Lộ trình→/roadmaps",
+    "Frontend Developer→/roadmaps/frontend-developer",
     "HTML cơ bản",
   ],
 );

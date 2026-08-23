@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { BarChart3, BookOpen, Calendar, LayoutDashboard, Pencil } from "lucide-react";
+import { BarChart3, Calendar, LayoutDashboard, Pencil } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EntityCard } from "@/components/entity-card";
+import { CourseCard } from "@/components/course-card";
 import { ProblemRow } from "@/components/problem-row";
 import { WeeklyGoalCard } from "@/components/personalization/weekly-goal-card";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
@@ -29,7 +29,7 @@ export default function DashboardPage() {
         subtitle="Lộ trình Frontend Developer của bạn đang ở 14% — còn 2 bài nữa là xong chương CSS layout."
         actions={
           <>
-            <Button href="/paths/frontend-developer" size="sm">
+            <Button href="/roadmaps/frontend-developer" size="sm">
               Tiếp tục học →
             </Button>
             <Button href="/settings" variant="outline" size="sm">
@@ -139,20 +139,19 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {featuredCourses.slice(0, 6).map((course, i) => (
                 <div key={course.id}>
-                  <EntityCard
+                  <CourseCard
                     tile={course.thumbnail}
-                    tileVariant={i % 2 === 0 ? "ink" : "primary"}
+                    tileVariant={i % 2 === 0 ? "navy" : "primary"}
                     coverImage={placeholderCoverUrl(course.slug)}
-                    kind={{ icon: BookOpen, label: course.roadmapTitle }}
                     title={course.title}
-                    description={course.description}
+                    desc={course.description}
                     difficulty={courseDifficulty(course.level)}
                     tags={course.technologies.slice(0, 3)}
                     stats={[
                       { label: "chương", value: course.totalChapters },
                       { label: "giờ", value: course.durationHours },
                     ]}
-                    progress={course.progressPercent > 0 ? course.progressPercent : undefined}
+                    completed={course.progressPercent >= 100}
                     href={courseHref(course)}
                   />
                 </div>
