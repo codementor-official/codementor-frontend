@@ -20,8 +20,10 @@ export interface EntityCardStat {
 export interface EntityCardProps {
   tile: string;
   tileVariant?: keyof typeof tileVariantClasses;
-  /** Taller tile for browse-grid contexts (roadmaps/courses); shorter for compact tiles. */
-  tileHeight?: "sm" | "md";
+  /** Taller tile for browse-grid contexts (roadmaps/courses); shorter for compact tiles. `lg` gives the thumbnail top billing. */
+  tileHeight?: "sm" | "md" | "lg";
+  /** `horizontal`: fixed-width thumbnail on the left, content on the right, as one row — for list-style contexts (roadmap course rows). Ignores `tileHeight`, `progress`, `footer`, `cta`, `action`. */
+  layout?: "vertical" | "horizontal";
   eyebrow?: string;
   coverImage?: string;
   kind?: { icon: LucideIcon; label: string };
@@ -49,6 +51,7 @@ export function EntityCard({
   tile,
   tileVariant = "ink",
   tileHeight = "md",
+  layout = "vertical",
   eyebrow,
   coverImage,
   kind,
@@ -65,32 +68,41 @@ export function EntityCard({
   action,
   href,
 }: EntityCardProps) {
-  const content = (
-    <Card interactive={Boolean(href)} className="relative flex h-full flex-col overflow-hidden">
-      {/* A stretched overlay link rather than a wrapper around the card: `action` holds real
-        * buttons, and a <button> inside an <a> is invalid markup that eats its own clicks.
-        * Inside the Card so `interactive`'s hover still fires. */}
-      {href && <Link href={href} className="absolute inset-0 z-0" aria-label={title} />}
-      <div
-        className={`relative flex shrink-0 items-center justify-center font-mono font-bold text-on-ink ${
-          coverImage ? "bg-border-soft" : tileVariantClasses[tileVariant]
-        } ${tileHeight === "sm" ? "h-16 text-base" : "h-20 text-lg"}`}
-      >
-        {coverImage && (
-          <Image
-            src={coverImage}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 100vw, 320px"
-            className="object-cover"
-          />
-        )}
-        {eyebrow && (
-          <span className="absolute top-2 left-2 z-10 rounded-sm bg-surface/90 px-1.5 py-0.5 text-2xs font-bold tracking-wide text-navy uppercase">
-            {eyebrow}
-          </span>
-        )}
-        {coverImage ? (
+  const horizontal = layout === "horizontal";
+
+  const tileBlock = (
+    <div
+      className={`relative flex shrink-0 items-center justify-center font-mono font-bold text-on-ink ${
+        coverImage ? "bg-border-soft" : tileVariantClasses[tileVariant]
+      } ${
+        horizontal
+          ? // Khung theo tỉ lệ ảnh, KHÔNG kéo cao bằng thẻ: `object-cover` trên một ô cao
+            // bằng thẻ mà chỉ rộng ~1/6 sẽ cắt phăng hai bên tấm ảnh ngang, nhìn như bị
+            // phóng to. Giữ 16:9 thì phần cắt gần như bằng không.
+            "aspect-video w-40 shrink-0 self-start overflow-hidden rounded-md sm:w-56"
+          : tileHeight === "sm"
+            ? "h-16 text-base"
+            : tileHeight === "lg"
+              ? "h-40 text-lg"
+              : "h-20 text-lg"
+      }`}
+    >
+      {coverImage && (
+        <Image
+          src={coverImage}
+          alt=""
+          fill
+          sizes={horizontal ? "(max-width: 640px) 160px, 224px" : "(max-width: 640px) 100vw, 320px"}
+          className="object-cover"
+        />
+      )}
+      {eyebrow && (
+        <span className="absolute top-2 left-2 z-10 rounded-sm bg-surface/90 px-1.5 py-0.5 text-2xs font-bold tracking-wide text-navy uppercase">
+          {eyebrow}
+        </span>
+      )}
+      {!horizontal &&
+        (coverImage ? (
           <span
             className={`absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full text-2xs ring-2 ring-surface ${tileVariantClasses[tileVariant]}`}
           >
@@ -98,60 +110,78 @@ export function EntityCard({
           </span>
         ) : (
           tile
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        {kind && (
-          <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wide text-text-faint uppercase">
-            <kind.icon className="h-3 w-3" /> {kind.label}
-          </div>
-        )}
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold text-navy">{title}</h3>
-          {badge}
-        </div>
-        <p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{description}</p>
-        {(difficulty || tags.length > 0) && (
-          <div className="flex flex-wrap gap-1.5">
-            {difficulty && <DifficultyBadge difficulty={difficulty} />}
-            {tags.map((t) => (
-              <Badge key={t} tone="neutral">
-                {t}
-              </Badge>
-            ))}
-          </div>
-        )}
-        {stats.length > 0 && (
-          <div className="flex items-center gap-3 text-xs text-text-faint">
-            {stats.map((s) => (
-              <span key={s.label || String(s.value)}>
-                {s.value}
-                {s.label ? ` ${s.label}` : ""}
-              </span>
-            ))}
-          </div>
-        )}
-        {note && (
-          <p className="rounded-md bg-border-soft px-2.5 py-2 text-2xs leading-relaxed text-text">{note}</p>
-        )}
-        {typeof progress === "number" && <ProgressBar value={progress} />}
-        {footer && (
-          <div className="mt-auto flex justify-between border-t border-border-soft pt-2.5 text-xs text-text-faint">
-            {footer}
-          </div>
-        )}
-        {cta && (
-          <Link
-            href={cta.href}
-            className="relative z-10 mt-auto rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-on-ink hover:bg-navy/90"
-          >
-            {cta.label}
-          </Link>
-        )}
-        {action && <div className="relative z-10 mt-auto pt-1">{action}</div>}
-      </div>
-    </Card>
+        ))}
+    </div>
   );
 
-  return content;
+  const bodyBlock = (
+    <div className={`flex min-w-0 flex-1 flex-col gap-2 ${horizontal ? "py-1" : "p-4"}`}>
+      {kind && (
+        <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wide text-text-faint uppercase">
+          <kind.icon className="h-3 w-3" /> {kind.label}
+        </div>
+      )}
+      <div className="flex items-start justify-between gap-2">
+        <h3 className={`font-semibold text-navy ${horizontal ? "text-base" : "text-sm"}`}>{title}</h3>
+        {badge}
+      </div>
+      <p className={`text-text-muted ${horizontal ? "line-clamp-2 text-sm leading-relaxed" : "line-clamp-2 text-xs leading-relaxed"}`}>
+        {description}
+      </p>
+      {(difficulty || tags.length > 0) && (
+        <div className="flex flex-wrap gap-1.5">
+          {difficulty && <DifficultyBadge difficulty={difficulty} />}
+          {tags.map((t) => (
+            <Badge key={t} tone="neutral">
+              {t}
+            </Badge>
+          ))}
+        </div>
+      )}
+      {stats.length > 0 && (
+        <div className="flex items-center gap-3 text-xs text-text-faint">
+          {stats.map((s) => (
+            <span key={s.label || String(s.value)}>
+              {s.value}
+              {s.label ? ` ${s.label}` : ""}
+            </span>
+          ))}
+        </div>
+      )}
+      {note && (
+        <p className="rounded-md bg-border-soft px-2.5 py-2 text-2xs leading-relaxed text-text">{note}</p>
+      )}
+      {!horizontal && typeof progress === "number" && <ProgressBar value={progress} />}
+      {!horizontal && footer && (
+        <div className="mt-auto flex justify-between border-t border-border-soft pt-2.5 text-xs text-text-faint">
+          {footer}
+        </div>
+      )}
+      {!horizontal && cta && (
+        <Link
+          href={cta.href}
+          className="relative z-10 mt-auto rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-on-ink hover:bg-navy/90"
+        >
+          {cta.label}
+        </Link>
+      )}
+      {!horizontal && action && <div className="relative z-10 mt-auto pt-1">{action}</div>}
+    </div>
+  );
+
+  return (
+    <Card
+      interactive={Boolean(href)}
+      className={`relative h-full overflow-hidden ${
+        horizontal ? "flex flex-row items-start gap-4 p-3" : "flex flex-col"
+      }`}
+    >
+      {/* A stretched overlay link rather than a wrapper around the card: `action` holds real
+        * buttons, and a <button> inside an <a> is invalid markup that eats its own clicks.
+        * Inside the Card so `interactive`'s hover still fires. */}
+      {href && <Link href={href} className="absolute inset-0 z-0" aria-label={title} />}
+      {tileBlock}
+      {bodyBlock}
+    </Card>
+  );
 }

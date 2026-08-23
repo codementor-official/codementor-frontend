@@ -1,7 +1,7 @@
 /**
  * MOCK — superseded by the backend, kept on purpose.
  *
- * The browse pages (/paths, /courses, /practice) read the real catalogue through
+ * The browse pages (/roadmaps, /courses, /practice) read the real catalogue through
  * `lib/api.ts` as of 2026-08-16. This file still backs the surfaces that have no endpoint
  * yet — dashboard widgets, /explore sections, the roadmap and course *detail* routes — so
  * it is not deleted until each of those is wired or dropped.
@@ -9,11 +9,20 @@
  * Do not reintroduce it into a list that now has a backend: two sources for one list is how
  * a page ends up showing numbers the server never sent.
  */
-import type { CourseCardProps } from "@/components/course-card";
+import type { Difficulty } from "@/components/ui/badge";
 import type { CurrentLevel } from "@/types/learning-preference";
 import type { RoadmapField } from "@/types/roadmap";
 
-export interface PracticeItem extends CourseCardProps {
+export interface PracticeItem {
+  tile: string;
+  tileVariant?: "navy" | "accent" | "primary";
+  title: string;
+  desc: string;
+  difficulty: Difficulty;
+  tags?: string[];
+  participants?: string;
+  updated?: string;
+  href?: string;
   id: string;
   fields: RoadmapField[];
   technologies: string[];

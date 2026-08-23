@@ -1,5 +1,5 @@
-import { BookOpen } from "lucide-react";
-import { EntityCard } from "@/components/entity-card";
+import { Check } from "lucide-react";
+import { EntityCard, type EntityCardStat } from "@/components/entity-card";
 import type { Difficulty } from "@/components/ui/badge";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
 
@@ -23,17 +23,20 @@ export interface CourseCardProps {
   desc: string;
   difficulty: Difficulty;
   tags?: string[];
-  participants?: string;
+  /** e.g. { label: "chương", value: 3 }, { label: "bài học", value: 12 } */
+  stats?: EntityCardStat[];
+  /** Shows a small "Hoàn thành" check badge — the only learning-status signal this card carries. */
+  completed?: boolean;
   updated?: string;
-  progress?: number;
   href?: string;
   /** Optional mock/CMS artwork; falls back to the stable generated cover. */
   coverImage?: string;
 }
 
 /**
- * Thin wrapper around `EntityCard` — kept for call-site compatibility (dashboard, practice,
- * explore all import `CourseCard` directly). See `entity-card.tsx` for the shared implementation.
+ * Thumbnail-forward course tile: big cover image, title is the loudest thing on it, no
+ * progress bar or in-card CTA — resuming/enrolling lives on the course detail page, which
+ * `href` already points at.
  */
 export function CourseCard({
   tile,
@@ -43,9 +46,9 @@ export function CourseCard({
   desc,
   difficulty,
   tags = [],
-  participants,
+  stats = [],
+  completed = false,
   updated,
-  progress,
   href,
   coverImage,
 }: CourseCardProps) {
@@ -53,23 +56,22 @@ export function CourseCard({
     <EntityCard
       tile={tile}
       tileVariant={tileVariantMap[tileVariant]}
+      tileHeight="lg"
       eyebrow={eyebrow ?? recentEyebrow(updated)}
       coverImage={coverImage ?? placeholderCoverUrl(title)}
-      kind={{ icon: BookOpen, label: "Khóa học" }}
       title={title}
       description={desc}
       difficulty={difficulty}
       tags={tags}
-      progress={progress}
-      href={href}
-      footer={
-        (participants || updated) && (
-          <>
-            <span>{participants ? `${participants} học viên` : ""}</span>
-            <span>{updated}</span>
-          </>
-        )
+      stats={stats}
+      badge={
+        completed ? (
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary-tint px-2 py-0.5 text-2xs font-bold text-primary">
+            <Check className="h-3 w-3" /> Hoàn thành
+          </span>
+        ) : undefined
       }
+      href={href}
     />
   );
 }

@@ -46,7 +46,7 @@ const audiences = [
 
 const highlights = [
   { type: "Bộ luyện tập", title: "Top 100 câu hỏi phỏng vấn Backend", description: "API, SQL, Java và các tình huống hệ thống thường gặp.", meta: "100 bài · 4 cấp độ", icon: Trophy, href: "/practice" },
-  { type: "Lộ trình mới", title: "Backend Java từ nền tảng đến dự án", description: "Java Core, Spring Boot, database và dự án cuối lộ trình.", meta: "7 khóa học · 42 giờ", icon: BookOpen, href: "/paths/backend-java" },
+  { type: "Lộ trình mới", title: "Backend Java từ nền tảng đến dự án", description: "Java Core, Spring Boot, database và dự án cuối lộ trình.", meta: "7 khóa học · 42 giờ", icon: BookOpen, href: "/roadmaps/backend-java" },
   { type: "Cộng đồng", title: "Thảo luận hướng giải ngay trong IDE", description: "Hỏi đáp, vote và chia sẻ test case mà không rời màn hình code.", meta: "1.280 thảo luận", icon: MessageSquareText, href: "/solve/giai-phuong-trinh-bac-hai" },
   { type: "AI học tập", title: "Codey đồng hành theo trạng thái làm bài", description: "Gợi ý ngắn khi bế tắc và phản hồi theo kết quả test case.", meta: "Hỗ trợ 24/7", icon: Bot, href: "/ai-tutor" },
 ];
@@ -72,7 +72,7 @@ export default function LandingPage() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-5 sm:px-8">
         <Link href="/" className="shrink-0"><BrandLogo size="sm" priority /></Link>
         <nav className="hidden items-center gap-5 lg:flex">
-          {[["Khám phá", "/explore"], ["Luyện tập", "/practice"], ["Lộ trình", "/paths"], ["Nhóm học", "/workspace"]].map(([label, href]) => <Link key={label} href={href} className="text-xs font-medium text-text-muted hover:text-navy">{label}</Link>)}
+          {[["Khám phá", "/explore"], ["Luyện tập", "/practice"], ["Lộ trình", "/roadmaps"], ["Nhóm học", "/workspace"]].map(([label, href]) => <Link key={label} href={href} className="text-xs font-medium text-text-muted hover:text-navy">{label}</Link>)}
         </nav>
         <div className="flex-1" />
         <label className="hidden h-9 w-56 items-center gap-2 rounded-full border border-border px-3 xl:flex"><Search className="h-3.5 w-3.5 text-text-faint" /><span className="text-xs text-text-faint">Tìm bài tập, lộ trình...</span></label>
@@ -163,7 +163,7 @@ export default function LandingPage() {
       </section>
 
       <section className="px-5 pb-16 sm:px-8">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-primary/20 bg-primary-tint px-6 py-10 text-center sm:px-10"><Award className="mx-auto h-8 w-8 text-primary" /><h2 className="mt-4 text-3xl font-bold text-navy">Sẵn sàng chinh phục cột mốc tiếp theo?</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-text-muted">Tạo hồ sơ miễn phí, chọn mục tiêu và bắt đầu tích lũy XP từ bài luyện tập đầu tiên.</p><div className="mt-6 flex flex-wrap justify-center gap-3"><Button href="/signup">Tạo tài khoản miễn phí <ArrowRight className="h-4 w-4" /></Button><Button href="/paths" variant="outline">Xem lộ trình học</Button></div></div>
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-primary/20 bg-primary-tint px-6 py-10 text-center sm:px-10"><Award className="mx-auto h-8 w-8 text-primary" /><h2 className="mt-4 text-3xl font-bold text-navy">Sẵn sàng chinh phục cột mốc tiếp theo?</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-text-muted">Tạo hồ sơ miễn phí, chọn mục tiêu và bắt đầu tích lũy XP từ bài luyện tập đầu tiên.</p><div className="mt-6 flex flex-wrap justify-center gap-3"><Button href="/signup">Tạo tài khoản miễn phí <ArrowRight className="h-4 w-4" /></Button><Button href="/roadmaps" variant="outline">Xem lộ trình học</Button></div></div>
       </section>
     </main>
 

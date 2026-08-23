@@ -67,7 +67,7 @@ export const dashDeadlines = [
 ];
 
 export const recentlyViewed = [
-  { tile: "{ }", title: "Nhập môn Lập trình", meta: "Lộ trình · Hôm qua", href: "/paths/nhap-mon" },
+  { tile: "{ }", title: "Nhập môn Lập trình", meta: "Lộ trình · Hôm qua", href: "/roadmaps/nhap-mon" },
   { tile: "Σ", title: "Tính tổng phần tử mảng", meta: "Bài luyện tập · 2 ngày trước", href: "/practice" },
 ];
 

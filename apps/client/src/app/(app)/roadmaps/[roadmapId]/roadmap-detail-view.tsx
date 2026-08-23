@@ -79,7 +79,7 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
       <Card className="border-dashed p-10 text-center">
         <p className="text-sm font-semibold text-navy">Không mở được lộ trình này</p>
         <p className="mt-1 text-xs text-text-muted">{error}</p>
-        <Link href="/paths" className="mt-3 inline-block text-xs font-semibold text-primary hover:underline">
+        <Link href="/roadmaps" className="mt-3 inline-block text-xs font-semibold text-primary hover:underline">
           Quay lại danh sách lộ trình
         </Link>
       </Card>
@@ -133,18 +133,18 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
               {courses.map((course) => {
                 const detail = courseDetails.get(course.courseId);
                 return (
-                  // Số thứ tự đứng NGOÀI thẻ, không đè lên thumbnail — `eyebrow` của
-                  // EntityCard vốn để trong ảnh bìa, nhưng cùng góc với avatar chữ cái của
-                  // `tile` thì hai nhãn chồng lên nhau trên một banner thấp (`tileHeight="sm"`).
+                  // Số thứ tự đứng NGOÀI thẻ, không đè lên thumbnail — layout ngang đặt
+                  // thumbnail bên trái, thông tin bên phải, nên không còn chỗ nào để lồng số
+                  // thứ tự vào ảnh bìa nữa.
                   <li key={course.courseId} className="flex items-start gap-3">
                     <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy font-mono text-xs font-bold text-on-ink">
                       {course.position}
                     </span>
                     <div className="min-w-0 flex-1">
                       <EntityCard
-                        tileHeight="sm"
+                        layout="horizontal"
                         tile={tileFor(course.title)}
-                        coverImage={detail?.coverImageUrl ?? placeholderCoverUrl(course.slug)}
+                        coverImage={detail?.coverImageUrl || placeholderCoverUrl(course.slug)}
                         kind={{ icon: User, label: detail?.authorName ?? "CodeMentor" }}
                         title={course.title}
                         description={detail?.description ?? "Chưa có mô tả cho khóa học này."}

@@ -1,7 +1,7 @@
 /**
  * MOCK — superseded by the backend, kept on purpose.
  *
- * The browse pages (/paths, /courses, /practice) read the real catalogue through
+ * The browse pages (/roadmaps, /courses, /practice) read the real catalogue through
  * `lib/api.ts` as of 2026-08-16. This file still backs the surfaces that have no endpoint
  * yet — dashboard widgets, /explore sections, the roadmap and course *detail* routes — so
  * it is not deleted until each of those is wired or dropped.
@@ -37,7 +37,7 @@ export function courseDifficulty(level: CurrentLevel): Difficulty {
 }
 
 export function courseHref(course: CatalogCourse): string {
-  return `/paths/${course.roadmapSlug}/courses/${course.slug}`;
+  return `/roadmaps/${course.roadmapSlug}/courses/${course.slug}`;
 }
 
 /** One course per roadmap, in catalog order — gives topic variety for a "featured courses"

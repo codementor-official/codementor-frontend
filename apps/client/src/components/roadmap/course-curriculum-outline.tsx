@@ -68,7 +68,7 @@ function ChapterBlock({
       </summary>
       <div className="divide-y divide-border-soft">
         {chapter.lessons.map((lesson) => (
-          <LessonRow key={lesson.id} lesson={lesson} isNext={lesson.id === nextLessonId} href={hrefForLesson?.(lesson) ?? `/paths/${roadmapSlug}/courses/${courseSlug}/learn/${lesson.id}`} />
+          <LessonRow key={lesson.id} lesson={lesson} isNext={lesson.id === nextLessonId} href={hrefForLesson?.(lesson) ?? `/roadmaps/${roadmapSlug}/courses/${courseSlug}/learn/${lesson.id}`} />
         ))}
       </div>
     </details>

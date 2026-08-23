@@ -36,7 +36,7 @@ function CourseSummaryCard({ roadmapSlug, course, index }: { roadmapSlug: string
           </div>
         </div>
         <Link
-          href={`/paths/${roadmapSlug}/courses/${course.slug}`}
+          href={`/roadmaps/${roadmapSlug}/courses/${course.slug}`}
           className={`shrink-0 rounded-md px-4 py-2 text-xs font-semibold text-on-ink ${
             hasCurriculum ? "bg-navy hover:bg-navy/90" : "bg-text-faint hover:bg-text-muted"
           }`}
