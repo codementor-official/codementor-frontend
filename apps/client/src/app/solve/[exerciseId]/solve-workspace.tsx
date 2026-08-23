@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -11,27 +10,32 @@ import { ProblemPicker } from "@/components/workspace/problem-picker";
 import { UserMenu } from "@/components/user-menu";
 import { TAB_META, type PaneId, type PanesState, type TabKind } from "@/components/workspace/types";
 import { LanguageDropdown, Pane, ResizeHandle, useWorkspace, WorkspaceProvider } from "@codementor/ui";
+import { CodeEditor, FORMATTABLE_LANGUAGES } from "@codementor/editor";
+import { fileExtension as fileExtensionOf, LANGUAGES, showValue } from "@codementor/solve";
 import { type Problem } from "@/data/sample-problem";
 import { useResolvedTheme } from "@/lib/store/use-resolved-theme";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
-import { JUDGE_LANGUAGE_IDS, VERDICT_LABELS, type JudgeRunResult } from "@/types/judge";
+import { VERDICT_LABELS, type JudgeRunResult } from "@/types/judge";
 import { DiscussionPanel } from "@/components/workspace/discussion-panel";
 import { MascotAssistant, type MascotState } from "@/components/workspace/mascot-assistant";
 import "highlight.js/styles/github-dark.css";
 
-const Editor = dynamic(() => import("@monaco-editor/react"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center text-xs text-text-muted">
-      Đang tải trình soạn code...
-    </div>
-  ),
-});
-
-const languages = ["C", "C++", "Python", "Java", "JavaScript"];
-const monacoLang: Record<string, string> = { C: "c", "C++": "cpp", Python: "python", Java: "java", JavaScript: "javascript" };
-const fileExtension: Record<string, string> = { C: "c", "C++": "cpp", Python: "py", Java: "java", JavaScript: "js" };
+/**
+ * Danh sách ngôn ngữ dùng chung với giảng viên/admin (`@codementor/solve`) — trước đây trang
+ * này tự khai một danh sách rút gọn (C/C++/Python/Java/JavaScript), nên bài nào chỉ có Go,
+ * TypeScript hay PHP thì học viên không giải được dù giảng viên đã đăng.
+ */
+const languages = LANGUAGES.map((entry) => entry.label);
+const monacoLang: Record<string, string> = Object.fromEntries(
+  LANGUAGES.map((entry) => [entry.label, entry.monaco ?? entry.id]),
+);
+const fileExtension: Record<string, string> = Object.fromEntries(
+  LANGUAGES.map((entry) => [entry.label, fileExtensionOf(entry.id)]),
+);
+const languageIdOf: Record<string, string> = Object.fromEntries(
+  LANGUAGES.map((entry) => [entry.label, entry.id]),
+);
 const xpByDifficulty = { "Cơ bản": 25, "Trung bình": 50, "Nâng cao": 80 } as const;
 
 const initialPanes: PanesState = {
@@ -119,7 +123,7 @@ export function SolveWorkspace({
 
     try {
       const result = await api.judge.run({
-        language: JUDGE_LANGUAGE_IDS[language] ?? language.toLowerCase(),
+        language: languageIdOf[language] ?? language.toLowerCase(),
         sourceCode: code[language] ?? "",
         timeLimitMs,
         memoryLimitKb,
@@ -208,26 +212,27 @@ export function SolveWorkspace({
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                 </button>
-                <button
-                  onClick={formatCode}
-                  title="Format code"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
-                >
-                  <Braces className="h-3.5 w-3.5" />
-                </button>
+                {FORMATTABLE_LANGUAGES.has(monacoLang[language]) && (
+                  <button
+                    onClick={formatCode}
+                    title="Định dạng code"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-navy"
+                  >
+                    <Braces className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="min-h-0 flex-1">
-              <Editor
-                key={language}
+              <CodeEditor
+                height="100%"
                 onMount={(editor) => {
                   editorRef.current = editor;
                 }}
                 language={monacoLang[language]}
                 value={code[language] ?? ""}
-                onChange={(v) => handleCodeChange(v ?? "")}
-                theme={editorTheme === "dark" ? "vs-dark" : "vs"}
-                options={{ fontSize: 13, lineHeight: 21, minimap: { enabled: true, scale: 0.7, showSlider: "mouseover" }, automaticLayout: true, padding: { top: 14 }, fontLigatures: true, smoothScrolling: true, cursorBlinking: "smooth", renderLineHighlight: "all", bracketPairColorization: { enabled: true } }}
+                onChange={handleCodeChange}
+                theme={editorTheme}
               />
             </div>
           </div>
@@ -238,21 +243,22 @@ export function SolveWorkspace({
             {(problem.publicTestCases ?? problem.testCases).map((tc, i) => (
               <div key={i} className="rounded-md border border-border-soft bg-bg p-2.5 font-mono text-xs">
                 <div className="mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">
-                  {tc.args !== undefined ? "Tham số" : "Input"}
+                  {tc.args !== undefined ? "Tham số" : "Đầu vào"}
                 </div>
-                <div className="text-navy">
-                  {tc.args !== undefined
-                    ? tc.args.map((arg) => JSON.stringify(arg)).join(", ")
-                    : tc.input}
+                <pre className="whitespace-pre-wrap text-navy">
+                  {(tc.args !== undefined
+                    ? tc.args
+                        .map(
+                          (arg, position) =>
+                            `${problem.spec?.parameters[position]?.name ?? `arg${position}`} = ${showValue(arg)}`,
+                        )
+                        .join("\n")
+                    : showValue(tc.input)) || "(rỗng)"}
+                </pre>
+                <div className="mt-2 mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">
+                  {tc.args !== undefined ? "Trả về" : "Đầu ra"}
                 </div>
-                {tc.expected !== undefined && tc.expected !== "" && (
-                  <>
-                    <div className="mt-1.5 mb-1 font-sans text-2xs font-semibold text-text-faint uppercase">
-                      Kết quả mong đợi
-                    </div>
-                    <div className="text-navy">{JSON.stringify(tc.expected)}</div>
-                  </>
-                )}
+                <pre className="whitespace-pre-wrap text-navy">{showValue(tc.expected) || "(rỗng)"}</pre>
               </div>
             ))}
           </div>

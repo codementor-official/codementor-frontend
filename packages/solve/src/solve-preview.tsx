@@ -27,9 +27,10 @@ import {
   type PanesState,
   type TabMetaMap,
 } from "@codementor/ui";
-import { CodeEditor } from "@codementor/editor";
+import { CodeEditor, FORMATTABLE_LANGUAGES } from "@codementor/editor";
 import {
   DIFFICULTY_LABELS,
+  fileExtension,
   STATUS_LABELS,
   STATUS_TONES,
   VERDICT_LABELS,
@@ -50,22 +51,6 @@ type SolveTab = "description" | "code" | "testcase" | "result";
  * Hai từ vựng không trùng nhau vì `checker` có sẵn từ thời stdin: `trimmed` và `custom` không
  * có nghĩa khi so sánh giá trị có kiểu, nên chúng về `exact`.
  */
-/**
- * Đuôi file hiển thị trên chip tên file.
- *
- * `language.id` không phải lúc nào cũng là đuôi file — `python` là `.py`, `javascript` là
- * `.js`. Chỉ liệt kê chỗ khác nhau; còn lại id chính là đuôi.
- */
-const FILE_EXTENSIONS: Record<string, string> = {
-  python: "py",
-  javascript: "js",
-  typescript: "ts",
-};
-
-function fileExtension(languageId: string): string {
-  return FILE_EXTENSIONS[languageId] ?? languageId;
-}
-
 function judgeModeOf(checker: string | undefined): "exact" | "float" | "unordered" {
   if (checker === "float" || checker === "unordered") return checker;
   return "exact";
@@ -229,14 +214,16 @@ export function SolvePreview({ exercise, theme, run, back, actions }: SolvePrevi
                   >
                     <RotateCcw className="size-3.5" />
                   </button>
-                  <button
-                    className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                    onClick={() => editorRef.current?.getAction("editor.action.formatDocument")?.run()}
-                    title="Định dạng code"
-                    type="button"
-                  >
-                    <Braces className="size-3.5" />
-                  </button>
+                  {language && FORMATTABLE_LANGUAGES.has(language.monaco ?? language.id) && (
+                    <button
+                      className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                      onClick={() => editorRef.current?.getAction("editor.action.formatDocument")?.run()}
+                      title="Định dạng code"
+                      type="button"
+                    >
+                      <Braces className="size-3.5" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -430,8 +417,25 @@ function SolveBody({
   back: { href: string; label: string };
   actions?: ReactNode;
 }) {
-  const { setActive } = useWorkspace();
+  const { setActive, maximized } = useWorkspace();
   const openResult = () => setActive("console", "result");
+
+  const leftPane = (
+    <Pane<SolveTab> id="left" className="min-h-0">
+      {renderTab}
+    </Pane>
+  );
+  const editorPane = (
+    <Pane<SolveTab> id="editor" className="min-h-0">
+      {renderTab}
+    </Pane>
+  );
+  const consolePane = (
+    <Pane<SolveTab> id="console" className="min-h-0">
+      {renderTab}
+    </Pane>
+  );
+  const panesById = { left: leftPane, editor: editorPane, console: consolePane };
 
   return (
       <div className="flex h-full flex-col">
@@ -456,31 +460,29 @@ function SolveBody({
         </div>
 
         <div className="min-h-0 flex-1">
-          <Group orientation="horizontal" className="h-full">
-            <Panel id="left" defaultSize="42%" minSize="20%" className="min-h-0">
-              <Pane<SolveTab> id="left" className="min-h-0">
-                {renderTab}
-              </Pane>
-            </Panel>
+          {maximized ? (
+            <div className="h-full">{panesById[maximized as keyof typeof panesById]}</div>
+          ) : (
+            <Group orientation="horizontal" className="h-full">
+              <Panel id="left" defaultSize="42%" minSize="20%" className="min-h-0">
+                {leftPane}
+              </Panel>
 
-            <ResizeHandle orientation="horizontal" />
+              <ResizeHandle orientation="horizontal" />
 
-            <Panel id="workbench" defaultSize="58%" minSize="30%" className="min-h-0">
-              <Group orientation="vertical" className="h-full">
-                <Panel id="editor" defaultSize="62%" minSize="20%" className="min-h-0">
-                  <Pane<SolveTab> id="editor" className="min-h-0">
-                    {renderTab}
-                  </Pane>
-                </Panel>
-                <ResizeHandle orientation="vertical" />
-                <Panel id="console" defaultSize="38%" minSize="15%" className="min-h-0">
-                  <Pane<SolveTab> id="console" className="min-h-0">
-                    {renderTab}
-                  </Pane>
-                </Panel>
-              </Group>
-            </Panel>
-          </Group>
+              <Panel id="workbench" defaultSize="58%" minSize="30%" className="min-h-0">
+                <Group orientation="vertical" className="h-full">
+                  <Panel id="editor" defaultSize="62%" minSize="20%" className="min-h-0">
+                    {editorPane}
+                  </Panel>
+                  <ResizeHandle orientation="vertical" />
+                  <Panel id="console" defaultSize="38%" minSize="15%" className="min-h-0">
+                    {consolePane}
+                  </Panel>
+                </Group>
+              </Panel>
+            </Group>
+          )}
         </div>
       </div>
   );

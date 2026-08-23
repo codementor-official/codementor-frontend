@@ -155,6 +155,32 @@ export function sessionNeedsRefresh(session: AdminSession): boolean {
   return session.accessExpiresAt <= Math.floor(Date.now() / 1000) + 30;
 }
 
+/**
+ * Kết thúc phiên qua back-channel — thu hồi refresh token của RIÊNG client
+ * `codementor-admin`, không điều hướng trình duyệt tới Keycloak.
+ *
+ * Trước đây route `/api/auth/logout` redirect thẳng tới `end_session` (front-channel):
+ * việc đó xoá cookie SSO dùng chung ở id.codementor.cloud và khiến Keycloak thu hồi
+ * TOÀN BỘ phiên người dùng, kể cả apps/lecturer và apps/client (khi đăng nhập popup)
+ * đang mở ở tab khác. `prompt: "login"` ở route đăng nhập đã buộc luôn hiện form bất
+ * kể cookie SSO còn sống hay không, nên không cần dựa vào việc xoá cookie đó để "an
+ * toàn" — chỉ cần refresh token của app này chết là đủ. `codementor-admin` là public
+ * client (không có client_secret) nên endpoint chấp nhận `client_id` + `refresh_token`
+ * không kèm secret, giống hệt cách `requestTokens` gọi grant_type=refresh_token ở trên.
+ */
+export async function endAdminKeycloakSession(session: AdminSession): Promise<void> {
+  const config = getAdminAuthConfig();
+  await fetch(`${keycloakRealmUrl(config)}/protocol/openid-connect/logout`, {
+    body: new URLSearchParams({
+      client_id: config.clientId,
+      refresh_token: session.refreshToken,
+    }),
+    cache: "no-store",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    method: "POST",
+  });
+}
+
 async function requestTokens(parameters: Record<string, string>): Promise<TokenResponse> {
   const config = getAdminAuthConfig();
   const response = await fetch(`${keycloakRealmUrl(config)}/protocol/openid-connect/token`, {

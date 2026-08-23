@@ -370,19 +370,21 @@ function SignatureCard({
                   ))}
                 </select>
               </label>
-              <button
+              <Button
                 aria-label={`Xoá tham số ${parameter.name}`}
-                className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="shrink-0"
                 onClick={() =>
                   onChange({
                     ...signature,
                     parameters: parameters.filter((_, position) => position !== index),
                   })
                 }
+                size="sm"
                 type="button"
+                variant="danger"
               >
-                <X className="size-4" />
-              </button>
+                <X className="size-3.5" />
+              </Button>
             </div>
           ))}
         </div>
@@ -707,11 +709,18 @@ export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "l
             {isFunction ? (
               // Không cho sửa: mã khởi tạo phải khớp chính xác chữ ký mà driver sẽ gọi. Sửa
               // được là mở đường cho một bài mà học viên không thể nào giải đúng.
-              <pre className="overflow-x-auto rounded-md border bg-muted/40 p-3 font-mono text-xs">
-                {language.starterCode ||
+              <CodeEditor
+                height={150}
+                language={language.monaco ?? language.id}
+                onChange={() => {}}
+                readOnly
+                theme={theme}
+                value={
+                  language.starterCode ||
                   unsupported[language.id] ||
-                  "// đang sinh từ chữ ký hàm…"}
-              </pre>
+                  "// đang sinh từ chữ ký hàm…"
+                }
+              />
             ) : (
               <CodeEditor
                 height={150}
@@ -811,14 +820,15 @@ export function ExerciseCodeForm({ value, onChange, readOnly = false, theme = "l
                   ]}
                   value={testCase.visibility}
                 />
-                <button
+                <Button
                   aria-label={`Xoá case ${testCase.order}`}
-                  className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                   onClick={() => removeTestCase(index)}
+                  size="sm"
                   type="button"
+                  variant="danger"
                 >
-                  <X className="size-4" />
-                </button>
+                  <X className="size-3.5" />
+                </Button>
               </div>
             </div>
 

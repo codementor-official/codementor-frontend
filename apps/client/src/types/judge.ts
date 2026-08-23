@@ -38,12 +38,3 @@ export const VERDICT_LABELS: Record<JudgeVerdict, string> = {
   timeout: "Quá thời gian cho phép",
   memory_exceeded: "Quá bộ nhớ cho phép",
 };
-
-/** Tên ngôn ngữ hiển thị ở trang solve sang id mà judge hiểu. */
-export const JUDGE_LANGUAGE_IDS: Record<string, string> = {
-  C: "c",
-  "C++": "cpp",
-  Python: "python",
-  Java: "java",
-  JavaScript: "javascript",
-};

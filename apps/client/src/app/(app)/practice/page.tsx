@@ -66,9 +66,6 @@ function ExerciseRow({
           {new Date(item.updatedAt).toLocaleDateString("vi-VN")}
         </span>
       </Link>
-      <span className="hidden w-20 shrink-0 text-right text-xs text-text-muted sm:block">
-        {item.kind === "code" ? "Bài code" : item.kind}
-      </span>
       <span className={`w-20 shrink-0 text-right text-xs font-semibold ${difficultyClass(difficulty)}`}>
         {difficulty}
       </span>
@@ -188,7 +185,6 @@ export default function PracticePage() {
               <div className="flex items-center gap-3 border-b border-border bg-bg px-4 py-3">
                 <Search className="h-4 w-4 text-text-faint" />
                 <span className="flex-1 text-sm font-bold text-navy">Danh sách bài tập</span>
-                <span className="hidden w-20 text-right text-xs text-text-faint sm:block">Dạng</span>
                 <span className="w-20 text-right text-xs text-text-faint">Độ khó</span>
                 <span className="w-7" />
               </div>

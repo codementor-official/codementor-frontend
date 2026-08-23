@@ -1,4 +1,9 @@
-import { breadcrumbTrail, type BreadcrumbItem, type RouteMeta } from "@codementor/ui";
+import {
+  breadcrumbTrail,
+  type BreadcrumbItem,
+  type BreadcrumbTitleEntry,
+  type RouteMeta,
+} from "@codementor/ui";
 
 /**
  * The one place a lecturer route's human name lives. Same contract as the web
@@ -18,6 +23,9 @@ const ROUTES: Record<string, RouteMeta> = {
 /** Labels for the trailing segments the studio routes end in. */
 const SEGMENT_LABELS = { studio: "Studio", solve: "Làm thử" };
 
-export function breadcrumbFor(pathname: string): BreadcrumbItem[] {
-  return breadcrumbTrail(ROUTES, pathname, { titles: SEGMENT_LABELS });
+export function breadcrumbFor(
+  pathname: string,
+  titles: Record<string, BreadcrumbTitleEntry> = {},
+): BreadcrumbItem[] {
+  return breadcrumbTrail(ROUTES, pathname, { titles: { ...SEGMENT_LABELS, ...titles } });
 }

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { AppTopbar, Breadcrumb, NotificationBell, ThemeMenu } from "@codementor/ui";
+import { AppTopbar, Breadcrumb, NotificationBell, ThemeMenu, useBreadcrumbTitles } from "@codementor/ui";
 import type { NotificationSource } from "@codementor/ui";
 import { breadcrumbFor } from "@/components/navigation/route-meta";
 import { useAuth } from "@/providers/auth-provider";
@@ -18,6 +18,7 @@ import { realtimeUrl } from "@/lib/env";
 export function LecturerTopbar({ onMobileMenu }: { onMobileMenu: () => void }) {
   const { signOut, status, realtimeToken } = useAuth();
   const pathname = usePathname();
+  const breadcrumbTitles = useBreadcrumbTitles();
 
   const notifications: NotificationSource = {
     list: (params) => api.notifications.list(params),
@@ -52,7 +53,7 @@ export function LecturerTopbar({ onMobileMenu }: { onMobileMenu: () => void }) {
           </button>
         </>
       }
-      breadcrumb={<Breadcrumb items={breadcrumbFor(pathname)} />}
+      breadcrumb={<Breadcrumb items={breadcrumbFor(pathname, breadcrumbTitles)} />}
       onMobileMenu={onMobileMenu}
     />
   );

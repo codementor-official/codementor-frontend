@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Check, ChevronLeft, ChevronRight, Circle, Code2, FileText, Lock, PlayCircle } from "lucide-react";
 import type { ReactNode } from "react";
+import { isLessonLocked } from "@/lib/lesson-unlock";
 import type { CourseDetail, CourseLesson, LessonProgress } from "@/types/catalogue";
 
 const LESSON_ICON: Record<string, typeof FileText> = {
@@ -48,6 +49,7 @@ export function LessonShell({
   lessons,
   progressByLesson,
   current,
+  enrolled,
   footer,
   children,
 }: {
@@ -55,15 +57,17 @@ export function LessonShell({
   lessons: FlatLesson[];
   progressByLesson: Map<string, LessonProgress>;
   current: FlatLesson;
+  /** Chưa ghi danh: đang xem nhờ `isPreview`, nên không cho nhảy sang bài khác từ đây. */
+  enrolled: boolean;
   /** The completion control — differs per lesson type, so the page owns it. */
   footer: ReactNode;
   children: ReactNode;
 }) {
   const index = lessons.findIndex((lesson) => lesson.id === current.id);
-  const previous = index > 0 ? lessons[index - 1] : null;
-  const next = index >= 0 && index < lessons.length - 1 ? lessons[index + 1] : null;
+  const previous = enrolled && index > 0 ? lessons[index - 1] : null;
+  const next = enrolled && index >= 0 && index < lessons.length - 1 ? lessons[index + 1] : null;
   const nextProgress = next ? progressByLesson.get(next.id) : undefined;
-  const nextLocked = Boolean(next) && nextProgress?.isAvailable === false;
+  const nextLocked = next !== null && isLessonLocked(next, nextProgress, enrolled);
 
   return (
     // Mục lục nằm cột phải, nhưng đứng SAU nội dung trong DOM — thứ tự đọc và thứ tự Tab
@@ -119,8 +123,11 @@ export function LessonShell({
           {lessons.map((lesson, position) => {
             const progress = progressByLesson.get(lesson.id);
             const done = progress?.status === "completed";
-            const locked = progress?.isAvailable === false;
             const active = lesson.id === current.id;
+            // Chưa ghi danh: mọi bài khác — kể cả bài cũng cho xem trước — đều không nhảy
+            // tới được từ đây. Xem trước là cách vào MỘT bài từ trang khóa học, không phải
+            // giấy thông hành dạo khắp khóa học.
+            const locked = active ? false : !enrolled ? true : isLessonLocked(lesson, progress, enrolled);
             const Icon = LESSON_ICON[lesson.type] ?? FileText;
             const showsChapter =
               position === 0 || lessons[position - 1].chapterPosition !== lesson.chapterPosition;

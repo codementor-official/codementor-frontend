@@ -2,12 +2,26 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Info, Save, Send, Tags, Undo2 } from "lucide-react";
+import { Info, Save, Send, Tags, TriangleAlert, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { Group, Panel } from "react-resizable-panels";
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  pointerWithin,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import {
+  BreadcrumbTitle,
   Button,
   Card,
+  Modal,
   PageHeader,
   ResizeHandle,
   StatusBadge,
@@ -19,7 +33,9 @@ import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
-import { CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
+import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
+import { SortableOverlay } from "@/components/sortable";
+import { addCourse, CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
 import type { CourseListItem } from "@/features/courses/types";
 import { api } from "@/lib/api";
 import { isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
@@ -79,6 +95,9 @@ export default function RoadmapStudioPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { scheduleDelete } = useUndoableDelete();
+  // Nháp phát hiện trong localStorage lúc mở trang, còn chờ người dùng chọn khôi phục
+  // hay bỏ qua — xem effect nạp lộ trình bên dưới và ô thoại render ở cuối component.
+  const [pendingDraft, setPendingDraft] = useState<StoredDraft<{ draft: Draft; picked: PickedCourse[] }> | null>(null);
 
   const apply = useCallback((loaded: Roadmap) => {
     setRoadmap(loaded);
@@ -101,6 +120,22 @@ export default function RoadmapStudioPage() {
       .then((loaded) => {
         if (cancelled) return;
         apply(loaded);
+
+        const freshDraft = toDraft(loaded);
+        const freshPicked: PickedCourse[] = (loaded.courses ?? []).map((course) => ({
+          courseId: course.courseId,
+          title: course.title,
+          status: course.status,
+          durationHours: course.durationHours,
+          isOptional: course.isOptional,
+        }));
+        const stored = readDraft<{ draft: Draft; picked: PickedCourse[] }>(draftStorageKey("roadmap", id));
+        if (!stored) return;
+        if (signature(stored.value.draft, stored.value.picked) === signature(freshDraft, freshPicked)) {
+          clearDraft(draftStorageKey("roadmap", id));
+        } else {
+          setPendingDraft(stored);
+        }
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(describe(cause));
@@ -142,19 +177,29 @@ export default function RoadmapStudioPage() {
   };
 
   // Trước early return: hook phải chạy ở mọi lần render.
-  const unsavedDialog = useUnsavedGuard(
+  const dirty =
     Boolean(roadmap && draft) &&
-      signature(draft as Draft, picked) !==
-        signature(
-          toDraft(roadmap as Roadmap),
-          ((roadmap as Roadmap).courses ?? []).map((course) => ({
-            courseId: course.courseId,
-            title: course.title,
-            status: course.status,
-            durationHours: course.durationHours,
-            isOptional: course.isOptional,
-          })),
-        ),
+    signature(draft as Draft, picked) !==
+      signature(
+        toDraft(roadmap as Roadmap),
+        ((roadmap as Roadmap).courses ?? []).map((course) => ({
+          courseId: course.courseId,
+          title: course.title,
+          status: course.status,
+          durationHours: course.durationHours,
+          isOptional: course.isOptional,
+        })),
+      );
+  useDraftAutosave(draftStorageKey("roadmap", id), { draft: draft as Draft, picked }, {
+    ready: Boolean(roadmap && draft),
+    dirty,
+  });
+  const unsavedDialog = useUnsavedGuard(dirty);
+  // Cũng phải chạy trước early return — dùng ở DndContext bên dưới, sau chỗ trang có thể
+  // return sớm khi đang tải hoặc lỗi.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   if (error && !roadmap) {
@@ -188,9 +233,104 @@ export default function RoadmapStudioPage() {
   };
   const blocker = isClean(errors) ? undefined : "Còn ô chưa hợp lệ ở thông tin lộ trình";
 
+  /**
+   * `closestCenter` không phân biệt vùng thả cha (pane) với hàng con của chính nó — cả hai
+   * cùng đăng ký droppable, nên một cú kéo-sắp-xếp-lại gần tâm pane có thể trúng nhầm pane
+   * thay vì đúng hàng. Lọc trước theo nguồn kéo: kéo để sắp xếp lại thì loại "picked-pane" ra,
+   * chỉ để các hàng cạnh tranh với nhau — giống cách curriculum-tree.tsx lọc theo chương/bài.
+   *
+   * Kéo từ kho thì KHÔNG dùng `closestCenter`: với đúng một candidate ("picked-pane"), nó luôn
+   * trả candidate đó bất kể con trỏ đang ở đâu — thả ở bất kỳ đâu cũng bị tính là thả vào pane,
+   * và highlight "rê tới để thả" của pane bật sáng suốt lúc kéo thay vì chỉ lúc rê tới. Dùng
+   * `pointerWithin` — trả rỗng khi con trỏ thực sự chưa nằm trong pane, đúng nghĩa "đã thả vào".
+   */
+  const collisionDetection: CollisionDetection = (args) => {
+    if (String(args.active.id).startsWith("pool:")) {
+      return pointerWithin({
+        ...args,
+        droppableContainers: args.droppableContainers.filter((container) => container.id === "picked-pane"),
+      });
+    }
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter((container) => container.id !== "picked-pane"),
+    });
+  };
+
+  /**
+   * Một `DndContext` cho cả hai pane: kéo từ "Kho khóa học" thả VÀO BẤT KỲ ĐÂU trong pane lộ
+   * trình thì thêm vào cuối (giống hệt nút "+"); kéo trong pane lộ trình thì vẫn là sắp xếp
+   * lại như trước. Chỉ "Kho khóa học" đăng ký `useDroppable`/`useDraggable`, nên `over` khác
+   * null LUÔN LUÔN thuộc phía lộ trình — không cần kiểm thêm over.id.
+   */
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over) return;
+    const activeId = String(active.id);
+
+    if (activeId.startsWith("pool:")) {
+      const courseId = activeId.slice("pool:".length);
+      const course = available.find((item) => item.id === courseId);
+      if (!course || picked.some((item) => item.courseId === courseId)) return;
+      setPicked(addCourse(picked, course));
+      return;
+    }
+
+    if (active.id === over.id) return;
+    const from = picked.findIndex((course) => course.courseId === active.id);
+    const to = picked.findIndex((course) => course.courseId === over.id);
+    if (from < 0 || to < 0) return;
+    setPicked(arrayMove(picked, from, to));
+  };
+
   return (
     <>
     {unsavedDialog}
+    <BreadcrumbTitle href={`/roadmaps?open=${id}`} slug={id} title={draft.title || roadmap.slug} />
+    <Modal
+      description={
+        pendingDraft
+          ? `Bản nháp từ ${new Date(pendingDraft.savedAt).toLocaleString("vi-VN")}, chưa kịp lưu vào hệ thống.`
+          : undefined
+      }
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button
+            onClick={() => {
+              clearDraft(draftStorageKey("roadmap", id));
+              setPendingDraft(null);
+            }}
+            type="button"
+            variant="outline"
+          >
+            Bỏ qua
+          </Button>
+          <Button
+            onClick={() => {
+              if (!pendingDraft) return;
+              setDraft(pendingDraft.value.draft);
+              setPicked(pendingDraft.value.picked);
+              setPendingDraft(null);
+            }}
+            type="button"
+          >
+            Khôi phục thay đổi
+          </Button>
+        </div>
+      }
+      onClose={() => {
+        clearDraft(draftStorageKey("roadmap", id));
+        setPendingDraft(null);
+      }}
+      open={pendingDraft !== null}
+      title="Phát hiện thay đổi chưa lưu"
+      width="sm"
+    >
+      <p className="flex items-start gap-2.5 text-sm text-muted-foreground">
+        <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+        Trang có vẻ đã bị tải lại hoặc mất mạng trước khi kịp lưu. Khôi phục để tiếp tục từ
+        chỗ đang dở, hoặc bỏ qua để dùng đúng bản đã lưu trên hệ thống.
+      </p>
+    </Modal>
     <StudioShell
       actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -280,26 +420,29 @@ export default function RoadmapStudioPage() {
       title={draft.title || "Lộ trình chưa đặt tên"}
     >
       {tab === "courses" ? (
-        <Group orientation="horizontal" className="h-full">
-          <Panel id="picked" defaultSize="55%" minSize="25%" className="min-h-0">
-            <div className="h-full overflow-y-auto p-3">
-              <PickedCourses disabled={locked} onChange={setPicked} picked={picked} />
-            </div>
-          </Panel>
+        <DndContext collisionDetection={collisionDetection} onDragEnd={onDragEnd} sensors={sensors}>
+          <Group orientation="horizontal" className="h-full">
+            <Panel id="picked" defaultSize="55%" minSize="25%" className="min-h-0">
+              <div className="h-full overflow-y-auto p-3">
+                <PickedCourses disabled={locked} onChange={setPicked} picked={picked} />
+              </div>
+            </Panel>
 
-          <ResizeHandle orientation="horizontal" />
+            <ResizeHandle orientation="horizontal" />
 
-          <Panel id="library" defaultSize="45%" minSize="20%" className="min-h-0">
-            <div className="h-full overflow-y-auto p-3">
-              <CourseLibrary
-                available={available}
-                disabled={locked}
-                onChange={setPicked}
-                picked={picked}
-              />
-            </div>
-          </Panel>
-        </Group>
+            <Panel id="library" defaultSize="45%" minSize="20%" className="min-h-0">
+              <div className="h-full overflow-y-auto p-3">
+                <CourseLibrary
+                  available={available}
+                  disabled={locked}
+                  onChange={setPicked}
+                  picked={picked}
+                />
+              </div>
+            </Panel>
+          </Group>
+          <RoadmapDragOverlay available={available} picked={picked} />
+        </DndContext>
       ) : (
         <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
@@ -421,7 +564,7 @@ export default function RoadmapStudioPage() {
 
         </Card>
 
-          <div className="lg:col-span-3">
+          <div className="mt-6 border-t border-border pt-6 lg:col-span-3">
             <DangerZone
               actionLabel="Xoá lộ trình này"
               confirmDescription={`Lộ trình “${draft.title || roadmap.slug}” sẽ bị xoá khỏi hệ thống cùng danh sách khóa học bên trong. Bản thân các khóa học vẫn còn. Có vài giây để hoàn tác sau khi xác nhận.`}
@@ -448,6 +591,21 @@ export default function RoadmapStudioPage() {
       )}
     </StudioShell>
     </>
+  );
+}
+
+function RoadmapDragOverlay({ picked, available }: { picked: PickedCourse[]; available: CourseListItem[] }) {
+  return (
+    <SortableOverlay>
+      {(activeId) => {
+        if (activeId.startsWith("pool:")) {
+          const course = available.find((item) => item.id === activeId.slice("pool:".length));
+          return course ? <p className="px-3 py-2 text-sm font-medium">{course.title}</p> : null;
+        }
+        const course = picked.find((item) => item.courseId === activeId);
+        return course ? <p className="px-3 py-2 text-sm font-medium">{course.title}</p> : null;
+      }}
+    </SortableOverlay>
   );
 }
 

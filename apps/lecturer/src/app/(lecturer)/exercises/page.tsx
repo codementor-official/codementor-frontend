@@ -1,9 +1,9 @@
 "use client";
 
 import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/page/review-notice";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
   BookOpen,
@@ -33,6 +33,7 @@ import {
   ReasonButton,
   Select,
   StatusBadge,
+  buttonClassName,
   useToast,
   useUndoableDelete,
 } from "@codementor/ui";
@@ -58,8 +59,19 @@ type Tab = "mine" | "bank";
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
 
 export default function ExercisesPage() {
+  return (
+    <Suspense fallback={null}>
+      <ExercisesPageContent />
+    </Suspense>
+  );
+}
+
+function ExercisesPageContent() {
   const router = useRouter();
   const { user } = useAuth();
+  // Breadcrumb ở studio trỏ về đây kèm id vì bản ghi không có trang riêng — mở sẵn drawer
+  // của đúng bài code đó thay vì chỉ về danh sách trống trơn.
+  const openId = useSearchParams().get("open");
 
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("mine");
@@ -197,6 +209,7 @@ export default function ExercisesPage() {
           </Button>
         }
         activeFilterCount={[difficulty, status].filter(Boolean).length}
+        initialSelectedId={openId}
         icon={Braces}
         columns={columns}
         drawer={{
@@ -484,19 +497,13 @@ function ExerciseDrawerActions({
           {row.status !== "published" && (
             <DeleteExerciseButton busy={busy} onRemove={onRemove} row={row} />
           )}
-          <Link
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground"
-            href={`/exercises/${row.id}/studio`}
-          >
+          <Link className={buttonClassName()} href={`/exercises/${row.id}/studio`}>
             <Pencil aria-hidden="true" className="size-4" /> Mở studio
           </Link>
         </>
       )}
       {!isMine && (
-        <Link
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium"
-          href={`/exercises/${row.id}/solve`}
-        >
+        <Link className={buttonClassName("outline")} href={`/exercises/${row.id}/solve`}>
           <FlaskConical aria-hidden="true" className="size-4" /> Xem & giải thử
         </Link>
       )}

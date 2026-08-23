@@ -44,33 +44,18 @@ export interface CourseListItem {
   updatedAt: string;
 }
 
-/**
- * Điều kiện mở một bài. `ALL` = phải xong hết danh sách, `ANY` = xong một bài bất kỳ.
- *
- * Chỉ có tác dụng khi khóa học ở chế độ mở khoá `graph` — hai chế độ kia bỏ qua hoàn
- * toàn: `linear` gác bằng thứ tự, `free` không gác gì. Studio nói thẳng điều đó ra thay
- * vì để người soạn tự phát hiện là mình vừa soạn một thứ không chạy.
- */
-export type PrerequisiteRule = "ALL" | "ANY";
-
-export interface LessonPrerequisites {
-  rule: PrerequisiteRule;
-  /** Rỗng = không có điều kiện, bài mở ngay. */
-  lessonIds: string[];
-}
-
-export const NO_PREREQUISITES: LessonPrerequisites = { rule: "ALL", lessonIds: [] };
-
-export const PREREQUISITE_RULE_LABELS: Record<PrerequisiteRule, string> = {
-  ALL: "Phải hoàn thành TẤT CẢ các bài đã chọn",
-  ANY: "Chỉ cần hoàn thành MỘT bài bất kỳ trong danh sách",
-};
-
 export interface StoredLesson {
   id: string;
   title: string;
   type: LessonType;
   durationMinutes: number | null;
+  /**
+   * "Cho học trước": bài mở cho MỌI người kể cả chưa ghi danh khóa học, và không cần
+   * bài/chương liền trước hoàn thành. Từng là hai cờ riêng ("cho học thử" + "cho học
+   * trước") — gộp vì cờ thứ hai luôn kéo theo cờ nhất: người chưa ghi danh không có tiến
+   * độ nào để "đã xong bài trước", nên một bài mở cho họ đương nhiên không thể còn đòi
+   * thứ tự.
+   */
   isPreview: boolean;
   isOptional: boolean;
   position: number;
@@ -79,7 +64,6 @@ export interface StoredLesson {
   exerciseTitle: string | null;
   exerciseStatus: string | null;
   exerciseAuthorId: string | null;
-  prerequisites: LessonPrerequisites;
 }
 
 export interface StoredChapter {
@@ -155,12 +139,12 @@ export interface DraftLesson {
   title: string;
   type: LessonType;
   durationMinutes: string;
+  /** "Cho học trước" — xem `StoredLesson.isPreview`. */
   isPreview: boolean;
   isOptional: boolean;
   exerciseId: string | null;
   exerciseTitle: string | null;
   contentRef: string | null;
-  prerequisites: LessonPrerequisites;
 }
 
 export interface DraftChapter {
@@ -207,20 +191,11 @@ export function toDraft(chapters: StoredChapter[]): DraftChapter[] {
       exerciseId: lesson.exerciseId,
       exerciseTitle: lesson.exerciseTitle,
       contentRef: lesson.contentRef,
-      // Khoá học lưu trước khi có tính năng này không có trường này trong phản hồi.
-      prerequisites: lesson.prerequisites ?? NO_PREREQUISITES,
     })),
   }));
 }
 
 export function toPayload(chapters: DraftChapter[]) {
-  // Xoá một bài không tự gỡ nó khỏi điều kiện của những bài khác đang trỏ vào. Cắt ở đây
-  // thay vì ở chỗ xoá: kéo thả giữa hai chương, hoàn tác, xoá cả một chương — mỗi đường
-  // đều làm mất một bài, và chỉ chỗ này nhìn thấy cây sau cùng.
-  const alive = new Set(
-    chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.id).filter(Boolean)),
-  );
-
   return chapters.map((chapter) => ({
     ...(chapter.id ? { id: chapter.id } : {}),
     title: chapter.title,
@@ -234,16 +209,6 @@ export function toPayload(chapters: DraftChapter[]) {
       isPreview: lesson.isPreview,
       isOptional: lesson.isOptional,
       exerciseId: bearsExercise(lesson.type) ? lesson.exerciseId : null,
-      // Chỉ gửi cho bài ĐÃ có id: cạnh cần cả hai đầu là hàng có thật trong CSDL, và
-      // backend từ chối cả cây nếu thấy điều kiện gắn vào một bài chưa lưu lần nào.
-      ...(lesson.id
-        ? {
-            prerequisites: {
-              rule: lesson.prerequisites.rule,
-              lessonIds: lesson.prerequisites.lessonIds.filter((id) => alive.has(id)),
-            },
-          }
-        : {}),
     })),
   }));
 }
