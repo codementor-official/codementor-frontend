@@ -211,6 +211,7 @@ export interface ExerciseDetail extends ExerciseSummary {
       parameters: { name: string; type: Record<string, unknown>; description?: string }[];
       returnType: Record<string, unknown>;
     };
+    constraints?: string[];
     testCases: {
       order: number;
       input?: string;

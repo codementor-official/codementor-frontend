@@ -65,6 +65,9 @@ export function SolveWorkspace({
     ? problem.languages.map((entry) => entry.label).filter((label) => label in monacoLang)
     : languages;
   const available = offered.length > 0 ? offered : languages;
+  const xpReward = problem.xpReward ?? xpByDifficulty[problem.difficulty];
+  const timeLimitMs = problem.timeLimitMs ?? 1000;
+  const memoryLimitKb = problem.memoryLimitKb ?? 128 * 1024;
   const [language, setLanguage] = useState(available[0]);
   const [code, setCode] = useState<Record<string, string>>(problem.starter);
   const editorRef = useRef<MonacoEditorHandle | null>(null);
@@ -118,8 +121,8 @@ export function SolveWorkspace({
       const result = await api.judge.run({
         language: JUDGE_LANGUAGE_IDS[language] ?? language.toLowerCase(),
         sourceCode: code[language] ?? "",
-        timeLimitMs: 1000,
-        memoryLimitKb: 128 * 1024,
+        timeLimitMs,
+        memoryLimitKb,
         // `spec` present = grade by calling the function; absent = pipe stdin. Sending one
         // for a stdin exercise would make the judge look for a function that is not there.
         ...(problem.spec ? { spec: problem.spec } : {}),
@@ -165,9 +168,9 @@ export function SolveWorkspace({
                   <div className="mb-1 text-2xs font-semibold tracking-wide text-text-faint uppercase">Bài luyện tập</div>
                   <h1 className="text-xl font-bold text-navy">{problem.title}</h1>
                 </div>
-                <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">+{xpByDifficulty[problem.difficulty]} XP</span>
+                <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">+{xpReward} XP</span>
               </div>
-              <p className="mt-2 text-xs text-text-muted">Độ khó: <b className="text-navy">{problem.difficulty}</b> · Giới hạn 1 giây · 128 MB</p>
+              <p className="mt-2 text-xs text-text-muted">Độ khó: <b className="text-navy">{problem.difficulty}</b> · Giới hạn {timeLimitMs / 1000} giây · {Math.round(memoryLimitKb / 1024)} MB</p>
             </div>
             <div className="mb-3 flex flex-wrap gap-1.5">
               {problem.tags.map((tag) => (
@@ -369,7 +372,7 @@ export function SolveWorkspace({
       {celebrating && judgeResult && (
         <SolvedDialog
           result={judgeResult}
-          xp={xpByDifficulty[problem.difficulty]}
+          xp={xpReward}
           backHref={backHref}
           tracked={Boolean(context)}
           onClose={() => setCelebrating(false)}
@@ -469,7 +472,7 @@ function WorkspaceBody({
             disabled={running}
             className="rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-on-ink hover:bg-primary-hover disabled:opacity-50"
           >
-            Nộp bài · +{xpByDifficulty[problem.difficulty]} XP
+            Nộp bài · +{problem.xpReward ?? xpByDifficulty[problem.difficulty]} XP
           </button>
           <button
             onClick={onToggleCodey}

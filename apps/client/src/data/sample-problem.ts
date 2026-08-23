@@ -28,6 +28,9 @@ export interface Problem {
   spec?: JudgeSpec;
   /** Language labels the author published, so the picker offers only what will compile. */
   languages?: { id: string; label: string }[];
+  xpReward?: number;
+  timeLimitMs?: number;
+  memoryLimitKb?: number;
 }
 
 export const problems: Problem[] = [

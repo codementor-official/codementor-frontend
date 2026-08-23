@@ -36,7 +36,7 @@ export function problemFromExercise(exercise: ExerciseDetail): Problem {
     difficulty: DIFFICULTY_LABEL[exercise.difficulty],
     tags: [],
     description: content?.statement ?? "",
-    constraints: [],
+    constraints: content?.constraints ?? [],
     // Every case goes to the judge, or a "passed" verdict would mean nothing. Ordered by
     // the author's `order` rather than array position — the two agree today and there is
     // no reason to depend on that.
@@ -57,5 +57,8 @@ export function problemFromExercise(exercise: ExerciseDetail): Problem {
           }
         : undefined,
     languages: content?.languages?.map(({ id, label }) => ({ id, label })),
+    xpReward: exercise.xpReward,
+    timeLimitMs: exercise.timeLimitMs,
+    memoryLimitKb: exercise.memoryLimitKb,
   };
 }

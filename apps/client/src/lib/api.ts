@@ -4,6 +4,21 @@ import { apiBaseUrl } from "@/lib/env";
 import type { JudgeRunResult } from "@/types/judge";
 import type { NotificationPage } from "@/types/notification";
 import type {
+  WorkspaceDetail,
+  WorkspaceMembersPage,
+  WorkspaceAssignment,
+  WorkspaceContentPage,
+  WorkspaceDocument,
+  WorkspaceExercise,
+  WorkspaceOverview,
+  WorkspacePage,
+  WorkspacePermission,
+  WorkspaceRole,
+  WorkspaceSummary,
+  WorkspaceUploadConfig,
+  PresignedWorkspaceUpload,
+} from "@/features/workspace/types";
+import type {
   ArticleDetail,
   ArticleSummary,
   CatalogueParams,
@@ -143,6 +158,73 @@ export const api = {
     markRead: (id: string) =>
       unwrap<void>(`/notifications/${id}/read`, { method: "PATCH" }),
     markAllRead: () => unwrap<{ marked: number }>("/notifications/read-all", { method: "PATCH" }),
+  },
+
+  workspaces: {
+    list: (params: {
+      scope?: "all" | "owned" | "joined";
+      q?: string;
+      topic?: string;
+      cursor?: string;
+      limit?: number;
+    } = {}) => unwrap<WorkspacePage>(`/workspaces${query(params)}`),
+    summary: () => unwrap<WorkspaceSummary>("/workspaces/summary"),
+    detail: (slug: string) => unwrap<WorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}`),
+    overview: (slug: string) => unwrap<WorkspaceOverview>(`/workspaces/${encodeURIComponent(slug)}/overview`),
+    documents: (slug: string, params: { page?: number; limit?: number; q?: string; status?: string; type?: string } = {}) => unwrap<WorkspaceContentPage<WorkspaceDocument>>(`/workspaces/${encodeURIComponent(slug)}/documents${query(params)}`),
+    documentUploadConfig: (slug: string) => unwrap<WorkspaceUploadConfig>(`/workspaces/${encodeURIComponent(slug)}/documents/upload-config`),
+    documentUploadUrl: (slug: string, body: { filename: string; contentType: string; sizeBytes: number }) => unwrap<PresignedWorkspaceUpload>(`/workspaces/${encodeURIComponent(slug)}/documents/upload-url`, { method: "POST", body }),
+    createDocument: (slug: string, body: { filename: string; contentType: string; sizeBytes: number; title: string; docType: string; topic?: string; storageKey: string; url: string }) => unwrap<WorkspaceDocument>(`/workspaces/${encodeURIComponent(slug)}/documents`, { method: "POST", body }),
+    updateDocument: (slug: string, id: string, body: { title?: string; topic?: string | null; status?: string }) => unwrap<WorkspaceDocument>(`/workspaces/${encodeURIComponent(slug)}/documents/${id}`, { method: "PATCH", body }),
+    deleteDocument: (slug: string, id: string) => unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/documents/${id}`, { method: "DELETE" }),
+    workspaceExercises: (slug: string, params: { page?: number; limit?: number; q?: string; status?: string; difficulty?: string } = {}) => unwrap<WorkspaceContentPage<WorkspaceExercise>>(`/workspaces/${encodeURIComponent(slug)}/exercises${query(params)}`),
+    attachExercise: (slug: string, body: { exerciseId: string; dueAt?: string; attemptLimit?: number; allowRetry?: boolean; allowLateSubmission?: boolean; memberIds: string[] }) => unwrap<{ attached: boolean }>(`/workspaces/${encodeURIComponent(slug)}/exercises`, { method: "POST", body }),
+    updateWorkspaceExercise: (slug: string, id: string, body: { dueAt?: string | null; attemptLimit?: number | null; allowRetry?: boolean; allowLateSubmission?: boolean; memberIds?: string[] }) => unwrap<{ updated: boolean }>(`/workspaces/${encodeURIComponent(slug)}/exercises/${id}`, { method: "PATCH", body }),
+    deleteWorkspaceExercise: (slug: string, id: string) => unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/exercises/${id}`, { method: "DELETE" }),
+    assignments: (slug: string, params: { page?: number; limit?: number; q?: string; status?: string } = {}) => unwrap<WorkspaceContentPage<WorkspaceAssignment>>(`/workspaces/${encodeURIComponent(slug)}/assignments${query(params)}`),
+    updateAssignment: (slug: string, id: string, body: { status?: string; reviewStatus?: string; feedback?: string | null }) => unwrap<{ updated: boolean }>(`/workspaces/${encodeURIComponent(slug)}/assignments/${id}`, { method: "PATCH", body }),
+    create: (body: { name: string; description?: string; topic?: string }) =>
+      unwrap<WorkspaceDetail>("/workspaces", { method: "POST", body }),
+    join: (inviteCode: string) =>
+      unwrap<WorkspaceDetail>("/workspaces/join", { method: "POST", body: { inviteCode } }),
+    update: (slug: string, body: { name?: string; description?: string | null; topic?: string | null }) =>
+      unwrap<WorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}`, { method: "PATCH", body }),
+    archive: (slug: string) =>
+      unwrap<{ archived: boolean }>(`/workspaces/${encodeURIComponent(slug)}/archive`, { method: "POST" }),
+    rotateInviteCode: (slug: string) =>
+      unwrap<{ inviteCode: string }>(`/workspaces/${encodeURIComponent(slug)}/invite-code/rotate`, { method: "POST" }),
+    leave: (slug: string) =>
+      unwrap<{ left: boolean }>(`/workspaces/${encodeURIComponent(slug)}/leave`, { method: "POST" }),
+    members: (slug: string, params: { q?: string; role?: WorkspaceRole; cursor?: string; limit?: number } = {}) =>
+      unwrap<WorkspaceMembersPage>(`/workspaces/${encodeURIComponent(slug)}/members${query(params)}`),
+    invite: (slug: string, handle: string) =>
+      unwrap<{ invitationId: string; user: { id: string; displayName: string; avatarUrl: string | null } }>(`/workspaces/${encodeURIComponent(slug)}/invitations`, { method: "POST", body: { handle } }),
+    invitations: (slug: string, params: { q?: string; cursor?: string; limit?: number } = {}) =>
+      unwrap<{ items: Array<{ id: string; user: { id: string; displayName: string; avatarUrl: string | null }; role: WorkspaceRole; invitedAt: string }>; nextCursor: string | null }>(`/workspaces/${encodeURIComponent(slug)}/invitations${query(params)}`),
+    acceptInvitation: (slug: string, invitationId: string) =>
+      unwrap<WorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}/invitations/${invitationId}/accept`, { method: "POST" }),
+    revokeInvitation: (slug: string, invitationId: string) =>
+      unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/invitations/${invitationId}`, { method: "DELETE" }),
+    updateMemberRole: (slug: string, memberId: string, role: Exclude<WorkspaceRole, "owner">) =>
+      unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/members/${memberId}/role`, {
+        method: "PATCH",
+        body: { role },
+      }),
+    removeMember: (slug: string, memberId: string) =>
+      unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/members/${memberId}`, { method: "DELETE" }),
+    transferOwnership: (slug: string, memberId: string) =>
+      unwrap<{ transferred: boolean }>(`/workspaces/${encodeURIComponent(slug)}/transfer-ownership`, {
+        method: "POST",
+        body: { memberId },
+      }),
+    updateRolePermissions: (
+      slug: string,
+      role: Exclude<WorkspaceRole, "owner">,
+      permissions: Partial<Record<WorkspacePermission, boolean>>,
+    ) => unwrap<WorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}/permissions/roles/${role}`, {
+      method: "PUT",
+      body: { permissions },
+    }),
   },
 
   /**

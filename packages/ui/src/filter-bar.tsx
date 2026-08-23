@@ -16,7 +16,7 @@ export function FilterBar({
   searchValue: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
-  controls: ReactNode;
+  controls?: ReactNode;
   activeFilterCount?: number;
   onClearFilters?: () => void;
   sheetTitle?: string;
@@ -39,21 +39,23 @@ export function FilterBar({
           placeholder={searchPlaceholder}
           className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={expanded}
-          className="flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-foreground hover:bg-muted"
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">{sheetTitle}</span>
-          {activeFilterCount > 0 && (
-            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-              {activeFilterCount}
-            </span>
-          )}
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
-        </button>
+        {controls && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={expanded}
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-foreground hover:bg-muted"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{sheetTitle}</span>
+            {activeFilterCount > 0 && (
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+          </button>
+        )}
         {activeFilterCount > 0 && onClearFilters && (
           <button
             type="button"
@@ -67,7 +69,7 @@ export function FilterBar({
 
       {/* Inline, in the page flow — never a popover or a bottom sheet. An overlay covered
         * the results the filters were meant to narrow, on both desktop and mobile. */}
-      {expanded && (
+      {controls && expanded && (
         <div className="mt-2 rounded-lg border border-border bg-card p-3">
           <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">{controls}</div>
         </div>

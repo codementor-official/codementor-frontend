@@ -16,9 +16,8 @@ const GROUP_TYPE = {
  * Thin wrapper around `EntityCard` — same card anatomy as roadmaps/courses so the
  * whole app has one "browse this thing" grid.
  *
- * The invite code and the progress bar are deliberately absent: a code is an action
- * you go looking for (it lives in Cài đặt), and a single group-progress number said
- * little while costing a whole row. Who's in the group says more at a glance.
+ * Invite code remains in Settings; operational counts come from the Workspace read
+ * model so the card never falls back to placeholder progress.
  */
 export function StudyGroupCard({ group }: { group: StudyGroup }) {
   const owned = isOwned(group);
@@ -36,7 +35,8 @@ export function StudyGroupCard({ group }: { group: StudyGroup }) {
       tags={[group.topic]}
       stats={[
         { label: "thành viên", value: group.memberCount },
-        { label: "bài tập đang mở", value: group.openTaskCount },
+        { label: "bài đang mở", value: group.openTaskCount },
+        { label: "hoàn thành", value: `${group.progressPercent}%` },
       ]}
       footer={
         <div className="flex w-full items-center justify-between gap-3">
