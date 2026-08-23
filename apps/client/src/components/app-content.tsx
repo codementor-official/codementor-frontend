@@ -14,7 +14,7 @@ export function AppContent({ children }: { children: React.ReactNode }) {
   // The lesson player and the AI workspace are tool surfaces: they use every available
   // pixel after the sidebar, like an IDE, so they skip both the padding and the ceiling.
   const isFullBleed =
-    /^\/paths\/[^/]+\/courses\/[^/]+\/learn\/[^/]+$/.test(pathname) || pathname === "/ai-tutor";
+    /^\/roadmaps\/[^/]+\/courses\/[^/]+\/learn\/[^/]+$/.test(pathname) || pathname === "/ai-tutor";
 
   return (
     // `scroll-smooth` has to sit here, not on <html>: this element is the scroll container,

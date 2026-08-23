@@ -56,7 +56,7 @@ export function RoadmapCard({ roadmap }: { roadmap: RankedRoadmap }) {
           <span>{roadmapStatus(roadmap)}</span>
         </>
       }
-      href={`/paths/${roadmap.slug}`}
+      href={`/roadmaps/${roadmap.slug}`}
     />
   );
 }

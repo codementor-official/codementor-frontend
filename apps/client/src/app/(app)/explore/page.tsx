@@ -101,7 +101,7 @@ export default function ExplorePage() {
         subtitle="Nội dung mới đang nổi trên toàn hệ thống — khóa học, bài luyện tập, bài viết và cộng đồng."
         actions={
           <>
-            <Button href="/paths" size="sm">
+            <Button href="/roadmaps" size="sm">
               Xem lộ trình
             </Button>
             <PersonalizationSettingsTrigger label="Thiết lập gợi ý" />

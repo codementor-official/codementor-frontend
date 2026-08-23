@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import confetti from "canvas-confetti";
 import {
   Asterisk,
   BookOpen,
   Check,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Code2,
   FileText,
@@ -14,6 +18,7 @@ import {
   Loader2,
   Lock,
   PlayCircle,
+  Plus,
   RotateCcw,
   Trophy,
   Unlock,
@@ -23,7 +28,9 @@ import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { consumeCourseCelebration, markCourseCelebrated } from "@/lib/course-celebration";
 import { describeLock, explainLock, isLessonLocked } from "@/lib/lesson-unlock";
+import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import type { CourseDetail, CourseProgress } from "@/types/catalogue";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -39,8 +46,6 @@ const LESSON_ICON: Record<string, typeof FileText> = {
   exercise: Code2,
 };
 
-
-
 /** Chapters flattened into learning order — the same order the backend gates on. */
 function flatLessons(course: CourseDetail) {
   return [...course.chapters]
@@ -48,36 +53,12 @@ function flatLessons(course: CourseDetail) {
     .flatMap((chapter) => [...chapter.lessons].sort((a, b) => a.position - b.position));
 }
 
-const CONFETTI_COLORS = ["#f59e0b", "#ef4444", "#3b82f6", "#22c55e", "#a855f7", "#ec4899"];
-
-/** Vãi confetti một lượt rồi thôi — không lặp, không theo dõi gì sau khi rơi hết màn hình. */
-function ConfettiBurst() {
-  const [pieces] = useState(() =>
-    Array.from({ length: 40 }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 0.4,
-      duration: 2.2 + Math.random() * 1.2,
-      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-    })),
-  );
-
-  return (
-    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
-      {pieces.map((piece) => (
-        <span
-          key={piece.id}
-          className="animate-confetti-fall absolute -top-2.5 h-2.5 w-1.5 rounded-[1px]"
-          style={{
-            left: `${piece.left}%`,
-            backgroundColor: piece.color,
-            animationDelay: `${piece.delay}s`,
-            animationDuration: `${piece.duration}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
+/** Vãi confetti một lượt rồi thôi — `canvas-confetti` tự dọn canvas của nó khi rơi hết. */
+function fireConfetti() {
+  const colors = ["#f59e0b", "#ef4444", "#3b82f6", "#22c55e", "#a855f7", "#ec4899"];
+  confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors });
+  confetti({ particleCount: 60, spread: 100, origin: { y: 0.5 }, angle: 60, colors });
+  confetti({ particleCount: 60, spread: 100, origin: { y: 0.5 }, angle: 120, colors });
 }
 
 export function CourseDetailView({ courseId }: { courseId: string }) {
@@ -86,21 +67,28 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
-  // `?completed=1` lands here right after the "Hoàn thành khóa học" button on the last
-  // lesson. Read it from `location` in a lazy initializer rather than `useSearchParams`, so
-  // this component doesn't need a `<Suspense>` boundary just for a one-off celebration flag.
-  const [showConfetti, setShowConfetti] = useState(
-    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("completed") === "1",
-  );
-
-  // Strip the query param immediately so a refresh doesn't replay the celebration, and
-  // clear the flag once the animation has had time to finish.
+  // Every chapter starts expanded (same as before this got collapsible) — this tracks only
+  // the ones a learner has explicitly closed.
+  const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(() => new Set());
+  const toggleChapter = (chapterId: string) =>
+    setCollapsedChapters((prev) => {
+      const next = new Set(prev);
+      if (next.has(chapterId)) {
+        next.delete(chapterId);
+      } else {
+        next.add(chapterId);
+      }
+      return next;
+    });
+  // Vừa bấm "Hoàn thành khóa học" ở bài cuối thì ăn mừng — cờ do trang bài học đặt vào
+  // `sessionStorage` TRƯỚC khi điều hướng, xem `lib/course-celebration.ts` để biết vì sao
+  // không đọc từ query param. Đọc trong effect (sau khi mount) vì `sessionStorage` không
+  // tồn tại ở server, và bản thân việc đọc đã xoá cờ nên chạy lại cũng vô hại.
   useEffect(() => {
-    if (!showConfetti) return;
-    router.replace(`/courses/${courseId}`, { scroll: false });
-    const timer = setTimeout(() => setShowConfetti(false), 3200);
-    return () => clearTimeout(timer);
-  }, [showConfetti, router, courseId]);
+    if (!consumeCourseCelebration(courseId)) return;
+    markCourseCelebrated(courseId);
+    fireConfetti();
+  }, [courseId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +110,13 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
     setEnrolling(true);
     try {
       await api.courses.enroll(courseId);
+      // Đăng ký xong là để học, nên đi thẳng vào bài đầu tiên. Ở lại trang này chỉ đổi một
+      // cái nút rồi bắt người học tự tìm chỗ bấm tiếp.
+      const first = course ? flatLessons(course)[0] : undefined;
+      if (first) {
+        router.push(`/courses/${courseId}/lessons/${first.id}`);
+        return;
+      }
       setProgress(await api.courses.progress(courseId));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không đăng ký được khóa học");
@@ -163,158 +158,183 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
 
   const lessonCount = course.chapters.reduce((total, ch) => total + ch.lessons.length, 0);
 
-  return (
-    <div>
-      {showConfetti && <ConfettiBurst />}
-      <BreadcrumbTitle slug={courseId} title={course.title} />
-      <PageHeader icon={BookOpen} title={course.title} subtitle={course.description ?? undefined} />
-
-      <StatStrip
-        className="mb-5"
-        stats={[
-          { label: "Trình độ", value: LEVEL_LABEL[course.level] ?? course.level },
-          { label: "Chương", value: course.chapters.length },
-          { label: "Bài học", value: lessonCount },
-          { label: "Giờ học", value: course.durationHours ?? "—" },
-          ...(enrollment
-            ? [
-                { label: "Đã học", value: `${enrollment.completedLessons}/${lessonCount}` },
-                { label: "Tiến độ", value: `${enrollment.progressPercent}%` },
-              ]
-            : []),
-        ]}
-      />
-
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="min-w-0">
-          <h2 className="mb-3 text-base font-bold text-navy">Nội dung khóa học</h2>
-          {course.chapters.length === 0 ? (
-            <Card className="border-dashed p-8 text-center">
-              <p className="text-sm font-semibold text-navy">Khóa học chưa có chương nào</p>
-              <p className="mt-1 text-xs text-text-faint">Giảng viên đang biên soạn nội dung.</p>
-            </Card>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {[...course.chapters]
-                .sort((a, b) => a.position - b.position)
-                .map((chapter, chapterIndex) => (
-                <li key={chapter.id}>
-                  <Card className="overflow-hidden">
-                    <div className="flex items-baseline justify-between gap-3 border-b border-border-soft bg-bg px-4 py-3">
-                      {/* Đánh số theo VỊ TRÍ trong danh sách đã sắp, không theo `position`
-                        * thô: xoá một chương giữa chừng để lại khoảng trống ở `position`,
-                        * và học viên sẽ đọc được "Chương 1, Chương 3". */}
-                      <h3 className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-navy">
-                        <span className="truncate">
-                          Chương {chapterIndex + 1}: {chapter.title}
-                        </span>
-                        {/* Tùy chọn chỉ đáng nói khi đã ghi danh: người chưa học chưa có gì
-                          * để "tính là hoàn thành" cả, nên cờ này chưa có ý nghĩa với họ. */}
-                        {chapter.isOptional && enrolled && (
-                          <span
-                            className="shrink-0"
-                            title="Chương tùy chọn — bỏ qua được mà vẫn tính là hoàn thành khóa học"
-                          >
-                            <Asterisk aria-hidden="true" className="size-3.5 text-text-faint" />
-                          </span>
-                        )}
-                      </h3>
-                      <span className="shrink-0 text-2xs text-text-faint">
-                        {chapter.lessons.length} bài
+  const curriculum =
+    course.chapters.length === 0 ? (
+      <Card className="border-dashed p-8 text-center">
+        <p className="text-sm font-semibold text-navy">Khóa học chưa có chương nào</p>
+        <p className="mt-1 text-xs text-text-faint">Giảng viên đang biên soạn nội dung.</p>
+      </Card>
+    ) : (
+      <ul className="flex flex-col gap-3">
+        {[...course.chapters]
+          .sort((a, b) => a.position - b.position)
+          .map((chapter, chapterIndex) => {
+            const chapterCollapsed = collapsedChapters.has(chapter.id);
+            return (
+              <li key={chapter.id}>
+                <Card className="overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => toggleChapter(chapter.id)}
+                    aria-expanded={!chapterCollapsed}
+                    className="flex w-full items-baseline justify-between gap-3 border-b border-border-soft bg-bg px-4 py-3 text-left"
+                  >
+                    {/* Đánh số theo VỊ TRÍ trong danh sách đã sắp, không theo `position`
+                      * thô: xoá một chương giữa chừng để lại khoảng trống ở `position`,
+                      * và học viên sẽ đọc được "Chương 1, Chương 3". */}
+                    <h3 className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-navy">
+                      <span className="truncate">
+                        Chương {chapterIndex + 1}: {chapter.title}
                       </span>
-                    </div>
+                      {/* Tùy chọn chỉ đáng nói khi đã ghi danh: người chưa học chưa có gì
+                        * để "tính là hoàn thành" cả, nên cờ này chưa có ý nghĩa với họ. */}
+                      {chapter.isOptional && enrolled && (
+                        <span
+                          className="shrink-0"
+                          title="Chương tùy chọn — bỏ qua được mà vẫn tính là hoàn thành khóa học"
+                        >
+                          <Asterisk aria-hidden="true" className="size-3.5 text-text-faint" />
+                        </span>
+                      )}
+                    </h3>
+                    <span className="flex shrink-0 items-center gap-2 text-2xs text-text-faint">
+                      {chapter.lessons.length} bài
+                      {chapterCollapsed ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                  </button>
+                  {!chapterCollapsed && (
                     <ul className="divide-y divide-border-soft">
                       {[...chapter.lessons]
                         .sort((a, b) => a.position - b.position)
                         .map((lesson, lessonIndex) => {
-                        const Icon = LESSON_ICON[lesson.type] ?? FileText;
-                        const state = progressByLesson.get(lesson.id);
-                        const locked = isLessonLocked(lesson, state, enrolled);
-                        const reason = locked ? explainLock(course, lesson, progressByLesson) : null;
-                        const body = (
-                          <>
-                            {state?.status === "completed" ? (
-                              <Check className="h-4 w-4 shrink-0 text-primary" />
-                            ) : locked ? (
-                              <Lock className="h-4 w-4 shrink-0 text-text-faint" />
-                            ) : (
-                              <Icon className="h-4 w-4 shrink-0 text-text-faint" />
-                            )}
-                            <span className="min-w-0 flex-1 truncate text-sm text-text">
-                              <span className="text-text-faint">Bài {lessonIndex + 1}.</span>{" "}
-                              {lesson.title}
-                            </span>
-                            {/* Cho học trước: luôn đáng nói, kể cả chưa ghi danh — đó chính
-                              * là đối tượng nó nhắm tới, người còn đang cân nhắc có học hay
-                              * không. Tùy chọn thì ngược lại, chỉ đáng nói khi đã ghi danh —
-                              * xem chú thích cùng cờ này ở tiêu đề chương. */}
-                            {lesson.isPreview && (
-                              <span
-                                className="shrink-0"
-                                title="Cho học trước — xem được ngay, không cần ghi danh hay hoàn thành bài trước đó"
-                              >
-                                <Unlock aria-hidden="true" className="size-3.5 text-text-faint" />
+                          const Icon = LESSON_ICON[lesson.type] ?? FileText;
+                          const state = progressByLesson.get(lesson.id);
+                          const locked = isLessonLocked(lesson, state, enrolled);
+                          const reason = locked ? explainLock(course, lesson, progressByLesson) : null;
+                          const body = (
+                            <>
+                              {state?.status === "completed" ? (
+                                <Check className="h-4 w-4 shrink-0 text-primary" />
+                              ) : locked ? (
+                                <Lock className="h-4 w-4 shrink-0 text-text-faint" />
+                              ) : (
+                                <Icon className="h-4 w-4 shrink-0 text-text-faint" />
+                              )}
+                              <span className="min-w-0 flex-1 truncate text-sm text-text">
+                                <span className="text-text-faint">Bài {lessonIndex + 1}.</span>{" "}
+                                {lesson.title}
                               </span>
-                            )}
-                            {lesson.isOptional && enrolled && (
-                              <span
-                                className="shrink-0"
-                                title="Bài tùy chọn — bỏ qua được mà vẫn tính là hoàn thành khóa học"
-                              >
-                                <Asterisk aria-hidden="true" className="size-3.5 text-text-faint" />
-                              </span>
-                            )}
-                            {lesson.durationMinutes !== null && (
-                              <span className="shrink-0 text-2xs text-text-faint">
-                                {lesson.durationMinutes} phút
-                              </span>
-                            )}
-                          </>
-                        );
-                        return (
-                          <li key={lesson.id}>
-                            {/* Locked lessons are not links: the server refuses them, so a
-                              * click would only teach that the app says no at random. */}
-                            {locked ? (
-                              <div className="cursor-not-allowed px-4 py-2.5 opacity-70">
-                                <div className="flex items-center gap-3">{body}</div>
-                                {/* Ổ khoá không kèm điều kiện thì học viên chỉ biết là
-                                  * "chưa mở", không biết phải làm gì để mở. */}
-                                <p className="mt-1 pl-7 text-2xs text-text-faint">
-                                  {describeLock(reason)}
-                                  {reason && (
-                                    <span className="font-semibold text-text-muted">
-                                      {" "}
-                                      {reason.missing
-                                        .map((item) => `${item.number} — ${item.title}`)
-                                        .join("; ")}
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-                            ) : (
-                              <Link
-                                href={`/courses/${courseId}/lessons/${lesson.id}`}
-                                className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg"
-                              >
-                                {body}
-                              </Link>
-                            )}
-                          </li>
-                        );
-                      })}
+                              {/* Cho học trước: luôn đáng nói, kể cả chưa ghi danh — đó chính
+                                * là đối tượng nó nhắm tới, người còn đang cân nhắc có học hay
+                                * không. Tùy chọn thì ngược lại, chỉ đáng nói khi đã ghi danh —
+                                * xem chú thích cùng cờ này ở tiêu đề chương. */}
+                              {lesson.isPreview && (
+                                <span
+                                  className="shrink-0"
+                                  title="Cho học trước — xem được ngay, không cần ghi danh hay hoàn thành bài trước đó"
+                                >
+                                  <Unlock aria-hidden="true" className="size-3.5 text-text-faint" />
+                                </span>
+                              )}
+                              {lesson.isOptional && enrolled && (
+                                <span
+                                  className="shrink-0"
+                                  title="Bài tùy chọn — bỏ qua được mà vẫn tính là hoàn thành khóa học"
+                                >
+                                  <Asterisk aria-hidden="true" className="size-3.5 text-text-faint" />
+                                </span>
+                              )}
+                              {lesson.durationMinutes !== null && (
+                                <span className="shrink-0 text-2xs text-text-faint">
+                                  {lesson.durationMinutes} phút
+                                </span>
+                              )}
+                            </>
+                          );
+                          return (
+                            <li key={lesson.id}>
+                              {/* Locked lessons are not links: the server refuses them, so a
+                                * click would only teach that the app says no at random. */}
+                              {locked ? (
+                                <div className="cursor-not-allowed px-4 py-2.5 opacity-70">
+                                  <div className="flex items-center gap-3">{body}</div>
+                                  {/* Ổ khoá không kèm điều kiện thì học viên chỉ biết là
+                                    * "chưa mở", không biết phải làm gì để mở. */}
+                                  <p className="mt-1 pl-7 text-2xs text-text-faint">
+                                    {describeLock(reason)}
+                                    {reason && (
+                                      <span className="font-semibold text-text-muted">
+                                        {" "}
+                                        {reason.missing
+                                          .map((item) => `${item.number} — ${item.title}`)
+                                          .join("; ")}
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                              ) : (
+                                <Link
+                                  href={`/courses/${courseId}/lessons/${lesson.id}`}
+                                  className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg"
+                                >
+                                  {body}
+                                </Link>
+                              )}
+                            </li>
+                          );
+                        })}
                     </ul>
-                  </Card>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                  )}
+                </Card>
+              </li>
+            );
+          })}
+      </ul>
+    );
 
-        <aside className="flex flex-col gap-4">
-          {/* The action sits with the course facts rather than in the page header: in the
-            * header it competed with the title for the same corner of the eye, and it is
-            * the rail the learner is already reading when they decide to start. */}
+  return (
+    <div>
+      <BreadcrumbTitle slug={courseId} title={course.title} />
+
+      {/* Một lưới 2 cột cho CẢ trang, không phải hero riêng rồi nội dung riêng: tách đôi như
+        * vậy thì cột trái của hero chỉ có tiêu đề và vài con số, còn cột phải cao gấp đôi —
+        * để lại một mảng trắng rỗng và đẩy toàn bộ nội dung khóa học xuống dưới nó. */}
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
+          <PageHeader icon={BookOpen} title={course.title} subtitle={course.description ?? undefined} />
+          <StatStrip
+            className="mt-4 mb-6"
+            stats={[
+              { label: "Trình độ", value: LEVEL_LABEL[course.level] ?? course.level },
+              { label: "Chương", value: course.chapters.length },
+              { label: "Bài học", value: lessonCount },
+              { label: "Giờ học", value: course.durationHours ?? "—" },
+            ]}
+          />
+
+          <section>
+            <h2 className="mb-3 text-base font-bold text-navy">Nội dung khóa học</h2>
+            {curriculum}
+          </section>
+        </div>
+
+        {/* Dính khi cuộn: danh sách chương dài hơn cột này rất nhiều, và nút bắt đầu học là
+          * thứ người học cần với tới ở bất kỳ đoạn nào của danh sách. */}
+        <aside className="flex flex-col gap-3 lg:sticky lg:top-5">
+          <div className="relative aspect-video overflow-hidden rounded-lg border border-border-soft bg-border-soft">
+            <Image
+              src={course.coverImageUrl || placeholderCoverUrl(course.slug)}
+              alt=""
+              fill
+              sizes="320px"
+              className="object-cover"
+            />
+          </div>
+
           <Card className="p-4">
             <h2 className="mb-3 text-sm font-bold text-navy">Bắt đầu học</h2>
             {enrolled ? (
@@ -340,7 +360,9 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                         <RotateCcw className="h-4 w-4" /> Xem lại khóa học
                       </>
                     ) : (
-                      "Tiếp tục học"
+                      <>
+                        <PlayCircle className="h-4 w-4" /> Tiếp tục học
+                      </>
                     )}
                   </Link>
                 ) : (
@@ -354,7 +376,8 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                 disabled={enrolling}
                 className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
-                {enrolling && <Loader2 className="h-4 w-4 animate-spin" />} Đăng ký học
+                {enrolling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Đăng ký học
               </button>
             )}
             {enrollment && (
@@ -362,14 +385,17 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                 Đã học {enrollment.completedLessons}/{lessonCount} bài · {enrollment.progressPercent}%
               </p>
             )}
+            {/* Yêu cầu đầu vào ở cùng thẻ với nút đăng ký, và CHỈ với người chưa ghi danh:
+              * nó là thứ để cân nhắc trước khi bấm. Người đã học rồi thì nó chỉ còn là chữ
+              * thừa chiếm chỗ giữa trang. */}
+            {!enrolled && course.prerequisiteNote && (
+              <div className="mt-3 border-t border-border-soft pt-3">
+                <h3 className="mb-1 text-xs font-bold text-navy">Yêu cầu đầu vào</h3>
+                <p className="text-xs leading-relaxed text-text-muted">{course.prerequisiteNote}</p>
+              </div>
+            )}
           </Card>
 
-          {course.prerequisiteNote && (
-            <Card className="p-4">
-              <h2 className="mb-2 text-sm font-bold text-navy">Yêu cầu đầu vào</h2>
-              <p className="text-xs leading-relaxed text-text-muted">{course.prerequisiteNote}</p>
-            </Card>
-          )}
           <Card className="p-4">
             <h2 className="mb-2 flex items-center gap-1.5 text-sm font-bold text-navy">
               <BookOpen className="h-4 w-4 text-primary" /> Thông tin

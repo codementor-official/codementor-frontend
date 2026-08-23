@@ -4,10 +4,11 @@ import { useToast } from "@codementor/ui";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, PartyPopper } from "lucide-react";
+import { Home, Loader2, PartyPopper } from "lucide-react";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { hasCelebratedCourse, requestCourseCelebration } from "@/lib/course-celebration";
 import { describeLock, explainLock, isLessonLocked, missingRequiredLessons } from "@/lib/lesson-unlock";
 import type { CourseDetail, CourseProgress, LessonContent, LessonProgress } from "@/types/catalogue";
 import { ExerciseLesson } from "./exercise-lesson";
@@ -34,6 +35,23 @@ function CompleteCourseButton({
 }) {
   const router = useRouter();
   const toast = useToast();
+  // Đọc sau khi mount, không phải trong lúc render: `localStorage` không tồn tại ở server,
+  // nên đọc thẳng khi render sẽ cho hai kết quả khác nhau giữa server và client.
+  const [celebrated, setCelebrated] = useState(false);
+  useEffect(() => setCelebrated(hasCelebratedCourse(courseId)), [courseId]);
+
+  // Đã ăn mừng rồi thì đây chỉ là đường về, không phải nút hoàn thành nữa. Mốc là cờ trong
+  // trình duyệt chứ KHÔNG phải `enrollment.status` — xem `lib/course-celebration.ts`.
+  if (celebrated) {
+    return (
+      <Link
+        href={`/courses/${courseId}`}
+        className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-navy transition-colors hover:bg-bg"
+      >
+        <Home className="h-3.5 w-3.5" /> Về trang chính khóa học
+      </Link>
+    );
+  }
 
   const finish = () => {
     const missing = missingRequiredLessons(course, progressByLesson);
@@ -43,7 +61,9 @@ function CompleteCourseButton({
       );
       return;
     }
-    router.push(`/courses/${courseId}?completed=1`);
+    // Đặt cờ TRƯỚC khi điều hướng — trang khóa học đọc nó để bắn pháo hoa.
+    requestCourseCelebration(courseId);
+    router.push(`/courses/${courseId}`);
   };
 
   return (

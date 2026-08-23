@@ -5,10 +5,10 @@ import { roadmapService } from "@/lib/roadmap/roadmap-service";
 export default async function LessonPage({
   params,
 }: {
-  params: Promise<{ pathId: string; courseSlug: string; lessonId: string }>;
+  params: Promise<{ roadmapId: string; courseSlug: string; lessonId: string }>;
 }) {
-  const { pathId, courseSlug, lessonId } = await params;
-  const result = await roadmapService.getCourse(pathId, courseSlug);
+  const { roadmapId, courseSlug, lessonId } = await params;
+  const result = await roadmapService.getCourse(roadmapId, courseSlug);
   const lessonExists = result?.course.chapters.some((chapter) => chapter.lessons.some((lesson) => lesson.id === lessonId));
 
   if (!result || !lessonExists) {
