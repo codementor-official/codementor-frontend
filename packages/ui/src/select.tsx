@@ -18,12 +18,14 @@ export function Select({
   value,
   options,
   onChange,
+  disabled = false,
   className = "",
 }: {
   label: string;
   value: string;
   options: SelectOption[];
   onChange: (value: string) => void;
+  disabled?: boolean;
   className?: string;
 }) {
   return (
@@ -34,6 +36,7 @@ export function Select({
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
         className={`h-9 w-full appearance-none rounded-md border border-border bg-card py-0 pr-8 pl-3 text-xs font-semibold text-foreground focus:border-foreground sm:w-auto ${className}`}
       >
         {options.map((o) => (
