@@ -21,6 +21,8 @@ import type {
   WorkspaceSummary,
   WorkspaceUploadConfig,
   PresignedWorkspaceUpload,
+  WorkspaceMessage,
+  WorkspaceMessagePage,
 } from "@/features/workspace/types";
 import type {
   ArticleDetail,
@@ -191,6 +193,34 @@ export const api = {
   },
 
   workspaces: {
+    messages: (slug: string, params: { before?: string; limit?: number } = {}) =>
+      unwrap<WorkspaceMessagePage>(
+        `/workspaces/${encodeURIComponent(slug)}/messages${query(params)}`,
+      ),
+    unreadMessages: (slug: string) =>
+      unwrap<{ count: number }>(
+        `/workspaces/${encodeURIComponent(slug)}/messages/unread`,
+      ),
+    createMessage: (slug: string, content: string) =>
+      unwrap<WorkspaceMessage>(
+        `/workspaces/${encodeURIComponent(slug)}/messages`,
+        { method: "POST", body: { content } },
+      ),
+    updateMessage: (slug: string, messageId: string, content: string) =>
+      unwrap<WorkspaceMessage>(
+        `/workspaces/${encodeURIComponent(slug)}/messages/${encodeURIComponent(messageId)}`,
+        { method: "PATCH", body: { content } },
+      ),
+    deleteMessage: (slug: string, messageId: string) =>
+      unwrap<WorkspaceMessage>(
+        `/workspaces/${encodeURIComponent(slug)}/messages/${encodeURIComponent(messageId)}`,
+        { method: "DELETE" },
+      ),
+    markMessagesRead: (slug: string) =>
+      unwrap<{ readAt: string }>(
+        `/workspaces/${encodeURIComponent(slug)}/messages/read`,
+        { method: "POST" },
+      ),
     list: (
       params: {
         scope?: "all" | "owned" | "joined";

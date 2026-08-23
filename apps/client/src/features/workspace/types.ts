@@ -309,3 +309,22 @@ export interface PresignedWorkspaceUpload {
   objectKey: string;
   expiresInSeconds: number;
 }
+
+export interface WorkspaceMessage {
+  id: string;
+  workspaceId: string;
+  senderId: string;
+  sender: {
+    displayName: string;
+    avatarUrl: string | null;
+  };
+  content: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface WorkspaceMessagePage {
+  items: WorkspaceMessage[];
+  nextCursor: string | null;
+}

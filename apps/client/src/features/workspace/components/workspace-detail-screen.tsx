@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Activity,
   Archive,
@@ -17,6 +17,7 @@ import {
   Image as ImageIcon,
   KeyRound,
   LogOut,
+  MessageCircle,
   RotateCcw,
   Save,
   Settings,
@@ -50,9 +51,17 @@ import {
   WorkspaceDocumentsTab,
   WorkspaceExercisesTab,
 } from "./workspace-content-tabs";
+import { useWorkspaceChat } from "../chat/use-workspace-chat";
+import { WorkspaceChatTab, WorkspaceMiniChat } from "../chat/workspace-chat";
 
 type Tab =
-  "overview" | "documents" | "exercises" | "members" | "progress" | "settings";
+  | "overview"
+  | "documents"
+  | "exercises"
+  | "members"
+  | "progress"
+  | "chat"
+  | "settings";
 
 const TABS: Array<{
   key: Tab;
@@ -65,6 +74,7 @@ const TABS: Array<{
   { key: "exercises", label: "Bài tập", icon: ClipboardList },
   { key: "members", label: "Thành viên", icon: Users },
   { key: "progress", label: "Tiến độ", icon: BarChart3 },
+  { key: "chat", label: "Chat", icon: MessageCircle },
   { key: "settings", label: "Cài đặt", icon: Settings, ownerOnly: true },
 ];
 
@@ -113,11 +123,12 @@ const PERMISSION_LABELS: {
 
 export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const [detail, setDetail] = useState<WorkspaceDetail | null>(null);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [overview, setOverview] = useState<WorkspaceOverview | null>(null);
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<Tab>(() => tabFromQuery(searchParams.get("tab")));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -125,6 +136,29 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const [archiving, setArchiving] = useState(false);
   const [removing, setRemoving] = useState<WorkspaceMember | null>(null);
   const [memberRevision, setMemberRevision] = useState(0);
+  const chat = useWorkspaceChat(slug, detail !== null, tab === "chat");
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setTab(tabFromQuery(searchParams.get("tab"))),
+      0,
+    );
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
+
+  const selectTab = useCallback(
+    (next: Tab) => {
+      setTab(next);
+      const query = new URLSearchParams(searchParams.toString());
+      if (next === "overview") query.delete("tab");
+      else query.set("tab", next);
+      const suffix = query.toString();
+      router.replace(`/workspace/${encodeURIComponent(slug)}${suffix ? `?${suffix}` : ""}`, {
+        scroll: false,
+      });
+    },
+    [router, searchParams, slug],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -310,7 +344,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
               <button
                 key={value}
                 type="button"
-                onClick={() => setTab(value)}
+                onClick={() => selectTab(value)}
                 aria-current={tab === value ? "page" : undefined}
                 className={`inline-flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
                   tab === value
@@ -320,6 +354,11 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
               >
                 <Icon className="h-4 w-4" />
                 {label}
+                {value === "chat" && chat.unreadCount > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-on-ink">
+                    {Math.min(chat.unreadCount, 99)}
+                  </span>
+                )}
               </button>
             ),
           )}
@@ -345,6 +384,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       {tab === "progress" && (
         <Progress slug={detail.slug} overview={overview} />
       )}
+      {tab === "chat" && <WorkspaceChatTab detail={detail} chat={chat} />}
       {tab === "settings" && isOwner && (
         <SettingsPanel
           detail={detail}
@@ -385,8 +425,19 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           </>
         }
       />
+      {tab !== "chat" && (
+        <WorkspaceMiniChat
+          workspaceName={detail.name}
+          chat={chat}
+          onOpenFull={() => selectTab("chat")}
+        />
+      )}
     </div>
   );
+}
+
+function tabFromQuery(value: string | null): Tab {
+  return TABS.some((item) => item.key === value) ? (value as Tab) : "overview";
 }
 
 function Overview({
