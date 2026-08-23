@@ -12,6 +12,8 @@ export interface WorkspaceUserSummary {
   id: string;
   displayName: string;
   avatarUrl: string | null;
+  handle?: string;
+  email?: string;
 }
 
 export interface WorkspaceListItem {
@@ -21,6 +23,10 @@ export interface WorkspaceListItem {
   description: string | null;
   topic: string | null;
   memberCount: number;
+  avatarUrl: string | null;
+  coverUrl: string | null;
+  privacy: "public" | "private";
+  joinPolicy: "open" | "approval" | "invite_only";
   lastActivityAt: string;
   owner: WorkspaceUserSummary;
   memberPreview: WorkspaceUserSummary[];
@@ -48,6 +54,11 @@ export interface WorkspaceDetail {
   topic: string | null;
   status: "active" | "archived";
   memberCount: number;
+  avatarUrl: string | null;
+  coverUrl: string | null;
+  coverKey: string | null;
+  privacy: "public" | "private";
+  joinPolicy: "open" | "approval" | "invite_only";
   createdAt: string;
   updatedAt: string;
   lastActivityAt: string | null;
@@ -74,19 +85,81 @@ export interface WorkspaceMember {
 
 export interface WorkspaceMembersPage {
   items: WorkspaceMember[];
-  nextCursor: string | null;
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
   canManage: boolean;
+  canViewPrivate: boolean;
+}
+
+export interface WorkspaceMemberDetail extends WorkspaceMember {
+  xp: number;
+  solvedCount: number;
+  currentStreakDays: number;
+  longestStreakDays: number;
+  activeDays: number;
+  lastActiveAt: string | null;
+  activityHeatmap: Array<{ date: string; count: number }>;
+  assignmentStats: {
+    assigned: number;
+    completed: number;
+    inProgress: number;
+    notStarted: number;
+  };
+  submissionStats: {
+    total: number;
+    accepted: number;
+    failed: number;
+    averageScore: number;
+  };
+  access: "public" | "manager";
+  recentActivities?: Array<{
+    id: string;
+    action: string;
+    targetType: string | null;
+    targetId: string | null;
+    createdAt: string;
+  }>;
+  permissions?: Record<WorkspacePermission, boolean>;
+  roleDefaults?: Record<WorkspacePermission, boolean>;
+  overrides?: Partial<Record<WorkspacePermission, boolean>>;
+  canManagePermissions: boolean;
+}
+
+export interface WorkspaceJoinRequest {
+  id: string;
+  userId: string;
+  status: "pending" | "approved" | "rejected";
+  message: string | null;
+  createdAt: string;
+  user: WorkspaceUserSummary;
 }
 
 export interface WorkspaceOverview {
   documents: { total: number; published: number; pending: number };
   exercises: { total: number; open: number };
-  assignments: { total: number; completed: number; inProgress: number; notStarted: number; late: number; completionRate: number };
-  submissions: { total: number; accepted: number; failed: number; acceptanceRate: number; averageScore: number; averageAttempts: number; maxAttempts: number };
+  assignments: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    notStarted: number;
+    late: number;
+    completionRate: number;
+  };
+  submissions: {
+    total: number;
+    accepted: number;
+    failed: number;
+    acceptanceRate: number;
+    averageScore: number;
+    averageAttempts: number;
+    maxAttempts: number;
+  };
   members: Array<{
     id: string;
     displayName: string;
-    email: string;
+    email?: string;
     avatarUrl: string | null;
     role: WorkspaceRole;
     joinedAt: string;
@@ -100,8 +173,15 @@ export interface WorkspaceOverview {
     acceptedCount: number;
     averageScore: number;
     activityCount: number;
+    lastActiveAt: string | null;
   }>;
-  activities: Array<{ id: string; actor: string | null; action: string; targetType: string | null; createdAt: string }>;
+  activities: Array<{
+    id: string;
+    actor: string | null;
+    action: string;
+    targetType: string | null;
+    createdAt: string;
+  }>;
   submissionTrend: Array<{ label: string; value: number }>;
   completionTrend: Array<{ label: string; value: number }>;
   activityTrend: Array<{ label: string; value: number }>;
@@ -111,9 +191,121 @@ export interface WorkspaceOverview {
   topic: string | null;
 }
 
-export interface WorkspaceContentPage<T> { items: T[]; page: number; limit: number; total: number; totalPages: number }
-export interface WorkspaceDocument { id: string; title: string; docType: string; topic: string | null; uploaderId: string | null; uploaderName: string | null; sizeBytes: string | number | null; storageKey: string | null; url: string | null; previewText: string | null; status: "published" | "pending" | "changes" | "rejected" | "hidden"; aiVerdict: string; uploadedAt: string }
-export interface WorkspaceExercise { id: string; exerciseId: string; slug: string; title: string; summary: string | null; difficulty: "easy" | "medium" | "hard"; status: string; source: string; xp: number; dueAt: string | null; attemptLimit: number | null; allowRetry: boolean; allowLateSubmission: boolean; phase: string | null; assignedCount: number; completedCount: number }
-export interface WorkspaceAssignment { id: string; groupExerciseId: string; exerciseId: string; exerciseSlug: string; exerciseTitle: string; memberId: string; memberName: string; status: "notstarted" | "inprogress" | "done" | "late"; reviewStatus: "pending" | "approved" | "needsfix"; feedback: string | null; startedAt: string | null; updatedAt: string; submissionCount: number; latestVerdict: string | null; latestScore: number | null; latestAttemptNumber: number | null; latestIsLate: boolean; latestSubmittedAt: string | null }
-export interface WorkspaceUploadConfig { enabled: boolean; maxBytes: number; acceptedTypes: string[] }
-export interface PresignedWorkspaceUpload { uploadUrl: string; headers: Record<string, string>; publicUrl: string; objectKey: string; expiresInSeconds: number }
+export interface WorkspaceContentPage<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+export interface WorkspaceDocument {
+  id: string;
+  title: string;
+  docType: string;
+  topic: string | null;
+  uploaderId: string | null;
+  uploaderName: string | null;
+  sizeBytes: string | number | null;
+  storageKey: string | null;
+  url: string | null;
+  previewText: string | null;
+  status: "published" | "pending" | "changes" | "rejected" | "hidden";
+  aiVerdict: string;
+  uploadedAt: string;
+}
+export interface WorkspaceExercise {
+  id: string;
+  exerciseId: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  difficulty: "easy" | "medium" | "hard";
+  status: string;
+  source: string;
+  xp: number;
+  dueAt: string | null;
+  attemptLimit: number | null;
+  allowRetry: boolean;
+  allowLateSubmission: boolean;
+  phase: string | null;
+  assignedCount: number;
+  completedCount: number;
+  isAssignedToMe: boolean;
+  myAssignment: {
+    id: string;
+    status: string;
+    submissionCount: number;
+    latestVerdict: string | null;
+  } | null;
+}
+export interface WorkspaceAssignment {
+  id: string;
+  groupExerciseId: string;
+  exerciseId: string;
+  exerciseSlug: string;
+  exerciseTitle: string;
+  memberId: string;
+  memberName: string;
+  status: "notstarted" | "inprogress" | "done" | "late";
+  reviewStatus: "pending" | "approved" | "needsfix";
+  feedback: string | null;
+  startedAt: string | null;
+  updatedAt: string;
+  submissionCount: number;
+  latestVerdict: string | null;
+  latestScore: number | null;
+  latestAttemptNumber: number | null;
+  latestIsLate: boolean;
+  latestSubmittedAt: string | null;
+}
+export interface WorkspaceExerciseDetail extends WorkspaceExercise {
+  assignments: WorkspaceAssignment[];
+  canManage: boolean;
+  canReview: boolean;
+}
+export interface WorkspaceSubmission {
+  id: string;
+  userId: string;
+  language: string;
+  sourceCode: string;
+  verdict: string;
+  score: number | null;
+  passedTests: number | null;
+  totalTests: number | null;
+  runtimeMs: number | null;
+  memoryKb: number | null;
+  attemptNumber: number;
+  isLate: boolean;
+  note: string | null;
+  runDetailRef: string | null;
+  submittedAt: string;
+  runDetail: {
+    compile?: { success?: boolean; stderr?: string; durationMs?: number };
+    cases?: Array<{
+      order: number;
+      passed: boolean;
+      visibility?: string;
+      input?: string;
+      expected?: string;
+      actual?: string;
+      stderr?: string;
+      runtimeMs?: number;
+      memoryKb?: number;
+      verdict?: string;
+    }>;
+    consoleOutput?: string;
+    judge?: Record<string, string>;
+  } | null;
+}
+export interface WorkspaceUploadConfig {
+  enabled: boolean;
+  maxBytes: number;
+  acceptedTypes: string[];
+}
+export interface PresignedWorkspaceUpload {
+  uploadUrl: string;
+  headers: Record<string, string>;
+  publicUrl: string;
+  objectKey: string;
+  expiresInSeconds: number;
+}

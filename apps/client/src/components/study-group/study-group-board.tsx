@@ -7,7 +7,10 @@ import { FilterBar, SegmentedTabs, StatStrip, useToast } from "@codementor/ui";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { isOwned } from "@/lib/study-group/study-group-stats";
-import type { WorkspaceListItem, WorkspaceSummary } from "@/features/workspace/types";
+import type {
+  WorkspaceListItem,
+  WorkspaceSummary,
+} from "@/features/workspace/types";
 import type { StudyGroup } from "@/types/study-group";
 import { StudyGroupActions } from "./study-group-actions";
 import { StudyGroupCard } from "./study-group-card";
@@ -44,9 +47,14 @@ function GroupSection({
       {groups.length === 0 ? (
         <p className="px-1 py-4 text-xs text-text-faint">{emptyMessage}</p>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label={title}>
+        <ul
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          aria-label={title}
+        >
           {groups.map((group) => (
-            <li key={group.id}><StudyGroupCard group={group} /></li>
+            <li key={group.id}>
+              <StudyGroupCard group={group} />
+            </li>
           ))}
         </ul>
       )}
@@ -66,7 +74,11 @@ export function StudyGroupBoard() {
   const [error, setError] = useState<string | null>(null);
 
   const cursor = cursorStack.at(-1) ?? null;
-  const load = async (nextScope: Scope, nextSearch: string, nextCursorValue: string | null) => {
+  const load = async (
+    nextScope: Scope,
+    nextSearch: string,
+    nextCursorValue: string | null,
+  ) => {
     setLoading(true);
     setError(null);
     try {
@@ -83,14 +95,19 @@ export function StudyGroupBoard() {
       setNextCursor(page.nextCursor);
       setSummary(nextSummary);
     } catch (cause) {
-      setError(messageOf(cause, "Không tải được danh sách nhóm. Vui lòng thử lại."));
+      setError(
+        messageOf(cause, "Không tải được danh sách nhóm. Vui lòng thử lại."),
+      );
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(scope, search, cursor), search === "" ? 0 : 350);
+    const timer = window.setTimeout(
+      () => void load(scope, search, cursor),
+      search === "" ? 0 : 350,
+    );
     return () => window.clearTimeout(timer);
   }, [scope, search, cursor]);
 
@@ -104,10 +121,16 @@ export function StudyGroupBoard() {
   };
 
   const ownedGroups = useMemo(() => groups.filter(isOwned), [groups]);
-  const joinedGroups = useMemo(() => groups.filter((group) => !isOwned(group)), [groups]);
+  const joinedGroups = useMemo(
+    () => groups.filter((group) => !isOwned(group)),
+    [groups],
+  );
 
   const create = async (name: string, description: string) => {
-    const created = await api.workspaces.create({ name, description: description || undefined });
+    const created = await api.workspaces.create({
+      name,
+      description: description || undefined,
+    });
     toast.success(`Đã tạo nhóm “${created.name}”`);
     setScope("owned");
     setSearch("");
@@ -157,39 +180,76 @@ export function StudyGroupBoard() {
 
       {error ? (
         <Card className="border-dashed p-8 text-center">
-          <p className="text-sm font-semibold text-navy">Không tải được nhóm học tập</p>
+          <p className="text-sm font-semibold text-navy">
+            Không tải được nhóm học tập
+          </p>
           <p className="mt-1 text-xs text-text-faint">{error}</p>
-          <button type="button" onClick={retry} className="mt-3 text-xs font-semibold text-primary hover:text-primary-hover">
+          <button
+            type="button"
+            onClick={retry}
+            className="mt-3 text-xs font-semibold text-primary hover:text-primary-hover"
+          >
             Thử lại
           </button>
         </Card>
       ) : loading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-busy="true" aria-label="Đang tải nhóm học tập">
-          {Array.from({ length: 4 }, (_, index) => <Card key={index} className="h-56 animate-pulse bg-border-soft" />)}
+        <div
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          aria-busy="true"
+          aria-label="Đang tải nhóm học tập"
+        >
+          {Array.from({ length: 4 }, (_, index) => (
+            <Card key={index} className="h-56 animate-pulse bg-border-soft" />
+          ))}
         </div>
       ) : noResults ? (
         <Card className="border-dashed p-10 text-center">
           <SearchX className="mx-auto mb-2 h-5 w-5 text-text-faint" />
-          <p className="text-sm font-semibold text-navy">Không có nhóm nào khớp điều kiện</p>
-          <p className="mt-1 text-xs text-text-faint">Thử từ khóa khác hoặc tham gia nhóm bằng mã mời.</p>
+          <p className="text-sm font-semibold text-navy">
+            Không có nhóm nào khớp điều kiện
+          </p>
+          <p className="mt-1 text-xs text-text-faint">
+            Thử từ khóa khác hoặc tham gia nhóm bằng mã mời.
+          </p>
         </Card>
       ) : scope === "all" ? (
         <>
-          <GroupSection icon={Crown} title="Nhóm bạn quản lý" hint="Bạn có toàn quyền quản lý nhóm" groups={ownedGroups} emptyMessage="Bạn chưa tạo nhóm nào trên trang này." />
-          <GroupSection icon={UsersRound} title="Nhóm bạn đã tham gia" hint="Nhóm do người khác làm chủ" groups={joinedGroups} emptyMessage="Bạn chưa tham gia nhóm nào trên trang này." />
+          <GroupSection
+            icon={Crown}
+            title="Nhóm bạn quản lý"
+            hint="Bạn có toàn quyền quản lý nhóm"
+            groups={ownedGroups}
+            emptyMessage="Bạn chưa tạo nhóm nào trên trang này."
+          />
+          <GroupSection
+            icon={UsersRound}
+            title="Nhóm bạn đã tham gia"
+            hint="Nhóm do người khác làm chủ"
+            groups={joinedGroups}
+            emptyMessage="Bạn chưa tham gia nhóm nào trên trang này."
+          />
         </>
       ) : (
         <GroupSection
           icon={scope === "owned" ? Crown : UsersRound}
-          title={scope === "owned" ? "Nhóm bạn quản lý" : "Nhóm bạn đã tham gia"}
-          hint={scope === "owned" ? "Bạn có toàn quyền quản lý nhóm" : "Nhóm do người khác làm chủ"}
+          title={
+            scope === "owned" ? "Nhóm bạn quản lý" : "Nhóm bạn đã tham gia"
+          }
+          hint={
+            scope === "owned"
+              ? "Bạn có toàn quyền quản lý nhóm"
+              : "Nhóm do người khác làm chủ"
+          }
           groups={groups}
           emptyMessage="Không có nhóm nào khớp điều kiện."
         />
       )}
 
       {!loading && !error && (cursorStack.length > 1 || nextCursor) && (
-        <nav aria-label="Phân trang nhóm học tập" className="mt-2 flex items-center justify-between gap-3 border-t border-border-soft pt-4">
+        <nav
+          aria-label="Phân trang nhóm học tập"
+          className="mt-2 flex items-center justify-between gap-3 border-t border-border-soft pt-4"
+        >
           <button
             type="button"
             disabled={cursorStack.length <= 1}
@@ -198,10 +258,16 @@ export function StudyGroupBoard() {
           >
             Trước
           </button>
+          <span className="text-xs font-medium text-text-faint">
+            Trang {cursorStack.length} · tối đa 12 nhóm/trang
+          </span>
           <button
             type="button"
             disabled={!nextCursor}
-            onClick={() => nextCursor && setCursorStack((history) => [...history, nextCursor])}
+            onClick={() =>
+              nextCursor &&
+              setCursorStack((history) => [...history, nextCursor])
+            }
             className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
           >
             Sau
@@ -229,14 +295,25 @@ function toStudyGroup(group: WorkspaceListItem): StudyGroup {
     })),
     openTaskCount: group.openTaskCount,
     progressPercent: group.progressPercent,
-    lastActiveMinutesAgo: Math.max(0, Math.floor((now - new Date(group.lastActivityAt).getTime()) / 60_000)),
+    lastActiveMinutesAgo: Math.max(
+      0,
+      Math.floor((now - new Date(group.lastActivityAt).getTime()) / 60_000),
+    ),
     role: group.role,
     ownerName: group.owner.displayName,
   };
 }
 
 function initialsOf(value: string): string {
-  return value.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").toUpperCase() || "NH";
+  return (
+    value
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0] ?? "")
+      .join("")
+      .toUpperCase() || "NH"
+  );
 }
 
 function messageOf(cause: unknown, fallback: string): string {
