@@ -285,6 +285,7 @@ function toStudyGroup(group: WorkspaceListItem): StudyGroup {
     tile: initialsOf(group.name),
     name: group.name,
     description: group.description ?? "Chưa có mô tả cho nhóm học tập này.",
+    coverUrl: group.coverUrl,
     code: "",
     topic: group.topic ?? "Chưa phân loại",
     memberCount: group.memberCount,

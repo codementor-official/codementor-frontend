@@ -9,6 +9,8 @@ export interface StudyGroup {
   tile: string;
   name: string;
   description: string;
+  /** Signed/public cover URL returned by the Workspace read model. */
+  coverUrl: string | null;
   /** Invite code members join with — matched by the "tham gia bằng mã" box. */
   code: string;
   /** Subject the group is currently working through — also the topic filter's value. */

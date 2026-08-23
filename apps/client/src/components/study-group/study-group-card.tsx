@@ -28,6 +28,7 @@ export function StudyGroupCard({ group }: { group: StudyGroup }) {
       // tiles must not become a block of brand colour. Role is carried by the badge.
       tileVariant="ink"
       tileHeight="sm"
+      coverImage={group.coverUrl ?? undefined}
       kind={GROUP_TYPE[owned ? "owned" : "joined"]}
       title={group.name}
       description={group.description}

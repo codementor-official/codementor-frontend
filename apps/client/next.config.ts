@@ -9,7 +9,12 @@ const nextConfig: NextConfig = {
   images: {
     // picsum.photos stands in for real course/roadmap cover thumbnails until there's a
     // backend/CMS to source them from — see src/lib/placeholder-image.ts.
-    remotePatterns: [{ protocol: "https", hostname: "picsum.photos" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "picsum.photos" },
+      // Workspace covers are persisted in the configured S3 bucket. Bucket names vary
+      // per environment, so allow AWS image hosts without coupling UI code to one bucket.
+      { protocol: "https", hostname: "**.amazonaws.com" },
+    ],
   },
 };
 
