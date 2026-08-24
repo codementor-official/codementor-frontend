@@ -35,25 +35,33 @@ export interface WorkspaceListItem {
   memberCount: number;
   avatarUrl: string | null;
   coverUrl: string | null;
+  coverPosition: "top" | "center" | "bottom";
+  coverFit: "cover" | "contain";
+  coverHeight: "compact" | "medium" | "tall";
   privacy: "public" | "private";
   joinPolicy: "open" | "approval" | "invite_only";
   lastActivityAt: string;
   owner: WorkspaceUserSummary;
   memberPreview: WorkspaceUserSummary[];
-  role: WorkspaceRole;
+  role: WorkspaceRole | null;
   openTaskCount: number;
   progressPercent: number;
+  unreadCount: number;
 }
 
 export interface WorkspacePage {
   items: WorkspaceListItem[];
-  nextCursor: string | null;
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 export interface WorkspaceSummary {
   total: number;
   owned: number;
   joined: number;
+  unreadCount: number;
 }
 
 export interface WorkspaceDetail {
@@ -67,6 +75,9 @@ export interface WorkspaceDetail {
   avatarUrl: string | null;
   coverUrl: string | null;
   coverKey: string | null;
+  coverPosition: "top" | "center" | "bottom";
+  coverFit: "cover" | "contain";
+  coverHeight: "compact" | "medium" | "tall";
   privacy: "public" | "private";
   joinPolicy: "open" | "approval" | "invite_only";
   createdAt: string;
@@ -143,6 +154,7 @@ export interface WorkspaceJoinRequest {
   status: "pending" | "approved" | "rejected";
   message: string | null;
   createdAt: string;
+  reviewedAt?: string | null;
   user: WorkspaceUserSummary;
 }
 
@@ -226,12 +238,7 @@ export interface WorkspaceDocument {
   url: string | null;
   previewText: string | null;
   status:
-    | "published"
-    | "pending"
-    | "changes"
-    | "rejected"
-    | "hidden"
-    | "removed";
+    "published" | "pending" | "changes" | "rejected" | "hidden" | "removed";
   aiVerdict: string;
   uploadedAt: string;
   deletedAt: string | null;

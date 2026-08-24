@@ -1,6 +1,6 @@
 /** Your standing in a group. `owner` groups appear under "Nhóm bạn quản lý",
  * everything else under "Nhóm bạn đã tham gia". */
-export type StudyGroupRole = "owner" | "deputy" | "member";
+export type StudyGroupRole = "owner" | "deputy" | "member" | "guest";
 
 export interface StudyGroup {
   /** Slug — also the `/workspace/[groupId]` route segment. */
@@ -11,6 +11,9 @@ export interface StudyGroup {
   description: string;
   /** Signed/public cover URL returned by the Workspace read model. */
   coverUrl: string | null;
+  coverPosition: "top" | "center" | "bottom";
+  coverFit: "cover" | "contain";
+  coverHeight: "compact" | "medium" | "tall";
   /** Invite code members join with — matched by the "tham gia bằng mã" box. */
   code: string;
   /** Subject the group is currently working through — also the topic filter's value. */
@@ -23,6 +26,7 @@ export interface StudyGroup {
   openTaskCount: number;
   /** 0-100. Group-wide progress when you own it, your own progress when you joined. */
   progressPercent: number;
+  unreadCount: number;
   /** Stored as a number, not a label, so "hoạt động gần nhất" can actually sort by it.
    * Render it with `formatRelativeTime`. */
   lastActiveMinutesAgo: number;

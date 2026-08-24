@@ -26,6 +26,8 @@ export interface EntityCardProps {
   layout?: "vertical" | "horizontal";
   eyebrow?: string;
   coverImage?: string;
+  coverFit?: "cover" | "contain";
+  coverPosition?: "top" | "center" | "bottom";
   kind?: { icon: LucideIcon; label: string };
   title: string;
   description: string;
@@ -54,6 +56,8 @@ export function EntityCard({
   layout = "vertical",
   eyebrow,
   coverImage,
+  coverFit = "cover",
+  coverPosition = "center",
   kind,
   title,
   description,
@@ -92,8 +96,18 @@ export function EntityCard({
           src={coverImage}
           alt=""
           fill
-          sizes={horizontal ? "(max-width: 640px) 160px, 224px" : "(max-width: 640px) 100vw, 320px"}
-          className="object-cover"
+          sizes={
+            horizontal
+              ? "(max-width: 640px) 160px, 224px"
+              : "(max-width: 640px) 100vw, 320px"
+          }
+          className={`${coverFit === "contain" ? "object-contain" : "object-cover"} ${
+            coverPosition === "top"
+              ? "object-top"
+              : coverPosition === "bottom"
+                ? "object-bottom"
+                : "object-center"
+          }`}
         />
       )}
       {eyebrow && (
@@ -115,17 +129,25 @@ export function EntityCard({
   );
 
   const bodyBlock = (
-    <div className={`flex min-w-0 flex-1 flex-col gap-2 ${horizontal ? "py-1" : "p-4"}`}>
+    <div
+      className={`flex min-w-0 flex-1 flex-col gap-2 ${horizontal ? "py-1" : "p-4"}`}
+    >
       {kind && (
         <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wide text-text-faint uppercase">
           <kind.icon className="h-3 w-3" /> {kind.label}
         </div>
       )}
       <div className="flex items-start justify-between gap-2">
-        <h3 className={`font-semibold text-navy ${horizontal ? "text-base" : "text-sm"}`}>{title}</h3>
+        <h3
+          className={`font-semibold text-navy ${horizontal ? "text-base" : "text-sm"}`}
+        >
+          {title}
+        </h3>
         {badge}
       </div>
-      <p className={`text-text-muted ${horizontal ? "line-clamp-2 text-sm leading-relaxed" : "line-clamp-2 text-xs leading-relaxed"}`}>
+      <p
+        className={`text-text-muted ${horizontal ? "line-clamp-2 text-sm leading-relaxed" : "line-clamp-2 text-xs leading-relaxed"}`}
+      >
         {description}
       </p>
       {(difficulty || tags.length > 0) && (
@@ -149,9 +171,13 @@ export function EntityCard({
         </div>
       )}
       {note && (
-        <p className="rounded-md bg-border-soft px-2.5 py-2 text-2xs leading-relaxed text-text">{note}</p>
+        <p className="rounded-md bg-border-soft px-2.5 py-2 text-2xs leading-relaxed text-text">
+          {note}
+        </p>
       )}
-      {!horizontal && typeof progress === "number" && <ProgressBar value={progress} />}
+      {!horizontal && typeof progress === "number" && (
+        <ProgressBar value={progress} />
+      )}
       {!horizontal && footer && (
         <div className="mt-auto flex justify-between border-t border-border-soft pt-2.5 text-xs text-text-faint">
           {footer}
@@ -165,7 +191,9 @@ export function EntityCard({
           {cta.label}
         </Link>
       )}
-      {!horizontal && action && <div className="relative z-10 mt-auto pt-1">{action}</div>}
+      {!horizontal && action && (
+        <div className="relative z-10 mt-auto pt-1">{action}</div>
+      )}
     </div>
   );
 
@@ -177,9 +205,11 @@ export function EntityCard({
       }`}
     >
       {/* A stretched overlay link rather than a wrapper around the card: `action` holds real
-        * buttons, and a <button> inside an <a> is invalid markup that eats its own clicks.
-        * Inside the Card so `interactive`'s hover still fires. */}
-      {href && <Link href={href} className="absolute inset-0 z-0" aria-label={title} />}
+       * buttons, and a <button> inside an <a> is invalid markup that eats its own clicks.
+       * Inside the Card so `interactive`'s hover still fires. */}
+      {href && (
+        <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
+      )}
       {tileBlock}
       {bodyBlock}
     </Card>

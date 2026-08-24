@@ -1,9 +1,14 @@
-import type { StudyGroup, StudyGroupRole, StudyGroupSummary } from "@/types/study-group";
+import type {
+  StudyGroup,
+  StudyGroupRole,
+  StudyGroupSummary,
+} from "@/types/study-group";
 
 export const ROLE_LABEL: Record<StudyGroupRole, string> = {
   owner: "Chủ nhóm",
   deputy: "Phó nhóm",
   member: "Thành viên",
+  guest: "Khám phá",
 };
 
 export function isOwned(group: StudyGroup): boolean {
@@ -17,8 +22,10 @@ const MINUTES_PER_DAY = 60 * 24;
  * can never disagree. */
 export function formatRelativeTime(minutesAgo: number): string {
   if (minutesAgo < 1) return "vừa xong";
-  if (minutesAgo < MINUTES_PER_HOUR) return `${Math.round(minutesAgo)} phút trước`;
-  if (minutesAgo < MINUTES_PER_DAY) return `${Math.floor(minutesAgo / MINUTES_PER_HOUR)} giờ trước`;
+  if (minutesAgo < MINUTES_PER_HOUR)
+    return `${Math.round(minutesAgo)} phút trước`;
+  if (minutesAgo < MINUTES_PER_DAY)
+    return `${Math.floor(minutesAgo / MINUTES_PER_HOUR)} giờ trước`;
   const days = Math.floor(minutesAgo / MINUTES_PER_DAY);
   return days === 1 ? "hôm qua" : `${days} ngày trước`;
 }

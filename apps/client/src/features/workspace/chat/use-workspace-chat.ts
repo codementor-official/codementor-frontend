@@ -61,6 +61,9 @@ export function useWorkspaceChat(
     try {
       await api.workspaces.markMessagesRead(slug);
       socketRef.current?.emit("message:read", { slug });
+      window.dispatchEvent(
+        new CustomEvent("workspace-unread-changed", { detail: { slug } }),
+      );
     } catch {
       // Unread state is recovered from the API the next time the Workspace opens.
     }
@@ -90,12 +93,15 @@ export function useWorkspaceChat(
     ])
       .then(([page, unread]) => {
         if (cancelled) return;
-        setMessages((current) => mergeMessages([...page.items].reverse(), current));
+        setMessages((current) =>
+          mergeMessages([...page.items].reverse(), current),
+        );
         setCursor(page.nextCursor);
         setUnreadCount(unread.count);
       })
       .catch((cause) => {
-        if (!cancelled) setError(messageOf(cause, "Không tải được lịch sử chat."));
+        if (!cancelled)
+          setError(messageOf(cause, "Không tải được lịch sử chat."));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -124,14 +130,11 @@ export function useWorkspaceChat(
       socket.on("connect", () => {
         setConnected(true);
         setError(null);
-        socket?.emit(
-          "workspace:join",
-          { slug },
-          (ack: RealtimeAck<never>) => {
-            if (!ack?.ok) setError(ack?.error || "Không thể tham gia phòng chat.");
-            else setError(null);
-          },
-        );
+        socket?.emit("workspace:join", { slug }, (ack: RealtimeAck<never>) => {
+          if (!ack?.ok)
+            setError(ack?.error || "Không thể tham gia phòng chat.");
+          else setError(null);
+        });
       });
       socket.on("disconnect", () => setConnected(false));
       socket.on("connect_error", (cause) => setError(cause.message));
@@ -145,7 +148,10 @@ export function useWorkspaceChat(
         });
       });
 
-      const applyIncoming = (payload: { slug: string; message: WorkspaceMessage }) => {
+      const applyIncoming = (payload: {
+        slug: string;
+        message: WorkspaceMessage;
+      }) => {
         if (payload.slug !== slug) return;
         setMessages((current) => mergeMessages(current, [payload.message]));
         if (
@@ -154,11 +160,17 @@ export function useWorkspaceChat(
           !miniVisibleRef.current
         ) {
           setUnreadCount((count) => count + 1);
+          window.dispatchEvent(
+            new CustomEvent("workspace-unread-changed", { detail: { slug } }),
+          );
         } else if (payload.message.senderId !== user?.id) {
           void markRead();
         }
       };
-      const applyChange = (payload: { slug: string; message: WorkspaceMessage }) => {
+      const applyChange = (payload: {
+        slug: string;
+        message: WorkspaceMessage;
+      }) => {
         if (payload.slug !== slug) return;
         setMessages((current) => mergeMessages(current, [payload.message]));
       };
@@ -180,8 +192,13 @@ export function useWorkspaceChat(
     if (!cursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const page = await api.workspaces.messages(slug, { before: cursor, limit: PAGE_SIZE });
-      setMessages((current) => mergeMessages([...page.items].reverse(), current));
+      const page = await api.workspaces.messages(slug, {
+        before: cursor,
+        limit: PAGE_SIZE,
+      });
+      setMessages((current) =>
+        mergeMessages([...page.items].reverse(), current),
+      );
       setCursor(page.nextCursor);
     } catch (cause) {
       setError(messageOf(cause, "Không tải thêm được lịch sử chat."));
@@ -212,7 +229,10 @@ export function useWorkspaceChat(
               socket.auth = { token: freshToken };
               socket.disconnect().connect();
               await new Promise<void>((resolve, reject) => {
-                const timer = window.setTimeout(() => reject(new Error("Kết nối lại quá thời gian")), 8_000);
+                const timer = window.setTimeout(
+                  () => reject(new Error("Kết nối lại quá thời gian")),
+                  8_000,
+                );
                 socket.once("connect", () => {
                   window.clearTimeout(timer);
                   resolve();
@@ -222,17 +242,23 @@ export function useWorkspaceChat(
                   reject(cause);
                 });
               });
-              const join = (await socket.timeout(8_000).emitWithAck("workspace:join", {
-                slug,
-              })) as RealtimeAck<never>;
-              if (!join.ok) throw new Error(join.error || "Không thể kết nối lại phòng chat");
+              const join = (await socket
+                .timeout(8_000)
+                .emitWithAck("workspace:join", {
+                  slug,
+                })) as RealtimeAck<never>;
+              if (!join.ok)
+                throw new Error(
+                  join.error || "Không thể kết nối lại phòng chat",
+                );
               ack = (await socket.timeout(8_000).emitWithAck(event, {
                 slug,
                 ...payload,
               })) as RealtimeAck<WorkspaceMessage>;
             }
           }
-          if (!ack.ok || !ack.message) throw new Error(ack.error || "Realtime không phản hồi");
+          if (!ack.ok || !ack.message)
+            throw new Error(ack.error || "Realtime không phản hồi");
           message = ack.message;
         } else {
           message = await fallback();
@@ -251,28 +277,22 @@ export function useWorkspaceChat(
 
   const send = useCallback(
     (content: string) =>
-      runMessageAction(
-        "message:send",
-        { content },
-        () => api.workspaces.createMessage(slug, content),
+      runMessageAction("message:send", { content }, () =>
+        api.workspaces.createMessage(slug, content),
       ),
     [runMessageAction, slug],
   );
   const update = useCallback(
     (messageId: string, content: string) =>
-      runMessageAction(
-        "message:update",
-        { messageId, content },
-        () => api.workspaces.updateMessage(slug, messageId, content),
+      runMessageAction("message:update", { messageId, content }, () =>
+        api.workspaces.updateMessage(slug, messageId, content),
       ),
     [runMessageAction, slug],
   );
   const remove = useCallback(
     (messageId: string) =>
-      runMessageAction(
-        "message:delete",
-        { messageId },
-        () => api.workspaces.deleteMessage(slug, messageId),
+      runMessageAction("message:delete", { messageId }, () =>
+        api.workspaces.deleteMessage(slug, messageId),
       ),
     [runMessageAction, slug],
   );
@@ -308,8 +328,8 @@ function mergeMessages(...groups: WorkspaceMessage[][]) {
   groups.flat().forEach((message) => byId.set(message.id, message));
   return [...byId.values()].sort(
     (left, right) =>
-      new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime() ||
-      left.id.localeCompare(right.id),
+      new Date(left.createdAt).getTime() -
+        new Date(right.createdAt).getTime() || left.id.localeCompare(right.id),
   );
 }
 
