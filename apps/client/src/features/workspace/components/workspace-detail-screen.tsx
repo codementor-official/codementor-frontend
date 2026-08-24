@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Crown,
   Copy,
+  Download,
   FileText,
   Flame,
   Image as ImageIcon,
@@ -40,6 +41,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Pagination } from "@/components/ui/pagination";
 import { api } from "@/lib/api";
+import { downloadCsv } from "@/lib/download-csv";
 import type {
   WorkspaceDetail,
   WorkspaceJoinRequest,
@@ -180,6 +182,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const [archiving, setArchiving] = useState(false);
   const [removing, setRemoving] = useState<WorkspaceMember | null>(null);
   const [memberRevision, setMemberRevision] = useState(0);
+  const [joinRequestCount, setJoinRequestCount] = useState(0);
   const chat = useWorkspaceChat(slug, detail !== null, tab === "chat");
 
   useEffect(() => {
@@ -240,6 +243,20 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (detail?.currentMembership.role !== "owner") {
+      setJoinRequestCount(0);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void api.workspaces
+        .joinRequests(detail.slug, "pending")
+        .then((response) => setJoinRequestCount(response.items.length))
+        .catch(() => setJoinRequestCount(0));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [detail?.currentMembership.role, detail?.slug]);
 
   const isOwner = detail?.currentMembership.role === "owner";
   const memberChoices = useMemo(
@@ -406,6 +423,11 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
                     {Math.min(chat.unreadCount, 99)}
                   </span>
                 )}
+                {value === "members" && joinRequestCount > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-2xs font-bold text-on-ink">
+                    {Math.min(joinRequestCount, 99)}
+                  </span>
+                )}
               </button>
             ),
           )}
@@ -426,6 +448,8 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           pending={pending}
           onChangeRole={changeRole}
           onRemove={setRemoving}
+          pendingJoinRequestCount={joinRequestCount}
+          onJoinRequestCountChange={setJoinRequestCount}
         />
       )}
       {tab === "progress" && (
@@ -500,6 +524,26 @@ function Overview({
   const [activityPage, setActivityPage] = useState(1);
   const [activityOverview, setActivityOverview] = useState(overview);
   const [activityLoading, setActivityLoading] = useState(false);
+  const exportActivities = async () => {
+    try {
+      const result = await api.workspaces.overview(detail.slug, {
+        activitySearch: activitySearch.trim() || undefined,
+        activityPage: 1,
+        activityLimit: 50,
+      });
+      downloadCsv(
+        `workspace-activity-${todayForFile()}.csv`,
+        ["Thành viên", "Hoạt động", "Thời gian"],
+        result.activities.map((item) => [
+          item.actor ?? "Hệ thống",
+          item.action,
+          formatDateTime(item.createdAt),
+        ]),
+      );
+    } catch (error) {
+      toast.error(messageOf(error, "Không thể xuất hoạt động."));
+    }
+  };
   useEffect(() => {
     if (!overview) return;
     const timer = window.setTimeout(() => {
@@ -524,18 +568,28 @@ function Overview({
     <div className="flex flex-col gap-5">
       <Card className="overflow-hidden">
         <div
-          className="flex h-28 items-center justify-center bg-cover bg-center bg-navy sm:h-32"
+          className={`flex items-center justify-center bg-navy bg-no-repeat ${
+            detail.coverHeight === "compact"
+              ? "h-24 sm:h-28"
+              : detail.coverHeight === "tall"
+                ? "h-40 sm:h-52"
+                : "h-28 sm:h-36"
+          }`}
           style={
             detail.coverUrl
               ? {
                   backgroundImage: `url(${detail.coverUrl})`,
+                  backgroundPosition: detail.coverPosition,
+                  backgroundSize: detail.coverFit,
                 }
               : undefined
           }
         >
-          <span className="font-mono text-3xl font-bold text-on-ink">
-            {initialsOf(detail.name)}
-          </span>
+          {!detail.coverUrl && (
+            <span className="font-mono text-3xl font-bold text-on-ink">
+              {initialsOf(detail.name)}
+            </span>
+          )}
         </div>
         <div className="p-5">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -717,6 +771,15 @@ function Overview({
                   className="w-full rounded-md border border-border bg-surface py-1.5 pl-8 pr-3 text-xs text-navy"
                 />
               </label>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void exportActivities()}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export CSV
+              </Button>
             </div>
             {activityLoading ? (
               <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-text-faint">
@@ -927,6 +990,37 @@ function Progress({
   const pageSize = 8;
   const totalPages = Math.ceil(filtered.length / pageSize);
   const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const exportProgress = () => {
+    downloadCsv(
+      `workspace-member-progress-${todayForFile()}.csv`,
+      [
+        "Thành viên",
+        "Email",
+        "Tiến độ (%)",
+        "Bài hoàn thành",
+        "Bài được giao",
+        "Tỷ lệ đạt (%)",
+        "Lượt nộp",
+        "XP",
+        "Hoạt động gần nhất",
+      ],
+      filtered.map((member) => [
+        member.displayName,
+        member.email ?? "",
+        member.completionRate,
+        member.completedCount,
+        member.assignedCount,
+        member.submissionCount
+          ? Math.round((member.acceptedCount / member.submissionCount) * 100)
+          : 0,
+        member.submissionCount,
+        member.xp,
+        member.lastActiveAt
+          ? formatDateTime(member.lastActiveAt)
+          : "Chưa hoạt động",
+      ]),
+    );
+  };
   const selectMember = (member: (typeof overview.members)[number]) =>
     setSelected({
       id: member.id,
@@ -1095,13 +1189,26 @@ function Progress({
         </Card>
         <Card className="overflow-hidden">
           <div className="border-b border-border-soft p-5">
-            <h2 className="text-sm font-bold text-navy">
-              Tiến độ từng thành viên
-            </h2>
-            <p className="mt-1 text-xs text-text-faint">
-              Tìm, lọc và mở chi tiết streak/hoạt động từ dữ liệu assignment
-              thật.
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-navy">
+                  Tiến độ từng thành viên
+                </h2>
+                <p className="mt-1 text-xs text-text-faint">
+                  Tìm, lọc và mở chi tiết streak/hoạt động từ dữ liệu assignment
+                  thật.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={exportProgress}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export CSV
+              </Button>
+            </div>
             <div className="mt-4 grid gap-2 md:grid-cols-3">
               <input
                 value={search}
@@ -1114,6 +1221,7 @@ function Progress({
               />
               <Select
                 label="Trạng thái tiến độ"
+                className="w-full"
                 value={status}
                 onChange={(value) => {
                   setStatus(value);
@@ -1129,6 +1237,7 @@ function Progress({
               />
               <Select
                 label="Sắp xếp"
+                className="w-full"
                 value={sort}
                 onChange={(value) => {
                   setSort(value);
@@ -1327,10 +1436,14 @@ function DistributionBar({
 
 function JoinRequestsPanel({
   slug,
+  status,
   onApproved,
+  onCountChange,
 }: {
   slug: string;
+  status: "pending" | "rejected";
   onApproved: () => void;
+  onCountChange?: (count: number) => void;
 }) {
   const toast = useToast();
   const [requests, setRequests] = useState<WorkspaceJoinRequest[]>([]);
@@ -1340,14 +1453,15 @@ function JoinRequestsPanel({
   const loadRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.workspaces.joinRequests(slug);
+      const response = await api.workspaces.joinRequests(slug, status);
       setRequests(response.items);
+      if (status === "pending") onCountChange?.(response.items.length);
     } catch (cause) {
       toast.error(messageOf(cause, "Không tải được yêu cầu tham gia."));
     } finally {
       setLoading(false);
     }
-  }, [slug, toast]);
+  }, [onCountChange, slug, status, toast]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadRequests(), 0);
@@ -1364,6 +1478,8 @@ function JoinRequestsPanel({
       setRequests((current) =>
         current.filter((item) => item.id !== request.id),
       );
+      if (status === "pending")
+        onCountChange?.(Math.max(0, requests.length - 1));
       if (decision === "approve") onApproved();
       toast.success(
         decision === "approve" ? "Đã duyệt thành viên" : "Đã từ chối yêu cầu",
@@ -1379,20 +1495,30 @@ function JoinRequestsPanel({
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-4 py-3">
         <div>
-          <h2 className="text-sm font-bold text-navy">Duyệt thành viên</h2>
+          <h2 className="text-sm font-bold text-navy">
+            {status === "pending" ? "Duyệt thành viên" : "Yêu cầu đã từ chối"}
+          </h2>
           <p className="text-xs text-text-faint">
-            Yêu cầu từ nhóm đặt chế độ “Cần duyệt” sẽ xuất hiện tại đây.
+            {status === "pending"
+              ? "Yêu cầu từ nhóm đặt chế độ “Cần duyệt” sẽ xuất hiện tại đây."
+              : "Lịch sử yêu cầu đã bị từ chối."}
           </p>
         </div>
         <Badge tone={requests.length > 0 ? "brown" : "neutral"}>
-          {loading ? "Đang tải" : `${requests.length} chờ duyệt`}
+          {loading
+            ? "Đang tải"
+            : status === "pending"
+              ? `${requests.length} chờ duyệt`
+              : `${requests.length} đã từ chối`}
         </Badge>
       </div>
       {loading ? (
         <div className="h-20 animate-pulse bg-border-soft/40" />
       ) : requests.length === 0 ? (
         <p className="px-4 py-5 text-xs text-text-faint">
-          Không có yêu cầu tham gia đang chờ.
+          {status === "pending"
+            ? "Không có yêu cầu tham gia đang chờ."
+            : "Chưa có yêu cầu bị từ chối."}
         </p>
       ) : (
         <ul className="divide-y divide-border-soft">
@@ -1419,22 +1545,26 @@ function JoinRequestsPanel({
                   </p>
                 )}
               </div>
-              <Button
-                size="sm"
-                disabled={reviewingId !== null}
-                onClick={() => void review(request, "approve")}
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Duyệt
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={reviewingId !== null}
-                onClick={() => void review(request, "reject")}
-              >
-                Từ chối
-              </Button>
+              {status === "pending" && (
+                <>
+                  <Button
+                    size="sm"
+                    disabled={reviewingId !== null}
+                    onClick={() => void review(request, "approve")}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Duyệt
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={reviewingId !== null}
+                    onClick={() => void review(request, "reject")}
+                  >
+                    Từ chối
+                  </Button>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -1449,6 +1579,8 @@ function Members({
   viewerRole,
   revision,
   pending,
+  pendingJoinRequestCount,
+  onJoinRequestCountChange,
   onChangeRole,
   onRemove,
 }: {
@@ -1457,6 +1589,8 @@ function Members({
   viewerRole: WorkspaceRole;
   revision: number;
   pending: boolean;
+  pendingJoinRequestCount: number;
+  onJoinRequestCountChange: (count: number) => void;
   onChangeRole: (
     member: WorkspaceMember,
     role: Exclude<WorkspaceRole, "owner">,
@@ -1483,6 +1617,9 @@ function Members({
   const [joinedTo, setJoinedTo] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<WorkspaceMember | null>(null);
+  const [membershipView, setMembershipView] = useState<
+    "current" | "pending" | "rejected" | "all"
+  >("current");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1535,206 +1672,308 @@ function Members({
   };
   const canManage = viewerRole === "owner" && data.canManage;
   const canViewPrivate = viewerRole !== "member" && data.canViewPrivate;
+  const exportMembers = async () => {
+    try {
+      const response = await api.workspaces.members(slug, {
+        page: 1,
+        limit: 100,
+        search: search.trim() || undefined,
+        role: (role || undefined) as WorkspaceRole | undefined,
+        progress: (progress || undefined) as
+          "not_started" | "in_progress" | "completed" | undefined,
+        activityLevel: (activityLevel || undefined) as
+          "low" | "medium" | "high" | undefined,
+        submissionStatus: (submissionStatus || undefined) as
+          "not_submitted" | "submitted" | "passed" | undefined,
+        joinedFrom: joinedFrom || undefined,
+        joinedTo: joinedTo || undefined,
+      });
+      downloadCsv(
+        `workspace-members-${todayForFile()}.csv`,
+        [
+          "Thành viên",
+          "Email",
+          "Vai trò",
+          "Ngày tham gia",
+          "Tiến độ (%)",
+          "Lượt nộp",
+          "XP",
+        ],
+        response.items.map((member) => {
+          const stats = overview?.members.find((item) => item.id === member.id);
+          return [
+            member.user.displayName,
+            canViewPrivate ? (stats?.email ?? "") : "",
+            ROLE_LABEL[member.role],
+            formatDate(member.joinedAt),
+            stats?.completionRate ?? 0,
+            stats?.submissionCount ?? 0,
+            stats?.xp ?? 0,
+          ];
+        }),
+      );
+    } catch (error) {
+      toast.error(messageOf(error, "Không thể xuất danh sách thành viên."));
+    }
+  };
 
   return (
     <>
       {viewerRole === "owner" && (
-        <div className="mb-4">
-          <JoinRequestsPanel slug={slug} onApproved={() => void load()} />
+        <div className="mb-4 flex justify-end">
+          <Select
+            label="Hiển thị thành viên"
+            className="w-full sm:w-56"
+            value={membershipView}
+            onChange={(value) =>
+              setMembershipView(value as typeof membershipView)
+            }
+            options={[
+              { value: "current", label: "Thành viên hiện tại" },
+              {
+                value: "pending",
+                label: `Chờ duyệt (${pendingJoinRequestCount})`,
+              },
+              { value: "rejected", label: "Đã từ chối" },
+              { value: "all", label: "Tất cả" },
+            ]}
+          />
         </div>
       )}
-      <Card className="min-w-0 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-4 py-3">
-          <div>
-            <h2 className="text-sm font-bold text-navy">Thành viên</h2>
-            <p className="text-xs text-text-faint">
-              Tìm kiếm, lọc và quản lý thành viên mà không tải lại Workspace.
-            </p>
+      {viewerRole === "owner" &&
+        (membershipView === "pending" || membershipView === "all") && (
+          <div className="mb-4">
+            <JoinRequestsPanel
+              slug={slug}
+              status="pending"
+              onApproved={() => void load()}
+              onCountChange={onJoinRequestCountChange}
+            />
           </div>
-          <Badge tone="neutral">{data.total} người</Badge>
-        </div>
-        <div className="grid gap-3 border-b border-border-soft bg-bg/60 p-4 md:grid-cols-2 xl:grid-cols-4">
-          <input
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy xl:col-span-2"
-            placeholder="Tìm theo tên hoặc email..."
-            value={search}
-            onChange={(event) => changeFilter(setSearch, event.target.value)}
-          />
-          <Select
-            label="Vai trò"
-            value={role}
-            onChange={(value) => changeFilter(setRole, value)}
-            options={[
-              { value: "", label: "Tất cả vai trò" },
-              { value: "owner", label: "Chủ nhóm" },
-              { value: "deputy", label: "Phó nhóm" },
-              { value: "member", label: "Thành viên" },
-            ]}
-          />
-          <Select
-            label="Tiến độ"
-            value={progress}
-            onChange={(value) => changeFilter(setProgress, value)}
-            options={[
-              { value: "", label: "Mọi tiến độ" },
-              { value: "not_started", label: "Chưa bắt đầu" },
-              { value: "in_progress", label: "Đang học" },
-              { value: "completed", label: "Đã hoàn thành" },
-            ]}
-          />
-          <Select
-            label="Mức hoạt động"
-            value={activityLevel}
-            onChange={(value) => changeFilter(setActivityLevel, value)}
-            options={[
-              { value: "", label: "Mọi mức hoạt động" },
-              { value: "high", label: "Tích cực" },
-              { value: "medium", label: "Trung bình" },
-              { value: "low", label: "Ít hoạt động" },
-            ]}
-          />
-          <Select
-            label="Bài nộp"
-            value={submissionStatus}
-            onChange={(value) => changeFilter(setSubmissionStatus, value)}
-            options={[
-              { value: "", label: "Mọi trạng thái" },
-              { value: "not_submitted", label: "Chưa nộp" },
-              { value: "submitted", label: "Đã nộp" },
-              { value: "passed", label: "Đã đạt" },
-            ]}
-          />
-          <label className="grid gap-1 text-xs font-medium text-text-muted">
-            <span>Tham gia từ</span>
-            <input
-              type="date"
-              value={joinedFrom}
-              onChange={(event) =>
-                changeFilter(setJoinedFrom, event.target.value)
-              }
-              className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
+        )}
+      {viewerRole === "owner" &&
+        (membershipView === "rejected" || membershipView === "all") && (
+          <div className="mb-4">
+            <JoinRequestsPanel
+              slug={slug}
+              status="rejected"
+              onApproved={() => void load()}
             />
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-text-muted">
-            <span>Tham gia đến</span>
-            <input
-              type="date"
-              value={joinedTo}
-              onChange={(event) =>
-                changeFilter(setJoinedTo, event.target.value)
-              }
-              className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
-            />
-          </label>
-        </div>
-        <div className="relative min-h-[520px] md:min-h-[670px]">
-          {loading && (
-            <div
-              className="absolute inset-x-0 top-0 z-10 h-0.5 animate-pulse bg-primary"
-              aria-label="Đang tải trang thành viên"
-            />
-          )}
-          {!loading && data.items.length === 0 ? (
-            <div className="flex min-h-[360px] items-center justify-center px-4 text-center text-sm text-text-faint">
-              Không có thành viên phù hợp với bộ lọc.
+          </div>
+        )}
+      {(membershipView === "current" ||
+        membershipView === "all" ||
+        viewerRole !== "owner") && (
+        <Card className="min-w-0 overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-4 py-3">
+            <div>
+              <h2 className="text-sm font-bold text-navy">Thành viên</h2>
+              <p className="text-xs text-text-faint">
+                Tìm kiếm, lọc và quản lý thành viên mà không tải lại Workspace.
+              </p>
             </div>
-          ) : (
-            <ul
-              className={`divide-y divide-border-soft transition-opacity ${loading ? "opacity-60" : "opacity-100"}`}
-            >
-              {data.items.map((member) => {
-                const stats = overview?.members.find(
-                  (item) => item.id === member.id,
-                );
-                return (
-                  <li
-                    key={member.id}
-                    className="grid min-w-0 cursor-pointer gap-3 px-4 py-3 hover:bg-bg md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-                    onClick={() => setSelected(member)}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Avatar
-                        name={member.user.displayName}
-                        url={member.user.avatarUrl}
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-navy">
-                          {member.user.displayName}
-                        </p>
-                        <p className="truncate text-xs text-text-faint">
-                          {canViewPrivate && stats?.email
-                            ? stats.email
-                            : `Tham gia ${formatDate(member.joinedAt)}`}
-                        </p>
-                        {stats && (
-                          <p className="mt-0.5 text-2xs text-text-muted">
-                            {stats.xp.toLocaleString("vi-VN")} XP ·{" "}
-                            {stats.submissionCount} lượt nộp ·{" "}
-                            {stats.assignedCount
-                              ? `${stats.completionRate}% hoàn thành`
-                              : "Quản lý nhóm"}
+            <div className="flex items-center gap-2">
+              <Badge tone="neutral">{data.total} người</Badge>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void exportMembers()}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export CSV
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-3 border-b border-border-soft bg-bg/60 p-4 md:grid-cols-2 xl:grid-cols-4">
+            <input
+              className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy xl:col-span-2"
+              placeholder="Tìm theo tên hoặc email..."
+              value={search}
+              onChange={(event) => changeFilter(setSearch, event.target.value)}
+            />
+            <Select
+              label="Vai trò"
+              className="w-full"
+              value={role}
+              onChange={(value) => changeFilter(setRole, value)}
+              options={[
+                { value: "", label: "Tất cả vai trò" },
+                { value: "owner", label: "Chủ nhóm" },
+                { value: "deputy", label: "Phó nhóm" },
+                { value: "member", label: "Thành viên" },
+              ]}
+            />
+            <Select
+              label="Tiến độ"
+              className="w-full"
+              value={progress}
+              onChange={(value) => changeFilter(setProgress, value)}
+              options={[
+                { value: "", label: "Mọi tiến độ" },
+                { value: "not_started", label: "Chưa bắt đầu" },
+                { value: "in_progress", label: "Đang học" },
+                { value: "completed", label: "Đã hoàn thành" },
+              ]}
+            />
+            <Select
+              label="Mức hoạt động"
+              className="w-full"
+              value={activityLevel}
+              onChange={(value) => changeFilter(setActivityLevel, value)}
+              options={[
+                { value: "", label: "Mọi mức hoạt động" },
+                { value: "high", label: "Tích cực" },
+                { value: "medium", label: "Trung bình" },
+                { value: "low", label: "Ít hoạt động" },
+              ]}
+            />
+            <Select
+              label="Bài nộp"
+              className="w-full"
+              value={submissionStatus}
+              onChange={(value) => changeFilter(setSubmissionStatus, value)}
+              options={[
+                { value: "", label: "Mọi trạng thái" },
+                { value: "not_submitted", label: "Chưa nộp" },
+                { value: "submitted", label: "Đã nộp" },
+                { value: "passed", label: "Đã đạt" },
+              ]}
+            />
+            <label className="grid gap-1 text-xs font-medium text-text-muted">
+              <span>Tham gia từ</span>
+              <input
+                type="date"
+                value={joinedFrom}
+                onChange={(event) =>
+                  changeFilter(setJoinedFrom, event.target.value)
+                }
+                className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
+              />
+            </label>
+            <label className="grid gap-1 text-xs font-medium text-text-muted">
+              <span>Tham gia đến</span>
+              <input
+                type="date"
+                value={joinedTo}
+                onChange={(event) =>
+                  changeFilter(setJoinedTo, event.target.value)
+                }
+                className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
+              />
+            </label>
+          </div>
+          <div className="relative min-h-[520px] md:min-h-[670px]">
+            {loading && (
+              <div
+                className="absolute inset-x-0 top-0 z-10 h-0.5 animate-pulse bg-primary"
+                aria-label="Đang tải trang thành viên"
+              />
+            )}
+            {!loading && data.items.length === 0 ? (
+              <div className="flex min-h-[360px] items-center justify-center px-4 text-center text-sm text-text-faint">
+                Không có thành viên phù hợp với bộ lọc.
+              </div>
+            ) : (
+              <ul
+                className={`divide-y divide-border-soft transition-opacity ${loading ? "opacity-60" : "opacity-100"}`}
+              >
+                {data.items.map((member) => {
+                  const stats = overview?.members.find(
+                    (item) => item.id === member.id,
+                  );
+                  return (
+                    <li
+                      key={member.id}
+                      className="grid min-w-0 cursor-pointer gap-3 px-4 py-3 hover:bg-bg md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+                      onClick={() => setSelected(member)}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar
+                          name={member.user.displayName}
+                          url={member.user.avatarUrl}
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-navy">
+                            {member.user.displayName}
                           </p>
+                          <p className="truncate text-xs text-text-faint">
+                            {canViewPrivate && stats?.email
+                              ? stats.email
+                              : `Tham gia ${formatDate(member.joinedAt)}`}
+                          </p>
+                          {stats && (
+                            <p className="mt-0.5 text-2xs text-text-muted">
+                              {stats.xp.toLocaleString("vi-VN")} XP ·{" "}
+                              {stats.submissionCount} lượt nộp ·{" "}
+                              {stats.assignedCount
+                                ? `${stats.completionRate}% hoàn thành`
+                                : "Quản lý nhóm"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex min-w-0 flex-wrap items-center gap-2 md:justify-end">
+                        <Badge
+                          tone={member.role === "owner" ? "brown" : "neutral"}
+                        >
+                          {ROLE_LABEL[member.role]}
+                        </Badge>
+                        {canManage && member.role !== "owner" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={pending}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void onChangeRole(
+                                  member,
+                                  member.role === "deputy"
+                                    ? "member"
+                                    : "deputy",
+                                );
+                              }}
+                            >
+                              {member.role === "deputy"
+                                ? "Hạ xuống thành viên"
+                                : "Đặt làm Phó nhóm"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={pending}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onRemove(member);
+                              }}
+                            >
+                              Loại
+                            </Button>
+                          </>
                         )}
                       </div>
-                    </div>
-                    <div className="flex min-w-0 flex-wrap items-center gap-2 md:justify-end">
-                      <Badge
-                        tone={member.role === "owner" ? "brown" : "neutral"}
-                      >
-                        {ROLE_LABEL[member.role]}
-                      </Badge>
-                      {canManage && member.role !== "owner" && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={pending}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void onChangeRole(
-                                member,
-                                member.role === "deputy" ? "member" : "deputy",
-                              );
-                            }}
-                          >
-                            {member.role === "deputy"
-                              ? "Hạ xuống thành viên"
-                              : "Đặt làm Phó nhóm"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={pending}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onRemove(member);
-                            }}
-                          >
-                            Loại
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-        <div className="min-h-14 border-t border-border-soft px-4 py-3">
-          <Pagination
-            page={data.page}
-            pageCount={data.totalPages}
-            onChange={setPage}
-            label="Phân trang thành viên"
-          />
-          {data.totalPages <= 1 && (
-            <p className="text-xs text-text-faint">
-              Trang 1 / {Math.max(data.totalPages, 1)}
-            </p>
-          )}
-        </div>
-      </Card>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          <div className="min-h-14 border-t border-border-soft px-4 py-3">
+            <Pagination
+              page={data.page}
+              pageCount={data.totalPages}
+              onChange={setPage}
+              label="Phân trang thành viên"
+            />
+            {data.totalPages <= 1 && (
+              <p className="text-xs text-text-faint">
+                Trang 1 / {Math.max(data.totalPages, 1)}
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
       {selected && (
         <MemberDetailDialog
           slug={slug}
@@ -1814,7 +2053,7 @@ function MemberDetailDialog({
   };
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy/45 p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-fixed/35 p-3 backdrop-blur-[4px]"
       role="dialog"
       aria-modal="true"
     >
@@ -1967,6 +2206,7 @@ function MemberDetailDialog({
                             {data.canManagePermissions && (
                               <Select
                                 label="Nguồn quyền"
+                                className="w-full"
                                 value={value}
                                 onChange={(next) =>
                                   void updatePermission(
@@ -2057,6 +2297,9 @@ function SettingsPanel({
   const [topic, setTopic] = useState(detail.topic ?? "");
   const [privacy, setPrivacy] = useState(detail.privacy);
   const [joinPolicy, setJoinPolicy] = useState(detail.joinPolicy);
+  const [coverPosition, setCoverPosition] = useState(detail.coverPosition);
+  const [coverFit, setCoverFit] = useState(detail.coverFit);
+  const [coverHeight, setCoverHeight] = useState(detail.coverHeight);
   const [transferTo, setTransferTo] = useState("");
   const [pending, setPending] = useState(false);
   const [coverPreview, setCoverPreview] = useState(detail.coverUrl);
@@ -2071,6 +2314,9 @@ function SettingsPanel({
         topic,
         privacy,
         joinPolicy,
+        coverPosition,
+        coverFit,
+        coverHeight,
       });
       onSaved(updated);
       toast.success("Đã lưu thay đổi nhóm");
@@ -2185,6 +2431,7 @@ function SettingsPanel({
               Hiển thị
               <Select
                 label="Hiển thị nhóm"
+                className="w-full"
                 value={privacy}
                 onChange={(value) => setPrivacy(value as "public" | "private")}
                 options={[
@@ -2197,6 +2444,7 @@ function SettingsPanel({
               Cách tham gia
               <Select
                 label="Cách tham gia"
+                className="w-full"
                 value={joinPolicy}
                 onChange={(value) =>
                   setJoinPolicy(value as "open" | "approval" | "invite_only")
@@ -2211,11 +2459,19 @@ function SettingsPanel({
           </div>
           <div className="overflow-hidden rounded-lg border border-border-soft">
             <div
-              className="flex h-32 items-center justify-center bg-cover bg-center bg-navy"
+              className={`flex items-center justify-center bg-navy bg-no-repeat transition-[height] ${
+                coverHeight === "compact"
+                  ? "h-24"
+                  : coverHeight === "tall"
+                    ? "h-48"
+                    : "h-32"
+              }`}
               style={
                 coverPreview
                   ? {
                       backgroundImage: `url(${coverPreview})`,
+                      backgroundPosition: coverPosition,
+                      backgroundSize: coverFit,
                     }
                   : undefined
               }
@@ -2245,6 +2501,42 @@ function SettingsPanel({
                 </Button>
               </div>
             )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Select
+              label="Vị trí ảnh"
+              value={coverPosition}
+              onChange={(value) =>
+                setCoverPosition(value as typeof coverPosition)
+              }
+              className="w-full"
+              options={[
+                { value: "top", label: "Phía trên" },
+                { value: "center", label: "Chính giữa" },
+                { value: "bottom", label: "Phía dưới" },
+              ]}
+            />
+            <Select
+              label="Cách hiển thị"
+              value={coverFit}
+              onChange={(value) => setCoverFit(value as typeof coverFit)}
+              className="w-full"
+              options={[
+                { value: "cover", label: "Phủ đầy khung" },
+                { value: "contain", label: "Hiển thị toàn ảnh" },
+              ]}
+            />
+            <Select
+              label="Chiều cao"
+              value={coverHeight}
+              onChange={(value) => setCoverHeight(value as typeof coverHeight)}
+              className="w-full"
+              options={[
+                { value: "compact", label: "Gọn" },
+                { value: "medium", label: "Vừa" },
+                { value: "tall", label: "Cao" },
+              ]}
+            />
           </div>
           <div>
             <label className="block cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs font-semibold text-navy">
@@ -2282,6 +2574,7 @@ function SettingsPanel({
           </p>
           <Select
             label="Chủ nhóm mới"
+            className="w-full"
             value={transferTo}
             onChange={setTransferTo}
             options={[
@@ -2468,6 +2761,10 @@ function formatDate(value: string): string {
     month: "2-digit",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function todayForFile(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function formatDateTime(value: string): string {
