@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Crown, SearchX, UsersRound, type LucideIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Compass,
+  Crown,
+  Layers3,
+  SearchX,
+  UsersRound,
+  type LucideIcon,
+} from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { FilterBar, SegmentedTabs, StatStrip, useToast } from "@codementor/ui";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { isOwned } from "@/lib/study-group/study-group-stats";
 import type {
   WorkspaceListItem,
   WorkspaceSummary,
@@ -15,7 +21,43 @@ import type { StudyGroup } from "@/types/study-group";
 import { StudyGroupActions } from "./study-group-actions";
 import { StudyGroupCard } from "./study-group-card";
 
-type Scope = "all" | "owned" | "joined";
+type Scope = "all" | "mine" | "owned" | "joined" | "discover";
+
+const SCOPE_META: Record<
+  Scope,
+  { label: string; title: string; hint: string; icon: LucideIcon }
+> = {
+  all: {
+    label: "Tất cả",
+    title: "Tất cả Workspace",
+    hint: "Nhóm của bạn và các nhóm công khai",
+    icon: Layers3,
+  },
+  mine: {
+    label: "Nhóm của tôi",
+    title: "Nhóm của tôi",
+    hint: "Tất cả nhóm bạn đang là thành viên",
+    icon: UsersRound,
+  },
+  owned: {
+    label: "Tôi quản lý",
+    title: "Nhóm bạn quản lý",
+    hint: "Bạn có toàn quyền quản lý nhóm",
+    icon: Crown,
+  },
+  joined: {
+    label: "Đã tham gia",
+    title: "Nhóm bạn đã tham gia",
+    hint: "Nhóm do người khác làm chủ",
+    icon: UsersRound,
+  },
+  discover: {
+    label: "Khám phá",
+    title: "Khám phá nhóm công khai",
+    hint: "Tìm nhóm phù hợp để gửi yêu cầu tham gia",
+    icon: Compass,
+  },
+};
 
 function GroupSection({
   icon: Icon,
@@ -23,12 +65,14 @@ function GroupSection({
   hint,
   groups,
   emptyMessage,
+  onRequestJoin,
 }: {
   icon: LucideIcon;
   title: string;
   hint: string;
   groups: StudyGroup[];
   emptyMessage: string;
+  onRequestJoin?: (group: StudyGroup) => void;
 }) {
   return (
     <section className="mb-7">
@@ -53,7 +97,7 @@ function GroupSection({
         >
           {groups.map((group) => (
             <li key={group.id}>
-              <StudyGroupCard group={group} />
+              <StudyGroupCard group={group} onRequestJoin={onRequestJoin} />
             </li>
           ))}
         </ul>
@@ -64,20 +108,26 @@ function GroupSection({
 
 export function StudyGroupBoard() {
   const toast = useToast();
-  const [scope, setScope] = useState<Scope>("all");
+  const [scope, setScope] = useState<Scope>("mine");
   const [search, setSearch] = useState("");
   const [groups, setGroups] = useState<StudyGroup[]>([]);
   const [summary, setSummary] = useState<WorkspaceSummary | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [cursorStack, setCursorStack] = useState<(string | null)[]>([null]);
+  const [pageByScope, setPageByScope] = useState<Record<Scope, number>>({
+    all: 1,
+    mine: 1,
+    owned: 1,
+    joined: 1,
+    discover: 1,
+  });
+  const [totalPages, setTotalPages] = useState(0);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const cursor = cursorStack.at(-1) ?? null;
   const load = async (
     nextScope: Scope,
     nextSearch: string,
-    nextCursorValue: string | null,
+    nextPage: number,
   ) => {
     setLoading(true);
     setError(null);
@@ -86,13 +136,25 @@ export function StudyGroupBoard() {
         api.workspaces.list({
           scope: nextScope,
           q: nextSearch.trim() || undefined,
-          cursor: nextCursorValue ?? undefined,
-          limit: 12,
+          page: nextPage,
+          limit: 8,
         }),
         api.workspaces.summary(),
       ]);
-      setGroups(page.items.map(toStudyGroup));
-      setNextCursor(page.nextCursor);
+      const itemsWithSignedCovers = await Promise.all(
+        page.items.map(async (item) => {
+          if (!item.coverUrl || !item.role) return item;
+          try {
+            const preview = await api.workspaces.coverPreview(item.slug);
+            return { ...item, coverUrl: preview.url ?? item.coverUrl };
+          } catch {
+            return item;
+          }
+        }),
+      );
+      setGroups(itemsWithSignedCovers.map(toStudyGroup));
+      setTotalPages(page.totalPages);
+      setTotal(page.total);
       setSummary(nextSummary);
     } catch (cause) {
       setError(
@@ -105,26 +167,31 @@ export function StudyGroupBoard() {
 
   useEffect(() => {
     const timer = window.setTimeout(
-      () => void load(scope, search, cursor),
+      () => void load(scope, search, pageByScope[scope]),
       search === "" ? 0 : 350,
     );
     return () => window.clearTimeout(timer);
-  }, [scope, search, cursor]);
+  }, [scope, search, pageByScope]);
+
+  useEffect(() => {
+    const refresh = () => void load(scope, search, pageByScope[scope]);
+    const interval = window.setInterval(refresh, 30_000);
+    window.addEventListener("workspace-unread-changed", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("workspace-unread-changed", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [scope, search, pageByScope]);
 
   const changeScope = (nextScope: Scope) => {
     setScope(nextScope);
-    setCursorStack([null]);
   };
   const changeSearch = (value: string) => {
     setSearch(value);
-    setCursorStack([null]);
+    setPageByScope((current) => ({ ...current, [scope]: 1 }));
   };
-
-  const ownedGroups = useMemo(() => groups.filter(isOwned), [groups]);
-  const joinedGroups = useMemo(
-    () => groups.filter((group) => !isOwned(group)),
-    [groups],
-  );
 
   const create = async (name: string, description: string) => {
     const created = await api.workspaces.create({
@@ -134,8 +201,8 @@ export function StudyGroupBoard() {
     toast.success(`Đã tạo nhóm “${created.name}”`);
     setScope("owned");
     setSearch("");
-    setCursorStack([null]);
-    await load("owned", "", null);
+    setPageByScope((current) => ({ ...current, owned: 1 }));
+    await load("owned", "", 1);
   };
 
   const join = async (code: string) => {
@@ -150,7 +217,22 @@ export function StudyGroupBoard() {
     window.location.assign(`/workspace/${result.workspaceSlug}`);
   };
 
-  const retry = () => void load(scope, search, cursor);
+  const requestAccess = async (group: StudyGroup) => {
+    try {
+      const result = await api.workspaces.requestJoin(group.id);
+      if (result.status === "joined") {
+        toast.success(`Đã tham gia nhóm “${group.name}”`);
+        window.location.assign(`/workspace/${group.id}`);
+        return;
+      }
+      toast.success(`Đã gửi yêu cầu tham gia “${group.name}”`);
+      await load(scope, search, pageByScope[scope]);
+    } catch (cause) {
+      toast.error(messageOf(cause, "Không thể gửi yêu cầu tham gia."));
+    }
+  };
+
+  const retry = () => void load(scope, search, pageByScope[scope]);
   const noResults = !loading && !error && groups.length === 0;
 
   return (
@@ -172,8 +254,10 @@ export function StudyGroupBoard() {
         onChange={(value) => changeScope(value as Scope)}
         options={[
           { value: "all", label: "Tất cả" },
+          { value: "mine", label: "Nhóm của tôi" },
           { value: "owned", label: "Tôi quản lý" },
           { value: "joined", label: "Đã tham gia" },
+          { value: "discover", label: "Khám phá" },
         ]}
       />
 
@@ -218,61 +302,46 @@ export function StudyGroupBoard() {
             Thử từ khóa khác hoặc tham gia nhóm bằng mã mời.
           </p>
         </Card>
-      ) : scope === "all" ? (
-        <>
-          <GroupSection
-            icon={Crown}
-            title="Nhóm bạn quản lý"
-            hint="Bạn có toàn quyền quản lý nhóm"
-            groups={ownedGroups}
-            emptyMessage="Bạn chưa tạo nhóm nào trên trang này."
-          />
-          <GroupSection
-            icon={UsersRound}
-            title="Nhóm bạn đã tham gia"
-            hint="Nhóm do người khác làm chủ"
-            groups={joinedGroups}
-            emptyMessage="Bạn chưa tham gia nhóm nào trên trang này."
-          />
-        </>
       ) : (
         <GroupSection
-          icon={scope === "owned" ? Crown : UsersRound}
-          title={
-            scope === "owned" ? "Nhóm bạn quản lý" : "Nhóm bạn đã tham gia"
-          }
-          hint={
-            scope === "owned"
-              ? "Bạn có toàn quyền quản lý nhóm"
-              : "Nhóm do người khác làm chủ"
-          }
+          icon={SCOPE_META[scope].icon}
+          title={SCOPE_META[scope].title}
+          hint={`${SCOPE_META[scope].hint} · ${total} nhóm`}
           groups={groups}
           emptyMessage="Không có nhóm nào khớp điều kiện."
+          onRequestJoin={(group) => void requestAccess(group)}
         />
       )}
 
-      {!loading && !error && (cursorStack.length > 1 || nextCursor) && (
+      {!loading && !error && totalPages > 1 && (
         <nav
           aria-label="Phân trang nhóm học tập"
           className="mt-2 flex items-center justify-between gap-3 border-t border-border-soft pt-4"
         >
           <button
             type="button"
-            disabled={cursorStack.length <= 1}
-            onClick={() => setCursorStack((history) => history.slice(0, -1))}
+            disabled={pageByScope[scope] <= 1}
+            onClick={() =>
+              setPageByScope((current) => ({
+                ...current,
+                [scope]: Math.max(1, current[scope] - 1),
+              }))
+            }
             className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
           >
             Trước
           </button>
           <span className="text-xs font-medium text-text-faint">
-            Trang {cursorStack.length} · tối đa 12 nhóm/trang
+            Trang {pageByScope[scope]} / {totalPages} · 8 nhóm/trang
           </span>
           <button
             type="button"
-            disabled={!nextCursor}
+            disabled={pageByScope[scope] >= totalPages}
             onClick={() =>
-              nextCursor &&
-              setCursorStack((history) => [...history, nextCursor])
+              setPageByScope((current) => ({
+                ...current,
+                [scope]: Math.min(totalPages, current[scope] + 1),
+              }))
             }
             className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -292,6 +361,9 @@ function toStudyGroup(group: WorkspaceListItem): StudyGroup {
     name: group.name,
     description: group.description ?? "Chưa có mô tả cho nhóm học tập này.",
     coverUrl: group.coverUrl,
+    coverPosition: group.coverPosition,
+    coverFit: group.coverFit,
+    coverHeight: group.coverHeight,
     code: "",
     topic: group.topic ?? "Chưa phân loại",
     memberCount: group.memberCount,
@@ -302,11 +374,12 @@ function toStudyGroup(group: WorkspaceListItem): StudyGroup {
     })),
     openTaskCount: group.openTaskCount,
     progressPercent: group.progressPercent,
+    unreadCount: group.unreadCount,
     lastActiveMinutesAgo: Math.max(
       0,
       Math.floor((now - new Date(group.lastActivityAt).getTime()) / 60_000),
     ),
-    role: group.role,
+    role: group.role ?? "guest",
     ownerName: group.owner.displayName,
   };
 }

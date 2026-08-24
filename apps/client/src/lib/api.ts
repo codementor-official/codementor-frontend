@@ -226,10 +226,10 @@ export const api = {
       ),
     list: (
       params: {
-        scope?: "all" | "owned" | "joined";
+        scope?: "all" | "mine" | "owned" | "joined" | "discover";
         q?: string;
         topic?: string;
-        cursor?: string;
+        page?: number;
         limit?: number;
       } = {},
     ) => unwrap<WorkspacePage>(`/workspaces${query(params)}`),
@@ -511,6 +511,9 @@ export const api = {
         avatarKey?: string | null;
         coverUrl?: string | null;
         coverKey?: string | null;
+        coverPosition?: "top" | "center" | "bottom";
+        coverFit?: "cover" | "contain";
+        coverHeight?: "compact" | "medium" | "tall";
       },
     ) =>
       unwrap<WorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}`, {
@@ -568,9 +571,12 @@ export const api = {
         `/workspaces/${encodeURIComponent(slug)}/join-request`,
         { method: "POST", body: { message } },
       ),
-    joinRequests: (slug: string) =>
+    joinRequests: (
+      slug: string,
+      status: "pending" | "rejected" | "all" = "pending",
+    ) =>
       unwrap<{ items: WorkspaceJoinRequest[] }>(
-        `/workspaces/${encodeURIComponent(slug)}/join-requests`,
+        `/workspaces/${encodeURIComponent(slug)}/join-requests${query({ status })}`,
       ),
     reviewJoinRequest: (
       slug: string,

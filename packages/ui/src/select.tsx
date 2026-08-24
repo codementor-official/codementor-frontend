@@ -20,6 +20,7 @@ export function Select({
   onChange,
   disabled = false,
   className = "",
+  containerClassName = "",
 }: {
   label: string;
   value: string;
@@ -27,17 +28,21 @@ export function Select({
   onChange: (value: string) => void;
   disabled?: boolean;
   className?: string;
+  containerClassName?: string;
 }) {
+  const fullWidth = /(^|\s)w-full(\s|$)/.test(className);
   return (
-    // `inline-block` so the wrapper hugs the select. As a block element it stretched to
-    // fill its parent (a grid cell, a flex row), leaving the chevron floating in the gap.
-    <div className="relative inline-block w-full sm:w-auto">
+    <div
+      className={`relative inline-flex min-w-0 max-w-full align-middle ${
+        fullWidth ? "w-full" : "w-fit justify-self-start"
+      } ${containerClassName}`}
+    >
       <select
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={`h-9 w-full appearance-none rounded-md border border-border bg-card py-0 pr-8 pl-3 text-xs font-semibold text-foreground focus:border-foreground sm:w-auto ${className}`}
+        className={`h-9 min-w-0 appearance-none rounded-md border border-border bg-card py-0 pr-9 pl-3 text-xs font-semibold text-foreground outline-none transition-colors focus:border-foreground disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -45,7 +50,10 @@ export function Select({
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+      <ChevronDown
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 shrink-0 -translate-y-1/2 text-muted-foreground"
+      />
     </div>
   );
 }

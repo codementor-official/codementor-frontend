@@ -14,7 +14,6 @@ import {
   Loader2,
   Plus,
   RotateCcw,
-  Search,
   Sparkles,
   Trash2,
   Upload,
@@ -28,6 +27,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { api } from "@/lib/api";
+import { downloadCsv } from "@/lib/download-csv";
 import type { ExerciseSummary } from "@/types/catalogue";
 import type {
   WorkspaceAssignment,
@@ -39,6 +39,7 @@ import type {
   WorkspaceMember,
   WorkspaceSubmission,
 } from "../types";
+import { WorkspaceMemberSelector } from "./workspace-member-selector";
 
 const EMPTY_PAGE = <T,>(): WorkspaceContentPage<T> => ({
   items: [],
@@ -438,7 +439,7 @@ function DocumentPreviewDialog({
   const kind = previewKind(document.docType);
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy/55 p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-fixed/35 p-3 backdrop-blur-[4px]"
       role="dialog"
       aria-modal="true"
       aria-label={`Xem tài liệu ${document.title}`}
@@ -551,7 +552,7 @@ function DocumentReportDialog({
   };
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy/55 p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-fixed/35 p-3 backdrop-blur-[4px]"
       role="dialog"
       aria-modal="true"
       aria-label="Báo cáo tài liệu"
@@ -619,7 +620,6 @@ export function WorkspaceExercisesTab({
   const [exerciseStatus, setExerciseStatus] = useState("");
   const [selected, setSelected] = useState("");
   const [dueAt, setDueAt] = useState("");
-  const [memberSearch, setMemberSearch] = useState("");
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [reminders, setReminders] = useState<WorkspaceExercise[]>([]);
   const [busy, setBusy] = useState(false);
@@ -637,11 +637,6 @@ export function WorkspaceExercisesTab({
     detail.currentMembership.role === "owner" ||
     detail.currentMembership.permissions.manage_exercise ||
     detail.currentMembership.permissions.edit_exercise;
-  const visibleAssignable = assignable.filter((member) =>
-    `${member.user.displayName} ${member.user.email ?? ""}`
-      .toLocaleLowerCase("vi")
-      .includes(memberSearch.trim().toLocaleLowerCase("vi")),
-  );
   const load = useCallback(async () => {
     try {
       const main = await api.workspaces.workspaceExercises(detail.slug, {
@@ -722,12 +717,37 @@ export function WorkspaceExercisesTab({
       toast.error(messageOf(e));
     }
   };
-  const toggleMember = (id: string) =>
-    setMemberIds((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
-    );
+  const exportExercises = async () => {
+    try {
+      const response = await api.workspaces.workspaceExercises(detail.slug, {
+        page: 1,
+        limit: 100,
+        q: q || undefined,
+        difficulty: difficulty || undefined,
+        scope,
+        status: exerciseStatus || undefined,
+      });
+      downloadCsv(
+        `workspace-exercises-${todayForFile()}.csv`,
+        [
+          "Bài tập",
+          "Độ khó",
+          "Trạng thái",
+          "Số thành viên được giao",
+          "Hạn nộp",
+        ],
+        response.items.map((item) => [
+          item.title,
+          difficultyLabel(item.difficulty),
+          item.publicationStatus,
+          item.assignedCount,
+          item.dueAt ? formatDate(item.dueAt) : "Không giới hạn",
+        ]),
+      );
+    } catch (error) {
+      toast.error(messageOf(error, "Không thể xuất danh sách bài tập."));
+    }
+  };
   return (
     <div className="space-y-4">
       {canCreate && (
@@ -746,18 +766,28 @@ export function WorkspaceExercisesTab({
               Tạo bài mới
             </Button>
           </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-64 flex-1 sm:max-w-xl">
+          <div className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_220px_auto_auto]">
+            <div className="min-w-0">
               <Select
-                label="Bài tập từ kho công khai"
+                label="1. Chọn bài tập"
                 value={selected}
                 onChange={setSelected}
+                className="w-full"
                 options={[
                   { value: "", label: "Chọn bài tập" },
                   ...bank.map((x) => ({ value: x.id, label: x.title })),
                 ]}
               />
             </div>
+            <label className="grid gap-1 text-xs font-medium text-text-muted">
+              <span>2. Hạn nộp</span>
+              <input
+                type="datetime-local"
+                className={`${inputClass} h-9 w-full py-0 text-xs`}
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+              />
+            </label>
             <Button
               size="sm"
               variant="outline"
@@ -766,90 +796,26 @@ export function WorkspaceExercisesTab({
               onClick={() => setAssignmentOpen((value) => !value)}
             >
               <Users className="h-3.5 w-3.5" />
-              {assignmentOpen ? "Ẩn phân công" : "Phân công thành viên"}
+              {assignmentOpen
+                ? `3. Đã chọn ${memberIds.length}`
+                : "3. Chọn người được giao"}
             </Button>
-            {assignmentOpen && (
-              <>
-                <label className="text-xs font-medium text-text-muted">
-                  Hạn nộp
-                  <input
-                    type="datetime-local"
-                    className={`mt-1 block ${inputClass}`}
-                    value={dueAt}
-                    onChange={(e) => setDueAt(e.target.value)}
-                  />
-                </label>
-                <Button
-                  size="sm"
-                  disabled={!selected || !memberIds.length || busy}
-                  onClick={() => void attach()}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Thêm và giao ({memberIds.length})
-                </Button>
-              </>
-            )}
+            <Button
+              size="sm"
+              disabled={!selected || !memberIds.length || busy}
+              onClick={() => void attach()}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              4. Xác nhận giao
+            </Button>
           </div>
           {assignmentOpen && (
-            <fieldset
+            <WorkspaceMemberSelector
               id="workspace-assignment-options"
-              className="rounded-lg border border-border-soft p-3"
-            >
-              <legend className="px-1 text-xs font-semibold text-navy">
-                Phân công cho thành viên
-              </legend>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  className="rounded border border-border px-2 py-1 text-xs"
-                  onClick={() => setMemberIds(assignable.map((m) => m.id))}
-                >
-                  <Users className="mr-1 inline h-3.5 w-3.5" />
-                  Toàn bộ Workspace
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-border px-2 py-1 text-xs"
-                  onClick={() => setMemberIds([])}
-                >
-                  Xóa lựa chọn
-                </button>
-                <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                  Đã chọn {memberIds.length}/{assignable.length}
-                </span>
-                <label className="relative ml-auto min-w-52 flex-1 sm:max-w-xs">
-                  <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-text-faint" />
-                  <input
-                    value={memberSearch}
-                    onChange={(event) => setMemberSearch(event.target.value)}
-                    placeholder="Tìm thành viên..."
-                    className={`${inputClass} w-full pl-8`}
-                  />
-                </label>
-              </div>
-              <div className="mt-3 grid max-h-64 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-4">
-                {visibleAssignable.map((member) => (
-                  <label
-                    key={member.id}
-                    className={`flex cursor-pointer items-center gap-2 rounded border px-2.5 py-2 text-xs ${memberIds.includes(member.id) ? "border-primary bg-primary/5" : "border-border-soft"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={memberIds.includes(member.id)}
-                      onChange={() => toggleMember(member.id)}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium text-navy">
-                        {member.user.displayName}
-                      </span>
-                      <span className="block truncate text-2xs text-text-faint">
-                        {member.role === "deputy" ? "Phó nhóm" : "Thành viên"}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+              members={assignable}
+              selectedIds={memberIds}
+              onChange={setMemberIds}
+            />
           )}
         </Card>
       )}
@@ -902,6 +868,7 @@ export function WorkspaceExercisesTab({
         />
         <Select
           label="Độ khó"
+          className="w-full"
           value={difficulty}
           onChange={(v) => {
             setDifficulty(v);
@@ -918,6 +885,7 @@ export function WorkspaceExercisesTab({
           <>
             <Select
               label="Phạm vi"
+              className="w-full"
               value={scope}
               onChange={(value) => {
                 setScope(value as "all" | "assigned" | "public");
@@ -931,6 +899,7 @@ export function WorkspaceExercisesTab({
             />
             <Select
               label="Tiến độ"
+              className="w-full"
               value={exerciseStatus}
               onChange={(value) => {
                 setExerciseStatus(value);
@@ -951,6 +920,7 @@ export function WorkspaceExercisesTab({
         {canEdit && (
           <Select
             label="Trạng thái"
+            className="w-full"
             value={exerciseStatus}
             onChange={(value) => {
               setExerciseStatus(value);
@@ -967,9 +937,20 @@ export function WorkspaceExercisesTab({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-faint">
         <span>{data.total} bài tập phù hợp</span>
-        <span>
-          Trang {data.page} / {Math.max(data.totalPages, 1)}
-        </span>
+        <div className="flex items-center gap-3">
+          <span>
+            Trang {data.page} / {Math.max(data.totalPages, 1)}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => void exportExercises()}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export CSV
+          </Button>
+        </div>
       </div>
       {data.items.length === 0 ? (
         <Empty icon={Plus} title="Chưa có bài tập" />
@@ -1239,7 +1220,7 @@ function ExerciseAuthoringDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy/55 p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-fixed/35 p-3 backdrop-blur-[4px]"
       role="dialog"
       aria-modal="true"
       aria-label="Tạo bài tập Workspace"
@@ -1493,13 +1474,7 @@ function ExerciseDetailDialog({
   >("published");
   const [statement, setStatement] = useState("");
   const [assigned, setAssigned] = useState<string[]>([]);
-  const [assignmentSearch, setAssignmentSearch] = useState("");
   const [busy, setBusy] = useState(false);
-  const visibleMembers = members.filter((member) =>
-    `${member.user.displayName} ${member.user.email ?? ""}`
-      .toLocaleLowerCase("vi")
-      .includes(assignmentSearch.trim().toLocaleLowerCase("vi")),
-  );
   const selectedSubmission =
     submissions.find((item) => item.id === selectedSubmissionId) ??
     submissions[0];
@@ -1545,6 +1520,38 @@ function ExerciseDetailDialog({
       setHistoryLoading(false);
     }
   };
+  const exportSubmissionHistory = () => {
+    if (!selectedAssignment) return;
+    downloadCsv(
+      `workspace-submissions-${todayForFile()}.csv`,
+      [
+        "Thành viên",
+        "Lần nộp",
+        "Kết quả",
+        "Điểm",
+        "Test đạt",
+        "Tổng test",
+        "Runtime (ms)",
+        "Memory (KB)",
+        "Ngôn ngữ",
+        "Nộp trễ",
+        "Thời gian",
+      ],
+      submissions.map((submission) => [
+        selectedAssignment.memberName,
+        submission.attemptNumber,
+        verdictLabel(submission.verdict),
+        submission.score ?? "",
+        submission.passedTests ?? 0,
+        submission.totalTests ?? 0,
+        submission.runtimeMs ?? "",
+        submission.memoryKb ?? "",
+        submission.language,
+        submission.isLate ? "Có" : "Không",
+        formatDate(submission.submittedAt),
+      ]),
+    );
+  };
   const save = async () => {
     if (!data) return;
     setBusy(true);
@@ -1572,12 +1579,12 @@ function ExerciseDetailDialog({
   };
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy/45 p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-fixed/35 p-3 backdrop-blur-[4px]"
       role="dialog"
       aria-modal="true"
     >
-      <Card className="max-h-[92vh] w-full max-w-7xl overflow-y-auto p-5">
-        <div className="flex items-start justify-between gap-3">
+      <Card className="flex max-h-[92dvh] w-full max-w-7xl flex-col overflow-hidden p-0 shadow-2xl">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border-soft bg-surface px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-navy">
               {data?.title ?? "Chi tiết bài tập"}
@@ -1589,330 +1596,315 @@ function ExerciseDetailDialog({
           <button type="button" onClick={onClose} aria-label="Đóng">
             <X className="h-5 w-5" />
           </button>
-        </div>
-        {loading ? (
-          <Loading />
-        ) : (
-          data && (
-            <div className="mt-5 space-y-5">
-              {data.canManage && (
-                <Card className="space-y-3 bg-bg p-4">
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <Field label="Tiêu đề" value={title} onChange={setTitle} />
-                    <Field
-                      label="Tóm tắt"
-                      value={summary}
-                      onChange={setSummary}
-                    />
-                    <Select
-                      label="Độ khó"
-                      value={difficulty}
-                      onChange={(value) =>
-                        setDifficulty(value as typeof difficulty)
-                      }
-                      options={[
-                        { value: "easy", label: "Cơ bản" },
-                        { value: "medium", label: "Trung bình" },
-                        { value: "hard", label: "Nâng cao" },
-                      ]}
-                    />
-                    <Select
-                      label="Hiển thị"
-                      value={publicationStatus}
-                      onChange={(value) =>
-                        setPublicationStatus(value as typeof publicationStatus)
-                      }
-                      options={[
-                        { value: "published", label: "Đang hiển thị" },
-                        { value: "hidden", label: "Đã ẩn" },
-                      ]}
-                    />
-                  </div>
-                  <TextArea
-                    label="Nội dung đề bài"
-                    value={statement}
-                    onChange={setStatement}
-                  />
-                  <div className="flex flex-wrap items-end gap-3">
-                    <label className="text-xs font-medium">
-                      Hạn nộp
-                      <input
-                        type="datetime-local"
-                        className={`mt-1 block ${inputClass}`}
-                        value={dueAt}
-                        onChange={(e) => setDueAt(e.target.value)}
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-5">
+          {loading ? (
+            <Loading />
+          ) : (
+            data && (
+              <div className="space-y-5">
+                {data.canManage && (
+                  <Card className="space-y-3 bg-bg p-4">
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      <Field
+                        label="Tiêu đề"
+                        value={title}
+                        onChange={setTitle}
                       />
-                    </label>
-                    <label className="text-xs font-medium">
-                      Số lần tối đa
-                      <input
-                        type="number"
-                        min={1}
-                        max={100}
-                        className={`mt-1 block w-28 ${inputClass}`}
-                        value={attemptLimit}
-                        onChange={(e) => setAttemptLimit(e.target.value)}
+                      <Field
+                        label="Tóm tắt"
+                        value={summary}
+                        onChange={setSummary}
                       />
-                    </label>
-                    <Button
-                      size="sm"
-                      disabled={busy || assigned.length === 0}
-                      onClick={() => void save()}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Lưu thay đổi
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      className="rounded border border-border px-2 py-1 text-xs"
-                      onClick={() =>
-                        setAssigned(members.map((member) => member.id))
-                      }
-                    >
-                      Chọn toàn bộ
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded border border-border px-2 py-1 text-xs"
-                      onClick={() => setAssigned([])}
-                    >
-                      Xóa lựa chọn
-                    </button>
-                    <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                      Đã chọn {assigned.length}/{members.length}
-                    </span>
-                    <label className="relative ml-auto min-w-48">
-                      <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-text-faint" />
-                      <input
-                        className={`${inputClass} w-full pl-8`}
-                        placeholder="Tìm thành viên..."
-                        value={assignmentSearch}
-                        onChange={(event) =>
-                          setAssignmentSearch(event.target.value)
+                      <Select
+                        label="Độ khó"
+                        className="w-full"
+                        value={difficulty}
+                        onChange={(value) =>
+                          setDifficulty(value as typeof difficulty)
                         }
+                        options={[
+                          { value: "easy", label: "Cơ bản" },
+                          { value: "medium", label: "Trung bình" },
+                          { value: "hard", label: "Nâng cao" },
+                        ]}
                       />
-                    </label>
-                  </div>
-                  <div className="grid max-h-48 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-4">
-                    {visibleMembers.map((member) => (
-                      <label
-                        key={member.id}
-                        className={`flex cursor-pointer items-center gap-1.5 rounded border px-2 py-2 text-xs ${assigned.includes(member.id) ? "border-primary bg-primary/5" : "border-border-soft bg-surface"}`}
-                      >
+                      <Select
+                        label="Hiển thị"
+                        className="w-full"
+                        value={publicationStatus}
+                        onChange={(value) =>
+                          setPublicationStatus(
+                            value as typeof publicationStatus,
+                          )
+                        }
+                        options={[
+                          { value: "published", label: "Đang hiển thị" },
+                          { value: "hidden", label: "Đã ẩn" },
+                        ]}
+                      />
+                    </div>
+                    <TextArea
+                      label="Nội dung đề bài"
+                      value={statement}
+                      onChange={setStatement}
+                    />
+                    <div className="flex flex-wrap items-end gap-3">
+                      <label className="text-xs font-medium">
+                        Hạn nộp
                         <input
-                          type="checkbox"
-                          checked={assigned.includes(member.id)}
-                          onChange={() =>
-                            setAssigned((current) =>
-                              current.includes(member.id)
-                                ? current.filter((item) => item !== member.id)
-                                : [...current, member.id],
-                            )
-                          }
+                          type="datetime-local"
+                          className={`mt-1 block ${inputClass}`}
+                          value={dueAt}
+                          onChange={(e) => setDueAt(e.target.value)}
                         />
-                        {member.user.displayName}
                       </label>
-                    ))}
-                  </div>
-                </Card>
-              )}
-              <div
-                className={`grid items-start gap-4 transition-[grid-template-columns] duration-300 ${
-                  selectedAssignment
-                    ? "lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]"
-                    : "lg:grid-cols-[minmax(0,1fr)]"
-                }`}
-              >
-                <div className="col-span-full flex min-w-0 flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-sm font-bold text-navy">
-                      Thành viên được giao
-                    </h3>
-                    <p className="text-xs text-text-faint">
-                      Chọn một thành viên để xem lịch sử nộp ở bên phải.
-                    </p>
-                  </div>
-                  {selectedAssignment && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSelectedAssignment(null)}
-                    >
-                      Ẩn lịch sử nộp
-                    </Button>
-                  )}
-                </div>
-                {data.assignments.length === 0 ? (
-                  <Card className="border-dashed p-6 text-center text-xs text-text-faint">
-                    Bài công khai này chưa được giao cho bạn. Bạn vẫn có thể mở
-                    bài để luyện tập.
+                      <label className="text-xs font-medium">
+                        Số lần tối đa
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          className={`mt-1 block w-28 ${inputClass}`}
+                          value={attemptLimit}
+                          onChange={(e) => setAttemptLimit(e.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <WorkspaceMemberSelector
+                      members={members}
+                      selectedIds={assigned}
+                      onChange={setAssigned}
+                    />
                   </Card>
-                ) : (
-                  <div className="min-w-0 overflow-x-auto rounded-lg border border-border-soft">
-                    <table className="w-full min-w-[660px] text-left text-xs">
-                      <thead className="bg-bg text-text-faint">
-                        <tr>
-                          <th className="p-3">Thành viên</th>
-                          <th className="p-3">Trạng thái</th>
-                          <th className="p-3">Lượt nộp</th>
-                          <th className="p-3">Kết quả gần nhất</th>
-                          <th className="p-3">Điểm</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border-soft">
-                        {data.assignments.map((item) => (
-                          <tr
-                            key={item.id}
-                            aria-selected={selectedAssignment?.id === item.id}
-                            className={`cursor-pointer transition-colors duration-150 hover:bg-bg ${selectedAssignment?.id === item.id ? "bg-primary/5" : ""}`}
-                            onClick={() => void openHistory(item)}
-                          >
-                            <td className="p-3 font-semibold text-navy">
-                              {item.memberName}
-                            </td>
-                            <td className="p-3">
-                              {assignmentLabel(item.status)}
-                            </td>
-                            <td className="p-3">{item.submissionCount}</td>
-                            <td className="p-3">
-                              {item.latestVerdict
-                                ? verdictLabel(item.latestVerdict)
-                                : "Chưa nộp"}
-                            </td>
-                            <td className="p-3">{item.latestScore ?? "–"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
                 )}
-                {selectedAssignment && (
-                  <aside
-                    className="min-w-0 overflow-hidden"
-                    aria-label={`Lịch sử nộp của ${selectedAssignment.memberName}`}
-                  >
-                    <Card className="max-h-[560px] min-w-[360px] overflow-y-auto p-4">
-                      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border-soft bg-surface pb-3">
-                        <div>
-                          <h3 className="text-sm font-bold text-navy">
-                            Lịch sử nộp
-                          </h3>
-                          <p className="mt-0.5 text-xs text-text-faint">
-                            {selectedAssignment.memberName}
-                          </p>
-                        </div>
+                <div
+                  className={`grid items-start gap-4 transition-[grid-template-columns] duration-300 ${
+                    selectedAssignment
+                      ? "lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]"
+                      : "lg:grid-cols-[minmax(0,1fr)]"
+                  }`}
+                >
+                  <div className="col-span-full flex min-w-0 flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-bold text-navy">
+                        Thành viên được giao
+                      </h3>
+                      <p className="text-xs text-text-faint">
+                        Chọn một thành viên để xem lịch sử nộp ở bên phải.
+                      </p>
+                    </div>
+                    {selectedAssignment && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={historyLoading || submissions.length === 0}
+                          onClick={exportSubmissionHistory}
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Export CSV
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedAssignment(null)}
+                        >
+                          Ẩn lịch sử nộp
+                        </Button>
                       </div>
-                      {historyLoading ? (
-                        <div className="py-8">
-                          <Loading />
-                        </div>
-                      ) : submissions.length === 0 ? (
-                        <p className="mt-3 text-xs text-text-faint">
-                          Chưa có lần nộp.
-                        </p>
-                      ) : selectedSubmission ? (
-                        <div className="mt-3 space-y-3">
-                          <Select
-                            label="Lần nộp"
-                            value={selectedSubmission.id}
-                            onChange={setSelectedSubmissionId}
-                            options={submissions.map((submission) => ({
-                              value: submission.id,
-                              label: `Lần #${submission.attemptNumber} · ${verdictLabel(submission.verdict)} · ${submission.score ?? 0}/100${submission.isLate ? " · Trễ" : ""}`,
-                            }))}
-                          />
-                          <div className="rounded border border-border-soft p-3">
-                            <p className="text-xs font-semibold text-navy">
-                              Lần #{selectedSubmission.attemptNumber} ·{" "}
-                              {verdictLabel(selectedSubmission.verdict)} ·{" "}
-                              {formatDate(selectedSubmission.submittedAt)}
+                    )}
+                  </div>
+                  {data.assignments.length === 0 ? (
+                    <Card className="border-dashed p-6 text-center text-xs text-text-faint">
+                      Bài công khai này chưa được giao cho bạn. Bạn vẫn có thể
+                      mở bài để luyện tập.
+                    </Card>
+                  ) : (
+                    <div className="min-w-0 overflow-x-auto rounded-lg border border-border-soft">
+                      <table className="w-full min-w-[660px] text-left text-xs">
+                        <thead className="bg-bg text-text-faint">
+                          <tr>
+                            <th className="p-3">Thành viên</th>
+                            <th className="p-3">Trạng thái</th>
+                            <th className="p-3">Lượt nộp</th>
+                            <th className="p-3">Kết quả gần nhất</th>
+                            <th className="p-3">Điểm</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border-soft">
+                          {data.assignments.map((item) => (
+                            <tr
+                              key={item.id}
+                              aria-selected={selectedAssignment?.id === item.id}
+                              className={`cursor-pointer transition-colors duration-150 hover:bg-bg ${selectedAssignment?.id === item.id ? "bg-primary/5" : ""}`}
+                              onClick={() => void openHistory(item)}
+                            >
+                              <td className="p-3 font-semibold text-navy">
+                                {item.memberName}
+                              </td>
+                              <td className="p-3">
+                                {assignmentLabel(item.status)}
+                              </td>
+                              <td className="p-3">{item.submissionCount}</td>
+                              <td className="p-3">
+                                {item.latestVerdict
+                                  ? verdictLabel(item.latestVerdict)
+                                  : "Chưa nộp"}
+                              </td>
+                              <td className="p-3">{item.latestScore ?? "–"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {selectedAssignment && (
+                    <aside
+                      className="min-w-0 overflow-hidden"
+                      aria-label={`Lịch sử nộp của ${selectedAssignment.memberName}`}
+                    >
+                      <Card className="max-h-[560px] min-w-[360px] overflow-y-auto p-4">
+                        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border-soft bg-surface pb-3">
+                          <div>
+                            <h3 className="text-sm font-bold text-navy">
+                              Lịch sử nộp
+                            </h3>
+                            <p className="mt-0.5 text-xs text-text-faint">
+                              {selectedAssignment.memberName}
                             </p>
-                            <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-                              <span>
-                                Test: {selectedSubmission.passedTests ?? 0}/
-                                {selectedSubmission.totalTests ?? 0}
-                              </span>
-                              <span>
-                                Runtime: {selectedSubmission.runtimeMs ?? "–"}{" "}
-                                ms
-                              </span>
-                              <span>
-                                Memory: {selectedSubmission.memoryKb ?? "–"} KB
-                              </span>
-                              <span>
-                                Ngôn ngữ: {selectedSubmission.language}
-                              </span>
-                            </div>
-                            <pre className="mt-3 max-h-72 overflow-auto rounded bg-navy p-3 text-xs text-on-ink">
-                              <code>{selectedSubmission.sourceCode}</code>
-                            </pre>
-                            {selectedSubmission.runDetail?.compile?.stderr && (
-                              <pre className="mt-2 overflow-auto rounded bg-danger/10 p-2 text-xs text-danger">
-                                {selectedSubmission.runDetail.compile.stderr}
-                              </pre>
-                            )}
-                            {selectedSubmission.runDetail?.cases?.length ? (
-                              <div className="mt-3 overflow-x-auto rounded border border-border-soft">
-                                <table className="w-full min-w-[680px] text-left text-xs">
-                                  <thead className="bg-bg text-text-faint">
-                                    <tr>
-                                      <th className="p-2">Test</th>
-                                      <th className="p-2">Input</th>
-                                      <th className="p-2">Expected</th>
-                                      <th className="p-2">Actual</th>
-                                      <th className="p-2">Kết quả</th>
-                                      <th className="p-2">Thời gian</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-border-soft">
-                                    {selectedSubmission.runDetail.cases.map(
-                                      (testCase) => (
-                                        <tr key={testCase.order}>
-                                          <td className="p-2 font-semibold">
-                                            #{testCase.order}
-                                          </td>
-                                          <td className="max-w-40 truncate p-2 font-mono">
-                                            {testCase.input ?? "–"}
-                                          </td>
-                                          <td className="max-w-32 truncate p-2 font-mono">
-                                            {testCase.expected ?? "–"}
-                                          </td>
-                                          <td className="max-w-32 truncate p-2 font-mono">
-                                            {testCase.actual ?? "–"}
-                                          </td>
-                                          <td
-                                            className={`p-2 font-semibold ${testCase.passed ? "text-success" : "text-danger"}`}
-                                          >
-                                            {testCase.passed
-                                              ? "Đạt"
-                                              : verdictLabel(
-                                                  testCase.verdict ??
-                                                    "wrong_answer",
-                                                )}
-                                          </td>
-                                          <td className="p-2">
-                                            {testCase.runtimeMs ?? "–"} ms
-                                          </td>
-                                        </tr>
-                                      ),
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ) : null}
                           </div>
                         </div>
-                      ) : null}
-                    </Card>
-                  </aside>
-                )}
+                        {historyLoading ? (
+                          <div className="py-8">
+                            <Loading />
+                          </div>
+                        ) : submissions.length === 0 ? (
+                          <p className="mt-3 text-xs text-text-faint">
+                            Chưa có lần nộp.
+                          </p>
+                        ) : selectedSubmission ? (
+                          <div className="mt-3 space-y-3">
+                            <Select
+                              label="Lần nộp"
+                              className="w-full"
+                              value={selectedSubmission.id}
+                              onChange={setSelectedSubmissionId}
+                              options={submissions.map((submission) => ({
+                                value: submission.id,
+                                label: `Lần #${submission.attemptNumber} · ${verdictLabel(submission.verdict)} · ${submission.score ?? 0}/100${submission.isLate ? " · Trễ" : ""}`,
+                              }))}
+                            />
+                            <div className="rounded border border-border-soft p-3">
+                              <p className="text-xs font-semibold text-navy">
+                                Lần #{selectedSubmission.attemptNumber} ·{" "}
+                                {verdictLabel(selectedSubmission.verdict)} ·{" "}
+                                {formatDate(selectedSubmission.submittedAt)}
+                              </p>
+                              <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                                <span>
+                                  Test: {selectedSubmission.passedTests ?? 0}/
+                                  {selectedSubmission.totalTests ?? 0}
+                                </span>
+                                <span>
+                                  Runtime: {selectedSubmission.runtimeMs ?? "–"}{" "}
+                                  ms
+                                </span>
+                                <span>
+                                  Memory: {selectedSubmission.memoryKb ?? "–"}{" "}
+                                  KB
+                                </span>
+                                <span>
+                                  Ngôn ngữ: {selectedSubmission.language}
+                                </span>
+                              </div>
+                              <pre className="mt-3 max-h-72 overflow-auto rounded bg-navy p-3 text-xs text-on-ink">
+                                <code>{selectedSubmission.sourceCode}</code>
+                              </pre>
+                              {selectedSubmission.runDetail?.compile
+                                ?.stderr && (
+                                <pre className="mt-2 overflow-auto rounded bg-danger/10 p-2 text-xs text-danger">
+                                  {selectedSubmission.runDetail.compile.stderr}
+                                </pre>
+                              )}
+                              {selectedSubmission.runDetail?.cases?.length ? (
+                                <div className="mt-3 overflow-x-auto rounded border border-border-soft">
+                                  <table className="w-full min-w-[680px] text-left text-xs">
+                                    <thead className="bg-bg text-text-faint">
+                                      <tr>
+                                        <th className="p-2">Test</th>
+                                        <th className="p-2">Input</th>
+                                        <th className="p-2">Expected</th>
+                                        <th className="p-2">Actual</th>
+                                        <th className="p-2">Kết quả</th>
+                                        <th className="p-2">Thời gian</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border-soft">
+                                      {selectedSubmission.runDetail.cases.map(
+                                        (testCase) => (
+                                          <tr key={testCase.order}>
+                                            <td className="p-2 font-semibold">
+                                              #{testCase.order}
+                                            </td>
+                                            <td className="max-w-40 truncate p-2 font-mono">
+                                              {testCase.input ?? "–"}
+                                            </td>
+                                            <td className="max-w-32 truncate p-2 font-mono">
+                                              {testCase.expected ?? "–"}
+                                            </td>
+                                            <td className="max-w-32 truncate p-2 font-mono">
+                                              {testCase.actual ?? "–"}
+                                            </td>
+                                            <td
+                                              className={`p-2 font-semibold ${testCase.passed ? "text-success" : "text-danger"}`}
+                                            >
+                                              {testCase.passed
+                                                ? "Đạt"
+                                                : verdictLabel(
+                                                    testCase.verdict ??
+                                                      "wrong_answer",
+                                                  )}
+                                            </td>
+                                            <td className="p-2">
+                                              {testCase.runtimeMs ?? "–"} ms
+                                            </td>
+                                          </tr>
+                                        ),
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        ) : null}
+                      </Card>
+                    </aside>
+                  )}
+                </div>
               </div>
-            </div>
-          )
-        )}
+            )
+          )}
+        </div>
+        <footer className="flex shrink-0 justify-end gap-2 border-t border-border-soft bg-surface px-5 py-3">
+          <Button type="button" size="sm" variant="outline" onClick={onClose}>
+            Đóng
+          </Button>
+          {data?.canManage && (
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy || assigned.length === 0}
+              onClick={() => void save()}
+            >
+              <Check className="h-3.5 w-3.5" />
+              Lưu thay đổi
+            </Button>
+          )}
+        </footer>
       </Card>
     </div>
   );
@@ -1960,11 +1952,46 @@ export function WorkspaceAssignmentsTab({
       toast.error(messageOf(e));
     }
   };
+  const exportAssignments = async () => {
+    try {
+      const response = await api.workspaces.assignments(detail.slug, {
+        page: 1,
+        limit: 100,
+        q: q || undefined,
+        status: status || undefined,
+      });
+      downloadCsv(
+        `workspace-assignments-${todayForFile()}.csv`,
+        [
+          "Bài tập",
+          "Thành viên",
+          "Tiến độ",
+          "Lượt nộp",
+          "Kết quả gần nhất",
+          "Điểm",
+          "Nộp trễ",
+          "Cập nhật",
+        ],
+        response.items.map((item) => [
+          item.exerciseTitle,
+          item.memberName,
+          assignmentLabel(item.status),
+          item.submissionCount,
+          item.latestVerdict ? verdictLabel(item.latestVerdict) : "Chưa nộp",
+          item.latestScore ?? "",
+          item.latestIsLate ? "Có" : "Không",
+          formatDate(item.updatedAt),
+        ]),
+      );
+    } catch (error) {
+      toast.error(messageOf(error, "Không thể xuất danh sách phân công."));
+    }
+  };
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
-          className={`${inputClass} flex-1`}
+          className={`${inputClass} min-w-56 flex-1`}
           placeholder="Tìm bài hoặc thành viên..."
           value={q}
           onChange={(e) => {
@@ -1974,6 +2001,7 @@ export function WorkspaceAssignmentsTab({
         />
         <Select
           label="Trạng thái"
+          className="w-full sm:w-44"
           value={status}
           onChange={(v) => {
             setStatus(v);
@@ -1987,6 +2015,15 @@ export function WorkspaceAssignmentsTab({
             { value: "late", label: "Trễ hạn" },
           ]}
         />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => void exportAssignments()}
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export CSV
+        </Button>
       </div>
       {data.items.length === 0 ? (
         <Empty icon={FileText} title="Chưa có bài được giao" />
@@ -2090,12 +2127,12 @@ function Empty({
     </Card>
   );
 }
-function messageOf(error: unknown) {
+function messageOf(error: unknown, fallback = "Có lỗi xảy ra") {
   return error instanceof ApiClientError
     ? error.message
     : error instanceof Error
       ? error.message
-      : "Có lỗi xảy ra";
+      : fallback;
 }
 
 function splitLines(value: string) {
@@ -2157,6 +2194,10 @@ function formatDate(value: string) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function todayForFile() {
+  return new Date().toISOString().slice(0, 10);
 }
 function extension(name: string) {
   return name.split(".").pop()?.toUpperCase() || "FILE";
