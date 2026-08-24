@@ -1785,9 +1785,9 @@ function Members({
               </Button>
             </div>
           </div>
-          <div className="grid gap-3 border-b border-border-soft bg-bg/60 p-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid items-end gap-3 border-b border-border-soft bg-bg/60 p-4 md:grid-cols-2 xl:grid-cols-4">
             <input
-              className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy xl:col-span-2"
+              className="h-9 rounded-md border border-border bg-surface px-3 py-0 text-sm text-navy xl:col-span-2"
               placeholder="Tìm theo tên hoặc email..."
               value={search}
               onChange={(event) => changeFilter(setSearch, event.target.value)}
@@ -1848,7 +1848,7 @@ function Members({
                 onChange={(event) =>
                   changeFilter(setJoinedFrom, event.target.value)
                 }
-                className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
+                className="h-9 rounded-md border border-border bg-surface px-3 py-0 text-sm text-navy"
               />
             </label>
             <label className="grid gap-1 text-xs font-medium text-text-muted">
@@ -1859,7 +1859,7 @@ function Members({
                 onChange={(event) =>
                   changeFilter(setJoinedTo, event.target.value)
                 }
-                className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
+                className="h-9 rounded-md border border-border bg-surface px-3 py-0 text-sm text-navy"
               />
             </label>
           </div>
