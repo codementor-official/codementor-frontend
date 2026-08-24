@@ -11,6 +11,7 @@
     "@codementor/editor": "workspace:*",
     "@codementor/types": "workspace:*",
     "@codementor/ui": "workspace:*",
+    "@codementor/utils": "workspace:*",
     "lucide-react": "^1.28.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.12.2",

@@ -471,6 +471,9 @@ importers:
       '@codementor/ui':
         specifier: workspace:*
         version: link:../ui
+      '@codementor/utils':
+        specifier: workspace:*
+        version: link:../utils
       lucide-react:
         specifier: ^1.28.0
         version: 1.28.0(react@19.2.4)

@@ -21,7 +21,13 @@ import {
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
-import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
+import {
+  clearDraft,
+  draftStorageKey,
+  readDraft,
+  useDraftAutosave,
+  type StoredDraft,
+} from "@/hooks/use-studio-draft";
 import {
   ExerciseBriefForm,
   ExerciseCodeForm,
@@ -69,7 +75,8 @@ export default function ExerciseStudioPage() {
   const theme = useResolvedTheme();
   // Nháp phát hiện trong localStorage lúc mở trang, còn chờ người dùng chọn khôi phục
   // hay bỏ qua — xem effect nạp bài bên dưới và ô thoại render ở cuối component.
-  const [pendingDraft, setPendingDraft] = useState<StoredDraft<ExerciseDraft> | null>(null);
+  const [pendingDraft, setPendingDraft] =
+    useState<StoredDraft<ExerciseDraft> | null>(null);
 
   useEffect(() => {
     // Cờ hủy: rời trang trước khi request về thì response cũ không được ghi đè state
@@ -83,7 +90,9 @@ export default function ExerciseStudioPage() {
         setExercise(loaded);
         setDraft(nextDraft);
 
-        const stored = readDraft<ExerciseDraft>(draftStorageKey("exercise", id));
+        const stored = readDraft<ExerciseDraft>(
+          draftStorageKey("exercise", id),
+        );
         if (!stored) return;
         if (JSON.stringify(stored.value) === JSON.stringify(nextDraft)) {
           clearDraft(draftStorageKey("exercise", id));
@@ -138,7 +147,8 @@ export default function ExerciseStudioPage() {
 
   // Trước early return: hook phải chạy ở mọi lần render.
   const dirty =
-    Boolean(exercise && draft) && JSON.stringify(draft) !== JSON.stringify(toDraft(exercise as Exercise));
+    Boolean(exercise && draft) &&
+    JSON.stringify(draft) !== JSON.stringify(toDraft(exercise as Exercise));
   useDraftAutosave(draftStorageKey("exercise", id), draft as ExerciseDraft, {
     ready: Boolean(exercise && draft),
     dirty,
@@ -157,70 +167,87 @@ export default function ExerciseStudioPage() {
   }
 
   if (!exercise || !draft) {
-    return <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">Đang tải…</p>;
+    return (
+      <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">
+        Đang tải…
+      </p>
+    );
   }
 
   const locked = exercise.status === "pending_review";
 
   return (
     <>
-    {unsavedDialog}
-    <BreadcrumbTitle href={`/exercises?open=${id}`} slug={id} title={draft.title || exercise.slug} />
-    <Modal
-      description={
-        pendingDraft
-          ? `Bản nháp từ ${new Date(pendingDraft.savedAt).toLocaleString("vi-VN")}, chưa kịp lưu vào hệ thống.`
-          : undefined
-      }
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button
-            onClick={() => {
-              clearDraft(draftStorageKey("exercise", id));
-              setPendingDraft(null);
-            }}
-            type="button"
-            variant="outline"
-          >
-            Bỏ qua
-          </Button>
-          <Button
-            onClick={() => {
-              if (!pendingDraft) return;
-              setDraft(pendingDraft.value);
-              setPendingDraft(null);
-            }}
-            type="button"
-          >
-            Khôi phục thay đổi
-          </Button>
-        </div>
-      }
-      onClose={() => {
-        clearDraft(draftStorageKey("exercise", id));
-        setPendingDraft(null);
-      }}
-      open={pendingDraft !== null}
-      title="Phát hiện thay đổi chưa lưu"
-      width="sm"
-    >
-      <p className="flex items-start gap-2.5 text-sm text-muted-foreground">
-        <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
-        Trang có vẻ đã bị tải lại hoặc mất mạng trước khi kịp lưu. Khôi phục để tiếp tục từ
-        chỗ đang dở, hoặc bỏ qua để dùng đúng bản đã lưu trên hệ thống.
-      </p>
-    </Modal>
-    <StudioShell
-      actions={
+      {unsavedDialog}
+      <BreadcrumbTitle
+        href={`/exercises?open=${id}`}
+        slug={id}
+        title={draft.title || exercise.slug}
+      />
+      <Modal
+        description={
+          pendingDraft
+            ? `Bản nháp từ ${new Date(pendingDraft.savedAt).toLocaleString("vi-VN")}, chưa kịp lưu vào hệ thống.`
+            : undefined
+        }
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              onClick={() => {
+                clearDraft(draftStorageKey("exercise", id));
+                setPendingDraft(null);
+              }}
+              type="button"
+              variant="outline"
+            >
+              Bỏ qua
+            </Button>
+            <Button
+              onClick={() => {
+                if (!pendingDraft) return;
+                setDraft(pendingDraft.value);
+                setPendingDraft(null);
+              }}
+              type="button"
+            >
+              Khôi phục thay đổi
+            </Button>
+          </div>
+        }
+        onClose={() => {
+          clearDraft(draftStorageKey("exercise", id));
+          setPendingDraft(null);
+        }}
+        open={pendingDraft !== null}
+        title="Phát hiện thay đổi chưa lưu"
+        width="sm"
+      >
+        <p className="flex items-start gap-2.5 text-sm text-muted-foreground">
+          <TriangleAlert
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0 text-warning"
+          />
+          Trang có vẻ đã bị tải lại hoặc mất mạng trước khi kịp lưu. Khôi phục
+          để tiếp tục từ chỗ đang dở, hoặc bỏ qua để dùng đúng bản đã lưu trên
+          hệ thống.
+        </p>
+      </Modal>
+      <StudioShell
+        actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Link className={buttonClassName("outline")} href={`/exercises/${id}/solve`}>
+            <Link
+              className={buttonClassName("outline")}
+              href={`/exercises/${id}/solve`}
+            >
               <Play aria-hidden="true" className="size-4" />
               Giải thử
             </Link>
             {locked ? (
               <Button
                 disabled={saving}
-                onClick={() => run(() => api.exercises.withdraw(id), "Đã hủy gửi duyệt")}
+                onClick={() =>
+                  run(() => api.exercises.withdraw(id), "Đã hủy gửi duyệt")
+                }
                 type="button"
                 variant="outline"
               >
@@ -229,84 +256,94 @@ export default function ExerciseStudioPage() {
               </Button>
             ) : (
               <>
-                <Button disabled={saving} onClick={() => void save()} type="button" variant="outline">
+                <Button
+                  disabled={saving}
+                  onClick={() => void save()}
+                  type="button"
+                  variant="outline"
+                >
                   <Save aria-hidden="true" className="size-4" />
                   {saving ? "Đang lưu…" : "Lưu"}
                 </Button>
                 <Button
                   disabled={saving}
-                  onClick={() => run(() => api.exercises.submit(id), "Đã gửi duyệt")}
+                  onClick={() =>
+                    run(() => api.exercises.submit(id), "Đã gửi duyệt")
+                  }
                   type="button"
                 >
                   <Send aria-hidden="true" className="size-4" />
-                  {exercise.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
+                  {exercise.status === "published"
+                    ? "Gửi duyệt lại"
+                    : "Gửi duyệt"}
                 </Button>
               </>
             )}
           </div>
-      }
-      backHref="/exercises"
-      backLabel="Bài code"
-      meta={`${exercise.timeLimitMs} ms · ${Math.round(exercise.memoryLimitKb / 1024)} MB${
-        locked ? " · đang chờ duyệt nên không sửa được" : ""
-      }`}
-      rejectionReason={exercise.rejectionReason}
-      slug={exercise.slug}
-      status={
-        <StatusBadge tone={STATUS_TONES[exercise.status as ExerciseStatus]}>
-          {STATUS_LABELS[exercise.status as ExerciseStatus]}
-        </StatusBadge>
-      }
-      title={draft.title || "Bài tập chưa đặt tên"}
-    >
-      {/* Bên trái là bài đọc ra sao, bên phải là bài chạy và chấm ra sao. Hai nửa dài
+        }
+        backHref="/exercises"
+        backLabel="Bài code"
+        meta={`${exercise.timeLimitMs} ms · ${Math.round(exercise.memoryLimitKb / 1024)} MB${
+          locked ? " · đang chờ duyệt nên không sửa được" : ""
+        }`}
+        rejectionReason={exercise.rejectionReason}
+        slug={exercise.slug}
+        status={
+          <StatusBadge tone={STATUS_TONES[exercise.status as ExerciseStatus]}>
+            {STATUS_LABELS[exercise.status as ExerciseStatus]}
+          </StatusBadge>
+        }
+        title={draft.title || "Bài tập chưa đặt tên"}
+      >
+        {/* Bên trái là bài đọc ra sao, bên phải là bài chạy và chấm ra sao. Hai nửa dài
           gần bằng nhau và người soạn đi lại giữa chúng liên tục, nên chúng là hai pane
           cuộn độc lập chứ không phải một cột dài. */}
-      <Group orientation="horizontal" className="h-full">
-        <Panel id="brief" defaultSize="50%" minSize="25%" className="min-h-0">
-          <div className="h-full overflow-y-auto p-3">
-            <ExerciseBriefForm
-              onChange={setDraft}
-              readOnly={locked}
-              slugLocked={exercise.status === "published"}
-              value={draft}
-            />
+        <Group orientation="horizontal" className="h-full">
+          <Panel id="brief" defaultSize="50%" minSize="25%" className="min-h-0">
+            <div className="h-full overflow-y-auto p-3">
+              <ExerciseBriefForm
+                onChange={setDraft}
+                readOnly={locked}
+                slugLocked={exercise.status === "published"}
+                value={draft}
+              />
 
-            <div className="mt-6 border-t border-border pt-6">
-              <DangerZone
-                actionLabel="Xoá bài này"
-                confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}
-                confirmTitle="Xoá bài code này?"
-                description="Xoá bài code này cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận."
-                disabled={saving}
-                onConfirm={() => {
-                  scheduleDelete({
-                    id,
-                    message: `Đã xoá bài code "${draft.title || exercise.slug}".`,
-                    commit: () => api.exercises.remove(id),
-                  });
-                  router.push("/exercises");
-                }}
-                title="Xoá bài code"
+              <div className="mt-6 border-t border-border pt-6">
+                <DangerZone
+                  actionLabel="Xoá bài này"
+                  confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}
+                  confirmTitle="Xoá bài code này?"
+                  description="Xoá bài code này cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận."
+                  disabled={saving}
+                  onConfirm={() => {
+                    scheduleDelete({
+                      id,
+                      message: `Đã xoá bài code "${draft.title || exercise.slug}".`,
+                      commit: () => api.exercises.remove(id),
+                    });
+                    router.push("/exercises");
+                  }}
+                  title="Xoá bài code"
+                />
+              </div>
+            </div>
+          </Panel>
+
+          <ResizeHandle orientation="horizontal" />
+
+          <Panel id="code" defaultSize="50%" minSize="25%" className="min-h-0">
+            <div className="h-full overflow-y-auto p-3">
+              <ExerciseCodeForm
+                judge={api.judge}
+                onChange={setDraft}
+                readOnly={locked}
+                theme={theme}
+                value={draft}
               />
             </div>
-          </div>
-        </Panel>
-
-        <ResizeHandle orientation="horizontal" />
-
-        <Panel id="code" defaultSize="50%" minSize="25%" className="min-h-0">
-          <div className="h-full overflow-y-auto p-3">
-            <ExerciseCodeForm
-              onChange={setDraft}
-              readOnly={locked}
-              theme={theme}
-              value={draft}
-            />
-          </div>
-        </Panel>
-      </Group>
-    </StudioShell>
+          </Panel>
+        </Group>
+      </StudioShell>
     </>
   );
 }
