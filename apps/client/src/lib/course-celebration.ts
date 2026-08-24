@@ -10,7 +10,19 @@
  * hậu quả đúng mức với thứ chỉ là hiệu ứng pháo hoa.
  */
 const KEY_PREFIX = "codementor-course-celebrated:";
-const PENDING_KEY = "codementor-course-celebrate-pending";
+const PENDING_KEY = "codementor-course-celebrate-pending:";
+
+/**
+ * Cờ mang danh tính chủ nhân — xem lý do dài ở `lib/video-progress.ts`.
+ *
+ * Lỗi cụ thể mà nó chặn: A học xong một khoá trên máy này, B đăng nhập vào cùng trình
+ * duyệt và mở bài cuối của đúng khoá đó. Cờ "đã ăn mừng" là của A nhưng khoá theo
+ * `courseId`, nên B thấy nút "Về trang chính khóa học" thay vì nút hoàn thành — khoá học
+ * hiện ra như thể B đã học xong, dù CSDL vẫn ghi B chưa xong bài nào.
+ */
+function keyFor(prefix: string, userId: string, courseId: string): string {
+  return `${prefix}${userId}:${courseId}`;
+}
 
 /**
  * "Vừa bấm hoàn thành khóa học xong" — bàn giao từ trang bài học sang trang khóa học.
@@ -21,20 +33,20 @@ const PENDING_KEY = "codementor-course-celebrate-pending";
  * đã đo được ngày 2026-08-23. Ghi vào `sessionStorage` thì xảy ra ngay lúc bấm, trước khi
  * điều hướng, nên không phụ thuộc vào thời điểm trình duyệt cập nhật URL.
  */
-export function requestCourseCelebration(courseId: string): void {
+export function requestCourseCelebration(userId: string, courseId: string): void {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(PENDING_KEY, courseId);
+    window.sessionStorage.setItem(PENDING_KEY, keyFor("", userId, courseId));
   } catch {
     // Không ghi được thì chỉ mất hiệu ứng, không ảnh hưởng việc điều hướng.
   }
 }
 
 /** Đọc và xoá cờ — ăn mừng đúng một lần, tải lại trang không phát lại. */
-export function consumeCourseCelebration(courseId: string): boolean {
+export function consumeCourseCelebration(userId: string, courseId: string): boolean {
   if (typeof window === "undefined") return false;
   try {
-    if (window.sessionStorage.getItem(PENDING_KEY) !== courseId) return false;
+    if (window.sessionStorage.getItem(PENDING_KEY) !== keyFor("", userId, courseId)) return false;
     window.sessionStorage.removeItem(PENDING_KEY);
     return true;
   } catch {
@@ -42,20 +54,20 @@ export function consumeCourseCelebration(courseId: string): boolean {
   }
 }
 
-export function hasCelebratedCourse(courseId: string): boolean {
+export function hasCelebratedCourse(userId: string, courseId: string): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem(KEY_PREFIX + courseId) === "1";
+    return window.localStorage.getItem(keyFor(KEY_PREFIX, userId, courseId)) === "1";
   } catch {
     // Chế độ riêng tư / chặn lưu trữ: coi như chưa ăn mừng, không làm hỏng trang.
     return false;
   }
 }
 
-export function markCourseCelebrated(courseId: string): void {
+export function markCourseCelebrated(userId: string, courseId: string): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY_PREFIX + courseId, "1");
+    window.localStorage.setItem(keyFor(KEY_PREFIX, userId, courseId), "1");
   } catch {
     // Ghi hỏng cũng không sao — cùng lắm là lần sau ăn mừng lại.
   }

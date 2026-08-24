@@ -29,6 +29,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { consumeCourseCelebration, markCourseCelebrated } from "@/lib/course-celebration";
+import { useAuth } from "@/providers/auth-provider";
 import { describeLock, explainLock, isLessonLocked } from "@/lib/lesson-unlock";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import type { CourseDetail, CourseProgress } from "@/types/catalogue";
@@ -63,6 +64,7 @@ function fireConfetti() {
 
 export function CourseDetailView({ courseId }: { courseId: string }) {
   const router = useRouter();
+  const userId = useAuth().user?.id;
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,10 +87,13 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
   // không đọc từ query param. Đọc trong effect (sau khi mount) vì `sessionStorage` không
   // tồn tại ở server, và bản thân việc đọc đã xoá cờ nên chạy lại cũng vô hại.
   useEffect(() => {
-    if (!consumeCourseCelebration(courseId)) return;
-    markCourseCelebrated(courseId);
+    // Chưa biết mình là ai thì chưa ăn mừng: cờ mang danh tính chủ nhân, và đoán bừa một
+    // danh tính là mở lại đúng lỗ hổng dùng chung trình duyệt.
+    if (!userId) return;
+    if (!consumeCourseCelebration(userId, courseId)) return;
+    markCourseCelebrated(userId, courseId);
     fireConfetti();
-  }, [courseId]);
+  }, [courseId, userId]);
 
   useEffect(() => {
     let cancelled = false;

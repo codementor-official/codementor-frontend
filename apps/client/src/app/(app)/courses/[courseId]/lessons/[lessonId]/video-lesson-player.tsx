@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Modal } from "@codementor/ui";
+import { Modal, useToast } from "@codementor/ui";
 import { attachPlayer, formatDuration, type ResolvedVideo, type VideoController } from "@codementor/utils";
 import { PlayCircle, RotateCcw } from "lucide-react";
 import {
@@ -12,9 +12,16 @@ import {
   writeVideoProgress,
   type VideoProgress,
 } from "@/lib/video-progress";
+import { useAuth } from "@/providers/auth-provider";
 
 /** Ghi xuống localStorage thưa thôi — mỗi giây một lần là thừa cho một con số dùng để tua. */
 const SAVE_EVERY_MS = 5000;
+
+/** Chờ ngần này rồi mới kết luận lệnh tua có ăn hay không. */
+const SEEK_CHECK_MS = 2000;
+
+/** Lệch quá ngần này so với đích thì coi như tua hỏng, không phải sai số phát tiếp. */
+const SEEK_TOLERANCE_SECONDS = 5;
 
 /**
  * Đợi trình phát nói ra thời lượng trong ngần này rồi thôi.
@@ -57,6 +64,11 @@ export function VideoLessonPlayer({
   completed: boolean;
   onGateChange: (gate: WatchGate) => void;
 }) {
+  // Tiến trình xem là của MỘT tài khoản, không phải của một trình duyệt. Đọc danh tính
+  // ngay tại đây thay vì nhận qua prop: chỉ chỗ này cần nó, và luồn thêm một prop qua
+  // `TheoryLesson` là thêm một chỗ nữa có thể quên truyền.
+  const userId = useAuth().user?.id;
+  const toast = useToast();
   const fileRef = useRef<HTMLVideoElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const controllerRef = useRef<VideoController | null>(null);
@@ -96,7 +108,8 @@ export function VideoLessonPlayer({
    * Không cần dọn state cũ: người gọi đặt `key` theo bài nên đổi bài là dựng lại từ đầu.
    */
   useEffect(() => {
-    const stored = readVideoProgress(lessonId);
+    if (!userId) return;
+    const stored = readVideoProgress(userId, lessonId);
     if (!stored) return;
     watchedRef.current = stored.watchedSeconds;
     positionRef.current = stored.positionSeconds;
@@ -104,7 +117,7 @@ export function VideoLessonPlayer({
     // `completed` cố tình đứng ngoài danh sách phụ thuộc: nó đổi NGAY khi học viên bấm
     // hoàn thành, và chạy lại hiệu ứng lúc đó sẽ mời học tiếp một bài vừa mới học xong.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonId]);
+  }, [lessonId, userId]);
 
   const noteDuration = useCallback((seconds: number) => {
     durationRef.current = seconds;
@@ -126,12 +139,12 @@ export function VideoLessonPlayer({
       }
 
       const now = Date.now();
-      if (now - savedAtRef.current >= SAVE_EVERY_MS) {
+      if (userId && now - savedAtRef.current >= SAVE_EVERY_MS) {
         savedAtRef.current = now;
-        writeVideoProgress(lessonId, snapshot());
+        writeVideoProgress(userId, lessonId, snapshot());
       }
     },
-    [lessonId, snapshot],
+    [lessonId, snapshot, userId],
   );
 
   useEffect(() => {
@@ -158,13 +171,14 @@ export function VideoLessonPlayer({
   // Lưu lần cuối lúc rời trang. `pagehide` bắt được cả đóng tab lẫn chuyển sang trang khác,
   // thứ mà `beforeunload` trên thiết bị di động thường bỏ sót.
   useEffect(() => {
-    const save = () => writeVideoProgress(lessonId, snapshot());
+    if (!userId) return;
+    const save = () => writeVideoProgress(userId, lessonId, snapshot());
     window.addEventListener("pagehide", save);
     return () => {
       window.removeEventListener("pagehide", save);
       save();
     };
-  }, [lessonId, snapshot]);
+  }, [lessonId, snapshot, userId]);
 
   const enough = duration > 0 && ratio >= REQUIRED_WATCH_RATIO;
   useEffect(() => {
@@ -172,8 +186,31 @@ export function VideoLessonPlayer({
   }, [measurable, enough, onGateChange]);
 
   const continueWatching = () => {
-    if (resume) controllerRef.current?.seek(resume.positionSeconds);
+    const target = resume?.positionSeconds ?? 0;
+    controllerRef.current?.seek(target);
     setResume(null);
+
+    /*
+     * Kiểm lại xem lệnh tua có ăn không, và NÓI RA nếu không.
+     *
+     * Tệp video phục vụ từ một máy chủ không hỗ trợ HTTP Range thì trình duyệt không tua
+     * được: `currentTime` gán vào rồi bật lại 0, không có sự kiện lỗi nào. Học viên bấm
+     * "Học tiếp" và video đứng im ở đầu — im lặng là cách tệ nhất để hỏng.
+     *
+     * Chỉ kiểm với nguồn TỆP: YouTube/Vimeo tự lo việc phân phối nên luôn tua được, còn
+     * `currentTime` của chúng phải hỏi qua SDK và Vimeo chỉ báo khi đang phát — kiểm ở đó
+     * sẽ báo động giả với một video đang tạm dừng.
+     */
+    if (video.kind !== "file" || target <= 0) return;
+    window.setTimeout(() => {
+      const element = fileRef.current;
+      if (!element) return;
+      if (Math.abs(element.currentTime - target) > SEEK_TOLERANCE_SECONDS) {
+        toast.error(
+          "Không tua tới được chỗ đang học dở — máy chủ chứa video này không cho tua. Bạn cần xem lại từ đầu.",
+        );
+      }
+    }, SEEK_CHECK_MS);
   };
 
   const startOver = () => {
@@ -182,7 +219,7 @@ export function VideoLessonPlayer({
     positionRef.current = 0;
     lastTimeRef.current = null;
     controllerRef.current?.seek(0);
-    writeVideoProgress(lessonId, snapshot());
+    if (userId) writeVideoProgress(userId, lessonId, snapshot());
     setResume(null);
   };
 

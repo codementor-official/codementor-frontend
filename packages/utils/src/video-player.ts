@@ -146,7 +146,26 @@ function attachFile(element: HTMLVideoElement, handlers: PlayerHandlers): VideoC
 
   return {
     seek: (seconds) => {
-      element.currentTime = seconds;
+      /*
+       * Đợi có metadata rồi mới tua. Hộp thoại "học tiếp" hiện ngay lúc mở trang, thường
+       * sớm hơn lúc video tải xong, nên nhánh này là đường đi THƯỜNG GẶP chứ không hiếm.
+       *
+       * Gán thẳng `currentTime` lúc `readyState = 0` không báo lỗi, nhưng nó chỉ ghi lại
+       * "vị trí bắt đầu mong muốn": phần tử báo về đúng con số vừa gán kể cả khi sau đó
+       * không tua tới đó được. Đo trên Chromium với máy chủ KHÔNG hỗ trợ HTTP Range:
+       * gán thẳng → `currentTime` báo 300 trong khi video phát từ 0; đợi metadata rồi gán
+       * → `currentTime` về 0, đúng với sự thật.
+       *
+       * Khác biệt đó mới là lý do phải đợi: nó biến một lần tua hỏng từ chỗ nói dối thành
+       * chỗ đo được, và nhờ vậy `continueWatching` mới nói được cho học viên biết.
+       */
+      if (element.readyState >= 1) {
+        element.currentTime = seconds;
+        return;
+      }
+      element.addEventListener("loadedmetadata", () => { element.currentTime = seconds; }, {
+        once: true,
+      });
     },
     destroy: () => {
       element.removeEventListener("loadedmetadata", readDuration);

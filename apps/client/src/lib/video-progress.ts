@@ -21,6 +21,21 @@
 
 const KEY_PREFIX = "codementor.video-progress.";
 
+/**
+ * Khoá lưu trữ LUÔN mang danh tính chủ nhân.
+ *
+ * Thiếu nó thì hai tài khoản dùng chung một trình duyệt đọc trúng tiến trình của nhau:
+ * A xem hết video, B đăng nhập vào cùng máy và mở đúng bài đó thì cổng 80% đã mở sẵn —
+ * B bấm hoàn thành ngay mà không xem một giây nào. Với khoá học chỉ có một bài bắt buộc,
+ * đó là cả khoá học tự xong.
+ *
+ * `userId` là tham số BẮT BUỘC chứ không phải tuỳ chọn: để nó tuỳ chọn thì chỗ gọi nào
+ * quên truyền sẽ lặng lẽ quay về đúng cái lỗi này, và trình biên dịch không nói gì.
+ */
+function keyFor(userId: string, lessonId: string): string {
+  return `${KEY_PREFIX}${userId}:${lessonId}`;
+}
+
 export interface VideoProgress {
   /** Điểm dừng lần trước, giây — chỗ hộp thoại mời học tiếp sẽ tua tới. */
   positionSeconds: number;
@@ -84,10 +99,10 @@ export function isResumable(progress: VideoProgress): boolean {
 
 // -- Lưu trữ ---------------------------------------------------------------
 
-export function readVideoProgress(lessonId: string): VideoProgress | null {
+export function readVideoProgress(userId: string, lessonId: string): VideoProgress | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(KEY_PREFIX + lessonId);
+    const raw = window.localStorage.getItem(keyFor(userId, lessonId));
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed !== "object" || parsed === null) return null;
@@ -107,12 +122,17 @@ export function readVideoProgress(lessonId: string): VideoProgress | null {
   }
 }
 
-export function writeVideoProgress(lessonId: string, progress: VideoProgress): void {
+export function writeVideoProgress(
+  userId: string,
+  lessonId: string,
+  progress: VideoProgress,
+): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY_PREFIX + lessonId, JSON.stringify(progress));
+    window.localStorage.setItem(keyFor(userId, lessonId), JSON.stringify(progress));
   } catch {
     // ponytail: hết dung lượng hoặc bị chặn — bỏ qua. Mỗi bài tốn khoảng 100 byte nên
-    // không dọn rác cũ; đụng trần 5 MB cần vài chục nghìn bài video trong một trình duyệt.
+    // không dọn rác cũ, kể cả mục của tài khoản đã đăng xuất: khoá đã mang `userId` nên
+    // chúng vô hình với người khác. Đụng trần 5 MB cần vài chục nghìn mục.
   }
 }
