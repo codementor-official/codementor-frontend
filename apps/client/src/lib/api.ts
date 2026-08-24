@@ -193,7 +193,10 @@ export const api = {
   },
 
   workspaces: {
-    messages: (slug: string, params: { before?: string; limit?: number } = {}) =>
+    messages: (
+      slug: string,
+      params: { before?: string; limit?: number } = {},
+    ) =>
       unwrap<WorkspaceMessagePage>(
         `/workspaces/${encodeURIComponent(slug)}/messages${query(params)}`,
       ),
@@ -233,9 +236,16 @@ export const api = {
     summary: () => unwrap<WorkspaceSummary>("/workspaces/summary"),
     detail: (slug: string) =>
       unwrap<WorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}`),
-    overview: (slug: string) =>
+    overview: (
+      slug: string,
+      params: {
+        activitySearch?: string;
+        activityPage?: number;
+        activityLimit?: number;
+      } = {},
+    ) =>
       unwrap<WorkspaceOverview>(
-        `/workspaces/${encodeURIComponent(slug)}/overview`,
+        `/workspaces/${encodeURIComponent(slug)}/overview${query(params)}`,
       ),
     documents: (
       slug: string,
@@ -292,6 +302,29 @@ export const api = {
       unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/documents/${id}`, {
         method: "DELETE",
       }),
+    pendingDocumentCount: (slug: string) =>
+      unwrap<{ count: number }>(
+        `/workspaces/${encodeURIComponent(slug)}/documents/pending-count`,
+      ),
+    restoreDocument: (slug: string, id: string) =>
+      unwrap<{ restored: boolean }>(
+        `/workspaces/${encodeURIComponent(slug)}/documents/${id}/restore`,
+        { method: "POST" },
+      ),
+    purgeDocument: (slug: string, id: string) =>
+      unwrap<void>(
+        `/workspaces/${encodeURIComponent(slug)}/documents/${id}/permanent`,
+        { method: "DELETE" },
+      ),
+    reportDocument: (
+      slug: string,
+      id: string,
+      body: { category: string; note?: string },
+    ) =>
+      unwrap<{ id: string; status: string; createdAt: string }>(
+        `/workspaces/${encodeURIComponent(slug)}/documents/${id}/reports`,
+        { method: "POST", body },
+      ),
     documentDownload: (slug: string, id: string, preview = false) =>
       unwrap<{ url: string | null; expiresInSeconds: number | null }>(
         `/workspaces/${encodeURIComponent(slug)}/documents/${id}/download${preview ? "?preview=1" : ""}`,
@@ -339,8 +372,54 @@ export const api = {
       },
     ) =>
       unwrap<{ attached: boolean }>(
+        `/workspaces/${encodeURIComponent(slug)}/exercises/attach`,
+        { method: "POST", body },
+      ),
+    createWorkspaceExercise: (
+      slug: string,
+      body: {
+        title: string;
+        summary?: string;
+        difficulty: "easy" | "medium" | "hard";
+        source?: "manual" | "ai";
+        xpReward?: number;
+        timeLimitMs?: number;
+        memoryLimitKb?: number;
+        content: Record<string, unknown>;
+        dueAt?: string;
+        attemptLimit?: number;
+        allowRetry?: boolean;
+        allowLateSubmission?: boolean;
+        memberIds: string[];
+      },
+    ) =>
+      unwrap<WorkspaceExercise>(
         `/workspaces/${encodeURIComponent(slug)}/exercises`,
         { method: "POST", body },
+      ),
+    generateWorkspaceExerciseDraft: (
+      slug: string,
+      body: {
+        prompt: string;
+        documentIds?: string[];
+        difficulty?: "easy" | "medium" | "hard";
+      },
+    ) =>
+      unwrap<{
+        title: string;
+        summary: string;
+        difficulty: "easy" | "medium" | "hard";
+        source: "ai";
+        content: Record<string, unknown>;
+        sourceDocuments: Array<{ id: string; title: string }>;
+      }>(`/workspaces/${encodeURIComponent(slug)}/exercises/generate-draft`, {
+        method: "POST",
+        body,
+      }),
+    duplicateWorkspaceExercise: (slug: string, id: string) =>
+      unwrap<WorkspaceExercise>(
+        `/workspaces/${encodeURIComponent(slug)}/exercises/${id}/duplicate`,
+        { method: "POST" },
       ),
     updateWorkspaceExercise: (
       slug: string,
@@ -351,6 +430,11 @@ export const api = {
         allowRetry?: boolean;
         allowLateSubmission?: boolean;
         memberIds?: string[];
+        title?: string;
+        summary?: string | null;
+        difficulty?: "easy" | "medium" | "hard";
+        publicationStatus?: "published" | "hidden";
+        content?: Record<string, unknown>;
       },
     ) =>
       unwrap<{ updated: boolean }>(
@@ -361,6 +445,16 @@ export const api = {
       unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/exercises/${id}`, {
         method: "DELETE",
       }),
+    restoreWorkspaceExercise: (slug: string, id: string) =>
+      unwrap<{ restored: boolean }>(
+        `/workspaces/${encodeURIComponent(slug)}/exercises/${id}/restore`,
+        { method: "POST" },
+      ),
+    purgeWorkspaceExercise: (slug: string, id: string) =>
+      unwrap<void>(
+        `/workspaces/${encodeURIComponent(slug)}/exercises/${id}/permanent`,
+        { method: "DELETE" },
+      ),
     workspaceExerciseDetail: (slug: string, id: string) =>
       unwrap<WorkspaceExerciseDetail>(
         `/workspaces/${encodeURIComponent(slug)}/exercises/${id}/detail`,
@@ -397,7 +491,11 @@ export const api = {
     create: (body: { name: string; description?: string; topic?: string }) =>
       unwrap<WorkspaceDetail>("/workspaces", { method: "POST", body }),
     join: (inviteCode: string) =>
-      unwrap<WorkspaceDetail>("/workspaces/join", {
+      unwrap<{
+        status: "joined" | "pending";
+        requestId?: string;
+        workspaceSlug: string;
+      }>("/workspaces/join", {
         method: "POST",
         body: { inviteCode },
       }),

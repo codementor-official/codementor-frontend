@@ -5,15 +5,17 @@ import Link from "next/link";
 import {
   AlertTriangle,
   Check,
-  ChevronDown,
-  ChevronUp,
   Clock3,
+  Copy,
   Download,
   Eye,
   FileText,
+  Flag,
   Loader2,
   Plus,
+  RotateCcw,
   Search,
+  Sparkles,
   Trash2,
   Upload,
   Users,
@@ -61,12 +63,17 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const [previewing, setPreviewing] = useState<WorkspaceDocument | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [reporting, setReporting] = useState<WorkspaceDocument | null>(null);
   const canUpload =
     detail.currentMembership.role === "owner" ||
     detail.currentMembership.permissions.upload_doc;
   const canManage =
     detail.currentMembership.role === "owner" ||
+    detail.currentMembership.permissions.manage_doc ||
     detail.currentMembership.permissions.delete_doc;
+  const canApprove =
+    canManage || detail.currentMembership.permissions.approve_doc;
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -78,12 +85,16 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
           status: status || undefined,
         }),
       );
+      if (canApprove) {
+        const pending = await api.workspaces.pendingDocumentCount(detail.slug);
+        setPendingCount(pending.count);
+      }
     } catch (e) {
       toast.error(messageOf(e));
     } finally {
       setLoading(false);
     }
-  }, [detail.slug, page, q, status, toast]);
+  }, [detail.slug, page, q, status, canApprove, toast]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
@@ -132,8 +143,26 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
     if (!removing) return;
     try {
       await api.workspaces.deleteDocument(detail.slug, removing.id);
-      toast.success("Đã xóa tài liệu");
+      toast.success("Đã chuyển tài liệu vào mục đã xóa");
       setRemoving(null);
+      await load();
+    } catch (e) {
+      toast.error(messageOf(e));
+    }
+  };
+  const restore = async (doc: WorkspaceDocument) => {
+    try {
+      await api.workspaces.restoreDocument(detail.slug, doc.id);
+      toast.success("Đã khôi phục tài liệu");
+      await load();
+    } catch (e) {
+      toast.error(messageOf(e));
+    }
+  };
+  const purge = async (doc: WorkspaceDocument) => {
+    try {
+      await api.workspaces.purgeDocument(detail.slug, doc.id);
+      toast.success("Đã xóa vĩnh viễn tài liệu và tệp lưu trữ");
       await load();
     } catch (e) {
       toast.error(messageOf(e));
@@ -179,6 +208,23 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   };
   return (
     <div className="space-y-4">
+      {canApprove && pendingCount > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <Clock3 className="h-4 w-4 text-primary" />
+          <p className="min-w-0 flex-1 text-sm font-medium text-navy">
+            Có {pendingCount} tài liệu đang chờ duyệt.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => {
+              setStatus("pending");
+              setPage(1);
+            }}
+          >
+            Duyệt ngay
+          </Button>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <input
           className={`${inputClass} min-w-56 flex-1`}
@@ -189,7 +235,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
             setPage(1);
           }}
         />
-        {canManage && (
+        {canApprove && (
           <Select
             label="Trạng thái"
             value={status}
@@ -202,6 +248,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
               { value: "published", label: "Đã duyệt" },
               { value: "pending", label: "Chờ duyệt" },
               { value: "hidden", label: "Đã ẩn" },
+              { value: "removed", label: "Đã xóa" },
             ]}
           />
         )}
@@ -251,7 +298,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
                   {formatDate(doc.uploadedAt)}
                 </p>
               </div>
-              {canManage && (
+              {canApprove && doc.status !== "removed" && (
                 <span className="text-xs font-medium text-text-muted">
                   {statusLabel(doc.status)}
                 </span>
@@ -269,7 +316,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
                   Xem
                 </Button>
               )}
-              {canManage && (
+              {doc.canDelete && doc.status !== "removed" && (
                 <>
                   <Select
                     label="Duyệt"
@@ -292,6 +339,45 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Xóa
+                  </Button>
+                </>
+              )}
+              {!canManage && doc.status === "published" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setReporting(doc);
+                  }}
+                >
+                  <Flag className="h-3.5 w-3.5" />
+                  Báo cáo
+                </Button>
+              )}
+              {canManage && doc.status === "removed" && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void restore(doc);
+                    }}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Khôi phục
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void purge(doc);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Xóa vĩnh viễn
                   </Button>
                 </>
               )}
@@ -321,10 +407,17 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
         open={removing !== null}
         onClose={() => setRemoving(null)}
         onConfirm={() => void remove()}
-        title="Xóa tài liệu?"
+        title="Chuyển tài liệu vào mục đã xóa?"
         confirmLabel="Xóa"
-        message={`Tệp “${removing?.title ?? ""}” sẽ bị xóa khỏi database và storage.`}
+        message={`Tài liệu “${removing?.title ?? ""}” sẽ được ẩn khỏi danh sách. Tệp trên storage chỉ bị xóa khi xóa vĩnh viễn.`}
       />
+      {reporting && (
+        <DocumentReportDialog
+          document={reporting}
+          slug={detail.slug}
+          onClose={() => setReporting(null)}
+        />
+      )}
     </div>
   );
 }
@@ -428,6 +521,87 @@ function DocumentPreviewDialog({
   );
 }
 
+function DocumentReportDialog({
+  document,
+  slug,
+  onClose,
+}: {
+  document: WorkspaceDocument;
+  slug: string;
+  onClose: () => void;
+}) {
+  const toast = useToast();
+  const [category, setCategory] = useState("irrelevant");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    setBusy(true);
+    try {
+      await api.workspaces.reportDocument(slug, document.id, {
+        category,
+        note: note.trim() || undefined,
+      });
+      toast.success("Đã gửi báo cáo để quản trị viên xem xét");
+      onClose();
+    } catch (error) {
+      toast.error(messageOf(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-navy/55 p-3"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Báo cáo tài liệu"
+    >
+      <Card className="w-full max-w-lg space-y-4 p-5">
+        <div>
+          <h2 className="text-base font-bold text-navy">Báo cáo tài liệu</h2>
+          <p className="mt-1 text-xs text-text-muted">{document.title}</p>
+        </div>
+        <Select
+          label="Lý do"
+          value={category}
+          onChange={setCategory}
+          options={[
+            { value: "spam", label: "Spam" },
+            { value: "inappropriate", label: "Nội dung không phù hợp" },
+            { value: "copyright", label: "Vi phạm bản quyền" },
+            { value: "harmful", label: "Nội dung có hại" },
+            { value: "irrelevant", label: "Không liên quan Workspace" },
+            { value: "other", label: "Lý do khác" },
+          ]}
+        />
+        <label className="block text-xs font-medium text-text-muted">
+          Ghi chú (không bắt buộc)
+          <textarea
+            className={`${inputClass} mt-1 min-h-24 w-full resize-y`}
+            value={note}
+            maxLength={1000}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Mô tả ngắn để quản trị viên kiểm tra chính xác hơn..."
+          />
+        </label>
+        <p className="text-xs text-text-faint">
+          Vui lòng chỉ báo cáo nội dung thực sự vi phạm. Báo cáo trùng lặp sẽ bị
+          từ chối.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose} disabled={busy}>
+            Hủy
+          </Button>
+          <Button onClick={() => void submit()} disabled={busy}>
+            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Gửi báo cáo
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function WorkspaceExercisesTab({
   detail,
   members,
@@ -451,6 +625,7 @@ export function WorkspaceExercisesTab({
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState<WorkspaceExercise | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [authoringOpen, setAuthoringOpen] = useState(false);
   const assignable = members.filter((m) => m.role !== "owner");
   const [memberIds, setMemberIds] = useState<string[]>(
     assignable.map((m) => m.id),
@@ -460,6 +635,7 @@ export function WorkspaceExercisesTab({
     detail.currentMembership.permissions.create_exercise;
   const canEdit =
     detail.currentMembership.role === "owner" ||
+    detail.currentMembership.permissions.manage_exercise ||
     detail.currentMembership.permissions.edit_exercise;
   const visibleAssignable = assignable.filter((member) =>
     `${member.user.displayName} ${member.user.email ?? ""}`
@@ -565,31 +741,35 @@ export function WorkspaceExercisesTab({
                 {memberIds.length} thành viên đang được chọn
               </p>
             </div>
+            <Button size="sm" onClick={() => setAuthoringOpen(true)}>
+              <Sparkles className="h-3.5 w-3.5" />
+              Tạo bài mới
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-64 flex-1 sm:max-w-xl">
+              <Select
+                label="Bài tập từ kho công khai"
+                value={selected}
+                onChange={setSelected}
+                options={[
+                  { value: "", label: "Chọn bài tập" },
+                  ...bank.map((x) => ({ value: x.id, label: x.title })),
+                ]}
+              />
+            </div>
             <Button
               size="sm"
               variant="outline"
+              aria-expanded={assignmentOpen}
+              aria-controls="workspace-assignment-options"
               onClick={() => setAssignmentOpen((value) => !value)}
             >
-              {assignmentOpen ? (
-                <ChevronUp className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronDown className="h-3.5 w-3.5" />
-              )}
-              {assignmentOpen ? "Thu gọn" : "Mở bảng phân công"}
+              <Users className="h-3.5 w-3.5" />
+              {assignmentOpen ? "Ẩn phân công" : "Phân công thành viên"}
             </Button>
-          </div>
-          {assignmentOpen && (
-            <>
-              <div className="flex flex-wrap items-end gap-3">
-                <Select
-                  label="Bài tập từ kho công khai"
-                  value={selected}
-                  onChange={setSelected}
-                  options={[
-                    { value: "", label: "Chọn bài tập" },
-                    ...bank.map((x) => ({ value: x.id, label: x.title })),
-                  ]}
-                />
+            {assignmentOpen && (
+              <>
                 <label className="text-xs font-medium text-text-muted">
                   Hạn nộp
                   <input
@@ -607,64 +787,69 @@ export function WorkspaceExercisesTab({
                   <Plus className="h-3.5 w-3.5" />
                   Thêm và giao ({memberIds.length})
                 </Button>
+              </>
+            )}
+          </div>
+          {assignmentOpen && (
+            <fieldset
+              id="workspace-assignment-options"
+              className="rounded-lg border border-border-soft p-3"
+            >
+              <legend className="px-1 text-xs font-semibold text-navy">
+                Phân công cho thành viên
+              </legend>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="rounded border border-border px-2 py-1 text-xs"
+                  onClick={() => setMemberIds(assignable.map((m) => m.id))}
+                >
+                  <Users className="mr-1 inline h-3.5 w-3.5" />
+                  Toàn bộ Workspace
+                </button>
+                <button
+                  type="button"
+                  className="rounded border border-border px-2 py-1 text-xs"
+                  onClick={() => setMemberIds([])}
+                >
+                  Xóa lựa chọn
+                </button>
+                <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                  Đã chọn {memberIds.length}/{assignable.length}
+                </span>
+                <label className="relative ml-auto min-w-52 flex-1 sm:max-w-xs">
+                  <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-text-faint" />
+                  <input
+                    value={memberSearch}
+                    onChange={(event) => setMemberSearch(event.target.value)}
+                    placeholder="Tìm thành viên..."
+                    className={`${inputClass} w-full pl-8`}
+                  />
+                </label>
               </div>
-              <fieldset className="rounded-lg border border-border-soft p-3">
-                <legend className="px-1 text-xs font-semibold text-navy">
-                  Phân công cho thành viên
-                </legend>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    className="rounded border border-border px-2 py-1 text-xs"
-                    onClick={() => setMemberIds(assignable.map((m) => m.id))}
+              <div className="mt-3 grid max-h-64 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-4">
+                {visibleAssignable.map((member) => (
+                  <label
+                    key={member.id}
+                    className={`flex cursor-pointer items-center gap-2 rounded border px-2.5 py-2 text-xs ${memberIds.includes(member.id) ? "border-primary bg-primary/5" : "border-border-soft"}`}
                   >
-                    <Users className="mr-1 inline h-3.5 w-3.5" />
-                    Toàn bộ Workspace
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border border-border px-2 py-1 text-xs"
-                    onClick={() => setMemberIds([])}
-                  >
-                    Xóa lựa chọn
-                  </button>
-                  <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                    Đã chọn {memberIds.length}/{assignable.length}
-                  </span>
-                  <label className="relative ml-auto min-w-52 flex-1 sm:max-w-xs">
-                    <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-text-faint" />
                     <input
-                      value={memberSearch}
-                      onChange={(event) => setMemberSearch(event.target.value)}
-                      placeholder="Tìm thành viên..."
-                      className={`${inputClass} w-full pl-8`}
+                      type="checkbox"
+                      checked={memberIds.includes(member.id)}
+                      onChange={() => toggleMember(member.id)}
                     />
-                  </label>
-                </div>
-                <div className="mt-3 grid max-h-64 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-4">
-                  {visibleAssignable.map((member) => (
-                    <label
-                      key={member.id}
-                      className={`flex cursor-pointer items-center gap-2 rounded border px-2.5 py-2 text-xs ${memberIds.includes(member.id) ? "border-primary bg-primary/5" : "border-border-soft"}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={memberIds.includes(member.id)}
-                        onChange={() => toggleMember(member.id)}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium text-navy">
-                          {member.user.displayName}
-                        </span>
-                        <span className="block truncate text-2xs text-text-faint">
-                          {member.role === "deputy" ? "Phó nhóm" : "Thành viên"}
-                        </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium text-navy">
+                        {member.user.displayName}
                       </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            </>
+                      <span className="block truncate text-2xs text-text-faint">
+                        {member.role === "deputy" ? "Phó nhóm" : "Thành viên"}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           )}
         </Card>
       )}
@@ -763,6 +948,22 @@ export function WorkspaceExercisesTab({
             />
           </>
         )}
+        {canEdit && (
+          <Select
+            label="Trạng thái"
+            value={exerciseStatus}
+            onChange={(value) => {
+              setExerciseStatus(value);
+              setPage(1);
+            }}
+            options={[
+              { value: "", label: "Tất cả đang hoạt động" },
+              { value: "published", label: "Đang hiển thị" },
+              { value: "hidden", label: "Đã ẩn" },
+              { value: "removed", label: "Đã xóa" },
+            ]}
+          />
+        )}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-faint">
         <span>{data.total} bài tập phù hợp</span>
@@ -817,18 +1018,60 @@ export function WorkspaceExercisesTab({
               >
                 Mở bài
               </Button>
-              {canEdit && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setRemoving(ex);
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Gỡ
-                </Button>
+              {(ex.canEdit || ex.canDelete || canCreate) && (
+                <>
+                  {ex.deletedAt ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void api.workspaces
+                          .restoreWorkspaceExercise(detail.slug, ex.id)
+                          .then(() => load())
+                          .catch((error) => toast.error(messageOf(error)));
+                      }}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Khôi phục
+                    </Button>
+                  ) : (
+                    <>
+                      {canCreate && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void api.workspaces
+                              .duplicateWorkspaceExercise(detail.slug, ex.id)
+                              .then(() => {
+                                toast.success("Đã nhân bản bài tập");
+                                return load();
+                              })
+                              .catch((error) => toast.error(messageOf(error)));
+                          }}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Nhân bản
+                        </Button>
+                      )}
+                      {ex.canDelete && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setRemoving(ex);
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Gỡ
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </>
               )}
             </Card>
           ))}
@@ -849,15 +1092,371 @@ export function WorkspaceExercisesTab({
           onUpdated={load}
         />
       )}
+      {authoringOpen && (
+        <ExerciseAuthoringDialog
+          slug={detail.slug}
+          members={assignable}
+          initialMemberIds={memberIds}
+          onClose={() => setAuthoringOpen(false)}
+          onCreated={load}
+        />
+      )}
       <ConfirmDialog
         open={removing !== null}
         onClose={() => setRemoving(null)}
         onConfirm={() => void remove()}
-        title="Gỡ bài tập khỏi nhóm?"
+        title="Chuyển bài tập vào mục đã xóa?"
         confirmLabel="Gỡ"
-        message={`Các assignment chưa có bài nộp của “${removing?.title ?? ""}” sẽ bị xóa.`}
+        message={`Bài “${removing?.title ?? ""}” sẽ được ẩn khỏi thành viên và vẫn có thể khôi phục.`}
       />
     </div>
+  );
+}
+
+function ExerciseAuthoringDialog({
+  slug,
+  members,
+  initialMemberIds,
+  onClose,
+  onCreated,
+}: {
+  slug: string;
+  members: WorkspaceMember[];
+  initialMemberIds: string[];
+  onClose: () => void;
+  onCreated: () => Promise<void>;
+}) {
+  const toast = useToast();
+  const [mode, setMode] = useState<"manual" | "import" | "ai">("manual");
+  const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
+    "medium",
+  );
+  const [statement, setStatement] = useState("");
+  const [inputFormat, setInputFormat] = useState("");
+  const [outputFormat, setOutputFormat] = useState("");
+  const [constraints, setConstraints] = useState("");
+  const [examples, setExamples] = useState("");
+  const [testCases, setTestCases] = useState("");
+  const [tags, setTags] = useState("");
+  const [dueAt, setDueAt] = useState("");
+  const [rawImport, setRawImport] = useState("");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [generatedByAi, setGeneratedByAi] = useState(false);
+  const [memberIds, setMemberIds] = useState(initialMemberIds);
+  const [busy, setBusy] = useState(false);
+
+  const importText = () => {
+    setGeneratedByAi(false);
+    const parsed = parseProblemText(rawImport);
+    setTitle(parsed.title);
+    setSummary(parsed.summary);
+    setStatement(parsed.statement);
+    setInputFormat(parsed.inputFormat);
+    setOutputFormat(parsed.outputFormat);
+    setConstraints(parsed.constraints);
+    setExamples(parsed.examples);
+    toast.success("Đã chuyển nội dung sang form; hãy rà soát trước khi lưu");
+  };
+  const generate = async () => {
+    if (!aiPrompt.trim()) return;
+    setBusy(true);
+    try {
+      const draft = await api.workspaces.generateWorkspaceExerciseDraft(slug, {
+        prompt: aiPrompt.trim(),
+        difficulty,
+      });
+      setTitle(draft.title);
+      setSummary(draft.summary);
+      setDifficulty(draft.difficulty);
+      setStatement(String(draft.content.statement ?? ""));
+      setGeneratedByAi(true);
+      setConstraints(
+        Array.isArray(draft.content.constraints)
+          ? draft.content.constraints.join("\n")
+          : "",
+      );
+      toast.success(
+        `Đã tạo bản nháp từ ${draft.sourceDocuments.length} tài liệu đã duyệt`,
+      );
+      setMode("manual");
+    } catch (error) {
+      toast.error(messageOf(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const save = async () => {
+    if (!title.trim() || !statement.trim()) {
+      toast.error("Vui lòng nhập tiêu đề và đề bài");
+      return;
+    }
+    setBusy(true);
+    try {
+      const statementWithFormats = [
+        statement.trim(),
+        inputFormat.trim() ? `## Đầu vào\n${inputFormat.trim()}` : "",
+        outputFormat.trim() ? `## Đầu ra\n${outputFormat.trim()}` : "",
+        tags.trim() ? `## Tags\n${tags.trim()}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      await api.workspaces.createWorkspaceExercise(slug, {
+        title: title.trim(),
+        summary: summary.trim() || undefined,
+        difficulty,
+        source: generatedByAi ? "ai" : "manual",
+        dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
+        memberIds,
+        content: {
+          statement: statementWithFormats,
+          ioMode: "stdin_stdout",
+          constraints: splitLines(constraints),
+          examples: parseInputOutputPairs(examples).map((item) => ({
+            input: item.input,
+            output: item.output,
+          })),
+          testCases: parseInputOutputPairs(testCases).map((item, index) => ({
+            order: index + 1,
+            input: item.input,
+            expected: item.output,
+            visibility: index === 0 ? "public" : "hidden",
+          })),
+          languages: [],
+          evaluation: { checker: "trimmed", stopOnFirstFailure: false },
+        },
+      });
+      toast.success("Đã tạo và phân công bài tập");
+      await onCreated();
+      onClose();
+    } catch (error) {
+      toast.error(messageOf(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-navy/55 p-3"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Tạo bài tập Workspace"
+    >
+      <Card className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden">
+        <div className="flex items-center gap-3 border-b border-border-soft p-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-bold text-navy">
+              Tạo bài tập Workspace
+            </h2>
+            <p className="mt-1 text-xs text-text-muted">
+              Nội dung luôn được lưu thành bản có thể chỉnh sửa trước khi giao.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded p-1 text-text-muted hover:bg-bg"
+            aria-label="Đóng"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+          <div className="grid gap-2 sm:grid-cols-3">
+            {(
+              [
+                ["manual", "Nhập thủ công"],
+                ["import", "Import đề bài"],
+                ["ai", "Tạo từ tài liệu"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMode(value)}
+                className={`rounded-md border px-3 py-2 text-sm font-semibold ${mode === value ? "border-primary bg-primary/5 text-primary" : "border-border text-text-muted"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {mode === "import" && (
+            <Card className="space-y-3 p-4">
+              <p className="text-xs text-text-muted">
+                Hỗ trợ các mục phổ biến: Description, Input, Output,
+                Constraints, Example.
+              </p>
+              <textarea
+                className={`${inputClass} min-h-48 w-full resize-y font-mono`}
+                value={rawImport}
+                onChange={(event) => setRawImport(event.target.value)}
+                placeholder="Dán đề bài theo format LeetCode..."
+              />
+              <Button
+                size="sm"
+                onClick={importText}
+                disabled={!rawImport.trim()}
+              >
+                Chuyển sang form
+              </Button>
+            </Card>
+          )}
+          {mode === "ai" && (
+            <Card className="space-y-3 p-4">
+              <p className="text-xs text-text-muted">
+                Hệ thống chỉ đọc tài liệu đã duyệt của Workspace và trả về bản
+                nháp để bạn rà soát.
+              </p>
+              <textarea
+                className={`${inputClass} min-h-28 w-full resize-y`}
+                value={aiPrompt}
+                onChange={(event) => setAiPrompt(event.target.value)}
+                placeholder="Ví dụ: Tạo bài tập BFS tìm đường đi ngắn nhất..."
+              />
+              <Button
+                size="sm"
+                onClick={() => void generate()}
+                disabled={busy || !aiPrompt.trim()}
+              >
+                {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Tạo bản nháp
+              </Button>
+            </Card>
+          )}
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Tiêu đề" value={title} onChange={setTitle} />
+            <Select
+              label="Độ khó"
+              value={difficulty}
+              onChange={(value) => setDifficulty(value as typeof difficulty)}
+              options={[
+                { value: "easy", label: "Cơ bản" },
+                { value: "medium", label: "Trung bình" },
+                { value: "hard", label: "Nâng cao" },
+              ]}
+            />
+            <Field label="Tóm tắt" value={summary} onChange={setSummary} />
+            <label className="text-xs font-medium text-text-muted">
+              Hạn nộp
+              <input
+                type="datetime-local"
+                className={`${inputClass} mt-1 block w-full`}
+                value={dueAt}
+                onChange={(event) => setDueAt(event.target.value)}
+              />
+            </label>
+          </div>
+          <TextArea label="Đề bài" value={statement} onChange={setStatement} />
+          <div className="grid gap-3 md:grid-cols-2">
+            <TextArea
+              label="Định dạng đầu vào"
+              value={inputFormat}
+              onChange={setInputFormat}
+            />
+            <TextArea
+              label="Định dạng đầu ra"
+              value={outputFormat}
+              onChange={setOutputFormat}
+            />
+            <TextArea
+              label="Ràng buộc (mỗi dòng một mục)"
+              value={constraints}
+              onChange={setConstraints}
+            />
+            <TextArea label="Tags" value={tags} onChange={setTags} />
+            <TextArea
+              label="Ví dụ (input => output)"
+              value={examples}
+              onChange={setExamples}
+            />
+            <TextArea
+              label="Test case (input => output)"
+              value={testCases}
+              onChange={setTestCases}
+            />
+          </div>
+          <fieldset className="rounded-lg border border-border-soft p-3">
+            <legend className="px-1 text-xs font-semibold text-navy">
+              Phân công ({memberIds.length}/{members.length})
+            </legend>
+            <div className="grid max-h-48 gap-2 overflow-y-auto sm:grid-cols-2 xl:grid-cols-4">
+              {members.map((member) => (
+                <label
+                  key={member.id}
+                  className="flex items-center gap-2 rounded border border-border-soft px-2 py-1.5 text-xs"
+                >
+                  <input
+                    type="checkbox"
+                    checked={memberIds.includes(member.id)}
+                    onChange={() =>
+                      setMemberIds((current) =>
+                        current.includes(member.id)
+                          ? current.filter((id) => id !== member.id)
+                          : [...current, member.id],
+                      )
+                    }
+                  />
+                  <span className="truncate">{member.user.displayName}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border-soft p-4">
+          <Button variant="outline" onClick={onClose} disabled={busy}>
+            Hủy
+          </Button>
+          <Button onClick={() => void save()} disabled={busy}>
+            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Lưu bài tập
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="text-xs font-medium text-text-muted">
+      {label}
+      <input
+        className={`${inputClass} mt-1 block w-full`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="text-xs font-medium text-text-muted">
+      {label}
+      <textarea
+        className={`${inputClass} mt-1 min-h-24 w-full resize-y`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
   );
 }
 
@@ -880,9 +1479,19 @@ function ExerciseDetailDialog({
   const [selectedAssignment, setSelectedAssignment] =
     useState<WorkspaceAssignment | null>(null);
   const [submissions, setSubmissions] = useState<WorkspaceSubmission[]>([]);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState("");
   const [historyLoading, setHistoryLoading] = useState(false);
   const [dueAt, setDueAt] = useState("");
   const [attemptLimit, setAttemptLimit] = useState("");
+  const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
+    "medium",
+  );
+  const [publicationStatus, setPublicationStatus] = useState<
+    "published" | "hidden"
+  >("published");
+  const [statement, setStatement] = useState("");
   const [assigned, setAssigned] = useState<string[]>([]);
   const [assignmentSearch, setAssignmentSearch] = useState("");
   const [busy, setBusy] = useState(false);
@@ -891,6 +1500,9 @@ function ExerciseDetailDialog({
       .toLocaleLowerCase("vi")
       .includes(assignmentSearch.trim().toLocaleLowerCase("vi")),
   );
+  const selectedSubmission =
+    submissions.find((item) => item.id === selectedSubmissionId) ??
+    submissions[0];
   const loadDetail = useCallback(async () => {
     setLoading(true);
     try {
@@ -898,6 +1510,11 @@ function ExerciseDetailDialog({
       setData(next);
       setDueAt(next.dueAt ? toLocalInput(next.dueAt) : "");
       setAttemptLimit(next.attemptLimit?.toString() ?? "");
+      setTitle(next.title);
+      setSummary(next.summary ?? "");
+      setDifficulty(next.difficulty);
+      setPublicationStatus(next.publicationStatus);
+      setStatement(String(next.content?.statement ?? ""));
       setAssigned(next.assignments.map((item) => item.memberId));
     } catch (e) {
       toast.error(messageOf(e));
@@ -913,10 +1530,14 @@ function ExerciseDetailDialog({
     setSelectedAssignment(assignment);
     setHistoryLoading(true);
     setSubmissions([]);
+    setSelectedSubmissionId("");
     try {
-      setSubmissions(
-        (await api.workspaces.submissionHistory(slug, assignment.id)).items,
+      const response = await api.workspaces.submissionHistory(
+        slug,
+        assignment.id,
       );
+      setSubmissions(response.items);
+      setSelectedSubmissionId(response.items[0]?.id ?? "");
     } catch (e) {
       toast.error(messageOf(e));
       setSubmissions([]);
@@ -932,8 +1553,15 @@ function ExerciseDetailDialog({
         dueAt: dueAt ? new Date(dueAt).toISOString() : null,
         attemptLimit: attemptLimit ? Number(attemptLimit) : null,
         memberIds: assigned,
+        title: title.trim(),
+        summary: summary.trim() || null,
+        difficulty,
+        publicationStatus,
+        content: data.content
+          ? { ...data.content, statement: statement.trim() }
+          : { statement: statement.trim(), ioMode: "stdin_stdout" },
       });
-      toast.success("Đã cập nhật phân công bài tập");
+      toast.success("Đã cập nhật bài tập và phân công");
       await loadDetail();
       await onUpdated();
     } catch (e) {
@@ -969,6 +1597,42 @@ function ExerciseDetailDialog({
             <div className="mt-5 space-y-5">
               {data.canManage && (
                 <Card className="space-y-3 bg-bg p-4">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <Field label="Tiêu đề" value={title} onChange={setTitle} />
+                    <Field
+                      label="Tóm tắt"
+                      value={summary}
+                      onChange={setSummary}
+                    />
+                    <Select
+                      label="Độ khó"
+                      value={difficulty}
+                      onChange={(value) =>
+                        setDifficulty(value as typeof difficulty)
+                      }
+                      options={[
+                        { value: "easy", label: "Cơ bản" },
+                        { value: "medium", label: "Trung bình" },
+                        { value: "hard", label: "Nâng cao" },
+                      ]}
+                    />
+                    <Select
+                      label="Hiển thị"
+                      value={publicationStatus}
+                      onChange={(value) =>
+                        setPublicationStatus(value as typeof publicationStatus)
+                      }
+                      options={[
+                        { value: "published", label: "Đang hiển thị" },
+                        { value: "hidden", label: "Đã ẩn" },
+                      ]}
+                    />
+                  </div>
+                  <TextArea
+                    label="Nội dung đề bài"
+                    value={statement}
+                    onChange={setStatement}
+                  />
                   <div className="flex flex-wrap items-end gap-3">
                     <label className="text-xs font-medium">
                       Hạn nộp
@@ -996,7 +1660,7 @@ function ExerciseDetailDialog({
                       onClick={() => void save()}
                     >
                       <Check className="h-3.5 w-3.5" />
-                      Lưu phân công
+                      Lưu thay đổi
                     </Button>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -1061,6 +1725,26 @@ function ExerciseDetailDialog({
                     : "lg:grid-cols-[minmax(0,1fr)]"
                 }`}
               >
+                <div className="col-span-full flex min-w-0 flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-navy">
+                      Thành viên được giao
+                    </h3>
+                    <p className="text-xs text-text-faint">
+                      Chọn một thành viên để xem lịch sử nộp ở bên phải.
+                    </p>
+                  </div>
+                  {selectedAssignment && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedAssignment(null)}
+                    >
+                      Ẩn lịch sử nộp
+                    </Button>
+                  )}
+                </div>
                 {data.assignments.length === 0 ? (
                   <Card className="border-dashed p-6 text-center text-xs text-text-faint">
                     Bài công khai này chưa được giao cho bạn. Bạn vẫn có thể mở
@@ -1120,13 +1804,6 @@ function ExerciseDetailDialog({
                             {selectedAssignment.memberName}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAssignment(null)}
-                          aria-label="Đóng lịch sử nộp"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
                       </div>
                       {historyLoading ? (
                         <div className="py-8">
@@ -1136,94 +1813,99 @@ function ExerciseDetailDialog({
                         <p className="mt-3 text-xs text-text-faint">
                           Chưa có lần nộp.
                         </p>
-                      ) : (
+                      ) : selectedSubmission ? (
                         <div className="mt-3 space-y-3">
-                          {submissions.map((submission) => (
-                            <details
-                              key={submission.id}
-                              className="rounded border border-border-soft p-3"
-                            >
-                              <summary className="cursor-pointer text-xs font-semibold text-navy">
-                                Lần #{submission.attemptNumber} ·{" "}
-                                {verdictLabel(submission.verdict)} ·{" "}
-                                {submission.score ?? 0}/100 ·{" "}
-                                {formatDate(submission.submittedAt)}
-                                {submission.isLate ? " · Trễ" : ""}
-                              </summary>
-                              <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-                                <span>
-                                  Test: {submission.passedTests ?? 0}/
-                                  {submission.totalTests ?? 0}
-                                </span>
-                                <span>
-                                  Runtime: {submission.runtimeMs ?? "–"} ms
-                                </span>
-                                <span>
-                                  Memory: {submission.memoryKb ?? "–"} KB
-                                </span>
-                                <span>Ngôn ngữ: {submission.language}</span>
-                              </div>
-                              <pre className="mt-3 max-h-72 overflow-auto rounded bg-navy p-3 text-xs text-on-ink">
-                                <code>{submission.sourceCode}</code>
+                          <Select
+                            label="Lần nộp"
+                            value={selectedSubmission.id}
+                            onChange={setSelectedSubmissionId}
+                            options={submissions.map((submission) => ({
+                              value: submission.id,
+                              label: `Lần #${submission.attemptNumber} · ${verdictLabel(submission.verdict)} · ${submission.score ?? 0}/100${submission.isLate ? " · Trễ" : ""}`,
+                            }))}
+                          />
+                          <div className="rounded border border-border-soft p-3">
+                            <p className="text-xs font-semibold text-navy">
+                              Lần #{selectedSubmission.attemptNumber} ·{" "}
+                              {verdictLabel(selectedSubmission.verdict)} ·{" "}
+                              {formatDate(selectedSubmission.submittedAt)}
+                            </p>
+                            <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                              <span>
+                                Test: {selectedSubmission.passedTests ?? 0}/
+                                {selectedSubmission.totalTests ?? 0}
+                              </span>
+                              <span>
+                                Runtime: {selectedSubmission.runtimeMs ?? "–"}{" "}
+                                ms
+                              </span>
+                              <span>
+                                Memory: {selectedSubmission.memoryKb ?? "–"} KB
+                              </span>
+                              <span>
+                                Ngôn ngữ: {selectedSubmission.language}
+                              </span>
+                            </div>
+                            <pre className="mt-3 max-h-72 overflow-auto rounded bg-navy p-3 text-xs text-on-ink">
+                              <code>{selectedSubmission.sourceCode}</code>
+                            </pre>
+                            {selectedSubmission.runDetail?.compile?.stderr && (
+                              <pre className="mt-2 overflow-auto rounded bg-danger/10 p-2 text-xs text-danger">
+                                {selectedSubmission.runDetail.compile.stderr}
                               </pre>
-                              {submission.runDetail?.compile?.stderr && (
-                                <pre className="mt-2 overflow-auto rounded bg-danger/10 p-2 text-xs text-danger">
-                                  {submission.runDetail.compile.stderr}
-                                </pre>
-                              )}
-                              {submission.runDetail?.cases?.length ? (
-                                <div className="mt-3 overflow-x-auto rounded border border-border-soft">
-                                  <table className="w-full min-w-[680px] text-left text-xs">
-                                    <thead className="bg-bg text-text-faint">
-                                      <tr>
-                                        <th className="p-2">Test</th>
-                                        <th className="p-2">Input</th>
-                                        <th className="p-2">Expected</th>
-                                        <th className="p-2">Actual</th>
-                                        <th className="p-2">Kết quả</th>
-                                        <th className="p-2">Thời gian</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border-soft">
-                                      {submission.runDetail.cases.map(
-                                        (testCase) => (
-                                          <tr key={testCase.order}>
-                                            <td className="p-2 font-semibold">
-                                              #{testCase.order}
-                                            </td>
-                                            <td className="max-w-40 truncate p-2 font-mono">
-                                              {testCase.input ?? "–"}
-                                            </td>
-                                            <td className="max-w-32 truncate p-2 font-mono">
-                                              {testCase.expected ?? "–"}
-                                            </td>
-                                            <td className="max-w-32 truncate p-2 font-mono">
-                                              {testCase.actual ?? "–"}
-                                            </td>
-                                            <td
-                                              className={`p-2 font-semibold ${testCase.passed ? "text-success" : "text-danger"}`}
-                                            >
-                                              {testCase.passed
-                                                ? "Đạt"
-                                                : verdictLabel(
-                                                    testCase.verdict ??
-                                                      "wrong_answer",
-                                                  )}
-                                            </td>
-                                            <td className="p-2">
-                                              {testCase.runtimeMs ?? "–"} ms
-                                            </td>
-                                          </tr>
-                                        ),
-                                      )}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ) : null}
-                            </details>
-                          ))}
+                            )}
+                            {selectedSubmission.runDetail?.cases?.length ? (
+                              <div className="mt-3 overflow-x-auto rounded border border-border-soft">
+                                <table className="w-full min-w-[680px] text-left text-xs">
+                                  <thead className="bg-bg text-text-faint">
+                                    <tr>
+                                      <th className="p-2">Test</th>
+                                      <th className="p-2">Input</th>
+                                      <th className="p-2">Expected</th>
+                                      <th className="p-2">Actual</th>
+                                      <th className="p-2">Kết quả</th>
+                                      <th className="p-2">Thời gian</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-border-soft">
+                                    {selectedSubmission.runDetail.cases.map(
+                                      (testCase) => (
+                                        <tr key={testCase.order}>
+                                          <td className="p-2 font-semibold">
+                                            #{testCase.order}
+                                          </td>
+                                          <td className="max-w-40 truncate p-2 font-mono">
+                                            {testCase.input ?? "–"}
+                                          </td>
+                                          <td className="max-w-32 truncate p-2 font-mono">
+                                            {testCase.expected ?? "–"}
+                                          </td>
+                                          <td className="max-w-32 truncate p-2 font-mono">
+                                            {testCase.actual ?? "–"}
+                                          </td>
+                                          <td
+                                            className={`p-2 font-semibold ${testCase.passed ? "text-success" : "text-danger"}`}
+                                          >
+                                            {testCase.passed
+                                              ? "Đạt"
+                                              : verdictLabel(
+                                                  testCase.verdict ??
+                                                    "wrong_answer",
+                                                )}
+                                          </td>
+                                          <td className="p-2">
+                                            {testCase.runtimeMs ?? "–"} ms
+                                          </td>
+                                        </tr>
+                                      ),
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
-                      )}
+                      ) : null}
                     </Card>
                   </aside>
                 )}
@@ -1414,6 +2096,61 @@ function messageOf(error: unknown) {
     : error instanceof Error
       ? error.message
       : "Có lỗi xảy ra";
+}
+
+function splitLines(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function parseInputOutputPairs(value: string) {
+  return splitLines(value).flatMap((line) => {
+    const separator = line.includes("=>")
+      ? "=>"
+      : line.includes("→")
+        ? "→"
+        : null;
+    if (!separator) return [];
+    const [input, ...output] = line.split(separator);
+    return input.trim() && output.join(separator).trim()
+      ? [{ input: input.trim(), output: output.join(separator).trim() }]
+      : [];
+  });
+}
+
+function parseProblemText(raw: string) {
+  const text = raw.replace(/\r/g, "").trim();
+  const title =
+    text
+      .split("\n")
+      .find((line) => line.trim())
+      ?.replace(/^#+\s*/, "") ?? "";
+  const section = (names: string[]) => {
+    const escaped = names
+      .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|");
+    const headings =
+      "Description|Problem|Input(?: Format)?|Output(?: Format)?|Constraints?|Examples?";
+    const match = text.match(
+      new RegExp(
+        `(?:^|\\n)(?:#+\\s*)?(?:${escaped})\\s*:?\\s*\\n?([\\s\\S]*?)(?=\\n(?:#+\\s*)?(?:${headings})\\s*:?|$)`,
+        "i",
+      ),
+    );
+    return match?.[1]?.trim() ?? "";
+  };
+  const statement = section(["Description", "Problem", "Mô tả", "Đề bài"]);
+  return {
+    title,
+    summary: statement.split("\n")[0]?.slice(0, 500) ?? "",
+    statement: statement || text,
+    inputFormat: section(["Input", "Input Format", "Đầu vào"]),
+    outputFormat: section(["Output", "Output Format", "Đầu ra"]),
+    constraints: section(["Constraint", "Constraints", "Ràng buộc"]),
+    examples: section(["Example", "Examples", "Ví dụ"]),
+  };
 }
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("vi-VN", {

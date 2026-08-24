@@ -1,8 +1,18 @@
 export type WorkspaceRole = "owner" | "deputy" | "member";
 
 export type WorkspacePermission =
+  | "view_doc"
   | "upload_doc"
+  | "edit_own_doc"
+  | "delete_own_doc"
+  | "manage_doc"
+  | "approve_doc"
+  | "view_exercise"
   | "create_exercise"
+  | "edit_own_exercise"
+  | "delete_own_exercise"
+  | "manage_exercise"
+  | "assign_exercise"
   | "edit_exercise"
   | "delete_doc"
   | "review_submission"
@@ -182,6 +192,12 @@ export interface WorkspaceOverview {
     targetType: string | null;
     createdAt: string;
   }>;
+  activityPagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
   submissionTrend: Array<{ label: string; value: number }>;
   completionTrend: Array<{ label: string; value: number }>;
   activityTrend: Array<{ label: string; value: number }>;
@@ -209,9 +225,21 @@ export interface WorkspaceDocument {
   storageKey: string | null;
   url: string | null;
   previewText: string | null;
-  status: "published" | "pending" | "changes" | "rejected" | "hidden";
+  status:
+    | "published"
+    | "pending"
+    | "changes"
+    | "rejected"
+    | "hidden"
+    | "removed";
   aiVerdict: string;
   uploadedAt: string;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  deleteReason: string | null;
+  canEdit: boolean;
+  canDelete: boolean;
+  canApprove: boolean;
 }
 export interface WorkspaceExercise {
   id: string;
@@ -222,6 +250,13 @@ export interface WorkspaceExercise {
   difficulty: "easy" | "medium" | "hard";
   status: string;
   source: string;
+  authorId: string | null;
+  publicationStatus: "published" | "hidden";
+  deletedAt: string | null;
+  deletedBy: string | null;
+  deleteReason: string | null;
+  canEdit: boolean;
+  canDelete: boolean;
   xp: number;
   dueAt: string | null;
   attemptLimit: number | null;
@@ -260,6 +295,7 @@ export interface WorkspaceAssignment {
 }
 export interface WorkspaceExerciseDetail extends WorkspaceExercise {
   assignments: WorkspaceAssignment[];
+  content: Record<string, unknown> | null;
   canManage: boolean;
   canReview: boolean;
 }
