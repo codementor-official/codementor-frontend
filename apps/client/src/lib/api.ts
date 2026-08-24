@@ -1,7 +1,11 @@
 import { createApiClient } from "@codementor/api-client";
 import type { ApiResponse, User } from "@codementor/types";
+import type {
+  JudgeRunPayload,
+  JudgeRunResult,
+  JudgeSpecPayload,
+} from "@codementor/solve";
 import { apiBaseUrl } from "@/lib/env";
-import type { JudgeRunResult } from "@/types/judge";
 import type { NotificationPage } from "@/types/notification";
 import type {
   WorkspaceDetail,
@@ -378,11 +382,13 @@ export const api = {
     createWorkspaceExercise: (
       slug: string,
       body: {
+        slug?: string;
         title: string;
         summary?: string;
         difficulty: "easy" | "medium" | "hard";
         source?: "manual" | "ai";
         xpReward?: number;
+        estimatedMinutes?: number | null;
         timeLimitMs?: number;
         memoryLimitKb?: number;
         content: Record<string, unknown>;
@@ -431,6 +437,9 @@ export const api = {
         allowLateSubmission?: boolean;
         memberIds?: string[];
         title?: string;
+        estimatedMinutes?: number | null;
+        timeLimitMs?: number;
+        memoryLimitKb?: number;
         summary?: string | null;
         difficulty?: "easy" | "medium" | "hard";
         publicationStatus?: "published" | "hidden";
@@ -672,30 +681,26 @@ export const api = {
    * đó được viết.
    */
   judge: {
-    run: (body: {
-      language: string;
-      sourceCode: string;
-      timeLimitMs: number;
-      memoryLimitKb: number;
-      /** Present = grade by calling this function; absent = pipe stdin. */
-      spec?: {
-        functionName: string;
-        parameters: { name: string; type: Record<string, unknown> }[];
-        returnType: Record<string, unknown>;
-      };
-      testCases: {
-        order: number;
-        input?: string;
-        args?: unknown[];
-        expected?: unknown;
-        weight?: number;
-      }[];
-      /**
-       * Bài code này mở từ trong một khóa học nào. Có mặt + chấm đạt = judge phát
-       * `evt.exercise.solved.v1` và learning-service đánh dấu bài học hoàn thành. Vắng mặt
-       * là luyện tập tự do: chấm xong là hết, không ghi tiến độ vào đâu.
-       */
-      context?: { courseId: string; lessonId: string; exerciseId: string };
-    }) => unwrap<JudgeRunResult>("/judge/run", { method: "POST", body }),
+    run: (
+      body: Omit<JudgeRunPayload, "spec"> & {
+        spec?:
+          | JudgeRunPayload["spec"]
+          | {
+              functionName: string;
+              parameters: { name: string; type: Record<string, unknown> }[];
+              returnType: Record<string, unknown>;
+            };
+        context?: { courseId: string; lessonId: string; exerciseId: string };
+      },
+    ) =>
+      unwrap<JudgeRunResult>("/judge/run", {
+        method: "POST",
+        body: body as unknown as Record<string, unknown>,
+      }),
+    starter: (body: { languages: string[]; spec: JudgeSpecPayload }) =>
+      unwrap<{
+        starters: Record<string, string>;
+        unsupported: Record<string, string>;
+      }>("/judge/starter", { method: "POST", body }),
   },
 };

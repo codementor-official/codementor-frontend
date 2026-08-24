@@ -265,6 +265,9 @@ export interface WorkspaceExercise {
   canEdit: boolean;
   canDelete: boolean;
   xp: number;
+  estimatedMinutes: number | null;
+  timeLimitMs: number;
+  memoryLimitKb: number;
   dueAt: string | null;
   attemptLimit: number | null;
   allowRetry: boolean;
@@ -301,7 +304,9 @@ export interface WorkspaceAssignment {
   latestSubmittedAt: string | null;
 }
 export interface WorkspaceExerciseDetail extends WorkspaceExercise {
-  assignedMemberIds: string[];
+  assignedMemberIds?: string[];
+  /** Compatibility with workspace-service instances that have not restarted yet. */
+  assignments?: WorkspaceAssignment[];
   content: Record<string, unknown> | null;
   canManage: boolean;
   canReview: boolean;

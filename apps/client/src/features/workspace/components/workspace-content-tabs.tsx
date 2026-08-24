@@ -21,7 +21,19 @@ import {
   X,
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Select, useToast } from "@codementor/ui";
+import {
+  ExerciseBriefForm,
+  ExerciseCodeForm,
+  type ExerciseContent,
+  type ExerciseDraft,
+} from "@codementor/solve";
+import {
+  ResizeHandle,
+  Select,
+  useResolvedTheme,
+  useToast,
+} from "@codementor/ui";
+import { Group, Panel } from "react-resizable-panels";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -1141,6 +1153,7 @@ function ExerciseAuthoringDialog({
   onSaved: () => Promise<void>;
 }) {
   const toast = useToast();
+  const theme = useResolvedTheme();
   const [mode, setMode] = useState<"manual" | "import" | "ai">("manual");
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -1148,12 +1161,6 @@ function ExerciseAuthoringDialog({
     "medium",
   );
   const [statement, setStatement] = useState("");
-  const [inputFormat, setInputFormat] = useState("");
-  const [outputFormat, setOutputFormat] = useState("");
-  const [constraints, setConstraints] = useState("");
-  const [examples, setExamples] = useState("");
-  const [testCases, setTestCases] = useState("");
-  const [tags, setTags] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [rawImport, setRawImport] = useState("");
   const [sourcePlatform, setSourcePlatform] = useState("leetcode");
@@ -1165,6 +1172,17 @@ function ExerciseAuthoringDialog({
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [generatedByAi, setGeneratedByAi] = useState(false);
+  const [exerciseSlug, setExerciseSlug] = useState("");
+  const [estimatedMinutes, setEstimatedMinutes] = useState("30");
+  const [timeLimitMs, setTimeLimitMs] = useState("1000");
+  const [memoryLimitKb, setMemoryLimitKb] = useState("262144");
+  const [studioContent, setStudioContent] = useState<ExerciseContent>({
+    statement: "",
+    ioMode: "stdin_stdout",
+    testCases: [],
+    languages: [],
+    evaluation: { checker: "trimmed", stopOnFirstFailure: false },
+  });
   const [memberIds, setMemberIds] = useState(initialMemberIds);
   const [busy, setBusy] = useState(false);
 
@@ -1174,14 +1192,19 @@ function ExerciseAuthoringDialog({
       setSummary("");
       setDifficulty("medium");
       setStatement("");
-      setInputFormat("");
-      setOutputFormat("");
-      setConstraints("");
-      setExamples("");
-      setTestCases("");
-      setTags("");
       setDueAt("");
       setGeneratedByAi(false);
+      setExerciseSlug("");
+      setEstimatedMinutes("30");
+      setTimeLimitMs("1000");
+      setMemoryLimitKb("262144");
+      setStudioContent({
+        statement: "",
+        ioMode: "stdin_stdout",
+        testCases: [],
+        languages: [],
+        evaluation: { checker: "trimmed", stopOnFirstFailure: false },
+      });
       setMemberIds(initialMemberIds);
       return;
     }
@@ -1190,16 +1213,40 @@ function ExerciseAuthoringDialog({
     setSummary(initialExercise.summary ?? "");
     setDifficulty(initialExercise.difficulty);
     setStatement(String(content.statement ?? ""));
-    setInputFormat(String(content.inputFormat ?? ""));
-    setOutputFormat(String(content.outputFormat ?? ""));
-    setConstraints(
-      Array.isArray(content.constraints)
-        ? content.constraints.map(String).join("\n")
-        : "",
-    );
+    setExerciseSlug(initialExercise.slug);
+    setEstimatedMinutes(String(initialExercise.estimatedMinutes ?? 30));
+    setTimeLimitMs(String(initialExercise.timeLimitMs ?? 1000));
+    setMemoryLimitKb(String(initialExercise.memoryLimitKb ?? 262144));
+    setStudioContent(content as ExerciseContent);
     setDueAt(initialExercise.dueAt ? toLocalInput(initialExercise.dueAt) : "");
-    setMemberIds(initialExercise.assignedMemberIds);
+    setMemberIds(
+      initialExercise.assignedMemberIds ??
+        initialExercise.assignments?.map((assignment) => assignment.memberId) ??
+        [],
+    );
   }, [initialExercise?.id]);
+
+  const studioDraft: ExerciseDraft = {
+    slug: exerciseSlug || slugifyExercise(title),
+    title,
+    summary,
+    difficulty,
+    estimatedMinutes,
+    timeLimitMs,
+    memoryLimitKb,
+    content: { ...studioContent, statement },
+  };
+  const updateStudioDraft = (next: ExerciseDraft) => {
+    setExerciseSlug(next.slug);
+    setTitle(next.title);
+    setSummary(next.summary);
+    setDifficulty(next.difficulty as "easy" | "medium" | "hard");
+    setEstimatedMinutes(next.estimatedMinutes);
+    setTimeLimitMs(next.timeLimitMs);
+    setMemoryLimitKb(next.memoryLimitKb);
+    setStatement(next.content.statement ?? "");
+    setStudioContent(next.content);
+  };
 
   const loadApprovedDocuments = useCallback(async () => {
     setDocumentsLoading(true);
@@ -1228,22 +1275,29 @@ function ExerciseAuthoringDialog({
   const importText = () => {
     setGeneratedByAi(false);
     const parsed = parseProblemText(rawImport);
+    const importedStatement = [
+      parsed.statement,
+      parsed.inputFormat ? `## Đầu vào\n${parsed.inputFormat}` : "",
+      parsed.outputFormat ? `## Đầu ra\n${parsed.outputFormat}` : "",
+      sourceUrl.trim()
+        ? `Nguồn tham khảo (${sourcePlatform}): ${sourceUrl.trim()}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
     setTitle(parsed.title);
     setSummary(parsed.summary);
-    setStatement(
-      [
-        parsed.statement,
-        sourceUrl.trim()
-          ? `Nguồn tham khảo (${sourcePlatform}): ${sourceUrl.trim()}`
-          : "",
-      ]
-        .filter(Boolean)
-        .join("\n\n"),
-    );
-    setInputFormat(parsed.inputFormat);
-    setOutputFormat(parsed.outputFormat);
-    setConstraints(parsed.constraints);
-    setExamples(parsed.examples);
+    setExerciseSlug(slugifyExercise(parsed.title));
+    setStatement(importedStatement);
+    setStudioContent((current) => ({
+      ...current,
+      statement: importedStatement,
+      constraints: splitLines(parsed.constraints),
+      examples: parseInputOutputPairs(parsed.examples).map((item) => ({
+        input: item.input,
+        output: item.output,
+      })),
+    }));
     toast.success("Đã chuyển nội dung sang form; hãy rà soát trước khi lưu");
   };
   const generate = async () => {
@@ -1262,12 +1316,9 @@ function ExerciseAuthoringDialog({
       setSummary(draft.summary);
       setDifficulty(draft.difficulty);
       setStatement(String(draft.content.statement ?? ""));
+      setExerciseSlug(slugifyExercise(draft.title));
+      setStudioContent(draft.content as ExerciseContent);
       setGeneratedByAi(true);
-      setConstraints(
-        Array.isArray(draft.content.constraints)
-          ? draft.content.constraints.join("\n")
-          : "",
-      );
       toast.success(
         `Đã tạo bản nháp từ ${draft.sourceDocuments.length} tài liệu đã duyệt`,
       );
@@ -1285,34 +1336,19 @@ function ExerciseAuthoringDialog({
     }
     setBusy(true);
     try {
-      const statementWithFormats = [
-        statement.trim(),
-        inputFormat.trim() ? `## Đầu vào\n${inputFormat.trim()}` : "",
-        outputFormat.trim() ? `## Đầu ra\n${outputFormat.trim()}` : "",
-        tags.trim() ? `## Tags\n${tags.trim()}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n\n");
       const content = {
-        ...(initialExercise?.content ?? {}),
-        statement: statementWithFormats,
-        ioMode: "stdin_stdout",
-        constraints: splitLines(constraints),
-        examples: parseInputOutputPairs(examples).map((item) => ({
-          input: item.input,
-          output: item.output,
-        })),
-        testCases: parseInputOutputPairs(testCases).map((item, index) => ({
-          order: index + 1,
-          input: item.input,
-          expected: item.output,
-          visibility: index === 0 ? "public" : "hidden",
-        })),
-        languages: [],
-        evaluation: { checker: "trimmed", stopOnFirstFailure: false },
+        ...studioContent,
+        statement: statement.trim(),
+      };
+      const metadata = {
+        slug: studioDraft.slug.trim(),
+        estimatedMinutes: Number(estimatedMinutes) || null,
+        timeLimitMs: Number(timeLimitMs) || 1000,
+        memoryLimitKb: Number(memoryLimitKb) || 262144,
       };
       if (initialExercise) {
         await api.workspaces.updateWorkspaceExercise(slug, initialExercise.id, {
+          ...metadata,
           title: title.trim(),
           summary: summary.trim() || null,
           difficulty,
@@ -1322,6 +1358,7 @@ function ExerciseAuthoringDialog({
         });
       } else
         await api.workspaces.createWorkspaceExercise(slug, {
+          ...metadata,
           title: title.trim(),
           summary: summary.trim() || undefined,
           difficulty,
@@ -1351,7 +1388,7 @@ function ExerciseAuthoringDialog({
       aria-modal="true"
       aria-label="Tạo bài tập Workspace"
     >
-      <Card className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden">
+      <Card className="flex h-[96dvh] w-full max-w-[1600px] flex-col overflow-hidden p-0">
         <div className="sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b border-border-soft bg-surface p-4">
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-navy">
@@ -1525,58 +1562,39 @@ function ExerciseAuthoringDialog({
               </Button>
             </Card>
           )}
-          <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Tiêu đề" value={title} onChange={setTitle} />
-            <Select
-              label="Độ khó"
-              value={difficulty}
-              onChange={(value) => setDifficulty(value as typeof difficulty)}
-              options={[
-                { value: "easy", label: "Cơ bản" },
-                { value: "medium", label: "Trung bình" },
-                { value: "hard", label: "Nâng cao" },
-              ]}
-            />
-            <Field label="Tóm tắt" value={summary} onChange={setSummary} />
-            <label className="text-xs font-medium text-text-muted">
-              Hạn nộp
-              <input
-                type="datetime-local"
-                className={`${inputClass} mt-1 block w-full`}
-                value={dueAt}
-                onChange={(event) => setDueAt(event.target.value)}
-              />
-            </label>
+          <div className="h-[min(66vh,760px)] min-h-[540px] overflow-hidden rounded-xl border border-border-soft bg-bg/30">
+            <Group orientation="horizontal" className="h-full">
+              <Panel id="workspace-brief" defaultSize="50%" minSize="30%">
+                <div className="h-full overflow-y-auto p-3">
+                  <ExerciseBriefForm
+                    value={studioDraft}
+                    onChange={updateStudioDraft}
+                    slugLocked={Boolean(initialExercise)}
+                  />
+                </div>
+              </Panel>
+              <ResizeHandle orientation="horizontal" />
+              <Panel id="workspace-code" defaultSize="50%" minSize="30%">
+                <div className="h-full overflow-y-auto p-3">
+                  <ExerciseCodeForm
+                    value={studioDraft}
+                    onChange={updateStudioDraft}
+                    judge={api.judge}
+                    theme={theme}
+                  />
+                </div>
+              </Panel>
+            </Group>
           </div>
-          <TextArea label="Đề bài" value={statement} onChange={setStatement} />
-          <div className="grid gap-3 md:grid-cols-2">
-            <TextArea
-              label="Định dạng đầu vào"
-              value={inputFormat}
-              onChange={setInputFormat}
+          <label className="block text-xs font-medium text-text-muted">
+            Hạn nộp của Workspace
+            <input
+              type="datetime-local"
+              className={`${inputClass} mt-1 block w-full max-w-sm`}
+              value={dueAt}
+              onChange={(event) => setDueAt(event.target.value)}
             />
-            <TextArea
-              label="Định dạng đầu ra"
-              value={outputFormat}
-              onChange={setOutputFormat}
-            />
-            <TextArea
-              label="Ràng buộc (mỗi dòng một mục)"
-              value={constraints}
-              onChange={setConstraints}
-            />
-            <TextArea label="Tags" value={tags} onChange={setTags} />
-            <TextArea
-              label="Ví dụ (input => output)"
-              value={examples}
-              onChange={setExamples}
-            />
-            <TextArea
-              label="Test case (input => output)"
-              value={testCases}
-              onChange={setTestCases}
-            />
-          </div>
+          </label>
           <WorkspaceMemberSelector
             members={members}
             selectedIds={memberIds}
@@ -1698,7 +1716,11 @@ function ExerciseDetailDialog({
       setDifficulty(next.difficulty);
       setPublicationStatus(next.publicationStatus);
       setStatement(String(next.content?.statement ?? ""));
-      setAssigned(next.assignedMemberIds);
+      setAssigned(
+        next.assignedMemberIds ??
+          next.assignments?.map((assignment) => assignment.memberId) ??
+          [],
+      );
     } catch (e) {
       toast.error(messageOf(e));
       onClose();
@@ -2560,6 +2582,17 @@ function toLocalInput(value: string) {
   const date = new Date(value);
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function slugifyExercise(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 160);
 }
 function putFile(
   url: string,

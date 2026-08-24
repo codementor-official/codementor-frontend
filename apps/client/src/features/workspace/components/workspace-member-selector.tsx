@@ -6,7 +6,7 @@ import type { WorkspaceMember } from "../types";
 
 export function WorkspaceMemberSelector({
   members,
-  selectedIds,
+  selectedIds = [],
   onChange,
   id,
 }: {
