@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { resolveVideo } from "@codementor/utils";
 import { Card } from "@/components/ui/card";
+import { REQUIRED_WATCH_RATIO } from "@/lib/video-progress";
 import type { LessonContent, LessonProgress } from "@/types/catalogue";
 import type { FlatLesson } from "./lesson-shell";
+import { VideoLessonPlayer, type WatchGate } from "./video-lesson-player";
 
 /** Long enough that skipping is deliberate, short enough not to punish a fast reader. */
 const DWELL_SECONDS = 5;
@@ -59,11 +61,38 @@ export function TheoryLesson({
   saving: boolean;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
-  const canFinish = useReadingGate(endRef);
+  const readingGate = useReadingGate(endRef);
   const isVideo = lesson.type === "video";
   // `resolveVideo` trả `null` cho URL rỗng hoặc sai — nên một bài video chưa soạn xong
   // rơi đúng vào nhánh "chưa có nội dung" bên dưới thay vì vẽ một khung phát rỗng.
-  const video = isVideo ? resolveVideo(content?.media?.url) : null;
+  // Ghi nhớ theo URL: đối tượng mới mỗi lần render sẽ làm khung phát dựng lại liên tục.
+  const mediaUrl = content?.media?.url;
+  const video = useMemo(() => (isVideo ? resolveVideo(mediaUrl) : null), [isVideo, mediaUrl]);
+
+  const [watchGate, setWatchGate] = useState<WatchGate>({ measurable: null, enough: false });
+  // Giữ nguyên đối tượng cũ khi hai giá trị không đổi — khung phát báo về 4 lần mỗi giây,
+  // và nhận thẳng mọi lần báo là render lại cả bài học 4 lần mỗi giây.
+  const handleGateChange = useCallback((next: WatchGate) => {
+    setWatchGate((current) =>
+      current.measurable === next.measurable && current.enough === next.enough ? current : next,
+    );
+  }, []);
+
+  /*
+   * Bài có video thì cổng là "đã xem đủ 80%", và chính nó quyết định bao giờ được sang bài
+   * mới: bài kế tiếp chỉ mở sau khi bài này `completed`, mà `completed` chỉ ghi được từ cái
+   * nút bên dưới.
+   *
+   * `measurable === false` là lúc không đọc nổi thời lượng (SDK bị chặn, video tắt nhúng).
+   * Rơi về cổng đọc thường, KHÔNG khoá luôn: một script không tải được không phải lý do
+   * chính đáng để nhốt học viên lại trong một bài học.
+   */
+  const canFinish = video ? (watchGate.measurable === false ? readingGate : watchGate.enough) : readingGate;
+  const finishHint = video
+    ? watchGate.measurable === false
+      ? undefined
+      : `Xem ít nhất ${Math.round(REQUIRED_WATCH_RATIO * 100)}% video để hoàn thành bài`
+    : `Đọc hết bài hoặc đợi ${DWELL_SECONDS} giây`;
   // Stamped in an effect, not during render: `Date.now()` is impure, and under strict mode
   // a render can run twice, which would put the clock start in the wrong place.
   const openedAt = useRef(0);
@@ -103,24 +132,18 @@ export function TheoryLesson({
         {/* Bài video: khung phát đứng TRƯỚC thân bài, không thay thế nó. Giảng viên vẫn
           * viết được ghi chú, dàn ý hay mã nguồn kèm theo bên dưới video. */}
         {video && (
-          <div className="mt-5">
-            {video.kind === "file" ? (
-              <video
-                className="w-full rounded-lg border border-border-soft bg-ink-fixed"
-                controls
-                preload="metadata"
-                src={video.src}
-              />
-            ) : (
-              <iframe
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
-                allowFullScreen
-                className="aspect-video w-full rounded-lg border border-border-soft"
-                src={video.src}
-                title={lesson.title}
-              />
-            )}
-          </div>
+          <VideoLessonPlayer
+            authoredDurationSeconds={content?.media?.durationSeconds}
+            completed={done}
+            // Đổi bài là dựng lại trình phát từ đầu. Thiếu `key`, thời lượng và bộ đếm của
+            // bài TRƯỚC ở lại, và cổng 80% của bài mới đem phần đã xem chia cho thời lượng
+            // của một video khác.
+            key={lesson.id}
+            lessonId={lesson.id}
+            onGateChange={handleGateChange}
+            title={lesson.title}
+            video={video}
+          />
         )}
 
         {content?.contentHtml ? (
@@ -159,7 +182,7 @@ export function TheoryLesson({
           type="button"
           onClick={finish}
           disabled={!canFinish || saving}
-          title={canFinish ? undefined : `Đọc hết bài hoặc đợi ${DWELL_SECONDS} giây`}
+          title={canFinish ? undefined : finishHint}
           className="mt-5 flex items-center gap-1.5 rounded-md bg-navy px-3.5 py-2 text-xs font-semibold text-on-ink transition-colors hover:bg-navy/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
