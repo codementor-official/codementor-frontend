@@ -301,7 +301,7 @@ export interface WorkspaceAssignment {
   latestSubmittedAt: string | null;
 }
 export interface WorkspaceExerciseDetail extends WorkspaceExercise {
-  assignments: WorkspaceAssignment[];
+  assignedMemberIds: string[];
   content: Record<string, unknown> | null;
   canManage: boolean;
   canReview: boolean;

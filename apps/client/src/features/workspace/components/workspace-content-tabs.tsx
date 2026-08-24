@@ -638,6 +638,8 @@ export function WorkspaceExercisesTab({
   const [removing, setRemoving] = useState<WorkspaceExercise | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [authoringOpen, setAuthoringOpen] = useState(false);
+  const [studioExercise, setStudioExercise] =
+    useState<WorkspaceExerciseDetail | null>(null);
   const assignable = members.filter((m) => m.role !== "owner");
   const [memberIds, setMemberIds] = useState<string[]>(
     assignable.map((m) => m.id),
@@ -773,7 +775,13 @@ export function WorkspaceExercisesTab({
                 {memberIds.length} thành viên đang được chọn
               </p>
             </div>
-            <Button size="sm" onClick={() => setAuthoringOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setStudioExercise(null);
+                setAuthoringOpen(true);
+              }}
+            >
               <Sparkles className="h-3.5 w-3.5" />
               Tạo bài mới
             </Button>
@@ -1085,6 +1093,11 @@ export function WorkspaceExercisesTab({
           members={assignable}
           onClose={() => setDetailId(null)}
           onUpdated={load}
+          onOpenStudio={(exercise) => {
+            setDetailId(null);
+            setStudioExercise(exercise);
+            setAuthoringOpen(true);
+          }}
         />
       )}
       {authoringOpen && (
@@ -1092,8 +1105,12 @@ export function WorkspaceExercisesTab({
           slug={detail.slug}
           members={assignable}
           initialMemberIds={memberIds}
-          onClose={() => setAuthoringOpen(false)}
-          onCreated={load}
+          initialExercise={studioExercise}
+          onClose={() => {
+            setAuthoringOpen(false);
+            setStudioExercise(null);
+          }}
+          onSaved={load}
         />
       )}
       <ConfirmDialog
@@ -1112,14 +1129,16 @@ function ExerciseAuthoringDialog({
   slug,
   members,
   initialMemberIds,
+  initialExercise,
   onClose,
-  onCreated,
+  onSaved,
 }: {
   slug: string;
   members: WorkspaceMember[];
   initialMemberIds: string[];
+  initialExercise: WorkspaceExerciseDetail | null;
   onClose: () => void;
-  onCreated: () => Promise<void>;
+  onSaved: () => Promise<void>;
 }) {
   const toast = useToast();
   const [mode, setMode] = useState<"manual" | "import" | "ai">("manual");
@@ -1137,17 +1156,90 @@ function ExerciseAuthoringDialog({
   const [tags, setTags] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [rawImport, setRawImport] = useState("");
+  const [sourcePlatform, setSourcePlatform] = useState("leetcode");
+  const [sourceUrl, setSourceUrl] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
+  const [documentPage, setDocumentPage] = useState(1);
+  const [documentQuery, setDocumentQuery] = useState("");
+  const [documents, setDocuments] = useState(EMPTY_PAGE<WorkspaceDocument>());
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
   const [generatedByAi, setGeneratedByAi] = useState(false);
   const [memberIds, setMemberIds] = useState(initialMemberIds);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!initialExercise) {
+      setTitle("");
+      setSummary("");
+      setDifficulty("medium");
+      setStatement("");
+      setInputFormat("");
+      setOutputFormat("");
+      setConstraints("");
+      setExamples("");
+      setTestCases("");
+      setTags("");
+      setDueAt("");
+      setGeneratedByAi(false);
+      setMemberIds(initialMemberIds);
+      return;
+    }
+    const content = initialExercise.content ?? {};
+    setTitle(initialExercise.title);
+    setSummary(initialExercise.summary ?? "");
+    setDifficulty(initialExercise.difficulty);
+    setStatement(String(content.statement ?? ""));
+    setInputFormat(String(content.inputFormat ?? ""));
+    setOutputFormat(String(content.outputFormat ?? ""));
+    setConstraints(
+      Array.isArray(content.constraints)
+        ? content.constraints.map(String).join("\n")
+        : "",
+    );
+    setDueAt(initialExercise.dueAt ? toLocalInput(initialExercise.dueAt) : "");
+    setMemberIds(initialExercise.assignedMemberIds);
+  }, [initialExercise?.id]);
+
+  const loadApprovedDocuments = useCallback(async () => {
+    setDocumentsLoading(true);
+    try {
+      setDocuments(
+        await api.workspaces.documents(slug, {
+          page: documentPage,
+          limit: 8,
+          q: documentQuery.trim() || undefined,
+          status: "published",
+        }),
+      );
+    } catch (error) {
+      toast.error(messageOf(error, "Không thể tải tài liệu đã duyệt."));
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }, [documentPage, documentQuery, slug, toast]);
+
+  useEffect(() => {
+    if (mode !== "ai") return;
+    const timer = window.setTimeout(() => void loadApprovedDocuments(), 200);
+    return () => window.clearTimeout(timer);
+  }, [mode, loadApprovedDocuments]);
 
   const importText = () => {
     setGeneratedByAi(false);
     const parsed = parseProblemText(rawImport);
     setTitle(parsed.title);
     setSummary(parsed.summary);
-    setStatement(parsed.statement);
+    setStatement(
+      [
+        parsed.statement,
+        sourceUrl.trim()
+          ? `Nguồn tham khảo (${sourcePlatform}): ${sourceUrl.trim()}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+    );
     setInputFormat(parsed.inputFormat);
     setOutputFormat(parsed.outputFormat);
     setConstraints(parsed.constraints);
@@ -1155,12 +1247,16 @@ function ExerciseAuthoringDialog({
     toast.success("Đã chuyển nội dung sang form; hãy rà soát trước khi lưu");
   };
   const generate = async () => {
-    if (!aiPrompt.trim()) return;
+    if (!aiPrompt.trim() || selectedDocumentIds.length === 0) {
+      toast.error("Hãy nhập yêu cầu và chọn ít nhất một tài liệu đã duyệt");
+      return;
+    }
     setBusy(true);
     try {
       const draft = await api.workspaces.generateWorkspaceExerciseDraft(slug, {
         prompt: aiPrompt.trim(),
         difficulty,
+        documentIds: selectedDocumentIds,
       });
       setTitle(draft.title);
       setSummary(draft.summary);
@@ -1197,33 +1293,49 @@ function ExerciseAuthoringDialog({
       ]
         .filter(Boolean)
         .join("\n\n");
-      await api.workspaces.createWorkspaceExercise(slug, {
-        title: title.trim(),
-        summary: summary.trim() || undefined,
-        difficulty,
-        source: generatedByAi ? "ai" : "manual",
-        dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
-        memberIds,
-        content: {
-          statement: statementWithFormats,
-          ioMode: "stdin_stdout",
-          constraints: splitLines(constraints),
-          examples: parseInputOutputPairs(examples).map((item) => ({
-            input: item.input,
-            output: item.output,
-          })),
-          testCases: parseInputOutputPairs(testCases).map((item, index) => ({
-            order: index + 1,
-            input: item.input,
-            expected: item.output,
-            visibility: index === 0 ? "public" : "hidden",
-          })),
-          languages: [],
-          evaluation: { checker: "trimmed", stopOnFirstFailure: false },
-        },
-      });
-      toast.success("Đã tạo và phân công bài tập");
-      await onCreated();
+      const content = {
+        ...(initialExercise?.content ?? {}),
+        statement: statementWithFormats,
+        ioMode: "stdin_stdout",
+        constraints: splitLines(constraints),
+        examples: parseInputOutputPairs(examples).map((item) => ({
+          input: item.input,
+          output: item.output,
+        })),
+        testCases: parseInputOutputPairs(testCases).map((item, index) => ({
+          order: index + 1,
+          input: item.input,
+          expected: item.output,
+          visibility: index === 0 ? "public" : "hidden",
+        })),
+        languages: [],
+        evaluation: { checker: "trimmed", stopOnFirstFailure: false },
+      };
+      if (initialExercise) {
+        await api.workspaces.updateWorkspaceExercise(slug, initialExercise.id, {
+          title: title.trim(),
+          summary: summary.trim() || null,
+          difficulty,
+          dueAt: dueAt ? new Date(dueAt).toISOString() : null,
+          memberIds,
+          content,
+        });
+      } else
+        await api.workspaces.createWorkspaceExercise(slug, {
+          title: title.trim(),
+          summary: summary.trim() || undefined,
+          difficulty,
+          source: generatedByAi ? "ai" : "manual",
+          dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
+          memberIds,
+          content,
+        });
+      toast.success(
+        initialExercise
+          ? "Đã cập nhật bài tập từ Studio"
+          : "Đã tạo và phân công bài tập",
+      );
+      await onSaved();
       onClose();
     } catch (error) {
       toast.error(messageOf(error));
@@ -1243,10 +1355,14 @@ function ExerciseAuthoringDialog({
         <div className="sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b border-border-soft bg-surface p-4">
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-navy">
-              Tạo bài tập Workspace
+              {initialExercise
+                ? "Chỉnh sửa bài tập trong Studio"
+                : "Studio bài tập Workspace"}
             </h2>
             <p className="mt-1 text-xs text-text-muted">
-              Nội dung luôn được lưu thành bản có thể chỉnh sửa trước khi giao.
+              {initialExercise
+                ? "Rà soát nội dung và phân công trước khi lưu thay đổi."
+                : "Mặc định tự nhập; có thể nhập đề từ nền tảng hoặc tạo bản nháp từ tài liệu."}
             </p>
           </div>
           <button
@@ -1262,9 +1378,9 @@ function ExerciseAuthoringDialog({
           <div className="grid gap-2 sm:grid-cols-3">
             {(
               [
-                ["manual", "Nhập thủ công"],
-                ["import", "Import đề bài"],
-                ["ai", "Tạo từ tài liệu"],
+                ["manual", "Tự nhập"],
+                ["import", "Từ LeetCode / Codeforces"],
+                ["ai", "AI từ tài liệu"],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -1280,14 +1396,33 @@ function ExerciseAuthoringDialog({
           {mode === "import" && (
             <Card className="space-y-3 p-4">
               <p className="text-xs text-text-muted">
-                Hỗ trợ các mục phổ biến: Description, Input, Output,
-                Constraints, Example.
+                Chọn nguồn, dán URL để lưu tham chiếu và dán nội dung đề bài.
+                Studio nhận diện các mục Description, Input, Output, Constraints
+                và Example trước khi chuyển sang form chỉnh sửa.
               </p>
+              <div className="grid gap-3 md:grid-cols-[220px_1fr]">
+                <Select
+                  label="Nền tảng"
+                  value={sourcePlatform}
+                  onChange={setSourcePlatform}
+                  options={[
+                    { value: "leetcode", label: "LeetCode" },
+                    { value: "codeforces", label: "Codeforces" },
+                    { value: "other", label: "Nền tảng khác" },
+                  ]}
+                />
+                <Field
+                  label="URL bài tập (không bắt buộc)"
+                  value={sourceUrl}
+                  onChange={setSourceUrl}
+                  placeholder="https://leetcode.com/problems/..."
+                />
+              </div>
               <textarea
                 className={`${inputClass} min-h-48 w-full resize-y font-mono`}
                 value={rawImport}
                 onChange={(event) => setRawImport(event.target.value)}
-                placeholder="Dán đề bài theo format LeetCode..."
+                placeholder="Dán đề bài từ LeetCode, Codeforces hoặc nền tảng khác..."
               />
               <Button
                 size="sm"
@@ -1304,6 +1439,74 @@ function ExerciseAuthoringDialog({
                 Hệ thống chỉ đọc tài liệu đã duyệt của Workspace và trả về bản
                 nháp để bạn rà soát.
               </p>
+              <div className="rounded-lg border border-border-soft bg-bg/40 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="relative min-w-52 flex-1">
+                    <span className="sr-only">Tìm tài liệu đã duyệt</span>
+                    <input
+                      className={`${inputClass} h-9 w-full py-1.5 text-xs`}
+                      value={documentQuery}
+                      onChange={(event) => {
+                        setDocumentQuery(event.target.value);
+                        setDocumentPage(1);
+                      }}
+                      placeholder="Tìm tài liệu đã duyệt..."
+                    />
+                  </label>
+                  <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                    {selectedDocumentIds.length} tài liệu đã chọn
+                  </span>
+                </div>
+                <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                  {documentsLoading ? (
+                    <p className="col-span-full py-4 text-center text-xs text-text-faint">
+                      Đang tải tài liệu...
+                    </p>
+                  ) : documents.items.length === 0 ? (
+                    <p className="col-span-full py-4 text-center text-xs text-text-faint">
+                      Không tìm thấy tài liệu đã duyệt.
+                    </p>
+                  ) : (
+                    documents.items.map((document) => {
+                      const checked = selectedDocumentIds.includes(document.id);
+                      return (
+                        <label
+                          key={document.id}
+                          className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-xs ${checked ? "border-primary bg-primary/5" : "border-border-soft"}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setSelectedDocumentIds((current) =>
+                                current.includes(document.id)
+                                  ? current.filter((id) => id !== document.id)
+                                  : [...current, document.id],
+                              )
+                            }
+                          />
+                          <span className="min-w-0 flex-1 truncate font-medium text-navy">
+                            {document.title}
+                          </span>
+                          <span className="shrink-0 text-text-faint">
+                            {document.docType}
+                          </span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+                {documents.totalPages > 1 && (
+                  <div className="mt-2">
+                    <Pagination
+                      page={documentPage}
+                      pageCount={documents.totalPages}
+                      onChange={setDocumentPage}
+                      label="Phân trang tài liệu đã duyệt"
+                    />
+                  </div>
+                )}
+              </div>
               <textarea
                 className={`${inputClass} min-h-28 w-full resize-y`}
                 value={aiPrompt}
@@ -1313,7 +1516,9 @@ function ExerciseAuthoringDialog({
               <Button
                 size="sm"
                 onClick={() => void generate()}
-                disabled={busy || !aiPrompt.trim()}
+                disabled={
+                  busy || !aiPrompt.trim() || !selectedDocumentIds.length
+                }
               >
                 {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Tạo bản nháp
@@ -1372,32 +1577,11 @@ function ExerciseAuthoringDialog({
               onChange={setTestCases}
             />
           </div>
-          <fieldset className="rounded-lg border border-border-soft p-3">
-            <legend className="px-1 text-xs font-semibold text-navy">
-              Phân công ({memberIds.length}/{members.length})
-            </legend>
-            <div className="grid max-h-48 gap-2 overflow-y-auto sm:grid-cols-2 xl:grid-cols-4">
-              {members.map((member) => (
-                <label
-                  key={member.id}
-                  className="flex items-center gap-2 rounded border border-border-soft px-2 py-1.5 text-xs"
-                >
-                  <input
-                    type="checkbox"
-                    checked={memberIds.includes(member.id)}
-                    onChange={() =>
-                      setMemberIds((current) =>
-                        current.includes(member.id)
-                          ? current.filter((id) => id !== member.id)
-                          : [...current, member.id],
-                      )
-                    }
-                  />
-                  <span className="truncate">{member.user.displayName}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <WorkspaceMemberSelector
+            members={members}
+            selectedIds={memberIds}
+            onChange={setMemberIds}
+          />
         </div>
         <div className="flex justify-end gap-2 border-t border-border-soft p-4">
           <Button variant="outline" onClick={onClose} disabled={busy}>
@@ -1405,7 +1589,7 @@ function ExerciseAuthoringDialog({
           </Button>
           <Button onClick={() => void save()} disabled={busy}>
             {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Lưu bài tập
+            {initialExercise ? "Lưu thay đổi" : "Lưu bài tập"}
           </Button>
         </div>
       </Card>
@@ -1417,10 +1601,12 @@ function Field({
   label,
   value,
   onChange,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }) {
   return (
     <label className="text-xs font-medium text-text-muted">
@@ -1428,6 +1614,7 @@ function Field({
       <input
         className={`${inputClass} mt-1 block w-full`}
         value={value}
+        placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
     </label>
@@ -1461,12 +1648,14 @@ function ExerciseDetailDialog({
   members,
   onClose,
   onUpdated,
+  onOpenStudio,
 }: {
   slug: string;
   id: string;
   members: WorkspaceMember[];
   onClose: () => void;
   onUpdated: () => Promise<void>;
+  onOpenStudio: (exercise: WorkspaceExerciseDetail) => void;
 }) {
   const toast = useToast();
   const [data, setData] = useState<WorkspaceExerciseDetail | null>(null);
@@ -1476,6 +1665,11 @@ function ExerciseDetailDialog({
   const [submissions, setSubmissions] = useState<WorkspaceSubmission[]>([]);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState("");
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [assignments, setAssignments] =
+    useState(EMPTY_PAGE<WorkspaceAssignment>());
+  const [assignmentPage, setAssignmentPage] = useState(1);
+  const [assignmentSearch, setAssignmentSearch] = useState("");
+  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
   const [dueAt, setDueAt] = useState("");
   const [attemptLimit, setAttemptLimit] = useState("");
   const [title, setTitle] = useState("");
@@ -1504,7 +1698,7 @@ function ExerciseDetailDialog({
       setDifficulty(next.difficulty);
       setPublicationStatus(next.publicationStatus);
       setStatement(String(next.content?.statement ?? ""));
-      setAssigned(next.assignments.map((item) => item.memberId));
+      setAssigned(next.assignedMemberIds);
     } catch (e) {
       toast.error(messageOf(e));
       onClose();
@@ -1515,6 +1709,27 @@ function ExerciseDetailDialog({
   useEffect(() => {
     void loadDetail();
   }, [loadDetail]);
+  const loadAssignments = useCallback(async () => {
+    setAssignmentsLoading(true);
+    try {
+      setAssignments(
+        await api.workspaces.assignments(slug, {
+          page: assignmentPage,
+          limit: 10,
+          q: assignmentSearch.trim() || undefined,
+          groupExerciseId: id,
+        }),
+      );
+    } catch (error) {
+      toast.error(messageOf(error, "Không thể tải danh sách thành viên."));
+    } finally {
+      setAssignmentsLoading(false);
+    }
+  }, [assignmentPage, assignmentSearch, id, slug, toast]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadAssignments(), 200);
+    return () => window.clearTimeout(timer);
+  }, [loadAssignments]);
   const openHistory = async (assignment: WorkspaceAssignment) => {
     setSelectedAssignment(assignment);
     setHistoryLoading(true);
@@ -1607,9 +1822,22 @@ function ExerciseDetailDialog({
               Phân công, tiến độ và lịch sử từng lần nộp nằm chung tại đây.
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Đóng">
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {data?.canManage && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onOpenStudio(data)}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Mở Studio
+              </Button>
+            )}
+            <button type="button" onClick={onClose} aria-label="Đóng">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-5">
           {loading ? (
@@ -1705,7 +1933,8 @@ function ExerciseDetailDialog({
                         Thành viên được giao
                       </h3>
                       <p className="text-xs text-text-faint">
-                        Chọn một thành viên để xem lịch sử nộp ở bên phải.
+                        Tìm một thành viên và chọn để xem lịch sử nộp ở bên
+                        phải.
                       </p>
                     </div>
                     {selectedAssignment && (
@@ -1731,7 +1960,25 @@ function ExerciseDetailDialog({
                       </div>
                     )}
                   </div>
-                  {data.assignments.length === 0 ? (
+                  <div className="col-span-full flex flex-wrap items-center gap-2">
+                    <input
+                      className={`${inputClass} h-9 min-w-56 flex-1 py-1.5 text-xs`}
+                      value={assignmentSearch}
+                      onChange={(event) => {
+                        setAssignmentSearch(event.target.value);
+                        setAssignmentPage(1);
+                      }}
+                      placeholder="Tìm thành viên được giao..."
+                    />
+                    <span className="text-xs text-text-faint">
+                      {assignments.total} thành viên
+                    </span>
+                  </div>
+                  {assignmentsLoading ? (
+                    <div className="col-span-full">
+                      <Loading />
+                    </div>
+                  ) : assignments.items.length === 0 ? (
                     <Card className="border-dashed p-6 text-center text-xs text-text-faint">
                       Bài công khai này chưa được giao cho bạn. Bạn vẫn có thể
                       mở bài để luyện tập.
@@ -1749,7 +1996,7 @@ function ExerciseDetailDialog({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border-soft">
-                          {data.assignments.map((item) => (
+                          {assignments.items.map((item) => (
                             <tr
                               key={item.id}
                               aria-selected={selectedAssignment?.id === item.id}
@@ -1775,6 +2022,14 @@ function ExerciseDetailDialog({
                       </table>
                     </div>
                   )}
+                  <div className="col-span-full">
+                    <Pagination
+                      page={assignmentPage}
+                      pageCount={assignments.totalPages}
+                      onChange={setAssignmentPage}
+                      label="Phân trang thành viên được giao"
+                    />
+                  </div>
                   {selectedAssignment && (
                     <aside
                       className="min-w-0 overflow-hidden"

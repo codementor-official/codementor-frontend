@@ -466,6 +466,7 @@ export const api = {
         limit?: number;
         q?: string;
         status?: string;
+        groupExerciseId?: string;
       } = {},
     ) =>
       unwrap<WorkspaceContentPage<WorkspaceAssignment>>(
