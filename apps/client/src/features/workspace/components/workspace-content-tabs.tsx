@@ -445,7 +445,7 @@ function DocumentPreviewDialog({
       aria-label={`Xem tài liệu ${document.title}`}
     >
       <Card className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden">
-        <div className="flex flex-wrap items-start gap-3 border-b border-border-soft p-4">
+        <div className="sticky top-0 z-10 flex shrink-0 flex-wrap items-start gap-3 border-b border-border-soft bg-surface p-4">
           <FileText className="mt-0.5 h-5 w-5 text-primary" />
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-base font-bold text-navy">
@@ -557,39 +557,51 @@ function DocumentReportDialog({
       aria-modal="true"
       aria-label="Báo cáo tài liệu"
     >
-      <Card className="w-full max-w-lg space-y-4 p-5">
-        <div>
-          <h2 className="text-base font-bold text-navy">Báo cáo tài liệu</h2>
-          <p className="mt-1 text-xs text-text-muted">{document.title}</p>
-        </div>
-        <Select
-          label="Lý do"
-          value={category}
-          onChange={setCategory}
-          options={[
-            { value: "spam", label: "Spam" },
-            { value: "inappropriate", label: "Nội dung không phù hợp" },
-            { value: "copyright", label: "Vi phạm bản quyền" },
-            { value: "harmful", label: "Nội dung có hại" },
-            { value: "irrelevant", label: "Không liên quan Workspace" },
-            { value: "other", label: "Lý do khác" },
-          ]}
-        />
-        <label className="block text-xs font-medium text-text-muted">
-          Ghi chú (không bắt buộc)
-          <textarea
-            className={`${inputClass} mt-1 min-h-24 w-full resize-y`}
-            value={note}
-            maxLength={1000}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder="Mô tả ngắn để quản trị viên kiểm tra chính xác hơn..."
+      <Card className="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden p-0">
+        <header className="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-border-soft bg-surface px-5 py-4">
+          <div>
+            <h2 className="text-base font-bold text-navy">Báo cáo tài liệu</h2>
+            <p className="mt-1 text-xs text-text-muted">{document.title}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng"
+            className="rounded p-1 text-text-muted hover:bg-bg"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+          <Select
+            label="Lý do"
+            value={category}
+            onChange={setCategory}
+            options={[
+              { value: "spam", label: "Spam" },
+              { value: "inappropriate", label: "Nội dung không phù hợp" },
+              { value: "copyright", label: "Vi phạm bản quyền" },
+              { value: "harmful", label: "Nội dung có hại" },
+              { value: "irrelevant", label: "Không liên quan Workspace" },
+              { value: "other", label: "Lý do khác" },
+            ]}
           />
-        </label>
-        <p className="text-xs text-text-faint">
-          Vui lòng chỉ báo cáo nội dung thực sự vi phạm. Báo cáo trùng lặp sẽ bị
-          từ chối.
-        </p>
-        <div className="flex justify-end gap-2">
+          <label className="block text-xs font-medium text-text-muted">
+            Ghi chú (không bắt buộc)
+            <textarea
+              className={`${inputClass} mt-1 min-h-24 w-full resize-y`}
+              value={note}
+              maxLength={1000}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="Mô tả ngắn để quản trị viên kiểm tra chính xác hơn..."
+            />
+          </label>
+          <p className="text-xs text-text-faint">
+            Vui lòng chỉ báo cáo nội dung thực sự vi phạm. Báo cáo trùng lặp sẽ
+            bị từ chối.
+          </p>
+        </div>
+        <footer className="flex shrink-0 justify-end gap-2 border-t border-border-soft bg-surface p-4">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             Hủy
           </Button>
@@ -597,7 +609,7 @@ function DocumentReportDialog({
             {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             Gửi báo cáo
           </Button>
-        </div>
+        </footer>
       </Card>
     </div>
   );
@@ -1228,7 +1240,7 @@ function ExerciseAuthoringDialog({
       aria-label="Tạo bài tập Workspace"
     >
       <Card className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-border-soft p-4">
+        <div className="sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b border-border-soft bg-surface p-4">
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-navy">
               Tạo bài tập Workspace
@@ -1586,7 +1598,7 @@ function ExerciseDetailDialog({
       aria-modal="true"
     >
       <Card className="flex max-h-[92dvh] w-full max-w-7xl flex-col overflow-hidden p-0 shadow-2xl">
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border-soft bg-surface px-5 py-4">
+        <header className="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-border-soft bg-surface px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-navy">
               {data?.title ?? "Chi tiết bài tập"}

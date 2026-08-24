@@ -2057,8 +2057,8 @@ function MemberDetailDialog({
       role="dialog"
       aria-modal="true"
     >
-      <Card className="max-h-[92vh] w-full max-w-4xl overflow-y-auto p-5">
-        <div className="flex items-start justify-between gap-3">
+      <Card className="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden p-0">
+        <header className="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-border-soft bg-surface px-5 py-4">
           <div className="flex items-center gap-3">
             <Avatar
               name={member.user.displayName}
@@ -2078,194 +2078,203 @@ function MemberDetailDialog({
           <button type="button" onClick={onClose} aria-label="Đóng">
             <X className="h-5 w-5" />
           </button>
-        </div>
-        {loading ? (
-          <div className="p-8 text-center text-sm text-text-faint">
-            Đang tải hồ sơ...
-          </div>
-        ) : (
-          data && (
-            <div className="mt-5 space-y-5">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-                <MiniStat label="XP" value={data.xp} />
-                <MiniStat label="Đã giải" value={data.solvedCount} />
-                <MiniStat
-                  label="Hoàn thành"
-                  value={`${data.assignmentStats.completed}/${data.assignmentStats.assigned}`}
-                />
-                <MiniStat
-                  label="Tỷ lệ đạt"
-                  value={`${data.submissionStats.total ? Math.round((data.submissionStats.accepted / data.submissionStats.total) * 100) : 0}%`}
-                />
-                <MiniStat
-                  label="Streak hiện tại"
-                  value={`${data.currentStreakDays} ngày`}
-                />
-                <MiniStat
-                  label="Streak dài nhất"
-                  value={`${data.longestStreakDays} ngày`}
-                />
-                <MiniStat label="Ngày hoạt động" value={data.activeDays} />
-              </div>
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <Flame className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-bold text-navy">
-                    Mức độ hoạt động (12 tuần)
-                  </h3>
-                  <span className="ml-auto text-xs text-text-faint">
-                    Gần nhất:{" "}
-                    {data.lastActiveAt
-                      ? formatDateTime(data.lastActiveAt)
-                      : "Chưa có"}
-                  </span>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          {loading ? (
+            <div className="p-8 text-center text-sm text-text-faint">
+              Đang tải hồ sơ...
+            </div>
+          ) : (
+            data && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+                  <MiniStat label="XP" value={data.xp} />
+                  <MiniStat label="Đã giải" value={data.solvedCount} />
+                  <MiniStat
+                    label="Hoàn thành"
+                    value={`${data.assignmentStats.completed}/${data.assignmentStats.assigned}`}
+                  />
+                  <MiniStat
+                    label="Tỷ lệ đạt"
+                    value={`${data.submissionStats.total ? Math.round((data.submissionStats.accepted / data.submissionStats.total) * 100) : 0}%`}
+                  />
+                  <MiniStat
+                    label="Streak hiện tại"
+                    value={`${data.currentStreakDays} ngày`}
+                  />
+                  <MiniStat
+                    label="Streak dài nhất"
+                    value={`${data.longestStreakDays} ngày`}
+                  />
+                  <MiniStat label="Ngày hoạt động" value={data.activeDays} />
                 </div>
-                <div className="mt-4 overflow-x-auto">
-                  <div className="grid w-max grid-flow-col grid-rows-7 gap-1">
-                    {data.activityHeatmap.map((day) => (
-                      <span
-                        key={day.date}
-                        title={`${formatDate(day.date)} · ${day.count} hoạt động`}
-                        aria-label={`${day.date}: ${day.count} hoạt động`}
-                        className={`h-4 w-4 rounded ${day.count === 0 ? "bg-border-soft" : day.count < 3 ? "bg-primary/25" : day.count < 6 ? "bg-primary/60" : "bg-primary"}`}
-                      />
-                    ))}
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-bold text-navy">
+                      Mức độ hoạt động (12 tuần)
+                    </h3>
+                    <span className="ml-auto text-xs text-text-faint">
+                      Gần nhất:{" "}
+                      {data.lastActiveAt
+                        ? formatDateTime(data.lastActiveAt)
+                        : "Chưa có"}
+                    </span>
                   </div>
-                </div>
-              </Card>
-              {data.access === "manager" &&
-                data.permissions &&
-                data.roleDefaults &&
-                data.overrides && (
-                  <Card className="p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-primary" />
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-bold text-navy">
-                          Quyền hiệu lực
-                        </h3>
-                        <p className="mt-1 text-xs text-text-faint">
-                          Mỗi quyền hiển thị rõ đang kế thừa vai trò hay đã tùy
-                          chỉnh riêng.
-                        </p>
+                  <div className="mt-4 overflow-x-auto">
+                    <div className="grid w-max grid-flow-col grid-rows-7 gap-1">
+                      {data.activityHeatmap.map((day) => (
+                        <span
+                          key={day.date}
+                          title={`${formatDate(day.date)} · ${day.count} hoạt động`}
+                          aria-label={`${day.date}: ${day.count} hoạt động`}
+                          className={`h-4 w-4 rounded ${day.count === 0 ? "bg-border-soft" : day.count < 3 ? "bg-primary/25" : day.count < 6 ? "bg-primary/60" : "bg-primary"}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+                {data.access === "manager" &&
+                  data.permissions &&
+                  data.roleDefaults &&
+                  data.overrides && (
+                    <Card className="p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-bold text-navy">
+                            Quyền hiệu lực
+                          </h3>
+                          <p className="mt-1 text-xs text-text-faint">
+                            Mỗi quyền hiển thị rõ đang kế thừa vai trò hay đã
+                            tùy chỉnh riêng.
+                          </p>
+                        </div>
+                        {data.canManagePermissions &&
+                          Object.keys(data.overrides).length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={pending}
+                              onClick={() => void resetPermissions()}
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Reset về mặc định
+                            </Button>
+                          )}
                       </div>
-                      {data.canManagePermissions &&
-                        Object.keys(data.overrides).length > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={pending}
-                            onClick={() => void resetPermissions()}
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                            Reset về mặc định
-                          </Button>
-                        )}
-                    </div>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      {PERMISSION_LABELS.map(({ key, label, description }) => {
-                        const override = data.overrides?.[key];
-                        const value =
-                          override === undefined
-                            ? "inherit"
-                            : override
-                              ? "allow"
-                              : "deny";
-                        return (
-                          <div
-                            key={key}
-                            className="rounded border border-border-soft p-3"
-                          >
-                            <div className="mb-2 flex items-start justify-between gap-2">
-                              <span>
-                                <span className="block text-xs font-semibold text-navy">
-                                  {label}
-                                </span>
-                                <span className="text-2xs text-text-faint">
-                                  {description}
-                                </span>
-                              </span>
-                              <Badge
-                                tone={
-                                  override === undefined ? "neutral" : "brown"
-                                }
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {PERMISSION_LABELS.map(
+                          ({ key, label, description }) => {
+                            const override = data.overrides?.[key];
+                            const value =
+                              override === undefined
+                                ? "inherit"
+                                : override
+                                  ? "allow"
+                                  : "deny";
+                            return (
+                              <div
+                                key={key}
+                                className="rounded border border-border-soft p-3"
                               >
-                                {override === undefined
-                                  ? "Kế thừa"
-                                  : "Tùy chỉnh"}
-                              </Badge>
-                            </div>
-                            <p className="mb-2 text-2xs text-text-muted">
-                              Hiệu lực:{" "}
-                              <b>
-                                {data.permissions?.[key]
-                                  ? "Cho phép"
-                                  : "Không cho phép"}
-                              </b>
-                            </p>
-                            {data.canManagePermissions && (
-                              <Select
-                                label="Nguồn quyền"
-                                className="w-full"
-                                value={value}
-                                onChange={(next) =>
-                                  void updatePermission(
-                                    key,
-                                    next as "inherit" | "allow" | "deny",
-                                  )
-                                }
-                                options={[
-                                  {
-                                    value: "inherit",
-                                    label: `Theo vai trò (${data.roleDefaults?.[key] ? "Cho phép" : "Không"})`,
-                                  },
-                                  { value: "allow", label: "Cho phép riêng" },
-                                  { value: "deny", label: "Từ chối riêng" },
-                                ]}
-                                disabled={pending}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                                <div className="mb-2 flex items-start justify-between gap-2">
+                                  <span>
+                                    <span className="block text-xs font-semibold text-navy">
+                                      {label}
+                                    </span>
+                                    <span className="text-2xs text-text-faint">
+                                      {description}
+                                    </span>
+                                  </span>
+                                  <Badge
+                                    tone={
+                                      override === undefined
+                                        ? "neutral"
+                                        : "brown"
+                                    }
+                                  >
+                                    {override === undefined
+                                      ? "Kế thừa"
+                                      : "Tùy chỉnh"}
+                                  </Badge>
+                                </div>
+                                <p className="mb-2 text-2xs text-text-muted">
+                                  Hiệu lực:{" "}
+                                  <b>
+                                    {data.permissions?.[key]
+                                      ? "Cho phép"
+                                      : "Không cho phép"}
+                                  </b>
+                                </p>
+                                {data.canManagePermissions && (
+                                  <Select
+                                    label="Nguồn quyền"
+                                    className="w-full"
+                                    value={value}
+                                    onChange={(next) =>
+                                      void updatePermission(
+                                        key,
+                                        next as "inherit" | "allow" | "deny",
+                                      )
+                                    }
+                                    options={[
+                                      {
+                                        value: "inherit",
+                                        label: `Theo vai trò (${data.roleDefaults?.[key] ? "Cho phép" : "Không"})`,
+                                      },
+                                      {
+                                        value: "allow",
+                                        label: "Cho phép riêng",
+                                      },
+                                      { value: "deny", label: "Từ chối riêng" },
+                                    ]}
+                                    disabled={pending}
+                                  />
+                                )}
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    </Card>
+                  )}
+                {data.access === "manager" && (
+                  <Card className="p-4">
+                    <h3 className="text-sm font-bold text-navy">
+                      Hoạt động gần đây
+                    </h3>
+                    {data.recentActivities?.length ? (
+                      <ul className="mt-3 space-y-2">
+                        {data.recentActivities.map((activity) => (
+                          <li
+                            key={activity.id}
+                            className="border-l-2 border-primary/30 pl-3 text-xs text-text-muted"
+                          >
+                            {activity.action}
+                            <span className="block text-text-faint">
+                              {formatDateTime(activity.createdAt)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-xs text-text-faint">
+                        Chưa có hoạt động.
+                      </p>
+                    )}
                   </Card>
                 )}
-              {data.access === "manager" && (
-                <Card className="p-4">
-                  <h3 className="text-sm font-bold text-navy">
-                    Hoạt động gần đây
-                  </h3>
-                  {data.recentActivities?.length ? (
-                    <ul className="mt-3 space-y-2">
-                      {data.recentActivities.map((activity) => (
-                        <li
-                          key={activity.id}
-                          className="border-l-2 border-primary/30 pl-3 text-xs text-text-muted"
-                        >
-                          {activity.action}
-                          <span className="block text-text-faint">
-                            {formatDateTime(activity.createdAt)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-xs text-text-faint">
-                      Chưa có hoạt động.
-                    </p>
-                  )}
-                </Card>
-              )}
-              {data.access === "public" && (
-                <p className="rounded-md bg-bg p-3 text-xs text-text-muted">
-                  Hồ sơ công khai chỉ hiển thị tiến độ, submission tổng quan và
-                  streak; activity chi tiết cùng quyền quản trị đã được ẩn.
-                </p>
-              )}
-            </div>
-          )
-        )}
+                {data.access === "public" && (
+                  <p className="rounded-md bg-bg p-3 text-xs text-text-muted">
+                    Hồ sơ công khai chỉ hiển thị tiến độ, submission tổng quan
+                    và streak; activity chi tiết cùng quyền quản trị đã được ẩn.
+                  </p>
+                )}
+              </div>
+            )
+          )}
+        </div>
       </Card>
     </div>
   );

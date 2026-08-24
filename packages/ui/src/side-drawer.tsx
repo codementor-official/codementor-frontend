@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import { GripVertical, X } from "lucide-react";
 
 /** Hẹp hơn mức này thì trình soạn thảo trong drawer xuống dòng vỡ hết. */
@@ -12,7 +17,9 @@ const DEFAULT_WIDTH = { default: 672, wide: 1152 } as const;
 const KEY_STEP = 32;
 
 function clampWidth(px: number): number {
-  return Math.round(Math.min(Math.max(px, MIN_WIDTH), window.innerWidth - EDGE_GAP));
+  return Math.round(
+    Math.min(Math.max(px, MIN_WIDTH), window.innerWidth - EDGE_GAP),
+  );
 }
 
 /** Reusable right-side detail surface. Keep long-running list context visible beneath it. */
@@ -49,7 +56,8 @@ export function SideDrawer({
 
   useEffect(() => {
     if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    const onKeyDown = (event: KeyboardEvent) =>
+      event.key === "Escape" && onClose();
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
@@ -79,7 +87,10 @@ export function SideDrawer({
 
   if (!open) return null;
   return (
-    <div className="animate-overlay-in fixed inset-0 z-50 flex justify-end bg-black/50" onClick={onClose}>
+    <div
+      className="animate-overlay-in fixed inset-0 z-50 flex justify-end bg-ink-fixed/50"
+      onClick={onClose}
+    >
       <aside
         role="dialog"
         aria-modal="true"
@@ -101,28 +112,48 @@ export function SideDrawer({
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
           onKeyDown={(event) => {
-            if (event.key === "ArrowLeft") remember(clampWidth(pixels + KEY_STEP));
-            else if (event.key === "ArrowRight") remember(clampWidth(pixels - KEY_STEP));
+            if (event.key === "ArrowLeft")
+              remember(clampWidth(pixels + KEY_STEP));
+            else if (event.key === "ArrowRight")
+              remember(clampWidth(pixels - KEY_STEP));
             else return;
             event.preventDefault();
           }}
           className="group absolute inset-y-0 left-0 z-10 hidden w-3 -translate-x-1/2 cursor-col-resize items-center justify-center focus-visible:outline-none sm:flex"
         >
           <span className="h-10 w-1 rounded-full bg-border transition-colors group-hover:bg-foreground/40 group-focus-visible:bg-foreground/60" />
-          <GripVertical aria-hidden="true" className="absolute h-3.5 w-3.5 text-transparent transition-colors group-hover:text-muted-foreground" />
+          <GripVertical
+            aria-hidden="true"
+            className="absolute h-3.5 w-3.5 text-transparent transition-colors group-hover:text-muted-foreground"
+          />
         </div>
 
-        <header className="flex items-start gap-4 border-b border-border px-4 py-3 sm:px-5">
+        <header className="sticky top-0 z-10 flex shrink-0 items-start gap-4 border-b border-border bg-card px-4 py-3 sm:px-5">
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-foreground">{title}</h2>
-            {description && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>}
+            {description && (
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {description}
+              </p>
+            )}
           </div>
-          <button type="button" aria-label="Đóng" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground">
+          <button
+            type="button"
+            aria-label="Đóng"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
             <X className="h-4 w-4" />
           </button>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">{children}</div>
-        {footer && <footer className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3 sm:px-5">{footer}</footer>}
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+          {children}
+        </div>
+        {footer && (
+          <footer className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-border bg-card px-4 py-3 sm:px-5">
+            {footer}
+          </footer>
+        )}
       </aside>
     </div>
   );

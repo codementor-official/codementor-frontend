@@ -49,7 +49,7 @@ export function Modal({
   // generate z utilities from them (onboarding-modal hardcodes the same value).
   return (
     <div
-      className="animate-overlay-in fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/55 p-4 sm:p-6"
+      className="animate-overlay-in fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-fixed/55 p-4 sm:p-6"
       onClick={onClose}
     >
       <div
@@ -57,12 +57,16 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`animate-modal-in my-auto w-full rounded-lg bg-card shadow-[0_24px_60px_rgba(0,0,0,0.3)] ${widthClasses[width]}`}
+        className={`animate-modal-in my-auto flex max-h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-lg bg-card shadow-[0_24px_60px_rgba(0,0,0,0.3)] ${widthClasses[width]}`}
       >
-        <div className="flex items-start gap-4 border-b border-border px-4 py-3">
+        <div className="sticky top-0 z-10 flex shrink-0 items-start gap-4 border-b border-border bg-card px-4 py-3">
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-foreground">{title}</h2>
-            {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+            {description && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {description}
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -73,9 +77,13 @@ export function Modal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="px-4 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          {children}
+        </div>
         {footer && (
-          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3">{footer}</div>
+          <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-border bg-card px-4 py-3">
+            {footer}
+          </div>
         )}
       </div>
     </div>
