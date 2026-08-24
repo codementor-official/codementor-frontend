@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Braces,
   Check,
@@ -12,7 +12,18 @@ import {
   Video,
 } from "lucide-react";
 import { RichTextEditor } from "@codementor/editor";
-import { integer, looksPlayable, resolveVideo, text, url, type ResolvedVideo } from "@codementor/utils";
+import {
+  attachPlayer,
+  formatDuration,
+  integer,
+  lessonDurationError,
+  looksPlayable,
+  minimumLessonMinutes,
+  resolveVideo,
+  text,
+  url,
+  type ResolvedVideo,
+} from "@codementor/utils";
 import { Button, Select, StatusBadge, useToast } from "@codementor/ui";
 import { ListPager, ListSearch, usePagedList } from "@/components/page/paged-list";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
@@ -304,6 +315,8 @@ function LessonInspector({
   const [html, setHtml] = useState<string>("");
   const [summary, setSummary] = useState<string>("");
   const [videoUrl, setVideoUrl] = useState<string>("");
+  // Thời lượng video, giây. `null` = chưa đọc được — xem `lessonDurationError`.
+  const [videoSeconds, setVideoSeconds] = useState<number | null>(null);
   // Component được key theo `lesson.key` nên nó remount mỗi lần đổi bài; giá trị khởi
   // tạo này vì thế luôn đúng với bài đang chọn.
   const [loaded, setLoaded] = useState(!needsContent || !lesson.id);
@@ -317,6 +330,7 @@ function LessonInspector({
         setHtml(content?.contentHtml ?? "");
         setSummary(content?.summary ?? "");
         setVideoUrl(content?.media?.url ?? "");
+        setVideoSeconds(content?.media?.durationSeconds ?? null);
         setLoaded(true);
       })
       .catch(() => {
@@ -330,8 +344,21 @@ function LessonInspector({
   /** Thứ đang chặn lưu thân bài, hoặc `undefined` khi lưu được. */
   const contentBlocker = needsContent
     ? ((isVideo ? url(videoUrl, "URL video") : undefined) ??
+      (isVideo
+        ? lessonDurationError(
+            lesson.durationMinutes.trim() ? Number(lesson.durationMinutes) : null,
+            videoSeconds,
+          )
+        : undefined) ??
       (summary.trim().length > 2000 ? "Tóm tắt tối đa 2000 ký tự" : undefined))
     : undefined;
+
+  // Đổi nguồn video thì thời lượng đo được của video CŨ lập tức vô nghĩa. Không xoá ở đây
+  // là giữ lại một con số thuộc về video khác, và ràng buộc thời lượng sẽ gác nhầm số đó.
+  const changeVideoUrl = useCallback((next: string) => {
+    setVideoUrl(next);
+    setVideoSeconds(null);
+  }, []);
 
   // Bài video ghi `media`, bài lý thuyết ghi `contentHtml`. Gửi cả hai trong mọi trường
   // hợp sẽ ghi đè thân bài cũ bằng chuỗi rỗng khi người soạn đổi một bài lý thuyết sang
@@ -342,11 +369,23 @@ function LessonInspector({
       await saveContent(lessonId, {
         summary: summary || undefined,
         ...(isVideo
-          ? { ...(videoUrl.trim() ? { media: { url: videoUrl.trim() } } : {}) }
+          ? {
+              ...(videoUrl.trim()
+                ? {
+                    media: {
+                      url: videoUrl.trim(),
+                      // Ghi kèm để màn học viên biết đủ 80% là bao nhiêu giây mà không phải
+                      // đợi SDK trả lời. Thiếu thì bỏ hẳn khoá — `undefined` lọt qua
+                      // `IsInt()` của DTO, còn `null` thì không.
+                      ...(videoSeconds !== null ? { durationSeconds: Math.round(videoSeconds) } : {}),
+                    },
+                  }
+                : {}),
+            }
           : { contentHtml: html }),
       });
     },
-    [saveContent, isVideo, videoUrl, summary, html],
+    [saveContent, isVideo, videoUrl, videoSeconds, summary, html],
   );
 
   // Đăng ký hàm lưu thân bài của MỤC ĐANG MỞ vào ref của trang cha, để nút "Lưu" chung
@@ -494,10 +533,14 @@ function LessonInspector({
               <VideoSourcePicker
                 courseId={courseId}
                 disabled={disabled}
+                durationSeconds={videoSeconds}
                 ensureLessonId={ensureLessonId}
                 lessonId={lesson.id}
+                lessonMinutes={lesson.durationMinutes.trim() ? Number(lesson.durationMinutes) : null}
                 loaded={loaded}
-                onChange={setVideoUrl}
+                onChange={changeVideoUrl}
+                onDuration={setVideoSeconds}
+                onUseVideoDuration={(minutes) => onPatch({ durationMinutes: String(minutes) })}
                 value={videoUrl}
               />
             ) : (
@@ -537,6 +580,10 @@ function VideoSourcePicker({
   courseId,
   lessonId,
   ensureLessonId,
+  durationSeconds,
+  onDuration,
+  lessonMinutes,
+  onUseVideoDuration,
 }: {
   value: string;
   onChange: (url: string) => void;
@@ -545,6 +592,10 @@ function VideoSourcePicker({
   courseId: string;
   lessonId: string | undefined;
   ensureLessonId: () => Promise<string>;
+  durationSeconds: number | null;
+  onDuration: (seconds: number) => void;
+  lessonMinutes: number | null;
+  onUseVideoDuration: (minutes: number) => void;
 }) {
   const toast = useToast();
   const [config, setConfig] = useState<VideoUploadConfig | null>(null);
@@ -618,7 +669,11 @@ function VideoSourcePicker({
     }
   };
 
-  const resolved = resolveVideo(value);
+  // `resolveVideo` dựng một đối tượng MỚI mỗi lần render. Không ghi nhớ thì hiệu ứng gắn
+  // trình phát ở `VideoPlayer` chạy lại sau từng phím gõ, và mỗi lần chạy lại là một lần
+  // dựng lại trình phát YouTube.
+  const resolved = useMemo(() => resolveVideo(value), [value]);
+  const durationError = lessonDurationError(lessonMinutes, durationSeconds);
 
   return (
     <div className="grid gap-4">
@@ -695,7 +750,31 @@ function VideoSourcePicker({
           </p>
         ) : (
           <div className="grid gap-2">
-            <VideoPlayer video={resolved} />
+            <VideoPlayer onDuration={onDuration} video={resolved} />
+            {durationSeconds === null ? (
+              // Không đọc được thời lượng thì KHÔNG chặn lưu — nói ra để người soạn tự canh
+              // con số, thay vì im lặng bỏ qua một ràng buộc mà họ tưởng đang có hiệu lực.
+              <p className="text-xs text-muted-foreground">
+                Chưa đọc được thời lượng video, nên chưa đối chiếu được với thời lượng bài.
+                Đợi khung trên tải xong, hoặc tự canh cho thời lượng bài dài hơn video.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Thời lượng video: <strong>{formatDuration(durationSeconds)}</strong>
+              </p>
+            )}
+            {durationError && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2">
+                <p className="text-xs text-destructive">{durationError}</p>
+                <button
+                  className="mt-1.5 text-xs font-semibold text-primary hover:underline"
+                  onClick={() => onUseVideoDuration(minimumLessonMinutes(durationSeconds!))}
+                  type="button"
+                >
+                  Đặt thời lượng bài thành {minimumLessonMinutes(durationSeconds!)} phút
+                </button>
+              </div>
+            )}
             {!looksPlayable(resolved) && (
               <p className="text-xs text-muted-foreground">
                 URL này không có đuôi tệp video quen thuộc. Nếu khung trên không phát được,
@@ -713,10 +792,35 @@ function VideoSourcePicker({
  * Cùng cách phát mà màn học viên dùng — xem `resolveVideo`. Hai bên phải vẽ giống hệt
  * nhau, nếu không thì thứ giảng viên xem trước không phải thứ học viên nhận.
  */
-function VideoPlayer({ video }: { video: ResolvedVideo }) {
+function VideoPlayer({
+  video,
+  onDuration,
+}: {
+  video: ResolvedVideo;
+  onDuration: (seconds: number) => void;
+}) {
+  const fileRef = useRef<HTMLVideoElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+
+  // Chính khung xem trước này là thứ đo thời lượng — không dựng thêm một trình phát ẩn.
+  // Với YouTube/Vimeo thì đo bằng cách nào khác cũng không được: chỉ SDK của họ mới trả
+  // lời được, và SDK phải bám vào một iframe có thật trên trang.
+  useEffect(() => {
+    const element = video.kind === "file" ? fileRef.current : frameRef.current;
+    if (!element) return;
+    const player = attachPlayer(element, video, { onDuration });
+    return () => player.destroy();
+  }, [video, onDuration]);
+
   if (video.kind === "file") {
     return (
-      <video className="w-full rounded-lg border bg-black" controls preload="metadata" src={video.src} />
+      <video
+        className="w-full rounded-lg border bg-black"
+        controls
+        preload="metadata"
+        ref={fileRef}
+        src={video.src}
+      />
     );
   }
   return (
@@ -724,6 +828,7 @@ function VideoPlayer({ video }: { video: ResolvedVideo }) {
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
       allowFullScreen
       className="aspect-video w-full rounded-lg border"
+      ref={frameRef}
       src={video.src}
       title="Xem trước video bài học"
     />

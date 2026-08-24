@@ -57,7 +57,12 @@ export function resolveVideo(raw: string | null | undefined): ResolvedVideo | nu
   if (url.protocol !== "http:" && url.protocol !== "https:") return null;
 
   const youtube = youtubeId(url);
-  if (youtube) return { kind: "youtube", src: `https://www.youtube.com/embed/${youtube}` };
+  // `enablejsapi=1` là điều kiện để `attachPlayer` hỏi được thời lượng và vị trí đang phát
+  // từ iframe YouTube. Thêm ở ĐÂY chứ không ở chỗ gắn trình phát: nơi gọi chỉ có sẵn nút
+  // DOM, mà tham số này phải nằm trong `src` từ lúc iframe được dựng — sửa sau là quá muộn.
+  if (youtube) {
+    return { kind: "youtube", src: `https://www.youtube.com/embed/${youtube}?enablejsapi=1` };
+  }
 
   const vimeo = vimeoId(url);
   if (vimeo) return { kind: "vimeo", src: `https://player.vimeo.com/video/${vimeo}` };
@@ -73,4 +78,37 @@ export function resolveVideo(raw: string | null | undefined): ResolvedVideo | nu
  */
 export function looksPlayable(video: ResolvedVideo): boolean {
   return video.kind !== "file" || PLAYABLE_EXTENSIONS.test(video.src);
+}
+
+/** `754` → `"12:34"`, `3754` → `"1:02:34"`. Phần giờ chỉ hiện khi video thật sự dài. */
+export function formatDuration(totalSeconds: number): string {
+  const whole = Math.max(0, Math.round(totalSeconds));
+  const hours = Math.floor(whole / 3600);
+  const minutes = Math.floor((whole % 3600) / 60);
+  const seconds = whole % 60;
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${minutes}:${pad(seconds)}`;
+}
+
+/** Số phút tối thiểu đủ chứa một video dài `videoSeconds` giây. */
+export function minimumLessonMinutes(videoSeconds: number): number {
+  return Math.max(1, Math.ceil(videoSeconds / 60));
+}
+
+/**
+ * "Thời lượng bài học phải >= thời lượng video" — trả câu lỗi tiếng Việt, hoặc `undefined`
+ * khi hợp lệ. Cùng một luật cho video tải lên và video dán link: cả hai đều chỉ là một URL
+ * khi tới được đây, nên không có nhánh nào phân biệt chúng.
+ *
+ * `null` ở hai đầu đều là "chưa biết", và chưa biết thì KHÔNG chặn. Thời lượng video đọc
+ * từ SDK của YouTube/Vimeo, mà SDK thì có thể bị mạng chặn — biến một lần nạp script hỏng
+ * thành một bài học không lưu được là đổi một ràng buộc mềm lấy một ngõ cụt.
+ */
+export function lessonDurationError(
+  lessonMinutes: number | null,
+  videoSeconds: number | null,
+): string | undefined {
+  if (lessonMinutes === null || videoSeconds === null || videoSeconds <= 0) return undefined;
+  if (lessonMinutes * 60 >= videoSeconds) return undefined;
+  return `Thời lượng bài (${lessonMinutes} phút) ngắn hơn video (${formatDuration(videoSeconds)}). Đặt tối thiểu ${minimumLessonMinutes(videoSeconds)} phút.`;
 }

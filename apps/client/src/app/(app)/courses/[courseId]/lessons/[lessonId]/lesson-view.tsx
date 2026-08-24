@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { hasCelebratedCourse, requestCourseCelebration } from "@/lib/course-celebration";
 import { describeLock, explainLock, isLessonLocked, missingRequiredLessons } from "@/lib/lesson-unlock";
+import { useAuth } from "@/providers/auth-provider";
 import type { CourseDetail, CourseProgress, LessonContent, LessonProgress } from "@/types/catalogue";
 import { ExerciseLesson } from "./exercise-lesson";
 import { LessonShell, flattenLessons, type FlatLesson } from "./lesson-shell";
@@ -35,10 +36,14 @@ function CompleteCourseButton({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const userId = useAuth().user?.id;
   // Đọc sau khi mount, không phải trong lúc render: `localStorage` không tồn tại ở server,
   // nên đọc thẳng khi render sẽ cho hai kết quả khác nhau giữa server và client.
   const [celebrated, setCelebrated] = useState(false);
-  useEffect(() => setCelebrated(hasCelebratedCourse(courseId)), [courseId]);
+  useEffect(
+    () => setCelebrated(userId ? hasCelebratedCourse(userId, courseId) : false),
+    [courseId, userId],
+  );
 
   // Đã ăn mừng rồi thì đây chỉ là đường về, không phải nút hoàn thành nữa. Mốc là cờ trong
   // trình duyệt chứ KHÔNG phải `enrollment.status` — xem `lib/course-celebration.ts`.
@@ -62,7 +67,7 @@ function CompleteCourseButton({
       return;
     }
     // Đặt cờ TRƯỚC khi điều hướng — trang khóa học đọc nó để bắn pháo hoa.
-    requestCourseCelebration(courseId);
+    if (userId) requestCourseCelebration(userId, courseId);
     router.push(`/courses/${courseId}`);
   };
 
