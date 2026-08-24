@@ -139,9 +139,15 @@ export function StudyGroupBoard() {
   };
 
   const join = async (code: string) => {
-    const workspace = await api.workspaces.join(code);
-    toast.success(`Đã tham gia nhóm “${workspace.name}”`);
-    window.location.assign(`/workspace/${workspace.slug}`);
+    const result = await api.workspaces.join(code);
+    if (result.status === "pending") {
+      toast.success(
+        "Đã gửi yêu cầu. Chủ nhóm sẽ duyệt trước khi bạn tham gia.",
+      );
+      return;
+    }
+    toast.success("Đã tham gia nhóm học tập");
+    window.location.assign(`/workspace/${result.workspaceSlug}`);
   };
 
   const retry = () => void load(scope, search, cursor);

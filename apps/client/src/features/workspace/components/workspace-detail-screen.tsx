@@ -12,6 +12,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Crown,
+  Copy,
   FileText,
   Flame,
   Image as ImageIcon,
@@ -20,6 +21,7 @@ import {
   MessageCircle,
   RotateCcw,
   Save,
+  Search,
   Settings,
   ShieldCheck,
   Target,
@@ -90,9 +92,39 @@ const PERMISSION_LABELS: {
   description: string;
 }[] = [
   {
+    key: "view_doc",
+    label: "Xem tài liệu",
+    description: "Xem tài liệu đã được duyệt trong nhóm.",
+  },
+  {
     key: "upload_doc",
     label: "Tải tài liệu",
     description: "Đưa tài liệu lên không gian nhóm.",
+  },
+  {
+    key: "edit_own_doc",
+    label: "Sửa tài liệu của mình",
+    description: "Sửa metadata tài liệu do chính mình tải lên.",
+  },
+  {
+    key: "delete_own_doc",
+    label: "Xóa tài liệu của mình",
+    description: "Chuyển tài liệu của chính mình vào mục đã xóa.",
+  },
+  {
+    key: "manage_doc",
+    label: "Quản lý mọi tài liệu",
+    description: "Sửa, ẩn, khôi phục và xóa mọi tài liệu.",
+  },
+  {
+    key: "approve_doc",
+    label: "Duyệt tài liệu",
+    description: "Duyệt hoặc từ chối tài liệu đang chờ.",
+  },
+  {
+    key: "view_exercise",
+    label: "Xem bài tập",
+    description: "Xem bài tập đang hiển thị trong nhóm.",
   },
   {
     key: "create_exercise",
@@ -100,14 +132,24 @@ const PERMISSION_LABELS: {
     description: "Tạo bài tập mới cho nhóm.",
   },
   {
-    key: "edit_exercise",
-    label: "Sửa bài tập",
-    description: "Sửa bài tập đã có.",
+    key: "edit_own_exercise",
+    label: "Sửa bài tập của mình",
+    description: "Sửa bài tập do chính mình tạo.",
   },
   {
-    key: "delete_doc",
-    label: "Xóa tài liệu",
-    description: "Gỡ tài liệu khỏi nhóm.",
+    key: "delete_own_exercise",
+    label: "Xóa bài tập của mình",
+    description: "Chuyển bài tập của chính mình vào mục đã xóa.",
+  },
+  {
+    key: "manage_exercise",
+    label: "Quản lý mọi bài tập",
+    description: "Sửa, ẩn, khôi phục và xóa mọi bài tập.",
+  },
+  {
+    key: "assign_exercise",
+    label: "Phân công bài tập",
+    description: "Giao bài và cập nhật danh sách người học.",
   },
   {
     key: "review_submission",
@@ -128,7 +170,9 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const [detail, setDetail] = useState<WorkspaceDetail | null>(null);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [overview, setOverview] = useState<WorkspaceOverview | null>(null);
-  const [tab, setTab] = useState<Tab>(() => tabFromQuery(searchParams.get("tab")));
+  const [tab, setTab] = useState<Tab>(() =>
+    tabFromQuery(searchParams.get("tab")),
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -153,9 +197,12 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       if (next === "overview") query.delete("tab");
       else query.set("tab", next);
       const suffix = query.toString();
-      router.replace(`/workspace/${encodeURIComponent(slug)}${suffix ? `?${suffix}` : ""}`, {
-        scroll: false,
-      });
+      router.replace(
+        `/workspace/${encodeURIComponent(slug)}${suffix ? `?${suffix}` : ""}`,
+        {
+          scroll: false,
+        },
+      );
     },
     [router, searchParams, slug],
   );
@@ -447,7 +494,30 @@ function Overview({
   detail: WorkspaceDetail;
   overview: WorkspaceOverview | null;
 }) {
+  const toast = useToast();
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [activitySearch, setActivitySearch] = useState("");
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityOverview, setActivityOverview] = useState(overview);
+  const [activityLoading, setActivityLoading] = useState(false);
+  useEffect(() => {
+    if (!overview) return;
+    const timer = window.setTimeout(() => {
+      setActivityLoading(true);
+      void api.workspaces
+        .overview(detail.slug, {
+          activitySearch: activitySearch.trim() || undefined,
+          activityPage,
+          activityLimit: 12,
+        })
+        .then(setActivityOverview)
+        .catch((error) =>
+          toast.error(messageOf(error, "Không tải được hoạt động.")),
+        )
+        .finally(() => setActivityLoading(false));
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [activityPage, activitySearch, detail.slug, overview, toast]);
   const ranked = [...(overview?.members ?? [])].sort((a, b) => b.xp - a.xp);
   const leaderboard = ranked.slice(0, showLeaderboard ? 10 : 5);
   return (
@@ -500,12 +570,29 @@ function Overview({
               value={formatDate(detail.createdAt)}
             />
             {detail.inviteCode && (
-              <Meta
-                icon={KeyRound}
-                label="Mã mời"
-                value={detail.inviteCode}
-                mono
-              />
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <Meta
+                    icon={KeyRound}
+                    label="Mã mời"
+                    value={detail.inviteCode}
+                    mono
+                  />
+                </div>
+                <button
+                  type="button"
+                  aria-label="Sao chép mã mời"
+                  className="rounded-md border border-border p-2 text-text-muted hover:border-primary hover:text-primary"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(detail.inviteCode ?? "")
+                      .then(() => toast.success("Đã sao chép mã mời"))
+                      .catch(() => toast.error("Không thể sao chép mã mời"));
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              </div>
             )}
           </dl>
         </div>
@@ -614,13 +701,30 @@ function Overview({
         </div>
         <div className="space-y-4">
           <Card className="flex flex-col p-5 lg:h-[420px]">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-navy">Hoạt động nhóm</h2>
-              <Badge tone="neutral">4 tuần gần nhất</Badge>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <h2 className="mr-auto text-sm font-bold text-navy">
+                Hoạt động nhóm
+              </h2>
+              <label className="relative min-w-48 flex-1 sm:max-w-64">
+                <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-text-faint" />
+                <input
+                  value={activitySearch}
+                  onChange={(event) => {
+                    setActivitySearch(event.target.value);
+                    setActivityPage(1);
+                  }}
+                  placeholder="Tìm tên, nội dung, loại..."
+                  className="w-full rounded-md border border-border bg-surface py-1.5 pl-8 pr-3 text-xs text-navy"
+                />
+              </label>
             </div>
-            {overview?.activities.length ? (
+            {activityLoading ? (
+              <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-text-faint">
+                Đang tải hoạt động...
+              </div>
+            ) : activityOverview?.activities.length ? (
               <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
-                {overview.activities.map((item) => (
+                {activityOverview.activities.map((item) => (
                   <li
                     key={item.id}
                     className="border-l-2 border-primary/30 pl-3 text-xs text-text-muted"
@@ -642,7 +746,41 @@ function Overview({
               </p>
             )}
             <div className="mt-4 rounded-md bg-bg p-3 text-xs text-text-muted">
-              Nhóm được cập nhật {formatDate(detail.updatedAt)}.
+              <div className="flex items-center justify-between gap-2">
+                <span>
+                  {activityOverview?.activityPagination.total ?? 0} hoạt động
+                  phù hợp
+                </span>
+                {(activityOverview?.activityPagination.totalPages ?? 0) > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={activityPage <= 1}
+                      onClick={() =>
+                        setActivityPage((page) => Math.max(1, page - 1))
+                      }
+                      className="font-semibold text-primary disabled:text-text-faint"
+                    >
+                      Trước
+                    </button>
+                    <span>
+                      {activityPage}/
+                      {activityOverview?.activityPagination.totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={
+                        activityPage >=
+                        (activityOverview?.activityPagination.totalPages ?? 1)
+                      }
+                      onClick={() => setActivityPage((page) => page + 1)}
+                      className="font-semibold text-primary disabled:text-text-faint"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
           {overview && (
@@ -1187,6 +1325,124 @@ function DistributionBar({
   );
 }
 
+function JoinRequestsPanel({
+  slug,
+  onApproved,
+}: {
+  slug: string;
+  onApproved: () => void;
+}) {
+  const toast = useToast();
+  const [requests, setRequests] = useState<WorkspaceJoinRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+
+  const loadRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await api.workspaces.joinRequests(slug);
+      setRequests(response.items);
+    } catch (cause) {
+      toast.error(messageOf(cause, "Không tải được yêu cầu tham gia."));
+    } finally {
+      setLoading(false);
+    }
+  }, [slug, toast]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadRequests(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadRequests]);
+
+  const review = async (
+    request: WorkspaceJoinRequest,
+    decision: "approve" | "reject",
+  ) => {
+    setReviewingId(request.id);
+    try {
+      await api.workspaces.reviewJoinRequest(slug, request.id, decision);
+      setRequests((current) =>
+        current.filter((item) => item.id !== request.id),
+      );
+      if (decision === "approve") onApproved();
+      toast.success(
+        decision === "approve" ? "Đã duyệt thành viên" : "Đã từ chối yêu cầu",
+      );
+    } catch (cause) {
+      toast.error(messageOf(cause, "Không thể xử lý yêu cầu."));
+    } finally {
+      setReviewingId(null);
+    }
+  };
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-4 py-3">
+        <div>
+          <h2 className="text-sm font-bold text-navy">Duyệt thành viên</h2>
+          <p className="text-xs text-text-faint">
+            Yêu cầu từ nhóm đặt chế độ “Cần duyệt” sẽ xuất hiện tại đây.
+          </p>
+        </div>
+        <Badge tone={requests.length > 0 ? "brown" : "neutral"}>
+          {loading ? "Đang tải" : `${requests.length} chờ duyệt`}
+        </Badge>
+      </div>
+      {loading ? (
+        <div className="h-20 animate-pulse bg-border-soft/40" />
+      ) : requests.length === 0 ? (
+        <p className="px-4 py-5 text-xs text-text-faint">
+          Không có yêu cầu tham gia đang chờ.
+        </p>
+      ) : (
+        <ul className="divide-y divide-border-soft">
+          {requests.map((request) => (
+            <li
+              key={request.id}
+              className="flex flex-wrap items-center gap-3 px-4 py-3"
+            >
+              <Avatar
+                name={request.user.displayName}
+                url={request.user.avatarUrl}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-navy">
+                  {request.user.displayName}
+                </p>
+                <p className="truncate text-xs text-text-faint">
+                  {request.user.email ?? "Không có email"} · Gửi lúc{" "}
+                  {formatDateTime(request.createdAt)}
+                </p>
+                {request.message && (
+                  <p className="mt-1 text-xs text-text-muted">
+                    {request.message}
+                  </p>
+                )}
+              </div>
+              <Button
+                size="sm"
+                disabled={reviewingId !== null}
+                onClick={() => void review(request, "approve")}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Duyệt
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={reviewingId !== null}
+                onClick={() => void review(request, "reject")}
+              >
+                Từ chối
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 function Members({
   slug,
   overview,
@@ -1266,13 +1522,12 @@ function Members({
     slug,
     submissionStatus,
     toast,
-    revision,
   ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, revision]);
 
   const changeFilter = (setValue: (value: string) => void, value: string) => {
     setValue(value);
@@ -1283,6 +1538,11 @@ function Members({
 
   return (
     <>
+      {viewerRole === "owner" && (
+        <div className="mb-4">
+          <JoinRequestsPanel slug={slug} onApproved={() => void load()} />
+        </div>
+      )}
       <Card className="min-w-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-4 py-3">
           <div>
@@ -1799,15 +2059,7 @@ function SettingsPanel({
   const [joinPolicy, setJoinPolicy] = useState(detail.joinPolicy);
   const [transferTo, setTransferTo] = useState("");
   const [pending, setPending] = useState(false);
-  const [requests, setRequests] = useState<WorkspaceJoinRequest[]>([]);
   const [coverPreview, setCoverPreview] = useState(detail.coverUrl);
-
-  useEffect(() => {
-    void api.workspaces
-      .joinRequests(detail.slug)
-      .then((response) => setRequests(response.items))
-      .catch(() => setRequests([]));
-  }, [detail.slug]);
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -1872,26 +2124,6 @@ function SettingsPanel({
       toast.success("Đã gỡ ảnh bìa và dùng giao diện mặc định");
     } catch (cause) {
       toast.error(messageOf(cause, "Không thể gỡ ảnh bìa."));
-    } finally {
-      setPending(false);
-    }
-  };
-
-  const reviewRequest = async (
-    request: WorkspaceJoinRequest,
-    decision: "approve" | "reject",
-  ) => {
-    setPending(true);
-    try {
-      await api.workspaces.reviewJoinRequest(detail.slug, request.id, decision);
-      setRequests((current) =>
-        current.filter((item) => item.id !== request.id),
-      );
-      toast.success(
-        decision === "approve" ? "Đã duyệt thành viên" : "Đã từ chối yêu cầu",
-      );
-    } catch (cause) {
-      toast.error(messageOf(cause, "Không thể xử lý yêu cầu."));
     } finally {
       setPending(false);
     }
@@ -2037,56 +2269,6 @@ function SettingsPanel({
         </form>
       </Card>
       <div className="space-y-4">
-        <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-navy">Yêu cầu tham gia</h2>
-            <Badge tone="neutral">{requests.length}</Badge>
-          </div>
-          {requests.length === 0 ? (
-            <p className="mt-2 text-xs text-text-faint">
-              Không có yêu cầu đang chờ.
-            </p>
-          ) : (
-            <ul className="mt-3 divide-y divide-border-soft">
-              {requests.map((request) => (
-                <li
-                  key={request.id}
-                  className="flex flex-wrap items-center gap-3 py-3"
-                >
-                  <Avatar
-                    name={request.user.displayName}
-                    url={request.user.avatarUrl}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-navy">
-                      {request.user.displayName}
-                    </p>
-                    <p className="truncate text-2xs text-text-faint">
-                      {request.message ??
-                        request.user.email ??
-                        "Muốn tham gia nhóm"}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    disabled={pending}
-                    onClick={() => void reviewRequest(request, "approve")}
-                  >
-                    Duyệt
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={pending}
-                    onClick={() => void reviewRequest(request, "reject")}
-                  >
-                    Từ chối
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
         {detail.rolePermissions && (
           <RolePermissionsPanel detail={detail} onSaved={onSaved} />
         )}
