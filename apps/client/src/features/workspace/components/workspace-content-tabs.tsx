@@ -1627,7 +1627,7 @@ function Field({
   placeholder?: string;
 }) {
   return (
-    <label className="text-xs font-medium text-text-muted">
+    <label className="min-w-0 text-xs font-medium text-text-muted">
       {label}
       <input
         className={`${inputClass} mt-1 block w-full`}
@@ -1869,7 +1869,7 @@ function ExerciseDetailDialog({
               <div className="space-y-5">
                 {data.canManage && (
                   <Card className="space-y-3 bg-bg p-4">
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <Field
                         label="Tiêu đề"
                         value={title}
@@ -1880,33 +1880,41 @@ function ExerciseDetailDialog({
                         value={summary}
                         onChange={setSummary}
                       />
-                      <Select
-                        label="Độ khó"
-                        className="w-full"
-                        value={difficulty}
-                        onChange={(value) =>
-                          setDifficulty(value as typeof difficulty)
-                        }
-                        options={[
-                          { value: "easy", label: "Cơ bản" },
-                          { value: "medium", label: "Trung bình" },
-                          { value: "hard", label: "Nâng cao" },
-                        ]}
-                      />
-                      <Select
-                        label="Hiển thị"
-                        className="w-full"
-                        value={publicationStatus}
-                        onChange={(value) =>
-                          setPublicationStatus(
-                            value as typeof publicationStatus,
-                          )
-                        }
-                        options={[
-                          { value: "published", label: "Đang hiển thị" },
-                          { value: "hidden", label: "Đã ẩn" },
-                        ]}
-                      />
+                      <div className="min-w-0 text-xs font-medium text-text-muted">
+                        <span>Độ khó</span>
+                        <Select
+                          label="Độ khó"
+                          className="w-full"
+                          containerClassName="mt-1"
+                          value={difficulty}
+                          onChange={(value) =>
+                            setDifficulty(value as typeof difficulty)
+                          }
+                          options={[
+                            { value: "easy", label: "Cơ bản" },
+                            { value: "medium", label: "Trung bình" },
+                            { value: "hard", label: "Nâng cao" },
+                          ]}
+                        />
+                      </div>
+                      <div className="min-w-0 text-xs font-medium text-text-muted">
+                        <span>Hiển thị</span>
+                        <Select
+                          label="Hiển thị"
+                          className="w-full"
+                          containerClassName="mt-1"
+                          value={publicationStatus}
+                          onChange={(value) =>
+                            setPublicationStatus(
+                              value as typeof publicationStatus,
+                            )
+                          }
+                          options={[
+                            { value: "published", label: "Đang hiển thị" },
+                            { value: "hidden", label: "Đã ẩn" },
+                          ]}
+                        />
+                      </div>
                     </div>
                     <TextArea
                       label="Nội dung đề bài"
@@ -1997,16 +2005,16 @@ function ExerciseDetailDialog({
                     </span>
                   </div>
                   {assignmentsLoading ? (
-                    <div className="col-span-full">
+                    <div className="min-w-0 lg:col-start-1 lg:row-start-3">
                       <Loading />
                     </div>
                   ) : assignments.items.length === 0 ? (
-                    <Card className="border-dashed p-6 text-center text-xs text-text-faint">
+                    <Card className="border-dashed p-6 text-center text-xs text-text-faint lg:col-start-1 lg:row-start-3">
                       Bài công khai này chưa được giao cho bạn. Bạn vẫn có thể
                       mở bài để luyện tập.
                     </Card>
                   ) : (
-                    <div className="min-w-0 overflow-x-auto rounded-lg border border-border-soft">
+                    <div className="min-w-0 overflow-x-auto rounded-lg border border-border-soft lg:col-start-1 lg:row-start-3">
                       <table className="w-full min-w-[660px] text-left text-xs">
                         <thead className="bg-bg text-text-faint">
                           <tr>
@@ -2044,7 +2052,7 @@ function ExerciseDetailDialog({
                       </table>
                     </div>
                   )}
-                  <div className="col-span-full">
+                  <div className="min-w-0 lg:col-start-1 lg:row-start-4">
                     <Pagination
                       page={assignmentPage}
                       pageCount={assignments.totalPages}
@@ -2054,7 +2062,7 @@ function ExerciseDetailDialog({
                   </div>
                   {selectedAssignment && (
                     <aside
-                      className="min-w-0 overflow-hidden"
+                      className="min-w-0 overflow-hidden transition-all duration-300 lg:col-start-2 lg:row-span-2 lg:row-start-3"
                       aria-label={`Lịch sử nộp của ${selectedAssignment.memberName}`}
                     >
                       <Card className="max-h-[560px] min-w-[360px] overflow-y-auto p-4">
