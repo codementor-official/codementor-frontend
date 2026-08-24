@@ -766,10 +766,10 @@ export function WorkspaceExercisesTab({
               Tạo bài mới
             </Button>
           </div>
-          <div className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_220px_auto_auto]">
+          <div className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_200px_160px]">
             <div className="min-w-0">
               <Select
-                label="1. Chọn bài tập"
+                label="Chọn bài tập"
                 value={selected}
                 onChange={setSelected}
                 className="w-full"
@@ -780,7 +780,7 @@ export function WorkspaceExercisesTab({
               />
             </div>
             <label className="grid gap-1 text-xs font-medium text-text-muted">
-              <span>2. Hạn nộp</span>
+              <span>Hạn nộp</span>
               <input
                 type="datetime-local"
                 className={`${inputClass} h-9 w-full py-0 text-xs`}
@@ -791,22 +791,24 @@ export function WorkspaceExercisesTab({
             <Button
               size="sm"
               variant="outline"
+              className="h-9 whitespace-nowrap"
               aria-expanded={assignmentOpen}
               aria-controls="workspace-assignment-options"
               onClick={() => setAssignmentOpen((value) => !value)}
             >
               <Users className="h-3.5 w-3.5" />
               {assignmentOpen
-                ? `3. Đã chọn ${memberIds.length}`
-                : "3. Chọn người được giao"}
+                ? `Đã chọn ${memberIds.length}`
+                : "Chọn người được giao"}
             </Button>
             <Button
               size="sm"
+              className="h-9 whitespace-nowrap"
               disabled={!selected || !memberIds.length || busy}
               onClick={() => void attach()}
             >
               <Plus className="h-3.5 w-3.5" />
-              4. Xác nhận giao
+              Xác nhận giao
             </Button>
           </div>
           {assignmentOpen && (
