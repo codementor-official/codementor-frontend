@@ -34,6 +34,7 @@ interface LearningPreferenceState {
   setSingleValue: (field: keyof LearningPreference, value: string) => void;
   updatePreference: (patch: Partial<LearningPreference>) => void;
   savePreferenceSettings: (patch: Partial<LearningPreference>) => void;
+  hydratePreferenceFromServer: (preference: LearningPreference, completed: boolean) => void;
   completeOnboarding: () => void;
   skipOnboarding: () => void;
 }
@@ -82,6 +83,13 @@ export const useLearningPreferenceStore = create<LearningPreferenceState>()(
           hasCompletedOnboarding: true,
           hasSkippedOnboarding: false,
         })),
+
+      hydratePreferenceFromServer: (preference, completed) =>
+        set({
+          preference,
+          hasCompletedOnboarding: completed,
+          hasSkippedOnboarding: false,
+        }),
 
       completeOnboarding: () =>
         set({ isModalOpen: false, hasCompletedOnboarding: true, hasSkippedOnboarding: false }),

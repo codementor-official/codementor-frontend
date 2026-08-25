@@ -15,6 +15,14 @@ export interface User {
   displayName: string;
   /** Exactly one platform role. Keycloak may grant several; the API resolves the highest. */
   role: Role;
+  handle?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  websiteUrl?: string | null;
+  githubHandle?: string | null;
+  locale?: string;
+  timezone?: string;
+  emailVerified?: boolean;
 }
 
 export interface Pagination {

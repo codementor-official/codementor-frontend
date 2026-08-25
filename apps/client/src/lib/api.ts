@@ -1,5 +1,5 @@
 import { createApiClient } from "@codementor/api-client";
-import type { ApiResponse, User } from "@codementor/types";
+import type { ApiResponse } from "@codementor/types";
 import type {
   JudgeRunPayload,
   JudgeRunResult,
@@ -46,6 +46,13 @@ import type {
   RoadmapDetail,
   RoadmapSummary,
 } from "@/types/catalogue";
+import type {
+  AccountProfile,
+  PresignedAvatarUpload,
+  UserLearningPreferences,
+  UserLearningStats,
+  UserSettings,
+} from "@/features/account/types";
 
 /**
  * The single place that knows a backend URL. Everything below calls the gateway, so
@@ -103,7 +110,21 @@ function query(
 }
 
 export const api = {
-  me: () => unwrap<User>("/me"),
+  me: () => unwrap<AccountProfile>("/me"),
+  account: {
+    updateProfile: (body: Partial<Pick<AccountProfile, "displayName" | "handle" | "bio" | "avatarUrl" | "websiteUrl" | "githubHandle" | "locale" | "timezone">>) =>
+      unwrap<AccountProfile>("/me", { method: "PATCH", body }),
+    avatarUploadUrl: (body: { filename: string; contentType: string; sizeBytes: number }) =>
+      unwrap<PresignedAvatarUpload>("/me/avatar/upload-url", { method: "POST", body }),
+    settings: () => unwrap<UserSettings>("/me/settings"),
+    updateSettings: (body: Partial<UserSettings>) =>
+      unwrap<UserSettings>("/me/settings", { method: "PATCH", body }),
+    resetSettings: () => unwrap<UserSettings>("/me/settings", { method: "DELETE" }),
+    preferences: () => unwrap<UserLearningPreferences>("/me/preferences"),
+    updatePreferences: (body: Partial<Omit<UserLearningPreferences, "completedAt">>) =>
+      unwrap<UserLearningPreferences>("/me/preferences", { method: "PATCH", body }),
+    stats: () => unwrap<UserLearningStats>("/me/stats"),
+  },
 
   /**
    * The public catalogue: published, public content from every author.

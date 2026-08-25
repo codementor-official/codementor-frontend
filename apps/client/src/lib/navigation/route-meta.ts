@@ -18,7 +18,7 @@ const ROUTES: Record<string, RouteMeta> = {
   "/practice": { label: "Luyện tập", parent: HOME },
   "/workspace": { label: "Nhóm học tập", parent: HOME },
   "/ai-tutor": { label: "Trợ lý AI", parent: HOME },
-  "/settings": { label: "Cài đặt", parent: HOME },
+  "/settings": { label: "Cài đặt", parent: "/profile" },
   "/profile": { label: "Hồ sơ", parent: HOME },
   "/articles": { label: "Bài viết", parent: HOME },
   "/create-problem": { label: "Tạo bài tập", parent: HOME },

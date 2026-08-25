@@ -1,5 +1,5 @@
-import { SettingsManagementPage } from "@/components/settings/settings-management-page";
+import { redirect } from "next/navigation";
 
 export default function SettingsPage() {
-  return <SettingsManagementPage />;
+  redirect("/profile?tab=settings");
 }

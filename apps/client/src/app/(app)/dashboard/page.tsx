@@ -32,7 +32,7 @@ export default function DashboardPage() {
             <Button href="/roadmaps/frontend-developer" size="sm">
               Tiếp tục học →
             </Button>
-            <Button href="/settings" variant="outline" size="sm">
+            <Button href="/profile?tab=personalization" variant="outline" size="sm">
               <Pencil className="h-3.5 w-3.5" /> Chỉnh hồ sơ học tập
             </Button>
           </>

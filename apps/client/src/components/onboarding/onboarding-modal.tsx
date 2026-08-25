@@ -1,12 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { onboardingSteps } from "@/data/onboarding-steps";
 import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
 import { OnboardingProgress } from "./onboarding-progress";
 import { OnboardingOptionGrid } from "./onboarding-option-grid";
 import type { LearningPreference } from "@/types/learning-preference";
+import { api } from "@/lib/api";
+import { useAuth } from "@/providers/auth-provider";
+import { fromAccountPreferences, toAccountPreferences } from "@/features/account/learning-preference-mapper";
 
 function isFieldSatisfied(preference: LearningPreference, field: keyof LearningPreference, minSelect: number) {
   const value = preference[field];
@@ -15,6 +18,10 @@ function isFieldSatisfied(preference: LearningPreference, field: keyof LearningP
 }
 
 export function OnboardingModal() {
+  const { status } = useAuth();
+  const [serverChecked, setServerChecked] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const {
     isModalOpen,
     currentStep,
@@ -28,6 +35,7 @@ export function OnboardingModal() {
     toggleMultiValue,
     setSingleValue,
     completeOnboarding,
+    hydratePreferenceFromServer,
     skipOnboarding,
   } = useLearningPreferenceStore();
 
@@ -36,9 +44,23 @@ export function OnboardingModal() {
   // Gated on hasHydrated so this doesn't fire on the pre-rehydration default
   // state and incorrectly reopen the modal for a returning user.
   useEffect(() => {
-    if (hasHydrated && !hasCompletedOnboarding && !hasSkippedOnboarding) openModal();
+    if (!hasHydrated || status !== "authenticated") return;
+    let active = true;
+    api.account.preferences()
+      .then((stored) => {
+        if (!active) return;
+        const mapped = fromAccountPreferences(stored);
+        hydratePreferenceFromServer(mapped, Boolean(stored.completedAt));
+      })
+      .catch(() => undefined)
+      .finally(() => active && setServerChecked(true));
+    return () => { active = false; };
+  }, [hasHydrated, hydratePreferenceFromServer, status]);
+
+  useEffect(() => {
+    if (serverChecked && !hasCompletedOnboarding && !hasSkippedOnboarding) openModal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasHydrated]);
+  }, [serverChecked]);
 
   if (!isModalOpen) return null;
 
@@ -46,6 +68,19 @@ export function OnboardingModal() {
   const stepConfig = onboardingSteps[currentStep - 1];
   const isLastStep = currentStep === totalSteps;
   const isStepValid = stepConfig.fields.every((f) => isFieldSatisfied(preference, f.field, f.minSelect));
+
+  async function finish() {
+    setSaving(true);
+    setError(null);
+    try {
+      await api.account.updatePreferences(toAccountPreferences(preference));
+      completeOnboarding();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể lưu cấu hình cá nhân hóa.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="animate-overlay-in fixed inset-0 z-150 flex items-start justify-center overflow-y-auto bg-ink-fixed/55 p-6">
@@ -85,6 +120,8 @@ export function OnboardingModal() {
           />
         ))}
 
+        {error && <div role="alert" className="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-xs text-danger">{error}</div>}
+
         <div className="flex items-center justify-between gap-3 border-t border-border pt-5">
           {currentStep > 1 ? (
             <button
@@ -99,11 +136,11 @@ export function OnboardingModal() {
           )}
           <button
             type="button"
-            disabled={!isStepValid}
-            onClick={isLastStep ? completeOnboarding : goNext}
+            disabled={!isStepValid || saving}
+            onClick={isLastStep ? () => void finish() : goNext}
             className="rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-on-ink hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLastStep ? "Hoàn tất & xem lộ trình →" : "Tiếp tục →"}
+            {isLastStep ? saving ? "Đang lưu…" : "Hoàn tất & xem lộ trình →" : "Tiếp tục →"}
           </button>
         </div>
       </div>

@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { Settings2, Target } from "lucide-react";
 import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
 import { Card } from "@/components/ui/card";
-import { PersonalizationSettingsModal } from "./personalization-settings-modal";
 
 export function WeeklyGoalCard({ completedHours }: { completedHours: number }) {
-  const [open, setOpen] = useState(false);
   const preference = useLearningPreferenceStore((s) => s.preference);
   const targetHours = preference.weeklyStudyHours ?? 5;
   const percentage = Math.min(100, Math.round((completedHours / targetHours) * 100));
@@ -15,21 +13,19 @@ export function WeeklyGoalCard({ completedHours }: { completedHours: number }) {
   const scheduledDays = Object.values(preference.weeklyStudySchedule).filter((session) => session.enabled).length;
 
   return (
-    <>
       <Card className="p-4">
         <div className="mb-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 text-sm font-bold text-navy">
             <Target className="h-4 w-4 text-primary" /> Mục tiêu tuần
           </div>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
+          <Link
+            href="/profile?tab=personalization"
             aria-label="Thiết lập mục tiêu và lịch học"
             title="Thiết lập mục tiêu và lịch học"
             className="flex h-7 w-7 items-center justify-center rounded-md text-text-faint hover:bg-bg hover:text-navy "
           >
             <Settings2 className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
         <div className="flex items-center gap-4">
           <div
@@ -51,7 +47,5 @@ export function WeeklyGoalCard({ completedHours }: { completedHours: number }) {
           {scheduledDays > 0 ? `Đã lên lịch ${scheduledDays} ngày${preference.remindersEnabled ? ` · nhắc lúc ${preference.reminderTime}` : ""}` : "Chưa lên lịch học trong tuần"}
         </p>
       </Card>
-      {open && <PersonalizationSettingsModal open onClose={() => setOpen(false)} />}
-    </>
   );
 }

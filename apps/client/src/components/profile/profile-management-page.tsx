@@ -1,146 +1,157 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Award, CalendarDays, Code2, GitBranch, Globe2, MapPin, Pencil, Trophy } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AtSign, Camera, GitBranch, Globe2, Mail, Save, UserRound } from "lucide-react";
+import { api } from "@/lib/api";
+import type { AccountProfile, UserLearningStats } from "@/features/account/types";
+import { SettingsPanel } from "@/features/account/components/settings-panel";
+import { PersonalizationPanel } from "@/features/account/components/personalization-panel";
+import { useAuth } from "@/providers/auth-provider";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { submissionHistory } from "@/data/submission-history";
-import { Input, Modal, useToast } from "@codementor/ui";
+import { Input, SegmentedTabs, useToast } from "@codementor/ui";
 
-const heatLevels = Array.from({ length: 91 }, (_, index) => {
-  const value = Math.abs(Math.sin(index * 7.321 + 0.8));
-  return value > 0.88 ? 4 : value > 0.68 ? 3 : value > 0.46 ? 2 : value > 0.27 ? 1 : 0;
-});
+type AccountTab = "profile" | "settings" | "personalization";
+const EMPTY_STATS: UserLearningStats = { xp: 0, solvedCount: 0, currentStreakDays: 0, longestStreakDays: 0, lastSolvedOn: null };
 
-const heatColors = ["bg-border-soft", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"];
+function initials(name: string): string {
+  return name.trim().split(/\s+/).slice(-2).map((part) => part[0]?.toUpperCase() ?? "").join("") || "?";
+}
+function cleanOptional(value: string): string | null { return value.trim() || null; }
+function errorMessage(cause: unknown, fallback: string): string { return cause instanceof Error ? cause.message : fallback; }
 
-const difficulties = [
-  { label: "Cơ bản", value: "22/30", percent: 73, color: "bg-success" },
-  { label: "Trung bình", value: "18/32", percent: 56, color: "bg-accent" },
-  { label: "Nâng cao", value: "7/18", percent: 39, color: "bg-danger" },
-];
-
-export function ProfileManagementPage() {
+function ProfilePanel() {
   const toast = useToast();
-  const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    name: "Nguyễn Trần Gia Sĩ",
-    handle: "giasi",
-    bio: "Đang xây nền tảng Backend Java và rèn tư duy giải thuật mỗi ngày.",
-    website: "giasi.dev",
-    github: "giasi",
-  });
+  const { refreshUser } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [profile, setProfile] = useState<AccountProfile | null>(null);
+  const [draft, setDraft] = useState<AccountProfile | null>(null);
+  const [stats, setStats] = useState<UserLearningStats>(EMPTY_STATS);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const accepted = useMemo(() => submissionHistory.filter((item) => item.result === "Đạt"), []);
-  const recent = submissionHistory.slice(0, 5);
+  useEffect(() => {
+    let active = true;
+    Promise.all([api.me(), api.account.stats()])
+      .then(([currentProfile, currentStats]) => {
+        if (!active) return;
+        setProfile(currentProfile); setDraft(currentProfile); setStats(currentStats);
+      })
+      .catch((cause: unknown) => active && setError(errorMessage(cause, "Không thể tải hồ sơ.")))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, []);
 
-  function saveProfile() {
-    toast.success("Đã lưu thay đổi hồ sơ");
-    setIsEditing(false);
+  useEffect(() => () => { if (avatarPreview) URL.revokeObjectURL(avatarPreview); }, [avatarPreview]);
+  const dirty = useMemo(() => JSON.stringify(profile) !== JSON.stringify(draft) || avatarFile !== null, [avatarFile, draft, profile]);
+  const valid = Boolean(draft?.displayName.trim()) && (!draft?.websiteUrl || /^https?:\/\//i.test(draft.websiteUrl));
+  function update<K extends keyof AccountProfile>(key: K, value: AccountProfile[K]) { setDraft((current) => current ? { ...current, [key]: value } : current); }
+
+  function chooseAvatar(file: File | undefined) {
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Ảnh đại diện chỉ hỗ trợ PNG, JPEG hoặc WebP."); return; }
+    if (file.size > 5 * 1024 * 1024) { setError("Ảnh đại diện tối đa 5 MB."); return; }
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)); setError(null);
   }
 
+  async function save() {
+    if (!draft || !dirty || !valid) return;
+    setSaving(true); setError(null);
+    try {
+      let avatarUrl = draft.avatarUrl;
+      if (avatarFile) {
+        const target = await api.account.avatarUploadUrl({ filename: avatarFile.name, contentType: avatarFile.type, sizeBytes: avatarFile.size });
+        const upload = await fetch(target.uploadUrl, { method: "PUT", headers: target.headers, body: avatarFile });
+        if (!upload.ok) throw new Error("Không thể tải ảnh lên storage. Vui lòng thử lại.");
+        avatarUrl = target.publicUrl;
+      }
+      const updated = await api.account.updateProfile({
+        displayName: draft.displayName.trim(), handle: cleanOptional(draft.handle ?? ""), bio: cleanOptional(draft.bio ?? ""), avatarUrl,
+        websiteUrl: cleanOptional(draft.websiteUrl ?? ""), githubHandle: cleanOptional(draft.githubHandle ?? ""), locale: draft.locale, timezone: draft.timezone,
+      });
+      setProfile(updated); setDraft(updated); setAvatarFile(null);
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(null); await refreshUser(); toast.success("Đã lưu hồ sơ.");
+    } catch (cause) { setError(errorMessage(cause, "Không thể lưu hồ sơ.")); }
+    finally { setSaving(false); }
+  }
+
+  function cancel() {
+    setDraft(profile); setAvatarFile(null);
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarPreview(null); setError(null);
+  }
+
+  if (loading) return <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]"><div className="h-72 animate-pulse rounded-xl bg-bg" /><div className="h-96 animate-pulse rounded-xl bg-bg" /></div>;
+  if (!draft) return <Card className="p-6 text-sm text-danger">{error ?? "Không có dữ liệu hồ sơ."}</Card>;
+  const avatar = avatarPreview ?? draft.avatarUrl;
+
   return (
-    <div>
-      <div className="mb-6 flex flex-col justify-between gap-4 border-b border-border-soft pb-5 sm:flex-row sm:items-end">
-        <div>
-          <p className="mb-1 text-xs font-bold tracking-[0.14em] text-primary uppercase">Không gian cá nhân</p>
-          <h1 className="text-2xl font-bold text-navy">Hồ sơ & thành tích học tập</h1>
-          <p className="mt-1 text-sm text-text-muted">Theo dõi quá trình luyện tập, chia sẻ kỹ năng và quản lý thông tin công khai.</p>
-        </div>
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="space-y-4">
-          <Card className="overflow-hidden p-5">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-navy text-base font-bold text-on-ink">GS</div>
-              <div className="min-w-0">
-                <h2 className="truncate font-bold text-navy">{profile.name}</h2>
-                <p className="text-xs text-text-muted">@{profile.handle}</p>
-              </div>
+    <div className="space-y-5">
+      {error && <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
+      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="space-y-5">
+          <Card className="p-5 text-center">
+            <div className="relative mx-auto h-24 w-24">
+              {avatar ? <div role="img" aria-label={`Ảnh đại diện của ${draft.displayName}`} className="h-24 w-24 rounded-full border border-border bg-cover bg-center" style={{ backgroundImage: `url(${JSON.stringify(avatar).slice(1, -1)})` }} /> : <div className="flex h-24 w-24 items-center justify-center rounded-full bg-navy text-2xl font-bold text-on-ink">{initials(draft.displayName)}</div>}
+              <button type="button" aria-label="Chọn ảnh đại diện" onClick={() => fileRef.current?.click()} className="absolute right-0 bottom-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-on-ink shadow-sm"><Camera className="h-4 w-4" /></button>
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => chooseAvatar(event.target.files?.[0])} />
             </div>
-            <p className="mb-4 text-xs leading-5 text-text-muted">{profile.bio}</p>
-            <Button variant="outline" size="sm" className="w-full" onClick={() => setIsEditing(true)}>
-              <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa hồ sơ
-            </Button>
-            <div className="mt-5 space-y-2.5 border-t border-border-soft pt-4 text-xs text-text-muted">
-              <span className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> TP. Hồ Chí Minh, Việt Nam</span>
-              <span className="flex items-center gap-2"><Globe2 className="h-3.5 w-3.5" /> {profile.website}</span>
-              <span className="flex items-center gap-2"><GitBranch className="h-3.5 w-3.5" /> {profile.github}</span>
-            </div>
+            <h2 className="mt-4 font-bold text-navy">{draft.displayName}</h2>
+            <p className="mt-1 text-xs text-text-muted">{draft.handle ? `@${draft.handle}` : draft.email}</p>
+            <p className="mt-3 text-xs leading-relaxed text-text-muted">{draft.bio || "Chưa có phần giới thiệu."}</p>
           </Card>
-
           <Card className="p-5">
-            <h2 className="mb-3 text-sm font-bold text-navy">Kỹ năng nổi bật</h2>
-            <div className="flex flex-wrap gap-1.5">
-              {["Java", "C++", "SQL", "Cấu trúc dữ liệu", "OOP"].map((skill) => (
-                <span key={skill} className="rounded-full bg-bg px-2.5 py-1 text-xs font-medium text-navy">{skill}</span>
-              ))}
+            <h2 className="text-sm font-bold text-navy">Thống kê học tập</h2>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {[[stats.xp.toLocaleString("vi-VN"), "Tổng XP"], [String(stats.solvedCount), "Bài đã giải"], [`${stats.currentStreakDays} ngày`, "Chuỗi hiện tại"], [`${stats.longestStreakDays} ngày`, "Chuỗi dài nhất"]].map(([value, label]) => <div key={label} className="rounded-lg bg-bg p-3"><p className="text-base font-bold text-navy">{value}</p><p className="mt-1 text-2xs text-text-faint">{label}</p></div>)}
             </div>
+            {stats.lastSolvedOn && <p className="mt-3 text-xs text-text-faint">Lần hoàn thành gần nhất: {new Date(stats.lastSolvedOn).toLocaleDateString("vi-VN")}</p>}
           </Card>
         </aside>
 
-        <main className="min-w-0 space-y-5">
-          <Card className="grid divide-y divide-border-soft sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            {[["2.450", "Tổng XP", "Hạng #1 trong nhóm"], ["5 ngày", "Chuỗi hoạt động", "Kỷ lục 12 ngày"], ["47", "Bài đã giải", "68% tỷ lệ hoàn thành"]].map(([value, label, detail]) => (
-              <div key={label} className="px-3.5 py-2.5"><div className="flex items-baseline justify-between gap-2"><p className="text-xs text-text-muted">{label}</p><p className="text-base font-bold text-navy">{value}</p></div><p className="mt-0.5 text-2xs text-text-faint">{detail}</p></div>
-            ))}
-          </Card>
-
-          <section className="grid gap-5 lg:grid-cols-[1.18fr_0.82fr]">
-            <Card className="p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <div><h2 className="font-bold text-navy">Tổng quan bài luyện tập</h2><p className="mt-1 text-xs text-text-muted">69 bài trong ngân hàng bài tập cá nhân</p></div>
-                <Code2 className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="mx-auto flex h-32 w-32 shrink-0 items-center justify-center rounded-full" style={{ background: "conic-gradient(var(--color-primary) 68%, var(--color-border-soft) 0)" }}>
-                  <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-surface"><b className="text-2xl text-navy">47</b><span className="text-xs text-text-muted">/ 69 đã giải</span></div>
-                </div>
-                <div className="flex-1 space-y-3">
-                  {difficulties.map((item) => (
-                    <div key={item.label}>
-                      <div className="mb-1 flex justify-between text-xs"><span className="font-medium text-text">{item.label}</span><span className="text-text-muted">{item.value}</span></div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-border-soft"><div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.percent}%` }} /></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-5">
-              <div className="mb-4 flex items-center justify-between"><div><h2 className="font-bold text-navy">Thành tích</h2><p className="mt-1 text-xs text-text-muted">Mốc học tập gần đây</p></div><Trophy className="h-5 w-5 text-primary" /></div>
-              <div className="space-y-3">
-                {[["Người kiên trì", "Duy trì học 5 ngày liên tiếp"], ["100% Test case", "Hoàn thành 3 bài không lỗi"], ["Đồng đội tin cậy", "Đã nộp 36 bài cho nhóm"]].map(([title, detail], index) => (
-                  <div key={title} className="flex items-center gap-3 rounded-lg bg-bg p-3"><Award className={`h-5 w-5 ${index === 0 ? "text-accent" : "text-primary"}`} /><div><p className="text-xs font-semibold text-navy">{title}</p><p className="mt-0.5 text-2xs text-text-muted">{detail}</p></div></div>
-                ))}
-              </div>
-            </Card>
-          </section>
-
-          <Card className="p-5">
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-bold text-navy">Hoạt động trong 13 tuần</h2><p className="mt-1 text-xs text-text-muted">{accepted.length} bài đạt trong các lần nộp gần đây · Chuỗi hiện tại 5 ngày</p></div><CalendarDays className="h-5 w-5 text-text-faint" /></div>
-            <div className="overflow-x-auto pb-1"><div className="grid w-fit grid-flow-col grid-rows-7 gap-1">{heatLevels.map((level, index) => <span key={index} title={`${level} hoạt động`} className={`h-3 w-3 rounded-sm ${heatColors[level]}`} />)}</div></div>
-            <div className="mt-3 flex items-center justify-end gap-1.5 text-2xs text-text-faint"><span>Ít</span>{heatColors.map((color) => <span key={color} className={`h-3 w-3 rounded-sm ${color}`} />)}<span>Nhiều</span></div>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4"><div><h2 className="font-bold text-navy">Bài nộp gần đây</h2><p className="mt-1 text-xs text-text-muted">Các lần làm mới nhất từ nhóm học tập và ngân hàng luyện tập</p></div></div>
-            <div className="divide-y divide-border-soft">
-              {recent.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"><div className="min-w-0"><p className="truncate text-sm font-semibold text-navy">{item.title}</p><p className="mt-1 text-xs text-text-muted">{item.origin}{item.groupName ? ` · ${item.groupName}` : " · Ngân hàng bài luyện tập"}</p></div><div className="text-right"><span className={`text-xs font-bold ${item.result === "Đạt" ? "text-success" : item.result === "Không đạt" ? "text-accent" : "text-danger"}`}>{item.result}</span><p className="mt-1 text-2xs text-text-faint">{item.submittedAt}</p></div></div>)}
-            </div>
-          </Card>
-        </main>
+        <Card className="p-5 sm:p-6">
+          <div className="mb-5"><h2 className="text-base font-bold text-navy">Thông tin hồ sơ</h2><p className="mt-1 text-xs text-text-faint">Email lấy từ Keycloak và không thể chỉnh sửa tại đây.</p></div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="text-xs font-semibold text-text-muted">Họ và tên<Input className="mt-1.5" value={draft.displayName} maxLength={120} onChange={(event) => update("displayName", event.target.value)} /></label>
+            <label className="text-xs font-semibold text-text-muted">Username<div className="relative mt-1.5"><AtSign className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input className="pl-9" value={draft.handle ?? ""} maxLength={30} onChange={(event) => update("handle", event.target.value)} /></div></label>
+            <label className="text-xs font-semibold text-text-muted sm:col-span-2">Email<div className="relative mt-1.5"><Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input className="bg-bg pl-9" value={draft.email} disabled /></div></label>
+            <label className="text-xs font-semibold text-text-muted sm:col-span-2">Giới thiệu<textarea className="mt-1.5 min-h-28 w-full resize-y rounded-md border border-border bg-surface p-3 text-sm text-navy focus:border-primary focus:outline-none" value={draft.bio ?? ""} maxLength={2000} onChange={(event) => update("bio", event.target.value)} /><span className="mt-1 block text-right text-2xs text-text-faint">{draft.bio?.length ?? 0}/2000</span></label>
+            <label className="text-xs font-semibold text-text-muted">Website<div className="relative mt-1.5"><Globe2 className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input className="pl-9" placeholder="https://example.com" value={draft.websiteUrl ?? ""} onChange={(event) => update("websiteUrl", event.target.value)} /></div>{draft.websiteUrl && !/^https?:\/\//i.test(draft.websiteUrl) && <span className="mt-1 block text-2xs text-danger">URL phải bắt đầu bằng http:// hoặc https://</span>}</label>
+            <label className="text-xs font-semibold text-text-muted">GitHub<div className="relative mt-1.5"><GitBranch className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input className="pl-9" placeholder="username" value={draft.githubHandle ?? ""} maxLength={39} onChange={(event) => update("githubHandle", event.target.value)} /></div></label>
+            <label className="text-xs font-semibold text-text-muted">Ngôn ngữ<select value={draft.locale} onChange={(event) => update("locale", event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-navy"><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label>
+            <label className="text-xs font-semibold text-text-muted">Múi giờ<select value={draft.timezone} onChange={(event) => update("timezone", event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-navy"><option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh</option><option value="Asia/Bangkok">Asia/Bangkok</option><option value="UTC">UTC</option></select></label>
+          </div>
+          <div className="mt-6 flex justify-end gap-2 border-t border-border-soft pt-5">
+            <Button variant="outline" disabled={!dirty || saving} onClick={cancel}>Hủy thay đổi</Button>
+            <Button disabled={!dirty || !valid || saving} onClick={() => void save()}><Save className="h-4 w-4" /> {saving ? avatarFile ? "Đang tải ảnh…" : "Đang lưu…" : "Lưu hồ sơ"}</Button>
+          </div>
+        </Card>
       </div>
+    </div>
+  );
+}
 
-      <Modal open={isEditing} onClose={() => setIsEditing(false)} title="Chỉnh sửa hồ sơ" description="Thông tin này hiển thị trên trang cá nhân và trong các nhóm bạn tham gia." footer={<><Button variant="outline" onClick={() => setIsEditing(false)}>Hủy</Button><Button onClick={saveProfile}>Lưu thay đổi</Button></>}>
-        <div className="grid gap-4">
-          <label className="text-sm font-semibold text-navy">Họ và tên<Input className="mt-1.5" value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} /></label>
-          <label className="text-sm font-semibold text-navy">Tên hiển thị<Input className="mt-1.5" value={profile.handle} onChange={(event) => setProfile({ ...profile, handle: event.target.value })} /></label>
-          <label className="text-sm font-semibold text-navy">Giới thiệu<textarea className="mt-1.5 min-h-22 w-full rounded-md border border-border bg-surface p-3 text-sm text-navy focus:border-navy" value={profile.bio} onChange={(event) => setProfile({ ...profile, bio: event.target.value })} /></label>
-          <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold text-navy">Website<Input className="mt-1.5" value={profile.website} onChange={(event) => setProfile({ ...profile, website: event.target.value })} /></label><label className="text-sm font-semibold text-navy">GitHub<Input className="mt-1.5" value={profile.github} onChange={(event) => setProfile({ ...profile, github: event.target.value })} /></label></div>
-        </div>
-      </Modal>
+export function ProfileManagementPage({ initialTab = "profile" }: { initialTab?: AccountTab }) {
+  const [tab, setTab] = useState<AccountTab>(initialTab);
+  function changeTab(value: string) {
+    const next = value as AccountTab; setTab(next);
+    window.history.replaceState(null, "", next === "profile" ? "/profile" : `/profile?tab=${next}`);
+  }
+  return (
+    <div>
+      <PageHeader icon={UserRound} title="Hồ sơ cá nhân" subtitle="Quản lý thông tin, cài đặt tài khoản và dữ liệu cá nhân hóa của bạn." />
+      <SegmentedTabs className="mb-5" value={tab} onChange={changeTab} options={[{ value: "profile", label: "Hồ sơ" }, { value: "settings", label: "Cài đặt" }, { value: "personalization", label: "Cá nhân hóa" }]} />
+      <div role="tabpanel">
+        {tab === "profile" && <ProfilePanel />}
+        {tab === "settings" && <SettingsPanel />}
+        {tab === "personalization" && <PersonalizationPanel />}
+      </div>
     </div>
   );
 }
