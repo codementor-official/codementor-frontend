@@ -54,6 +54,21 @@ export interface UserLearningStats {
   lastSolvedOn: string | null;
 }
 
+export interface UserActivityCalendar {
+  days: { date: string; count: number }[];
+  totalActivities: number;
+  activeDays: number;
+  currentStreakDays: number;
+  longestStreakDays: number;
+}
+
+export interface UserActivityEntry {
+  kind: 'roadmap_enrolled' | 'course_enrolled' | 'course_completed' | 'lesson_completed' | 'exercise_solved';
+  title: string;
+  detail: string | null;
+  occurredAt: string;
+}
+
 export interface PresignedAvatarUpload {
   uploadUrl: string;
   headers: Record<string, string>;

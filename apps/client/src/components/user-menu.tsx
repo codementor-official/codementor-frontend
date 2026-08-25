@@ -30,6 +30,7 @@ export function UserMenu({
   }, [open]);
 
   const displayName = user?.displayName ?? "Tài khoản";
+  const avatarUrl = user?.avatarUrl;
 
   return (
     // Expanded: take the leftover row width so the collapse toggle sits flush right.
@@ -82,8 +83,13 @@ export function UserMenu({
           collapsed ? "justify-center" : "px-1"
         }`}
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-on-ink">
-          {initialsOf(displayName)}
+        <span
+          role={avatarUrl ? "img" : undefined}
+          aria-label={avatarUrl ? `Ảnh đại diện của ${displayName}` : undefined}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy bg-cover bg-center text-xs font-semibold text-on-ink"
+          style={avatarUrl ? { backgroundImage: `url(${JSON.stringify(avatarUrl)})` } : undefined}
+        >
+          {!avatarUrl && initialsOf(displayName)}
         </span>
         {!collapsed && (
           <span className="min-w-0 truncate text-sm font-medium text-navy">{displayName}</span>

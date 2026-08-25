@@ -7,7 +7,6 @@ import {
   LayoutGrid,
   Map,
   Newspaper,
-  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -38,5 +37,4 @@ export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/articles", label: "Bài viết", icon: Newspaper },
   { href: "/workspace", label: "Nhóm học tập", icon: Users },
   { href: "/ai-tutor", label: "Trợ lý AI", icon: Bot },
-  { href: "/profile", label: "Hồ sơ", icon: UserRound },
 ];

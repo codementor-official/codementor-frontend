@@ -49,7 +49,9 @@ import type {
 import type {
   AccountProfile,
   PresignedAvatarUpload,
+  UserActivityEntry,
   UserLearningPreferences,
+  UserActivityCalendar,
   UserLearningStats,
   UserSettings,
 } from "@/features/account/types";
@@ -124,6 +126,10 @@ export const api = {
     updatePreferences: (body: Partial<Omit<UserLearningPreferences, "completedAt">>) =>
       unwrap<UserLearningPreferences>("/me/preferences", { method: "PATCH", body }),
     stats: () => unwrap<UserLearningStats>("/me/stats"),
+    activityCalendar: (weeks = 13) =>
+      unwrap<UserActivityCalendar>(`/activity/me/calendar${query({ weeks })}`),
+    recentActivity: (limit = 10) =>
+      unwrap<UserActivityEntry[]>(`/activity/me${query({ limit })}`),
   },
 
   /**
