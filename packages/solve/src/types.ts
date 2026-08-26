@@ -207,6 +207,8 @@ export interface ExerciseContent {
 
 export interface Exercise extends Omit<ExerciseListItem, "authorName"> {
   summary: string | null;
+  /** Id chủ đề; tên tra từ `GET /tags`. */
+  tagIds: string[];
   xpReward: number;
   estimatedMinutes: number | null;
   timeLimitMs: number;

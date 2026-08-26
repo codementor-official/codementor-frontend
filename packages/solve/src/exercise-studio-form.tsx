@@ -41,20 +41,36 @@ import {
 } from "./types";
 import { integer, slug as slugRule, text } from "@codementor/utils";
 
+/** Khớp trần phía backend (`MAX_TAGS` trong aggregate Exercise). */
+const MAX_TAGS = 8;
+
 export interface ExerciseDraft {
   slug: string;
   title: string;
   summary: string;
   difficulty: string;
+  /** Id chủ đề đã chọn. Vắng mặt ở nơi soạn bài không có chủ đề (bài tập nhóm). */
+  tagIds?: string[];
   estimatedMinutes: string;
   timeLimitMs: string;
   memoryLimitKb: string;
   content: ExerciseContent;
 }
 
+export interface TagOption {
+  id: string;
+  name: string;
+}
+
 interface Props {
   value: ExerciseDraft;
   onChange: (next: ExerciseDraft) => void;
+  /**
+   * Từ vựng chủ đề để chọn. KHÔNG truyền thì cả khối chọn chủ đề biến mất — bài tập trong
+   * nhóm học tập đi qua một API khác, không có chỗ nào nhận chủ đề, và một ô nhập lưu
+   * xong không thấy đâu còn tệ hơn là không có ô nào.
+   */
+  tagOptions?: TagOption[];
   /** Đang chờ duyệt thì backend từ chối mọi lệnh ghi; khoá ở đây để không gọi vô ích. */
   readOnly?: boolean;
   /** Slug của bài đã công khai không đổi được — đường dẫn đã phát ra ngoài. */
@@ -80,6 +96,7 @@ export interface ExerciseStudioJudge {
 export function ExerciseBriefForm({
   value,
   onChange,
+  tagOptions,
   readOnly = false,
   slugLocked = false,
 }: Props) {
@@ -213,6 +230,50 @@ export function ExerciseBriefForm({
             />
           </Field>
         </div>
+
+        {tagOptions && tagOptions.length > 0 && (
+          // `role="group"` chứ không phải `Field`: nhãn của một NHÓM nút không trỏ được
+          // vào một control duy nhất, mà `<label htmlFor>` thì đòi đúng một cái.
+          <div aria-labelledby="tags-label" role="group">
+            <span
+              className="mb-1.5 flex items-center gap-1.5 text-sm font-medium"
+              id="tags-label"
+            >
+              Chủ đề
+              <InfoHint text="Dùng để gợi ý bài cùng chủ đề cho học viên. Tối đa 8." />
+            </span>
+            {/* Nút bật/tắt chứ không phải <select multiple>: danh sách ngắn, và chọn nhiều
+              * trong một select đòi giữ Ctrl — thao tác mà phần lớn người dùng không biết. */}
+            <div className="flex flex-wrap gap-2">
+              {tagOptions.map((tag) => {
+                const selected = (value.tagIds ?? []).includes(tag.id);
+                const full = (value.tagIds ?? []).length >= MAX_TAGS;
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    aria-pressed={selected}
+                    disabled={readOnly || (full && !selected)}
+                    onClick={() =>
+                      patch({
+                        tagIds: selected
+                          ? (value.tagIds ?? []).filter((id) => id !== tag.id)
+                          : [...(value.tagIds ?? []), tag.id],
+                      })
+                    }
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40 ${
+                      selected
+                        ? "border-primary bg-primary text-on-ink"
+                        : "border-border text-text hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    {tag.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card className="p-5">
