@@ -321,6 +321,17 @@ export default function ExerciseStudioPage() {
                 onChange={setDraft}
                 readOnly={locked}
                 slugLocked={exercise.status === "published"}
+                onCreateTag={async (name) => {
+                  const created = await api.tags.create(name);
+                  // Đưa ngay vào từ vựng tại chỗ: không chờ tải lại thì chip mới vẫn có
+                  // tên để hiện, và lần gõ sau đã thấy nó trong gợi ý.
+                  setTags((current) =>
+                    current.some((tag) => tag.id === created.id)
+                      ? current
+                      : [...current, created].sort((a, b) => a.name.localeCompare(b.name, "vi")),
+                  );
+                  return created;
+                }}
                 tagOptions={tags}
                 value={draft}
               />

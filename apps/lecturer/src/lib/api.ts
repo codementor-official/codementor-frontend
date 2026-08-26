@@ -229,6 +229,8 @@ export const api = {
    */
   tags: {
     list: () => unwrap<Tag[]>("/tags"),
+    /** Trùng tên thì trả về chủ đề đã có, không tạo bản sao. */
+    create: (name: string) => unwrap<Tag>("/tags", { method: "POST", body: { name } }),
   },
 
   /**
