@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RecommendedCourses, RecommendedExercises } from "@/components/dashboard/recommended";
+import { RecommendedCourses, RecommendedExercises } from "@/components/recommendation/recommended";
 import { WeeklyGoalCard } from "@/components/personalization/weekly-goal-card";
 import {
   continueLearning,
