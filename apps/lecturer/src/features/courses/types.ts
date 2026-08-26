@@ -76,6 +76,8 @@ export interface StoredChapter {
 }
 
 export interface Course {
+  /** Id chủ đề; tên tra từ `GET /tags`. */
+  tagIds: string[];
   id: string;
   slug: string;
   title: string;

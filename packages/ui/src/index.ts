@@ -48,6 +48,8 @@ export type { DashboardShellProps } from "./dashboard-shell";
 export type { ManagePageProps } from "./manage-page";
 export type { SegmentedTabOption } from "./segmented-tabs";
 export { LanguageDropdown } from "./workspace/language-dropdown";
+export { TopicPicker } from "./topic-picker";
+export type { TopicOption } from "./topic-picker";
 export { Pane } from "./workspace/pane";
 export { ResizeHandle } from "./workspace/resize-handle";
 export { TabBar } from "./workspace/tab-bar";

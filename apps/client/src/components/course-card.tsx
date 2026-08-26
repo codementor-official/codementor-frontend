@@ -27,6 +27,8 @@ export interface CourseCardProps {
   stats?: EntityCardStat[];
   /** Shows a small "Hoàn thành" check badge — the only learning-status signal this card carries. */
   completed?: boolean;
+  /** Free-form note, e.g. lý do khóa học này được đề xuất. See `EntityCard`. */
+  note?: string;
   updated?: string;
   href?: string;
   /** Optional mock/CMS artwork; falls back to the stable generated cover. */
@@ -48,6 +50,7 @@ export function CourseCard({
   tags = [],
   stats = [],
   completed = false,
+  note,
   updated,
   href,
   coverImage,
@@ -64,6 +67,7 @@ export function CourseCard({
       difficulty={difficulty}
       tags={tags}
       stats={stats}
+      note={note}
       badge={
         completed ? (
           <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary-tint px-2 py-0.5 text-2xs font-bold text-primary">

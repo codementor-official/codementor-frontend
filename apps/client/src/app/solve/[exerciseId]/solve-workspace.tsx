@@ -57,10 +57,13 @@ export interface LessonContext {
 
 export function SolveWorkspace({
   problem,
+  exerciseId,
   backHref = "/practice",
   context,
 }: {
   problem: Problem;
+  /** Id của bài đang mở — dùng để hỏi bài kế tiếp sau khi nộp đạt. */
+  exerciseId?: string;
   backHref?: string;
   context?: LessonContext;
 }) {
@@ -379,6 +382,7 @@ export function SolveWorkspace({
         <SolvedDialog
           result={judgeResult}
           xp={xpReward}
+          exerciseId={exerciseId}
           backHref={backHref}
           tracked={Boolean(context)}
           onClose={() => setCelebrating(false)}
@@ -559,18 +563,37 @@ function WorkspaceBody({
 function SolvedDialog({
   result,
   xp,
+  exerciseId,
   backHref,
   tracked,
   onClose,
 }: {
   result: JudgeRunResult;
   xp: number;
+  exerciseId?: string;
   backHref: string;
   /** Bài mở từ trong khóa học: tiến độ sẽ được ghi. Luyện tập tự do thì không. */
   tracked: boolean;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [next, setNext] = useState<{ id: string; title: string } | null>(null);
+
+  // Khoảnh khắc vừa xong một bài là lúc dễ làm tiếp bài nữa nhất. Hỏng thì im lặng: gợi ý
+  // là phần thêm, không được che mất việc chính của hộp thoại là báo bài đã đạt.
+  useEffect(() => {
+    if (!exerciseId) return;
+    let cancelled = false;
+    api.recommendations
+      .nextExercise(exerciseId)
+      .then((result) => {
+        if (!cancelled) setNext(result.items[0] ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [exerciseId]);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -607,6 +630,15 @@ function SolvedDialog({
             ? "Bài học đã được ghi nhận hoàn thành. Quay lại khóa học và tải lại trang để thấy tiến độ cập nhật."
             : "Đây là bài luyện tập tự do nên không gắn với tiến độ khóa học nào."}
         </p>
+
+        {next && (
+          <p className="mt-3 text-2xs text-text-faint">
+            Có thể bạn muốn thử tiếp:{" "}
+            <Link href={`/solve/${next.id}`} className="font-semibold text-primary hover:underline">
+              {next.title}
+            </Link>
+          </p>
+        )}
 
         <div className="mt-5 flex items-center justify-center gap-2">
           <button

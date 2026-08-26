@@ -16,6 +16,7 @@ import {
   StatusBadge,
   useToast,
   useUndoableDelete,
+  TopicPicker,
 } from "@codementor/ui";
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
@@ -34,7 +35,7 @@ import {
 } from "@/features/courses/types";
 import type { ExerciseListItem } from "@codementor/solve";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@/features/roadmaps/types";
-import { api } from "@/lib/api";
+import { api, type Tag } from "@/lib/api";
 import { integer, isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
 
 interface Meta {
@@ -45,6 +46,7 @@ interface Meta {
   level: string;
   progressionMode: string;
   prerequisiteNote: string;
+  tagIds: string[];
 }
 
 /**
@@ -111,6 +113,7 @@ function toMeta(course: Course): Meta {
     level: course.level,
     progressionMode: course.progressionMode,
     prerequisiteNote: course.prerequisiteNote ?? "",
+    tagIds: course.tagIds ?? [],
   };
 }
 
@@ -127,6 +130,34 @@ export default function CourseStudioPage() {
   const [exercises, setExercises] = useState<ExerciseListItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Từ vựng chủ đề để gợi ý. Hỏng thì thôi không hiện ô chọn — soạn nội dung không dừng
+  // lại vì một từ vựng phụ không tải được.
+  const [tags, setTags] = useState<Tag[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.tags
+      .list()
+      .then((loaded) => !cancelled && setTags(loaded))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const createTag = async (name: string) => {
+    const created = await api.tags.create(name);
+    // Đưa ngay vào từ vựng tại chỗ: không chờ tải lại thì chip mới vẫn có tên để hiện, và
+    // lần gõ sau đã thấy nó trong gợi ý.
+    setTags((current) =>
+      current.some((tag) => tag.id === created.id)
+        ? current
+        : [...current, created].sort((a, b) => a.name.localeCompare(b.name, "vi")),
+    );
+    return created;
+  };
+
   const { scheduleDelete } = useUndoableDelete();
   const [savedSignature, setSavedSignature] = useState("");
   // Nhớ mục đang chọn từ TRƯỚC lần lưu để `apply` remap được nó sang key mới — xem
@@ -292,6 +323,7 @@ export default function CourseStudioPage() {
       level: meta.level,
       progressionMode: meta.progressionMode,
       prerequisiteNote: meta.prerequisiteNote || null,
+      tagIds: meta.tagIds,
     });
     return api.courses.saveCurriculum(id, toPayload(chapters));
   };
@@ -615,6 +647,16 @@ export default function CourseStudioPage() {
                 <option value="free">Tự do</option>
               </select>
             </Field>
+
+            <div className="mt-4">
+              <TopicPicker
+                hint="Dùng để gợi ý khóa cùng chủ đề cho học viên. Chủ đề của bài tập bên trong khóa được gom thêm tự động."
+                onChange={(tagIds) => patchMeta({ tagIds })}
+                onCreate={createTag}
+                options={tags}
+                value={meta.tagIds}
+              />
+            </div>
           </Card>
 
           <div className="mt-6 border-t border-border pt-6 lg:col-span-3">
