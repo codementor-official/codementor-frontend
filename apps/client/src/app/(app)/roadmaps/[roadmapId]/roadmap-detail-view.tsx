@@ -151,9 +151,15 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                         description={detail?.description ?? "Chưa có mô tả cho khóa học này."}
                         difficulty={detail ? levelToDifficulty(detail.level) : undefined}
                         tags={course.isOptional ? ["Tự chọn"] : []}
-                        stats={
-                          course.durationHours !== null ? [{ label: "giờ", value: course.durationHours }] : []
-                        }
+                        // Số chương/bài đến từ `courseDetails`, không từ payload lộ trình —
+                        // `RoadmapDetail.courses` chỉ mang id/vị trí/tiêu đề/thời lượng.
+                        stats={[
+                          ...(detail ? [{ label: "chương", value: detail.totalChapters }] : []),
+                          ...(detail ? [{ label: "bài học", value: detail.totalLessons }] : []),
+                          ...(course.durationHours !== null
+                            ? [{ label: "giờ", value: course.durationHours }]
+                            : []),
+                        ]}
                         href={`/courses/${course.courseId}`}
                       />
                     </div>
