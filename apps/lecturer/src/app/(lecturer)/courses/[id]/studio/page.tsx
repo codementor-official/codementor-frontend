@@ -648,17 +648,15 @@ export default function CourseStudioPage() {
               </select>
             </Field>
 
-            {tags.length > 0 && (
-              <div className="mt-4">
-                <TopicPicker
-                  hint="Dùng để gợi ý khóa cùng chủ đề cho học viên. Chủ đề của bài tập bên trong khóa được gom thêm tự động."
-                  onChange={(tagIds) => patchMeta({ tagIds })}
-                  onCreate={createTag}
-                  options={tags}
-                  value={meta.tagIds}
-                />
-              </div>
-            )}
+            <div className="mt-4">
+              <TopicPicker
+                hint="Dùng để gợi ý khóa cùng chủ đề cho học viên. Chủ đề của bài tập bên trong khóa được gom thêm tự động."
+                onChange={(tagIds) => patchMeta({ tagIds })}
+                onCreate={createTag}
+                options={tags}
+                value={meta.tagIds}
+              />
+            </div>
           </Card>
 
           <div className="mt-6 border-t border-border pt-6 lg:col-span-3">

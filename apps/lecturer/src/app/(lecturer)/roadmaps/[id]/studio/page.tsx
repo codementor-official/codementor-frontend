@@ -593,17 +593,15 @@ export default function RoadmapStudioPage() {
             </select>
           </Field>
 
-          {tags.length > 0 && (
-            <div className="mt-4">
-              <TopicPicker
-                hint="Dùng để gợi ý lộ trình cùng chủ đề cho học viên. Chủ đề của khóa học bên trong được gom thêm tự động."
-                onChange={(tagIds) => patch({ tagIds })}
-                onCreate={createTag}
-                options={tags}
-                value={draft.tagIds}
-              />
-            </div>
-          )}
+          <div className="mt-4">
+            <TopicPicker
+              hint="Dùng để gợi ý lộ trình cùng chủ đề cho học viên. Chủ đề của khóa học bên trong được gom thêm tự động."
+              onChange={(tagIds) => patch({ tagIds })}
+              onCreate={createTag}
+              options={tags}
+              value={draft.tagIds}
+            />
+          </div>
         </Card>
 
           <div className="mt-6 border-t border-border pt-6 lg:col-span-3">
