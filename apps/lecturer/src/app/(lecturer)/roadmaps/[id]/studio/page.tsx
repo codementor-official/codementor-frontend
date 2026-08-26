@@ -27,6 +27,7 @@ import {
   StatusBadge,
   useToast,
   useUndoableDelete,
+  TopicPicker,
 } from "@codementor/ui";
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
@@ -37,7 +38,7 @@ import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDr
 import { SortableOverlay } from "@/components/sortable";
 import { addCourse, CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
 import type { CourseListItem } from "@/features/courses/types";
-import { api } from "@/lib/api";
+import { api, type Tag } from "@/lib/api";
 import { isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
 import {
   CONTENT_STATUS_LABELS,
@@ -61,6 +62,7 @@ interface Draft {
   coverImageUrl: string;
   progressionMode: string;
   prerequisiteNote: string;
+  tagIds: string[];
 }
 
 /** Chữ ký của bản nháp: thông tin lộ trình cộng danh sách khóa học theo đúng thứ tự. */
@@ -79,6 +81,7 @@ function toDraft(roadmap: Roadmap): Draft {
     coverImageUrl: roadmap.coverImageUrl ?? "",
     progressionMode: roadmap.progressionMode,
     prerequisiteNote: roadmap.prerequisiteNote ?? "",
+    tagIds: roadmap.tagIds ?? [],
   };
 }
 
@@ -94,6 +97,34 @@ export default function RoadmapStudioPage() {
   const [available, setAvailable] = useState<CourseListItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Từ vựng chủ đề để gợi ý. Hỏng thì thôi không hiện ô chọn — soạn nội dung không dừng
+  // lại vì một từ vựng phụ không tải được.
+  const [tags, setTags] = useState<Tag[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.tags
+      .list()
+      .then((loaded) => !cancelled && setTags(loaded))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const createTag = async (name: string) => {
+    const created = await api.tags.create(name);
+    // Đưa ngay vào từ vựng tại chỗ: không chờ tải lại thì chip mới vẫn có tên để hiện, và
+    // lần gõ sau đã thấy nó trong gợi ý.
+    setTags((current) =>
+      current.some((tag) => tag.id === created.id)
+        ? current
+        : [...current, created].sort((a, b) => a.name.localeCompare(b.name, "vi")),
+    );
+    return created;
+  };
+
   const { scheduleDelete } = useUndoableDelete();
   // Nháp phát hiện trong localStorage lúc mở trang, còn chờ người dùng chọn khôi phục
   // hay bỏ qua — xem effect nạp lộ trình bên dưới và ô thoại render ở cuối component.
@@ -363,6 +394,7 @@ export default function RoadmapStudioPage() {
                           coverImageUrl: draft.coverImageUrl || null,
                           progressionMode: draft.progressionMode,
                           prerequisiteNote: draft.prerequisiteNote || null,
+                          tagIds: draft.tagIds,
                         });
                         // Danh sách sau cùng: câu trả lời của nó đã kèm `estimatedHours`
                         // vừa được backend tính lại.
@@ -561,7 +593,17 @@ export default function RoadmapStudioPage() {
             </select>
           </Field>
 
-
+          {tags.length > 0 && (
+            <div className="mt-4">
+              <TopicPicker
+                hint="Dùng để gợi ý lộ trình cùng chủ đề cho học viên. Chủ đề của khóa học bên trong được gom thêm tự động."
+                onChange={(tagIds) => patch({ tagIds })}
+                onCreate={createTag}
+                options={tags}
+                value={draft.tagIds}
+              />
+            </div>
+          )}
         </Card>
 
           <div className="mt-6 border-t border-border pt-6 lg:col-span-3">

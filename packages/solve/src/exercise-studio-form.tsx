@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Braces,
@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import { Button, Card, Select } from "@codementor/ui";
+import { Button, Card, Select, TopicPicker } from "@codementor/ui";
 import { CodeEditor } from "@codementor/editor";
 import {
   DIFFICULTIES,
@@ -239,6 +239,8 @@ export function ExerciseBriefForm({
 
         {tagOptions && (
           <TopicPicker
+            hint="Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới."
+            max={MAX_TAGS}
             onChange={(tagIds) => patch({ tagIds })}
             onCreate={onCreateTag}
             options={tagOptions}
@@ -1101,141 +1103,6 @@ function defaultValueFor(type: TypeIR | undefined): unknown {
     default:
       return null;
   }
-}
-
-/**
- * Chọn chủ đề bằng cách GÕ, không phải bằng cách tìm trong một rổ nút.
- *
- * Từ vựng chủ đề mở: gõ tên chưa có thì tạo luôn (`onCreate`). Gợi ý dùng `<datalist>` —
- * trình duyệt tự lọc theo thứ đang gõ, tự xử bàn phím và đọc màn hình; một hộp gợi ý tự
- * viết chỉ để làm lại chuyện đó thì tốn vài trăm dòng để tệ hơn.
- */
-function TopicPicker({
-  value,
-  options,
-  onChange,
-  onCreate,
-  readOnly,
-}: {
-  value: string[];
-  options: TagOption[];
-  onChange: (tagIds: string[]) => void;
-  onCreate?: (name: string) => Promise<TagOption>;
-  readOnly: boolean;
-}) {
-  const [draft, setDraft] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const listId = useId();
-
-  const byId = new Map(options.map((option) => [option.id, option]));
-  const selected = value.map((id) => byId.get(id)).filter((tag): tag is TagOption => Boolean(tag));
-  const full = value.length >= MAX_TAGS;
-
-  const add = async () => {
-    const name = draft.trim();
-    if (name === "" || full) return;
-
-    const existing = options.find(
-      (option) => option.name.toLowerCase() === name.toLowerCase(),
-    );
-    if (existing) {
-      setError(null);
-      setDraft("");
-      if (!value.includes(existing.id)) onChange([...value, existing.id]);
-      return;
-    }
-
-    if (!onCreate) {
-      setError(`Chưa có chủ đề “${name}”.`);
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const created = await onCreate(name);
-      setDraft("");
-      setError(null);
-      // Chủ đề mới có thể trùng với một chủ đề đã có (khác cách gõ hoa thường, khác dấu
-      // câu): server trả về cái cũ, nên vẫn phải kiểm trước khi thêm.
-      if (!value.includes(created.id)) onChange([...value, created.id]);
-    } catch {
-      setError("Không thêm được chủ đề. Thử lại sau.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    // `role="group"` chứ không phải `Field`: nhãn của một NHÓM không trỏ được vào một
-    // control duy nhất, mà `<label htmlFor>` thì đòi đúng một cái.
-    <div aria-labelledby={`${listId}-label`} role="group">
-      <span
-        className="mb-1.5 flex items-center gap-1.5 text-sm font-medium"
-        id={`${listId}-label`}
-      >
-        Chủ đề
-        <InfoHint text="Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới. Tối đa 8." />
-      </span>
-
-      {selected.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-2">
-          {selected.map((tag) => (
-            <span
-              key={tag.id}
-              className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-medium text-on-ink"
-            >
-              {tag.name}
-              <button
-                aria-label={`Bỏ chủ đề ${tag.name}`}
-                className="opacity-70 hover:opacity-100 disabled:opacity-40"
-                disabled={readOnly}
-                onClick={() => onChange(value.filter((id) => id !== tag.id))}
-                type="button"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        <input
-          className={inputClassName}
-          disabled={readOnly || full}
-          list={listId}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            // Enter trong một form là "gửi đi"; ở đây nó phải là "thêm chủ đề này".
-            if (event.key !== "Enter") return;
-            event.preventDefault();
-            void add();
-          }}
-          placeholder={full ? `Đã đủ ${MAX_TAGS} chủ đề` : "Đệ quy, Đồ thị, ..."}
-          value={draft}
-        />
-        <datalist id={listId}>
-          {options
-            .filter((option) => !value.includes(option.id))
-            .map((option) => (
-              <option key={option.id} value={option.name} />
-            ))}
-        </datalist>
-        <Button
-          disabled={readOnly || full || busy || draft.trim() === ""}
-          onClick={() => void add()}
-          type="button"
-          variant="outline"
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          Thêm
-        </Button>
-      </div>
-
-      {error && <p className="mt-1.5 text-xs text-danger">{error}</p>}
-    </div>
-  );
 }
 
 function Field({

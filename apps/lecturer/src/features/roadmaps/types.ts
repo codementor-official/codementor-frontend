@@ -42,6 +42,8 @@ export interface RoadmapCourseItem {
 }
 
 export interface Roadmap {
+  /** Id chủ đề; tên tra từ `GET /tags`. */
+  tagIds: string[];
   id: string;
   slug: string;
   title: string;
