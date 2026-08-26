@@ -5,17 +5,13 @@ import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CourseCard } from "@/components/course-card";
-import { ProblemRow } from "@/components/problem-row";
+import { RecommendedCourses, RecommendedExercises } from "@/components/dashboard/recommended";
 import { WeeklyGoalCard } from "@/components/personalization/weekly-goal-card";
-import { placeholderCoverUrl } from "@/lib/placeholder-image";
-import { courseDifficulty, courseHref, featuredCourses } from "@/lib/roadmap/course-catalog";
 import {
   continueLearning,
   dashDeadlines,
   dashStats,
   popularTopics,
-  recommendedProblems,
   skillProgress,
   weeklyGoal,
 } from "@/data/sample-dashboard";
@@ -88,11 +84,7 @@ export default function DashboardPage() {
                 Xem tất cả →
               </Link>
             </div>
-            <Card className="overflow-hidden">
-              {recommendedProblems.map((p) => (
-                <ProblemRow key={p.title} {...p} />
-              ))}
-            </Card>
+            <RecommendedExercises />
           </section>
 
           <section>
@@ -134,29 +126,7 @@ export default function DashboardPage() {
                 Xem tất cả →
               </Link>
             </div>
-            {/* Was a fixed-width horizontal strip that clipped cards on the very screens
-              * with room to show them. A grid uses the width the shell now hands over. */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {featuredCourses.slice(0, 6).map((course, i) => (
-                <div key={course.id}>
-                  <CourseCard
-                    tile={course.thumbnail}
-                    tileVariant={i % 2 === 0 ? "navy" : "primary"}
-                    coverImage={placeholderCoverUrl(course.slug)}
-                    title={course.title}
-                    desc={course.description}
-                    difficulty={courseDifficulty(course.level)}
-                    tags={course.technologies.slice(0, 3)}
-                    stats={[
-                      { label: "chương", value: course.totalChapters },
-                      { label: "giờ", value: course.durationHours },
-                    ]}
-                    completed={course.progressPercent >= 100}
-                    href={courseHref(course)}
-                  />
-                </div>
-              ))}
-            </div>
+            <RecommendedCourses />
           </section>
         </div>
 

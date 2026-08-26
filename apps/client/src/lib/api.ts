@@ -7,6 +7,7 @@ import type {
 } from "@codementor/solve";
 import { apiBaseUrl } from "@/lib/env";
 import type { NotificationPage } from "@/types/notification";
+import type { RecommendationList } from "@/types/recommendation";
 import type {
   WorkspaceDetail,
   WorkspaceMembersPage,
@@ -194,6 +195,23 @@ export const api = {
       unwrap<Page<ExerciseSummary>>(`/exercises${query(params)}`),
     /** Takes the UUID, not the slug — the service has no slug lookup. */
     detail: (id: string) => unwrap<ExerciseDetail>(`/exercises/${id}`),
+  },
+
+  /**
+   * Đề xuất theo hồ sơ học tập. `userId` luôn lấy từ token — không route nào ở đây nhận id
+   * người dùng, nên không có gì để truyền vào. Cờ tắt/bật gợi ý thích ứng do service đọc
+   * lấy: khi tắt, `personalized` về `false` và danh sách là bảng phổ biến chung.
+   */
+  recommendations: {
+    roadmaps: (limit = 6) =>
+      unwrap<RecommendationList>(`/recommendations/roadmaps${query({ limit })}`),
+    courses: (limit = 6) =>
+      unwrap<RecommendationList>(`/recommendations/courses${query({ limit })}`),
+    exercises: (limit = 6) =>
+      unwrap<RecommendationList>(`/recommendations/exercises${query({ limit })}`),
+    /** Một bài kế tiếp sau khi vừa nộp đạt — trả về cùng dạng danh sách, nhiều nhất 1 mục. */
+    nextExercise: (exerciseId: string) =>
+      unwrap<RecommendationList>(`/recommendations/exercises/next${query({ exerciseId })}`),
   },
 
   /**
