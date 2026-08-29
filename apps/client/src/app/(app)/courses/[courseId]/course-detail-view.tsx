@@ -32,6 +32,8 @@ import { consumeCourseCelebration, markCourseCelebrated } from "@/lib/course-cel
 import { useAuth } from "@/providers/auth-provider";
 import { describeLock, explainLock, isLessonLocked } from "@/lib/lesson-unlock";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { SaveButton } from "@/features/saved/components/save-button";
+import { ReportButton } from "@/features/reports/report-button";
 import type { CourseDetail, CourseProgress } from "@/types/catalogue";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -341,7 +343,13 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
           </div>
 
           <Card className="p-4">
-            <h2 className="mb-3 text-sm font-bold text-navy">Bắt đầu học</h2>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-bold text-navy">Bắt đầu học</h2>
+              <div className="flex items-center gap-1">
+                <SaveButton compact targetType="COURSE" targetId={course.id} />
+                <ReportButton compact targetType="COURSE" targetId={course.id} />
+              </div>
+            </div>
             {enrolled ? (
               <>
                 {/* Completion is a status line, not a button. It used to replace the action

@@ -10,6 +10,7 @@ import type { NotificationPage } from "@/types/notification";
 import type { RecommendationList } from "@/types/recommendation";
 import type {
   WorkspaceDetail,
+  PublicWorkspaceDetail,
   WorkspaceMembersPage,
   WorkspaceAssignment,
   WorkspaceContentPage,
@@ -45,15 +46,24 @@ import type {
   Page,
   ProgressStatus,
   RoadmapDetail,
+  RoadmapEnrollment,
+  EnrolledRoadmap,
+  RoadmapProgress,
   RoadmapSummary,
 } from "@/types/catalogue";
 import type {
   AccountProfile,
+  BookmarkPage,
+  BookmarkTarget,
+  ContentReport,
+  ReportCategory,
+  ReportTarget,
   PresignedAvatarUpload,
   UserActivityEntry,
   UserLearningPreferences,
   UserActivityCalendar,
   UserLearningStats,
+  LearningLeaderboardEntry,
   UserSettings,
 } from "@/features/account/types";
 
@@ -127,10 +137,25 @@ export const api = {
     updatePreferences: (body: Partial<Omit<UserLearningPreferences, "completedAt">>) =>
       unwrap<UserLearningPreferences>("/me/preferences", { method: "PATCH", body }),
     stats: () => unwrap<UserLearningStats>("/me/stats"),
+    leaderboard: (limit = 5) =>
+      unwrap<LearningLeaderboardEntry[]>(`/users/leaderboard${query({ limit })}`),
     activityCalendar: (weeks = 13) =>
       unwrap<UserActivityCalendar>(`/activity/me/calendar${query({ weeks })}`),
     recentActivity: (limit = 10) =>
       unwrap<UserActivityEntry[]>(`/activity/me${query({ limit })}`),
+    bookmarks: (params: { type?: BookmarkTarget; page?: number; limit?: number } = {}) =>
+      unwrap<BookmarkPage>(`/me/bookmarks${query(params)}`),
+    saveBookmark: (body: { targetType: BookmarkTarget; targetId: string; targetRef?: string }) =>
+      unwrap<BookmarkPage["items"][number]>("/me/bookmarks", { method: "POST", body }),
+    removeBookmark: (targetType: BookmarkTarget, targetId: string) =>
+      unwrap<{ removed: true }>(`/me/bookmarks/${targetType}/${targetId}`, { method: "DELETE" }),
+    submitReport: (body: {
+      targetType: ReportTarget;
+      targetId: string;
+      targetRef?: string;
+      category: ReportCategory;
+      note?: string;
+    }) => unwrap<ContentReport>("/me/reports", { method: "POST", body }),
   },
 
   /**
@@ -144,6 +169,12 @@ export const api = {
       unwrap<Page<RoadmapSummary>>(`/roadmaps${query(params)}`),
     /** Takes the UUID, not the slug — the service has no slug lookup. */
     detail: (id: string) => unwrap<RoadmapDetail>(`/roadmaps/${id}`),
+    mine: () => unwrap<EnrolledRoadmap[]>("/roadmaps/enrollments/mine"),
+    enroll: (id: string) =>
+      unwrap<RoadmapEnrollment>(`/roadmaps/${id}/enroll`, { method: "POST" }),
+    unenroll: (id: string) =>
+      unwrap<void>(`/roadmaps/${id}/enroll`, { method: "DELETE" }),
+    progress: (id: string) => unwrap<RoadmapProgress>(`/roadmaps/${id}/progress`),
   },
   courses: {
     catalogue: (params: CatalogueParams = {}) =>
@@ -285,6 +316,8 @@ export const api = {
     summary: () => unwrap<WorkspaceSummary>("/workspaces/summary"),
     detail: (slug: string) =>
       unwrap<WorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}`),
+    publicDetail: (slug: string) =>
+      unwrap<PublicWorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}/public`),
     overview: (
       slug: string,
       params: {
@@ -747,5 +780,50 @@ export const api = {
         starters: Record<string, string>;
         unsupported: Record<string, string>;
       }>("/judge/starter", { method: "POST", body }),
+  },
+
+  submissions: {
+    create: (body: {
+      exerciseId: string;
+      assignmentId?: string;
+      language: string;
+      sourceCode: string;
+      courseId?: string;
+      lessonId?: string;
+    }) =>
+      unwrap<JudgeRunResult & {
+        id: string;
+        exerciseId: string;
+        assignmentId: string | null;
+        attemptNumber: number;
+        submittedAt: string;
+      }>("/submissions", { method: "POST", body }),
+    mine: (params: { exerciseId?: string; page?: number; limit?: number } = {}) => {
+      const search = new URLSearchParams();
+      if (params.exerciseId) search.set("exerciseId", params.exerciseId);
+      if (params.page) search.set("page", String(params.page));
+      if (params.limit) search.set("limit", String(params.limit));
+      return unwrap<{
+        items: Array<{
+          id: string;
+          exerciseId: string;
+          assignmentId: string | null;
+          language: string;
+          verdict: string;
+          score: number | null;
+          passedTests: number | null;
+          totalTests: number | null;
+          runtimeMs: number | null;
+          memoryKb: number | null;
+          attemptNumber: number;
+          isLate: boolean;
+          submittedAt: string;
+        }>;
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      }>(`/submissions/mine${search.size ? `?${search}` : ""}`);
+    },
   },
 };

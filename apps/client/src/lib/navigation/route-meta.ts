@@ -17,6 +17,7 @@ const ROUTES: Record<string, RouteMeta> = {
   "/roadmaps": { label: "Lộ trình", parent: HOME },
   "/practice": { label: "Luyện tập", parent: HOME },
   "/workspace": { label: "Nhóm học tập", parent: HOME },
+  "/saved": { label: "Đã lưu", parent: HOME },
   "/ai-tutor": { label: "Trợ lý AI", parent: HOME },
   "/settings": { label: "Cài đặt", parent: "/profile" },
   "/profile": { label: "Hồ sơ", parent: HOME },

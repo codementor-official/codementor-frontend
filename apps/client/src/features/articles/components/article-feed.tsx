@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Bookmark, Loader2, Newspaper, Search, X } from "lucide-react";
+import { BadgeCheck, Loader2, Newspaper, Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import type { ArticleSummary } from "@/types/catalogue";
+import { SaveButton } from "@/features/saved/components/save-button";
+import { ReportButton } from "@/features/reports/report-button";
 
 const PAGE_SIZE = 15;
 
@@ -105,7 +107,6 @@ export function ArticleFeed() {
               </button>
             )}
           </div>
-
           {error !== null && (
             <p className="rounded-lg border border-danger/40 bg-danger-tint px-4 py-3 text-sm text-danger" role="alert">
               {error}
@@ -219,9 +220,10 @@ function ArticleRow({ article }: { article: ArticleSummary }) {
             </span>
             <BadgeCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
           </div>
-          {/* Nút đánh dấu chưa có backend — để nguyên chỗ nhưng không vẽ ra, vì một nút
-              bấm vào không làm gì còn tệ hơn là chưa có nút. */}
-          <Bookmark aria-hidden="true" className="h-4 w-4 shrink-0 text-border" />
+          <div className="flex items-center gap-1">
+            <SaveButton compact targetType="POST" targetId={article.id} targetRef={article.slug} />
+            <ReportButton compact targetType="POST" targetId={article.id} targetRef={article.slug} />
+          </div>
         </div>
 
         <div className="flex gap-5">

@@ -2,17 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Map as MapIcon, User } from "lucide-react";
+import { CheckCircle2, Loader2, Lock, Map as MapIcon, User } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SaveButton } from "@/features/saved/components/save-button";
+import { ReportButton } from "@/features/reports/report-button";
 import { EntityCard } from "@/components/entity-card";
-import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import { levelToDifficulty } from "@/lib/catalogue/level";
-import type { CourseDetail, RoadmapDetail } from "@/types/catalogue";
+import type { CourseDetail, RoadmapDetail, RoadmapProgress } from "@/types/catalogue";
 
 /** Two initials from the title — the backend sends no thumbnail for a course. */
 function tileFor(title: string): string {
@@ -38,6 +41,8 @@ const FIELD_LABEL: Record<string, string> = {
 
 export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
   const [roadmap, setRoadmap] = useState<RoadmapDetail | null>(null);
+  const [progress, setProgress] = useState<RoadmapProgress | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Chi tiết từng khóa — thumbnail, tác giả, mô tả — không nằm trong payload lộ trình
   // (`RoadmapDetail.courses` chỉ có id/vị trí/tiêu đề/thời lượng), nên tải thêm cho mỗi
@@ -46,9 +51,13 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    api.roadmaps
-      .detail(roadmapId)
-      .then((data) => !cancelled && setRoadmap(data))
+    Promise.all([api.roadmaps.detail(roadmapId), api.roadmaps.progress(roadmapId)])
+      .then(([data, nextProgress]) => {
+        if (!cancelled) {
+          setRoadmap(data);
+          setProgress(nextProgress);
+        }
+      })
       .catch((cause: unknown) =>
         !cancelled && setError(cause instanceof Error ? cause.message : "Không tải được lộ trình"),
       );
@@ -98,11 +107,42 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
   // The service sends them ordered, but the order is the whole point of a roadmap —
   // rendering it wrong would teach the wrong sequence, so sort rather than assume.
   const courses = [...roadmap.courses].sort((a, b) => a.position - b.position);
+  const progressByCourse = new Map(progress?.courses.map((course) => [course.courseId, course]));
+
+  async function startRoadmap() {
+    setEnrolling(true);
+    setError(null);
+    try {
+      await api.roadmaps.enroll(roadmapId);
+      setProgress(await api.roadmaps.progress(roadmapId));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể bắt đầu lộ trình");
+    } finally {
+      setEnrolling(false);
+    }
+  }
 
   return (
     <div>
       <BreadcrumbTitle slug={roadmapId} title={roadmap.title} />
-      <PageHeader icon={MapIcon} title={roadmap.title} subtitle={roadmap.shortDescription ?? undefined} />
+      <PageHeader
+        icon={MapIcon}
+        title={roadmap.title}
+        subtitle={roadmap.shortDescription ?? undefined}
+        actions={<div className="flex items-center gap-2">
+          <SaveButton compact targetType="ROADMAP" targetId={roadmap.id} />
+          <ReportButton compact targetType="ROADMAP" targetId={roadmap.id} />
+          {progress?.enrollment ? (
+            <Badge tone={progress.enrollment.status === "completed" ? "success" : "navy"}>
+              {progress.enrollment.status === "completed" ? "Đã hoàn thành" : `${Math.round(progress.enrollment.progressPercent)}% tiến độ`}
+            </Badge>
+          ) : (
+            <Button onClick={() => void startRoadmap()} disabled={enrolling || courses.length === 0}>
+              {enrolling ? "Đang bắt đầu..." : "Bắt đầu lộ trình"}
+            </Button>
+          )}
+        </div>}
+      />
 
       {roadmap.description && (
         <p className="mb-4 max-w-prose text-sm leading-relaxed text-text-muted">{roadmap.description}</p>
@@ -133,6 +173,8 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
             <ul className="flex flex-col gap-3">
               {courses.map((course) => {
                 const detail = courseDetails.get(course.courseId);
+                const courseProgress = progressByCourse.get(course.courseId);
+                const available = !progress?.enrollment || Boolean(courseProgress?.isAvailable);
                 return (
                   // Số thứ tự đứng NGOÀI thẻ, không đè lên thumbnail — layout ngang đặt
                   // thumbnail bên trái, thông tin bên phải, nên không còn chỗ nào để lồng số
@@ -151,6 +193,13 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                         description={detail?.description ?? "Chưa có mô tả cho khóa học này."}
                         difficulty={detail ? levelToDifficulty(detail.level) : undefined}
                         tags={course.isOptional ? ["Tự chọn"] : []}
+                        badge={
+                          !available ? (
+                            <Badge tone="neutral"><Lock className="h-3 w-3" /> Đang khóa</Badge>
+                          ) : courseProgress?.enrollmentStatus === "completed" ? (
+                            <Badge tone="success"><CheckCircle2 className="h-3 w-3" /> Hoàn thành</Badge>
+                          ) : undefined
+                        }
                         // Số chương/bài đến từ `courseDetails`, không từ payload lộ trình —
                         // `RoadmapDetail.courses` chỉ mang id/vị trí/tiêu đề/thời lượng.
                         stats={[
@@ -160,7 +209,8 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                             ? [{ label: "giờ", value: course.durationHours }]
                             : []),
                         ]}
-                        href={`/courses/${course.courseId}`}
+                        progress={courseProgress?.progressPercent}
+                        href={available ? `/courses/${course.courseId}` : undefined}
                       />
                     </div>
                   </li>
@@ -184,25 +234,19 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                 ? `Khóa đầu tiên là “${courses[0].title}”.`
                 : "Chưa có khóa học nào để bắt đầu."}
             </p>
-            {courses.length > 0 && (
-              <Link
-                href={`/courses/${courses[0].courseId}`}
-                className="block rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover"
-              >
-                Vào khóa đầu tiên
+            {courses.length > 0 && progress?.enrollment && (
+              <Link href={`/courses/${progress.courses.find((course) => course.isAvailable && course.enrollmentStatus !== "completed")?.courseId ?? courses[0].courseId}`} className="block rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover">
+                Tiếp tục lộ trình
               </Link>
+            )}
+            {courses.length > 0 && !progress?.enrollment && (
+              <Button className="w-full" onClick={() => void startRoadmap()} disabled={enrolling}>
+                {enrolling ? "Đang bắt đầu..." : "Bắt đầu học"}
+              </Button>
             )}
           </Card>
         </aside>
       </div>
-
-      <section className="mt-6">
-        <h2 className="mb-1 text-base font-bold text-navy">Lộ trình khác dành cho bạn</h2>
-        <p className="mb-3 text-xs text-text-faint">
-          Xếp theo hồ sơ học tập của bạn — lộ trình đang xem không nằm trong danh sách.
-        </p>
-        <RecommendedRoadmaps excludeId={roadmapId} />
-      </section>
     </div>
   );
 }

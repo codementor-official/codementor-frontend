@@ -17,11 +17,13 @@ export function SolveLoader({
   exerciseId,
   backHref,
   context,
+  assignmentId,
 }: {
   exerciseId: string;
   backHref: string;
   /** Khóa học và bài học mà bài code này được mở từ đó; vắng = luyện tập tự do. */
   context?: LessonContext;
+  assignmentId?: string;
 }) {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +69,7 @@ export function SolveLoader({
       exerciseId={exerciseId}
       backHref={backHref}
       context={context}
+      assignmentId={assignmentId}
     />
   );
 }

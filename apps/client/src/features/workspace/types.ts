@@ -97,6 +97,25 @@ export interface WorkspaceDetail {
   } | null;
 }
 
+export interface PublicWorkspaceDetail {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  topic: string | null;
+  memberCount: number;
+  coverUrl: string | null;
+  coverPosition: "top" | "center" | "bottom";
+  coverFit: "cover" | "contain";
+  coverHeight: "compact" | "medium" | "tall";
+  joinPolicy: "open" | "approval" | "invite_only";
+  createdAt: string;
+  lastActivityAt: string;
+  owner: WorkspaceUserSummary;
+  membership: { role: WorkspaceRole } | null;
+  joinRequestStatus: "pending" | "approved" | "rejected" | null;
+}
+
 export interface WorkspaceMember {
   id: string;
   user: WorkspaceUserSummary;
@@ -290,6 +309,7 @@ export interface WorkspaceAssignment {
   exerciseId: string;
   exerciseSlug: string;
   exerciseTitle: string;
+  dueAt: string | null;
   memberId: string;
   memberName: string;
   status: "notstarted" | "inprogress" | "done" | "late";

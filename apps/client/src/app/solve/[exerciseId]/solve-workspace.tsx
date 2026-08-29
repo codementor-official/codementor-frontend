@@ -19,6 +19,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { VERDICT_LABELS, type JudgeRunResult } from "@/types/judge";
 import { DiscussionPanel } from "@/components/workspace/discussion-panel";
 import { MascotAssistant, type MascotState } from "@/components/workspace/mascot-assistant";
+import { ReportButton } from "@/features/reports/report-button";
 import "highlight.js/styles/github-dark.css";
 
 /**
@@ -41,7 +42,7 @@ const xpByDifficulty = { "Cơ bản": 25, "Trung bình": 50, "Nâng cao": 80 } a
 const initialPanes: PanesState = {
   left: { tabs: ["description", "discussion"], active: "description" },
   editor: { tabs: ["code"], active: "code" },
-  console: { tabs: ["testcase", "result"], active: "testcase" },
+  console: { tabs: ["testcase", "result", "history"], active: "testcase" },
   ai: { tabs: [], active: null },
 };
 
@@ -60,12 +61,14 @@ export function SolveWorkspace({
   exerciseId,
   backHref = "/practice",
   context,
+  assignmentId,
 }: {
   problem: Problem;
   /** Id của bài đang mở — dùng để hỏi bài kế tiếp sau khi nộp đạt. */
   exerciseId?: string;
   backHref?: string;
   context?: LessonContext;
+  assignmentId?: string;
 }) {
   const editorTheme = useResolvedTheme();
   const offered = problem.languages?.length
@@ -84,6 +87,7 @@ export function SolveWorkspace({
   const [judgeError, setJudgeError] = useState<string | null>(null);
   const [mascotState, setMascotState] = useState<MascotState>("idle");
   const [celebrating, setCelebrating] = useState(false);
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [codeyVisible, setCodeyVisible] = useState(true);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [aiInput, setAiInput] = useState("");
@@ -125,22 +129,40 @@ export function SolveWorkspace({
     setCelebrating(false);
 
     try {
-      const result = await api.judge.run({
-        language: languageIdOf[language] ?? language.toLowerCase(),
-        sourceCode: code[language] ?? "",
-        timeLimitMs,
-        memoryLimitKb,
-        // `spec` present = grade by calling the function; absent = pipe stdin. Sending one
-        // for a stdin exercise would make the judge look for a function that is not there.
-        ...(problem.spec ? { spec: problem.spec } : {}),
-        testCases: problem.testCases.map((testCase, index) => ({
-          order: index + 1,
-          ...(testCase.args !== undefined ? { args: testCase.args } : { input: testCase.input ?? "" }),
-          expected: testCase.expected,
-        })),
-        ...(mode === "submit" && context ? { context } : {}),
-      });
+      const languageId = languageIdOf[language] ?? language.toLowerCase();
+      const sourceCode = code[language] ?? "";
+      const result =
+        mode === "run"
+          ? await api.judge.run({
+              language: languageId,
+              sourceCode,
+              timeLimitMs,
+              memoryLimitKb,
+              // Run is intentionally limited to public cases already present in the learner DTO.
+              ...(problem.spec ? { spec: problem.spec } : {}),
+              testCases: problem.testCases.map((testCase, index) => ({
+                order: index + 1,
+                ...(testCase.args !== undefined
+                  ? { args: testCase.args }
+                  : { input: testCase.input ?? "" }),
+                expected: testCase.expected,
+              })),
+            })
+          : exerciseId
+            ? await api.submissions.create({
+                exerciseId,
+                ...(assignmentId ? { assignmentId } : {}),
+                language: languageId,
+                sourceCode,
+                ...(context
+                  ? { courseId: context.courseId, lessonId: context.lessonId }
+                  : {}),
+              })
+            : (() => {
+                throw new Error("Không xác định được bài tập để nộp.");
+              })();
       setJudgeResult(result);
+      if (mode === "submit") setHistoryVersion((version) => version + 1);
       setMascotState(result.verdict === "accepted" ? "success" : "error");
       if (mode === "submit" && result.verdict === "accepted") setCelebrating(true);
     } catch (cause) {
@@ -175,7 +197,10 @@ export function SolveWorkspace({
                   <div className="mb-1 text-2xs font-semibold tracking-wide text-text-faint uppercase">Bài luyện tập</div>
                   <h1 className="text-xl font-bold text-navy">{problem.title}</h1>
                 </div>
-                <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">+{xpReward} XP</span>
+                <div className="flex items-center gap-1">
+                  {exerciseId && <ReportButton compact targetType="EXERCISE" targetId={exerciseId} />}
+                  <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">+{xpReward} XP</span>
+                </div>
               </div>
               <p className="mt-2 text-xs text-text-muted">Độ khó: <b className="text-navy">{problem.difficulty}</b> · Giới hạn {timeLimitMs / 1000} giây · {Math.round(memoryLimitKb / 1024)} MB</p>
             </div>
@@ -338,6 +363,12 @@ export function SolveWorkspace({
             )}
           </div>
         );
+      case "history":
+        return exerciseId ? (
+          <SubmissionHistory exerciseId={exerciseId} refreshKey={historyVersion} />
+        ) : (
+          <div className="p-4 text-xs text-text-faint">Bài tập này chưa hỗ trợ lịch sử nộp.</div>
+        );
       case "ai":
         return (
           <div className="flex h-full flex-col">
@@ -384,11 +415,71 @@ export function SolveWorkspace({
           xp={xpReward}
           exerciseId={exerciseId}
           backHref={backHref}
-          tracked={Boolean(context)}
+          tracked={Boolean(context || assignmentId)}
           onClose={() => setCelebrating(false)}
         />
       )}
     </WorkspaceProvider>
+  );
+}
+
+function SubmissionHistory({ exerciseId, refreshKey }: { exerciseId: string; refreshKey: number }) {
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<Awaited<ReturnType<typeof api.submissions.mine>> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    api.submissions
+      .mine({ exerciseId, page, limit: 10 })
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .catch((cause: unknown) => {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : "Không tải được lịch sử nộp");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [exerciseId, page, refreshKey]);
+
+  if (loading) {
+    return <div className="flex items-center gap-2 p-4 text-xs text-text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải lịch sử...</div>;
+  }
+  if (error) return <div className="p-4 text-xs text-danger">{error}</div>;
+  if (!data || data.items.length === 0) {
+    return <div className="p-4 text-xs text-text-faint">Chưa có lần nộp nào.</div>;
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 divide-y divide-border-soft overflow-y-auto">
+        {data.items.map((submission) => (
+          <div key={submission.id} className="flex items-center gap-3 px-4 py-3 text-xs">
+            <span className="w-14 shrink-0 font-semibold text-navy">Lần #{submission.attemptNumber}</span>
+            <span className={submission.verdict === "accepted" ? "text-success" : "text-danger"}>
+              {VERDICT_LABELS[submission.verdict as keyof typeof VERDICT_LABELS] ?? submission.verdict}
+            </span>
+            <span className="ml-auto text-text-faint">
+              {submission.score ?? 0}/100 · {new Date(submission.submittedAt).toLocaleString("vi-VN")}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="flex shrink-0 items-center justify-between border-t border-border-soft px-4 py-2 text-xs">
+        <span className="text-text-faint">Trang {data.page}/{data.totalPages} · {data.total} lần nộp</span>
+        <div className="flex gap-2">
+          <button className="rounded border border-border px-2 py-1 disabled:opacity-40" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Trước</button>
+          <button className="rounded border border-border px-2 py-1 disabled:opacity-40" disabled={page >= data.totalPages} onClick={() => setPage((value) => value + 1)}>Sau</button>
+        </div>
+      </div>
+    </div>
   );
 }
 

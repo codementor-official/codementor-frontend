@@ -18,7 +18,7 @@ function toCase({ input, args, expected }: NonNullable<ExerciseDetail["content"]
  * Two fields the workspace shows have no counterpart on the server and stay empty rather
  * than being invented: `tags` and `constraints`. Starter code is different — authors can
  * now save it per language, so the editor opens with the author's skeleton when there is
- * one. `referenceSolution` is still never used: it is the answer.
+ * one. Grading secrets are removed by exercise-service before this mapper runs.
  */
 export function problemFromExercise(exercise: ExerciseDetail): Problem {
   const content = exercise.content;
@@ -37,13 +37,10 @@ export function problemFromExercise(exercise: ExerciseDetail): Problem {
     tags: [],
     description: content?.statement ?? "",
     constraints: content?.constraints ?? [],
-    // Every case goes to the judge, or a "passed" verdict would mean nothing. Ordered by
-    // the author's `order` rather than array position — the two agree today and there is
-    // no reason to depend on that.
+    // Learner detail contains public cases only. Submit fetches the complete grading
+    // snapshot inside submission-service; the browser never receives hidden cases.
     testCases: [...cases].sort(byOrder).map(toCase),
-    // Only the public ones are rendered. They travel to the browser either way — the judge
-    // takes its cases from the client — so this hides them from the page, not from anyone
-    // reading the network tab. Real secrecy needs grading to move server-side.
+    // Kept as a separate field because the solve UI also supports older mock Problem shapes.
     publicTestCases: [...cases].filter((c) => c.visibility === "public").sort(byOrder).map(toCase),
     starter,
     // Only in function mode: sending a spec is what tells the judge to call a function

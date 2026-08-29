@@ -11,10 +11,15 @@ export default async function SolvePage({
   searchParams,
 }: {
   params: Promise<{ exerciseId: string }>;
-  searchParams: Promise<{ returnTo?: string; courseId?: string; lessonId?: string }>;
+  searchParams: Promise<{
+    returnTo?: string;
+    courseId?: string;
+    lessonId?: string;
+    assignmentId?: string;
+  }>;
 }) {
   const { exerciseId } = await params;
-  const { returnTo, courseId, lessonId } = await searchParams;
+  const { returnTo, courseId, lessonId, assignmentId } = await searchParams;
   const backHref = returnTo?.startsWith("/") ? returnTo : "/practice";
 
   // Cả hai cùng có mặt mới tính. Một nửa ngữ cảnh thì judge không biết ghi tiến độ vào đâu,
@@ -23,7 +28,12 @@ export default async function SolvePage({
 
   return (
     <div className="min-h-0 flex-1">
-      <SolveLoader exerciseId={exerciseId} backHref={backHref} context={context} />
+      <SolveLoader
+        exerciseId={exerciseId}
+        backHref={backHref}
+        context={context}
+        assignmentId={assignmentId}
+      />
     </div>
   );
 }

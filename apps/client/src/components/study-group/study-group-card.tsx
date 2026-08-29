@@ -93,7 +93,7 @@ export function StudyGroupCard({
           </button>
         ) : undefined
       }
-      href={guest ? undefined : `/workspace/${group.id}`}
+      href={`/workspace/${group.id}`}
     />
   );
 }

@@ -54,12 +54,50 @@ export interface UserLearningStats {
   lastSolvedOn: string | null;
 }
 
+export interface LearningLeaderboardEntry {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  xp: number;
+  solvedCount: number;
+}
+
 export interface UserActivityCalendar {
   days: { date: string; count: number }[];
   totalActivities: number;
   activeDays: number;
   currentStreakDays: number;
   longestStreakDays: number;
+}
+
+export type BookmarkTarget = "COURSE" | "ROADMAP" | "EXERCISE" | "POST";
+export interface UserBookmark {
+  id: string;
+  targetType: BookmarkTarget;
+  targetId: string;
+  targetRef: string | null;
+  createdAt: string;
+}
+export interface BookmarkPage {
+  items: UserBookmark[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export type ReportTarget = "DOCUMENT" | "POST" | "COURSE" | "ROADMAP" | "EXERCISE" | "WORKSPACE";
+export type ReportCategory = "SPAM" | "MISLEADING" | "INAPPROPRIATE" | "COPYRIGHT" | "OTHER";
+export interface ContentReport {
+  id: string;
+  targetType: ReportTarget;
+  targetId: string;
+  targetRef: string | null;
+  category: ReportCategory;
+  note: string | null;
+  status: "PENDING" | "RESOLVED" | "REJECTED";
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserActivityEntry {

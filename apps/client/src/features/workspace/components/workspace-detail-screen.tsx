@@ -44,6 +44,7 @@ import { api } from "@/lib/api";
 import { downloadCsv } from "@/lib/download-csv";
 import type {
   WorkspaceDetail,
+  PublicWorkspaceDetail,
   WorkspaceJoinRequest,
   WorkspaceMember,
   WorkspaceMemberDetail,
@@ -57,6 +58,7 @@ import {
 } from "./workspace-content-tabs";
 import { useWorkspaceChat } from "../chat/use-workspace-chat";
 import { WorkspaceChatTab, WorkspaceMiniChat } from "../chat/workspace-chat";
+import { ReportButton } from "@/features/reports/report-button";
 
 type Tab =
   | "overview"
@@ -191,6 +193,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const searchParams = useSearchParams();
   const toast = useToast();
   const [detail, setDetail] = useState<WorkspaceDetail | null>(null);
+  const [publicDetail, setPublicDetail] = useState<PublicWorkspaceDetail | null>(null);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [overview, setOverview] = useState<WorkspaceOverview | null>(null);
   const [tab, setTab] = useState<Tab>(() =>
@@ -234,9 +237,10 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setPublicDetail(null);
     try {
-      const [nextDetail, nextMembers, nextOverview] = await Promise.all([
-        api.workspaces.detail(slug),
+      const nextDetail = await api.workspaces.detail(slug);
+      const [nextMembers, nextOverview] = await Promise.all([
         api.workspaces.members(slug, { limit: 100 }),
         api.workspaces.overview(slug),
       ]);
@@ -252,9 +256,19 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       setMembers(nextMembers.items);
       setOverview(nextOverview);
     } catch (cause) {
-      setError(
-        messageOf(cause, "Không tải được nhóm học tập. Vui lòng thử lại."),
-      );
+      try {
+        const publicWorkspace = await api.workspaces.publicDetail(slug);
+        try {
+          const cover = await api.workspaces.coverPreview(slug);
+          publicWorkspace.coverUrl = cover.url;
+        } catch {
+          // A public URL can still be displayed when signing is unavailable.
+        }
+        setDetail(null);
+        setPublicDetail(publicWorkspace);
+      } catch {
+        setError(messageOf(cause, "Không tải được nhóm học tập. Vui lòng thử lại."));
+      }
     } finally {
       setLoading(false);
     }
@@ -373,6 +387,31 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   }
 
   if (!detail) {
+    if (publicDetail) {
+      return (
+        <PublicWorkspaceView
+          workspace={publicDetail}
+          pending={pending}
+          onJoin={async () => {
+            setPending(true);
+            try {
+              const result = await api.workspaces.requestJoin(slug);
+              if (result.status === "joined") {
+                toast.success("Bạn đã tham gia nhóm học tập");
+                await load();
+              } else {
+                setPublicDetail((current) => current ? { ...current, joinRequestStatus: "pending" } : current);
+                toast.success("Đã gửi yêu cầu tham gia");
+              }
+            } catch (cause) {
+              toast.error(messageOf(cause, "Không thể gửi yêu cầu tham gia."));
+            } finally {
+              setPending(false);
+            }
+          }}
+        />
+      );
+    }
     return (
       <div>
         <PageHeader icon={Users} title="Nhóm học tập" />
@@ -419,6 +458,9 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         <Badge tone={isOwner ? "brown" : "neutral"}>
           {ROLE_LABEL[detail.currentMembership.role]}
         </Badge>
+        {!isOwner && (
+          <ReportButton compact targetType="WORKSPACE" targetId={detail.id} targetRef={detail.slug} />
+        )}
         {!isOwner && (
           <Button
             size="sm"
@@ -534,6 +576,56 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           onOpenFull={() => selectTab("chat")}
         />
       )}
+    </div>
+  );
+}
+
+function PublicWorkspaceView({
+  workspace,
+  pending,
+  onJoin,
+}: {
+  workspace: PublicWorkspaceDetail;
+  pending: boolean;
+  onJoin: () => Promise<void>;
+}) {
+  const requestPending = workspace.joinRequestStatus === "pending";
+  const inviteOnly = workspace.joinPolicy === "invite_only";
+  return (
+    <div>
+      <BreadcrumbTitle slug={workspace.slug} title={workspace.name} />
+      <PageHeader icon={Users} title={workspace.name} subtitle="Thông tin công khai của nhóm học tập" />
+      <Card className="overflow-hidden p-0">
+        <div
+          className="flex min-h-56 items-end bg-navy bg-cover bg-center p-6"
+          style={workspace.coverUrl ? { backgroundImage: `linear-gradient(to top, rgb(0 0 0 / 72%), rgb(0 0 0 / 8%)), url(${workspace.coverUrl})` } : undefined}
+        >
+          <div className="max-w-3xl text-on-ink-fixed">
+            <Badge tone="neutral">{workspace.topic ?? "Nhóm học tập"}</Badge>
+            <h1 className="mt-3 text-2xl font-bold">{workspace.name}</h1>
+            <p className="mt-2 text-sm leading-6 opacity-80">{workspace.description ?? "Nhóm chưa có phần giới thiệu."}</p>
+          </div>
+        </div>
+        <div className="grid gap-5 p-6 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-text-muted">
+            <span><b className="text-navy">{workspace.memberCount}</b> thành viên</span>
+            <span>Chủ nhóm: <b className="text-navy">{workspace.owner.displayName}</b></span>
+            <span>Tham gia: <b className="text-navy">{workspace.joinPolicy === "open" ? "Tự do" : workspace.joinPolicy === "approval" ? "Cần duyệt" : "Chỉ mã mời"}</b></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ReportButton compact targetType="WORKSPACE" targetId={workspace.id} targetRef={workspace.slug} />
+            <Button
+              onClick={() => void onJoin()}
+              disabled={pending || requestPending || inviteOnly}
+            >
+              {requestPending ? "Đang chờ duyệt" : inviteOnly ? "Cần mã mời" : pending ? "Đang xử lý..." : workspace.joinPolicy === "open" ? "Tham gia nhóm" : "Gửi yêu cầu tham gia"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+      <Card className="mt-5 border-dashed p-6 text-center text-xs text-text-muted">
+        Chat, tài liệu riêng, bài nộp, danh sách thành viên và cài đặt chỉ mở sau khi bạn tham gia nhóm.
+      </Card>
     </div>
   );
 }

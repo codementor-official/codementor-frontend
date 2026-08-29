@@ -25,6 +25,8 @@ export interface RoadmapSummary {
   id: string;
   slug: string;
   title: string;
+  shortDescription: string | null;
+  coverImageUrl: string | null;
   field: string;
   level: string;
   status: ContentStatus;
@@ -39,6 +41,8 @@ export interface CourseSummary {
   id: string;
   slug: string;
   title: string;
+  description: string | null;
+  coverImageUrl: string | null;
   level: string;
   status: ContentStatus;
   durationHours: number | null;
@@ -80,6 +84,45 @@ export interface RoadmapDetail extends RoadmapSummary {
     status: ContentStatus;
     durationHours: number | null;
   }[];
+}
+
+export interface RoadmapEnrollment {
+  id: string;
+  userId: string;
+  roadmapId: string;
+  status: "active" | "completed" | "paused" | "dropped";
+  completedCourses: number;
+  progressPercent: number;
+  startedAt: string;
+  completedAt: string | null;
+  lastActivityAt: string | null;
+}
+
+export interface EnrolledRoadmap extends RoadmapEnrollment {
+  title: string;
+  slug: string;
+  field: string;
+  level: string;
+  coverImageUrl: string | null;
+  estimatedHours: number | null;
+  totalCourses: number;
+}
+
+export interface RoadmapProgress {
+  enrollment: RoadmapEnrollment | null;
+  courses: Array<{
+    roadmapCourseId: string;
+    courseId: string;
+    position: number;
+    isOptional: boolean;
+    title: string;
+    slug: string;
+    coverImageUrl: string | null;
+    durationHours: number | null;
+    enrollmentStatus: "active" | "completed" | "paused" | "dropped" | null;
+    progressPercent: number;
+    isAvailable: boolean;
+  }>;
 }
 
 export interface CourseLesson {
@@ -180,12 +223,8 @@ export interface CourseDetail extends CourseSummary {
 /**
  * `GET /exercises/:id` — the list projection plus the body stored in MongoDB.
  *
- * `referenceSolution` is the author's answer. It is on the wire because the same endpoint
- * serves the lecturer studio, and it must never reach the learner's editor.
- *
- * `visibility: "hidden"` test cases are also on the wire, so they are not hidden from
- * anyone determined to look — the judge takes its cases from the client. Treating them as
- * hidden is a UI courtesy until grading moves behind submission-service.
+ * This is the learner contract. The backend removes hidden cases, reference solutions and
+ * custom checker source. Author/admin clients receive the full authoring contract.
  */
 export interface ExerciseDetail extends ExerciseSummary {
   summary: string | null;
@@ -212,9 +251,9 @@ export interface ExerciseDetail extends ExerciseSummary {
       input?: string;
       args?: unknown[];
       expected?: unknown;
-      visibility: "public" | "hidden";
+      visibility: "public";
     }[];
-    languages: { id: string; label: string; monaco?: string; starterCode?: string; referenceSolution?: string }[];
+    languages: { id: string; label: string; monaco?: string; starterCode?: string }[];
   } | null;
 }
 
