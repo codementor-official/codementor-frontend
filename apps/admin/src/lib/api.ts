@@ -85,6 +85,36 @@ export const moderationApi = {
     ),
 };
 
+export type ReportStatus = "PENDING" | "RESOLVED" | "REJECTED";
+export type ReportTargetType = "DOCUMENT" | "POST" | "COURSE" | "ROADMAP" | "EXERCISE" | "WORKSPACE";
+export type ReportCategory = "SPAM" | "MISLEADING" | "INAPPROPRIATE" | "COPYRIGHT" | "OTHER";
+
+export interface AdminContentReport {
+  id: string;
+  targetType: ReportTargetType;
+  targetId: string;
+  targetRef: string | null;
+  category: ReportCategory;
+  note: string | null;
+  status: ReportStatus;
+  reporterName: string;
+  reporterEmail: string;
+  resolutionNote: string | null;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const reportsApi = {
+  list: (
+    request: Request,
+    params: { q?: string; status?: ReportStatus; targetType?: ReportTargetType; category?: ReportCategory; page?: number; limit?: number },
+  ) => unwrap<{ items: AdminContentReport[]; page: number; limit: number; total: number; totalPages: number }>(request, `/reports${search(params)}`),
+  resolve: (request: Request, id: string, status: "RESOLVED" | "REJECTED", resolutionNote: string) =>
+    unwrap<AdminContentReport>(request, `/reports/${id}`, { method: "PATCH", body: { status, resolutionNote } }),
+};
+
 /** Khớp `TARGET_TYPE` ở `moderation-audit.consumer.ts` — lệch nhau là lịch sử ra rỗng. */
 const AUDIT_TARGET_TYPE: Record<ContentKind, string> = {
   articles: "article",
