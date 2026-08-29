@@ -83,7 +83,11 @@ export function EntityCard({
           ? // Khung theo tỉ lệ ảnh, KHÔNG kéo cao bằng thẻ: `object-cover` trên một ô cao
             // bằng thẻ mà chỉ rộng ~1/6 sẽ cắt phăng hai bên tấm ảnh ngang, nhìn như bị
             // phóng to. Giữ 16:9 thì phần cắt gần như bằng không.
-            "aspect-video w-40 shrink-0 self-start overflow-hidden rounded-md sm:w-56"
+            //
+            // Căn giữa theo chiều dọc (thẻ dùng `items-center`), không dán lên mép trên:
+            // thẻ cao hơn ảnh khi phần thân có nhiều hàng, và ảnh treo lủng lẳng ở trên với
+            // khoảng trắng bên dưới đọc như lỗi dựng chứ không như bố cục.
+            "aspect-video w-48 shrink-0 overflow-hidden rounded-md sm:w-72"
           : tileHeight === "sm"
             ? "h-16 text-base"
             : tileHeight === "lg"
@@ -98,7 +102,7 @@ export function EntityCard({
           fill
           sizes={
             horizontal
-              ? "(max-width: 640px) 160px, 224px"
+              ? "(max-width: 640px) 192px, 288px"
               : "(max-width: 640px) 100vw, 320px"
           }
           className={`${coverFit === "contain" ? "object-contain" : "object-cover"} ${
@@ -201,7 +205,7 @@ export function EntityCard({
     <Card
       interactive={Boolean(href)}
       className={`relative h-full overflow-hidden ${
-        horizontal ? "flex flex-row items-start gap-4 p-3" : "flex flex-col"
+        horizontal ? "flex flex-row items-center gap-4 p-3" : "flex flex-col"
       }`}
     >
       {/* A stretched overlay link rather than a wrapper around the card: `action` holds real

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import { Button, Card, Select } from "@codementor/ui";
+import { Button, Card, Select, TopicPicker } from "@codementor/ui";
 import { CodeEditor } from "@codementor/editor";
 import {
   DIFFICULTIES,
@@ -41,20 +41,41 @@ import {
 } from "./types";
 import { integer, slug as slugRule, text } from "@codementor/utils";
 
+/** Khớp trần phía backend (`MAX_TAGS` trong aggregate Exercise). */
+const MAX_TAGS = 8;
+
 export interface ExerciseDraft {
   slug: string;
   title: string;
   summary: string;
   difficulty: string;
+  /** Id chủ đề đã chọn. Vắng mặt ở nơi soạn bài không có chủ đề (bài tập nhóm). */
+  tagIds?: string[];
   estimatedMinutes: string;
   timeLimitMs: string;
   memoryLimitKb: string;
   content: ExerciseContent;
 }
 
+export interface TagOption {
+  id: string;
+  name: string;
+}
+
 interface Props {
   value: ExerciseDraft;
   onChange: (next: ExerciseDraft) => void;
+  /**
+   * Từ vựng chủ đề để gợi ý. KHÔNG truyền thì cả khối chủ đề biến mất — bài tập trong
+   * nhóm học tập đi qua một API khác, không có chỗ nào nhận chủ đề, và một ô nhập lưu
+   * xong không thấy đâu còn tệ hơn là không có ô nào.
+   */
+  tagOptions?: TagOption[];
+  /**
+   * Tạo chủ đề chưa có trong từ vựng. Vắng mặt thì ô nhập chỉ chọn được thứ đã có.
+   * Trả về chủ đề đã lưu — trùng tên thì là chủ đề cũ, không phải bản sao.
+   */
+  onCreateTag?: (name: string) => Promise<TagOption>;
   /** Đang chờ duyệt thì backend từ chối mọi lệnh ghi; khoá ở đây để không gọi vô ích. */
   readOnly?: boolean;
   /** Slug của bài đã công khai không đổi được — đường dẫn đã phát ra ngoài. */
@@ -80,6 +101,8 @@ export interface ExerciseStudioJudge {
 export function ExerciseBriefForm({
   value,
   onChange,
+  tagOptions,
+  onCreateTag,
   readOnly = false,
   slugLocked = false,
 }: Props) {
@@ -213,6 +236,19 @@ export function ExerciseBriefForm({
             />
           </Field>
         </div>
+
+        {tagOptions && (
+          <TopicPicker
+            hint="Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới."
+            max={MAX_TAGS}
+            onChange={(tagIds) => patch({ tagIds })}
+            onCreate={onCreateTag}
+            options={tagOptions}
+            readOnly={readOnly}
+            value={value.tagIds ?? []}
+          />
+        )}
+
       </Card>
 
       <Card className="p-5">

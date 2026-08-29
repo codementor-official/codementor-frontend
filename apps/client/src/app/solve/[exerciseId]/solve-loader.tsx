@@ -61,5 +61,12 @@ export function SolveLoader({
     );
   }
 
-  return <SolveWorkspace problem={problem} backHref={backHref} context={context} />;
+  return (
+    <SolveWorkspace
+      problem={problem}
+      exerciseId={exerciseId}
+      backHref={backHref}
+      context={context}
+    />
+  );
 }

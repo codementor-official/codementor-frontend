@@ -8,6 +8,7 @@ import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { EntityCard } from "@/components/entity-card";
+import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import { levelToDifficulty } from "@/lib/catalogue/level";
@@ -150,9 +151,15 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                         description={detail?.description ?? "Chưa có mô tả cho khóa học này."}
                         difficulty={detail ? levelToDifficulty(detail.level) : undefined}
                         tags={course.isOptional ? ["Tự chọn"] : []}
-                        stats={
-                          course.durationHours !== null ? [{ label: "giờ", value: course.durationHours }] : []
-                        }
+                        // Số chương/bài đến từ `courseDetails`, không từ payload lộ trình —
+                        // `RoadmapDetail.courses` chỉ mang id/vị trí/tiêu đề/thời lượng.
+                        stats={[
+                          ...(detail ? [{ label: "chương", value: detail.totalChapters }] : []),
+                          ...(detail ? [{ label: "bài học", value: detail.totalLessons }] : []),
+                          ...(course.durationHours !== null
+                            ? [{ label: "giờ", value: course.durationHours }]
+                            : []),
+                        ]}
                         href={`/courses/${course.courseId}`}
                       />
                     </div>
@@ -188,6 +195,14 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
           </Card>
         </aside>
       </div>
+
+      <section className="mt-6">
+        <h2 className="mb-1 text-base font-bold text-navy">Lộ trình khác dành cho bạn</h2>
+        <p className="mb-3 text-xs text-text-faint">
+          Xếp theo hồ sơ học tập của bạn — lộ trình đang xem không nằm trong danh sách.
+        </p>
+        <RecommendedRoadmaps excludeId={roadmapId} />
+      </section>
     </div>
   );
 }

@@ -39,7 +39,7 @@ import {
   type Exercise,
   type ExerciseStatus,
 } from "@codementor/solve";
-import { api } from "@/lib/api";
+import { api, type Tag } from "@/lib/api";
 
 function toDraft(exercise: Exercise): ExerciseDraft {
   return {
@@ -51,6 +51,7 @@ function toDraft(exercise: Exercise): ExerciseDraft {
     estimatedMinutes: exercise.estimatedMinutes?.toString() ?? "",
     timeLimitMs: exercise.timeLimitMs.toString(),
     memoryLimitKb: exercise.memoryLimitKb.toString(),
+    tagIds: exercise.tagIds ?? [],
     content: exercise.content ?? {},
   };
 }
@@ -77,6 +78,20 @@ export default function ExerciseStudioPage() {
   // hay bỏ qua — xem effect nạp bài bên dưới và ô thoại render ở cuối component.
   const [pendingDraft, setPendingDraft] =
     useState<StoredDraft<ExerciseDraft> | null>(null);
+  // Danh sách chủ đề để chọn. Hỏng thì thôi không hiện ô chọn — soạn bài không dừng lại
+  // vì một từ vựng phụ không tải được.
+  const [tags, setTags] = useState<Tag[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.tags
+      .list()
+      .then((loaded) => !cancelled && setTags(loaded))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     // Cờ hủy: rời trang trước khi request về thì response cũ không được ghi đè state
@@ -141,6 +156,7 @@ export default function ExerciseStudioPage() {
         estimatedMinutes: numberOrNull(draft.estimatedMinutes),
         timeLimitMs: numberOrNull(draft.timeLimitMs) ?? 1000,
         memoryLimitKb: numberOrNull(draft.memoryLimitKb) ?? 262144,
+        tagIds: draft.tagIds ?? [],
       });
       return api.exercises.saveContent(id, draft.content);
     }, "Đã lưu");
@@ -305,6 +321,18 @@ export default function ExerciseStudioPage() {
                 onChange={setDraft}
                 readOnly={locked}
                 slugLocked={exercise.status === "published"}
+                onCreateTag={async (name) => {
+                  const created = await api.tags.create(name);
+                  // Đưa ngay vào từ vựng tại chỗ: không chờ tải lại thì chip mới vẫn có
+                  // tên để hiện, và lần gõ sau đã thấy nó trong gợi ý.
+                  setTags((current) =>
+                    current.some((tag) => tag.id === created.id)
+                      ? current
+                      : [...current, created].sort((a, b) => a.name.localeCompare(b.name, "vi")),
+                  );
+                  return created;
+                }}
+                tagOptions={tags}
                 value={draft}
               />
 
