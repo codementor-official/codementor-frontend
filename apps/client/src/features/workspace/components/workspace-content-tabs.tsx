@@ -73,6 +73,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [removing, setRemoving] = useState<WorkspaceDocument | null>(null);
+  const [editing, setEditing] = useState<WorkspaceDocument | null>(null);
   const [previewing, setPreviewing] = useState<WorkspaceDocument | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -81,12 +82,13 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const canUpload =
     detail.currentMembership.role === "owner" ||
     detail.currentMembership.permissions.upload_doc;
-  const canManage =
+  const canDeleteAny =
     detail.currentMembership.role === "owner" ||
-    detail.currentMembership.permissions.manage_doc ||
     detail.currentMembership.permissions.delete_doc;
   const canApprove =
-    canManage || detail.currentMembership.permissions.approve_doc;
+    detail.currentMembership.role === "owner" ||
+    detail.currentMembership.permissions.approve_doc;
+  const canViewUnpublished = canApprove || canDeleteAny;
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -248,7 +250,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
             setPage(1);
           }}
         />
-        {canApprove && (
+        {canViewUnpublished && (
           <Select
             label="Trạng thái"
             value={status}
@@ -283,7 +285,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
           </label>
         )}
       </div>
-      {!canManage && canUpload && (
+      {detail.currentMembership.role !== "owner" && canUpload && (
         <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-text-muted">
           Tài liệu do thành viên tải lên sẽ hiển thị sau khi Chủ nhóm duyệt.
         </p>
@@ -311,7 +313,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
                   {formatDate(doc.uploadedAt)}
                 </p>
               </div>
-              {canApprove && doc.status !== "removed" && (
+              {canViewUnpublished && doc.status !== "removed" && (
                 <span className="text-xs font-medium text-text-muted">
                   {statusLabel(doc.status)}
                 </span>
@@ -329,8 +331,20 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
                   Xem
                 </Button>
               )}
-              {doc.canDelete && doc.status !== "removed" && (
-                <>
+              {doc.canEdit && doc.status !== "removed" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setEditing(doc);
+                  }}
+                >
+                  Sửa
+                </Button>
+              )}
+              {doc.canApprove && doc.status !== "removed" && (
+                <div onClick={(event) => event.stopPropagation()}>
                   <Select
                     label="Duyệt"
                     value={doc.status}
@@ -342,20 +356,22 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
                       { value: "rejected", label: "Từ chối" },
                     ]}
                   />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setRemoving(doc);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Xóa
-                  </Button>
-                </>
+                </div>
               )}
-              {!canManage && doc.status === "published" && (
+              {doc.canDelete && doc.status !== "removed" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setRemoving(doc);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Xóa
+                </Button>
+              )}
+              {!canViewUnpublished && doc.status === "published" && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -368,7 +384,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
                   Báo cáo
                 </Button>
               )}
-              {canManage && doc.status === "removed" && (
+              {canDeleteAny && doc.status === "removed" && (
                 <>
                   <Button
                     size="sm"
@@ -416,6 +432,14 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
           onDownload={() => void download(previewing)}
         />
       )}
+      {editing && (
+        <DocumentEditDialog
+          document={editing}
+          slug={detail.slug}
+          onClose={() => setEditing(null)}
+          onSaved={load}
+        />
+      )}
       <ConfirmDialog
         open={removing !== null}
         onClose={() => setRemoving(null)}
@@ -431,6 +455,101 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
           onClose={() => setReporting(null)}
         />
       )}
+    </div>
+  );
+}
+
+function DocumentEditDialog({
+  document,
+  slug,
+  onClose,
+  onSaved,
+}: {
+  document: WorkspaceDocument;
+  slug: string;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const toast = useToast();
+  const [title, setTitle] = useState(document.title);
+  const [topic, setTopic] = useState(document.topic ?? "");
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    const nextTitle = title.trim();
+    if (!nextTitle) {
+      toast.error("Tên tài liệu không được để trống");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.workspaces.updateDocument(slug, document.id, {
+        title: nextTitle,
+        topic: topic.trim() || null,
+      });
+      await onSaved();
+      toast.success("Đã cập nhật tài liệu");
+      onClose();
+    } catch (error) {
+      toast.error(messageOf(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-fixed/35 p-3 backdrop-blur-[4px]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Sửa tài liệu ${document.title}`}
+    >
+      <Card className="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden p-0">
+        <header className="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-border-soft bg-surface px-5 py-4">
+          <div>
+            <h2 className="text-base font-bold text-navy">Sửa tài liệu</h2>
+            <p className="mt-1 text-xs text-text-faint">
+              Chỉ cập nhật thông tin hiển thị, tệp gốc được giữ nguyên.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng"
+            className="rounded p-1 text-text-muted hover:bg-bg"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+          <label className="block text-xs font-medium text-text-muted">
+            Tên tài liệu
+            <input
+              className={`${inputClass} mt-1 w-full`}
+              value={title}
+              maxLength={200}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <label className="block text-xs font-medium text-text-muted">
+            Chủ đề
+            <input
+              className={`${inputClass} mt-1 w-full`}
+              value={topic}
+              maxLength={100}
+              onChange={(event) => setTopic(event.target.value)}
+              placeholder="Ví dụ: Cây và đồ thị"
+            />
+          </label>
+        </div>
+        <footer className="flex shrink-0 justify-end gap-2 border-t border-border-soft bg-surface p-4">
+          <Button variant="outline" onClick={onClose} disabled={busy}>
+            Hủy
+          </Button>
+          <Button onClick={() => void save()} disabled={busy || !title.trim()}>
+            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Lưu thay đổi
+          </Button>
+        </footer>
+      </Card>
     </div>
   );
 }
@@ -659,10 +778,15 @@ export function WorkspaceExercisesTab({
   const canCreate =
     detail.currentMembership.role === "owner" ||
     detail.currentMembership.permissions.create_exercise;
-  const canEdit =
+  const canDeleteAny =
     detail.currentMembership.role === "owner" ||
-    detail.currentMembership.permissions.manage_exercise ||
+    detail.currentMembership.permissions.delete_exercise;
+  const canEditAny =
+    detail.currentMembership.role === "owner" ||
     detail.currentMembership.permissions.edit_exercise;
+  const canAssign =
+    detail.currentMembership.role === "owner" ||
+    detail.currentMembership.permissions.assign_exercise;
   const load = useCallback(async () => {
     try {
       const main = await api.workspaces.workspaceExercises(detail.slug, {
@@ -674,7 +798,7 @@ export function WorkspaceExercisesTab({
         status: exerciseStatus || undefined,
       });
       setData(main);
-      if (!canEdit) {
+      if (!canEditAny && !canAssign) {
         const [overdue, dueSoon] = await Promise.all([
           api.workspaces.workspaceExercises(detail.slug, {
             limit: 5,
@@ -702,18 +826,18 @@ export function WorkspaceExercisesTab({
     } catch (e) {
       toast.error(messageOf(e));
     }
-  }, [detail.slug, page, q, difficulty, scope, exerciseStatus, canEdit, toast]);
+  }, [detail.slug, page, q, difficulty, scope, exerciseStatus, canEditAny, canAssign, toast]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
   }, [load]);
   useEffect(() => {
-    if (canCreate)
+    if (canAssign)
       void api.exercises
         .bank({ limit: 50 })
         .then((r) => setBank(r.items))
         .catch(() => setBank([]));
-  }, [canCreate]);
+  }, [canAssign]);
   const attach = async () => {
     if (!selected || memberIds.length === 0) return;
     setBusy(true);
@@ -776,74 +900,78 @@ export function WorkspaceExercisesTab({
   };
   return (
     <div className="space-y-4">
-      {canCreate && (
+      {(canCreate || canAssign) && (
         <Card className="space-y-3 p-4">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-bold text-navy">
-                Thêm và phân công bài tập
-              </h2>
-              <p className="mt-1 text-xs text-text-faint">
-                {memberIds.length} thành viên đang được chọn
-              </p>
+              <h2 className="text-sm font-bold text-navy">Quản lý bài tập</h2>
+              {canAssign && (
+                <p className="mt-1 text-xs text-text-faint">
+                  {memberIds.length} thành viên đang được chọn để phân công
+                </p>
+              )}
             </div>
-            <Button
-              size="sm"
-              onClick={() => {
-                setStudioExercise(null);
-                setAuthoringOpen(true);
-              }}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Tạo bài mới
-            </Button>
+            {canCreate && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setStudioExercise(null);
+                  setAuthoringOpen(true);
+                }}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Tạo bài mới
+              </Button>
+            )}
           </div>
-          <div className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_200px_160px]">
-            <div className="min-w-0">
-              <Select
-                label="Chọn bài tập"
-                value={selected}
-                onChange={setSelected}
-                className="w-full"
-                options={[
-                  { value: "", label: "Chọn bài tập" },
-                  ...bank.map((x) => ({ value: x.id, label: x.title })),
-                ]}
-              />
+          {canAssign && (
+            <div className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-[minmax(320px,1fr)_220px_200px_160px]">
+              <div className="min-w-0">
+                <Select
+                  label="Chọn bài tập"
+                  value={selected}
+                  onChange={setSelected}
+                  className="w-full"
+                  options={[
+                    { value: "", label: "Chọn bài tập" },
+                    ...bank.map((x) => ({ value: x.id, label: x.title })),
+                  ]}
+                />
+              </div>
+              <label className="grid gap-1 text-xs font-medium text-text-muted">
+                <span>Hạn nộp</span>
+                <input
+                  type="datetime-local"
+                  className={`${inputClass} h-9 w-full py-0 text-xs`}
+                  value={dueAt}
+                  onChange={(e) => setDueAt(e.target.value)}
+                />
+              </label>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 whitespace-nowrap"
+                aria-expanded={assignmentOpen}
+                aria-controls="workspace-assignment-options"
+                onClick={() => setAssignmentOpen((value) => !value)}
+              >
+                <Users className="h-3.5 w-3.5" />
+                {assignmentOpen
+                  ? `Đã chọn ${memberIds.length}`
+                  : "Chọn người được giao"}
+              </Button>
+              <Button
+                size="sm"
+                className="h-9 whitespace-nowrap"
+                disabled={!selected || !memberIds.length || busy}
+                onClick={() => void attach()}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Xác nhận giao
+              </Button>
             </div>
-            <label className="grid gap-1 text-xs font-medium text-text-muted">
-              <span>Hạn nộp</span>
-              <input
-                type="datetime-local"
-                className={`${inputClass} h-9 w-full py-0 text-xs`}
-                value={dueAt}
-                onChange={(e) => setDueAt(e.target.value)}
-              />
-            </label>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 whitespace-nowrap"
-              aria-expanded={assignmentOpen}
-              aria-controls="workspace-assignment-options"
-              onClick={() => setAssignmentOpen((value) => !value)}
-            >
-              <Users className="h-3.5 w-3.5" />
-              {assignmentOpen
-                ? `Đã chọn ${memberIds.length}`
-                : "Chọn người được giao"}
-            </Button>
-            <Button
-              size="sm"
-              className="h-9 whitespace-nowrap"
-              disabled={!selected || !memberIds.length || busy}
-              onClick={() => void attach()}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Xác nhận giao
-            </Button>
-          </div>
-          {assignmentOpen && (
+          )}
+          {canAssign && assignmentOpen && (
             <WorkspaceMemberSelector
               id="workspace-assignment-options"
               members={assignable}
@@ -853,7 +981,7 @@ export function WorkspaceExercisesTab({
           )}
         </Card>
       )}
-      {!canEdit && reminders.length > 0 && (
+      {!canEditAny && !canAssign && reminders.length > 0 && (
         <Card className="border-primary/30 p-4">
           <div className="mb-3 flex items-center gap-2">
             <Clock3 className="h-4 w-4 text-primary" />
@@ -889,7 +1017,7 @@ export function WorkspaceExercisesTab({
         </Card>
       )}
       <div
-        className={`grid gap-2 md:grid-cols-2 ${canEdit ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}
+        className={`grid gap-2 md:grid-cols-2 ${canEditAny ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}
       >
         <input
           className={`${inputClass} xl:col-span-2`}
@@ -915,7 +1043,7 @@ export function WorkspaceExercisesTab({
             { value: "hard", label: "Nâng cao" },
           ]}
         />
-        {!canEdit && (
+        {!canEditAny && (
           <>
             <Select
               label="Phạm vi"
@@ -951,7 +1079,7 @@ export function WorkspaceExercisesTab({
             />
           </>
         )}
-        {canEdit && (
+        {(canEditAny || canDeleteAny) && (
           <Select
             label="Trạng thái"
             className="w-full"
@@ -964,7 +1092,9 @@ export function WorkspaceExercisesTab({
               { value: "", label: "Tất cả đang hoạt động" },
               { value: "published", label: "Đang hiển thị" },
               { value: "hidden", label: "Đã ẩn" },
-              { value: "removed", label: "Đã xóa" },
+              ...(canDeleteAny
+                ? [{ value: "removed", label: "Đã xóa" }]
+                : []),
             ]}
           />
         )}
@@ -1002,7 +1132,7 @@ export function WorkspaceExercisesTab({
                   <span
                     className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${ex.isAssignedToMe ? "bg-primary/10 text-primary" : "bg-border-soft text-text-muted"}`}
                   >
-                    {canEdit
+                    {canEditAny || canAssign
                       ? `${ex.assignedCount} người được giao`
                       : ex.isAssignedToMe
                         ? "Được giao cho tôi"
@@ -1033,23 +1163,25 @@ export function WorkspaceExercisesTab({
               >
                 Mở bài
               </Button>
-              {(ex.canEdit || ex.canDelete || canCreate) && (
+              {(ex.canEdit || ex.canDelete || ex.canRestore || canCreate) && (
                 <>
                   {ex.deletedAt ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void api.workspaces
-                          .restoreWorkspaceExercise(detail.slug, ex.id)
-                          .then(() => load())
-                          .catch((error) => toast.error(messageOf(error)));
-                      }}
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      Khôi phục
-                    </Button>
+                    ex.canRestore && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void api.workspaces
+                            .restoreWorkspaceExercise(detail.slug, ex.id)
+                            .then(() => load())
+                            .catch((error) => toast.error(messageOf(error)));
+                        }}
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Khôi phục
+                      </Button>
+                    )
                   ) : (
                     <>
                       {canCreate && (
@@ -1117,6 +1249,7 @@ export function WorkspaceExercisesTab({
           slug={detail.slug}
           members={assignable}
           initialMemberIds={memberIds}
+          canAssign={canAssign}
           initialExercise={studioExercise}
           onClose={() => {
             setAuthoringOpen(false);
@@ -1141,6 +1274,7 @@ function ExerciseAuthoringDialog({
   slug,
   members,
   initialMemberIds,
+  canAssign,
   initialExercise,
   onClose,
   onSaved,
@@ -1148,6 +1282,7 @@ function ExerciseAuthoringDialog({
   slug: string;
   members: WorkspaceMember[];
   initialMemberIds: string[];
+  canAssign: boolean;
   initialExercise: WorkspaceExerciseDetail | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
@@ -1352,8 +1487,12 @@ function ExerciseAuthoringDialog({
           title: title.trim(),
           summary: summary.trim() || null,
           difficulty,
-          dueAt: dueAt ? new Date(dueAt).toISOString() : null,
-          memberIds,
+          ...(canAssign
+            ? {
+                dueAt: dueAt ? new Date(dueAt).toISOString() : null,
+                memberIds,
+              }
+            : {}),
           content,
         });
       } else
@@ -1363,8 +1502,9 @@ function ExerciseAuthoringDialog({
           summary: summary.trim() || undefined,
           difficulty,
           source: generatedByAi ? "ai" : "manual",
-          dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
-          memberIds,
+          dueAt:
+            canAssign && dueAt ? new Date(dueAt).toISOString() : undefined,
+          memberIds: canAssign ? memberIds : [],
           content,
         });
       toast.success(
@@ -1586,20 +1726,24 @@ function ExerciseAuthoringDialog({
               </Panel>
             </Group>
           </div>
-          <label className="block text-xs font-medium text-text-muted">
-            Hạn nộp của Workspace
-            <input
-              type="datetime-local"
-              className={`${inputClass} mt-1 block w-full max-w-sm`}
-              value={dueAt}
-              onChange={(event) => setDueAt(event.target.value)}
-            />
-          </label>
-          <WorkspaceMemberSelector
-            members={members}
-            selectedIds={memberIds}
-            onChange={setMemberIds}
-          />
+          {canAssign && (
+            <>
+              <label className="block text-xs font-medium text-text-muted">
+                Hạn nộp của Workspace
+                <input
+                  type="datetime-local"
+                  className={`${inputClass} mt-1 block w-full max-w-sm`}
+                  value={dueAt}
+                  onChange={(event) => setDueAt(event.target.value)}
+                />
+              </label>
+              <WorkspaceMemberSelector
+                members={members}
+                selectedIds={memberIds}
+                onChange={setMemberIds}
+              />
+            </>
+          )}
         </div>
         <div className="flex justify-end gap-2 border-t border-border-soft p-4">
           <Button variant="outline" onClick={onClose} disabled={busy}>
@@ -1808,18 +1952,32 @@ function ExerciseDetailDialog({
     setBusy(true);
     try {
       await api.workspaces.updateWorkspaceExercise(slug, id, {
-        dueAt: dueAt ? new Date(dueAt).toISOString() : null,
-        attemptLimit: attemptLimit ? Number(attemptLimit) : null,
-        memberIds: assigned,
-        title: title.trim(),
-        summary: summary.trim() || null,
-        difficulty,
-        publicationStatus,
-        content: data.content
-          ? { ...data.content, statement: statement.trim() }
-          : { statement: statement.trim(), ioMode: "stdin_stdout" },
+        ...(data.canAssign
+          ? {
+              dueAt: dueAt ? new Date(dueAt).toISOString() : null,
+              attemptLimit: attemptLimit ? Number(attemptLimit) : null,
+              memberIds: assigned,
+            }
+          : {}),
+        ...(data.canEdit
+          ? {
+              title: title.trim(),
+              summary: summary.trim() || null,
+              difficulty,
+              content: data.content
+                ? { ...data.content, statement: statement.trim() }
+                : { statement: statement.trim(), ioMode: "stdin_stdout" },
+            }
+          : {}),
+        ...(data.canPublish ? { publicationStatus } : {}),
       });
-      toast.success("Đã cập nhật bài tập và phân công");
+      toast.success(
+        data.canEdit && data.canAssign
+          ? "Đã cập nhật bài tập và phân công"
+          : data.canAssign
+            ? "Đã cập nhật phân công"
+            : "Đã cập nhật bài tập",
+      );
       await loadDetail();
       await onUpdated();
     } catch (e) {
@@ -1845,7 +2003,7 @@ function ExerciseDetailDialog({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {data?.canManage && (
+            {data?.canEdit && (
               <Button
                 type="button"
                 size="sm"
@@ -1867,87 +2025,99 @@ function ExerciseDetailDialog({
           ) : (
             data && (
               <div className="space-y-5">
-                {data.canManage && (
+                {(data.canEdit || data.canAssign) && (
                   <Card className="space-y-3 bg-bg p-4">
                     <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      <Field
-                        label="Tiêu đề"
-                        value={title}
-                        onChange={setTitle}
-                      />
-                      <Field
-                        label="Tóm tắt"
-                        value={summary}
-                        onChange={setSummary}
-                      />
-                      <div className="min-w-0 text-xs font-medium text-text-muted">
-                        <span>Độ khó</span>
-                        <Select
-                          label="Độ khó"
-                          className="w-full"
-                          containerClassName="mt-1"
-                          value={difficulty}
-                          onChange={(value) =>
-                            setDifficulty(value as typeof difficulty)
-                          }
-                          options={[
-                            { value: "easy", label: "Cơ bản" },
-                            { value: "medium", label: "Trung bình" },
-                            { value: "hard", label: "Nâng cao" },
-                          ]}
-                        />
-                      </div>
-                      <div className="min-w-0 text-xs font-medium text-text-muted">
-                        <span>Hiển thị</span>
-                        <Select
-                          label="Hiển thị"
-                          className="w-full"
-                          containerClassName="mt-1"
-                          value={publicationStatus}
-                          onChange={(value) =>
-                            setPublicationStatus(
-                              value as typeof publicationStatus,
-                            )
-                          }
-                          options={[
-                            { value: "published", label: "Đang hiển thị" },
-                            { value: "hidden", label: "Đã ẩn" },
-                          ]}
-                        />
-                      </div>
+                      {data.canEdit && (
+                        <>
+                          <Field
+                            label="Tiêu đề"
+                            value={title}
+                            onChange={setTitle}
+                          />
+                          <Field
+                            label="Tóm tắt"
+                            value={summary}
+                            onChange={setSummary}
+                          />
+                          <div className="min-w-0 text-xs font-medium text-text-muted">
+                            <span>Độ khó</span>
+                            <Select
+                              label="Độ khó"
+                              className="w-full"
+                              containerClassName="mt-1"
+                              value={difficulty}
+                              onChange={(value) =>
+                                setDifficulty(value as typeof difficulty)
+                              }
+                              options={[
+                                { value: "easy", label: "Cơ bản" },
+                                { value: "medium", label: "Trung bình" },
+                                { value: "hard", label: "Nâng cao" },
+                              ]}
+                            />
+                          </div>
+                        </>
+                      )}
+                      {data.canPublish && (
+                        <div className="min-w-0 text-xs font-medium text-text-muted">
+                          <span>Hiển thị</span>
+                          <Select
+                            label="Hiển thị"
+                            className="w-full"
+                            containerClassName="mt-1"
+                            value={publicationStatus}
+                            onChange={(value) =>
+                              setPublicationStatus(
+                                value as typeof publicationStatus,
+                              )
+                            }
+                            options={[
+                              { value: "published", label: "Đang hiển thị" },
+                              { value: "hidden", label: "Đã ẩn" },
+                            ]}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <TextArea
-                      label="Nội dung đề bài"
-                      value={statement}
-                      onChange={setStatement}
-                    />
-                    <div className="flex flex-wrap items-end gap-3">
-                      <label className="text-xs font-medium">
-                        Hạn nộp
-                        <input
-                          type="datetime-local"
-                          className={`mt-1 block ${inputClass}`}
-                          value={dueAt}
-                          onChange={(e) => setDueAt(e.target.value)}
+                    {data.canEdit && (
+                      <TextArea
+                        label="Nội dung đề bài"
+                        value={statement}
+                        onChange={setStatement}
+                      />
+                    )}
+                    {data.canAssign && (
+                      <>
+                        <div className="flex flex-wrap items-end gap-3">
+                          <label className="text-xs font-medium">
+                            Hạn nộp
+                            <input
+                              type="datetime-local"
+                              className={`mt-1 block ${inputClass}`}
+                              value={dueAt}
+                              onChange={(e) => setDueAt(e.target.value)}
+                            />
+                          </label>
+                          <label className="text-xs font-medium">
+                            Số lần tối đa
+                            <input
+                              type="number"
+                              min={1}
+                              max={100}
+                              className={`mt-1 block w-28 ${inputClass}`}
+                              value={attemptLimit}
+                              onChange={(e) => setAttemptLimit(e.target.value)}
+                            />
+                          </label>
+                        </div>
+                        <WorkspaceMemberSelector
+                          members={members}
+                          selectedIds={assigned}
+                          onChange={setAssigned}
                         />
-                      </label>
-                      <label className="text-xs font-medium">
-                        Số lần tối đa
-                        <input
-                          type="number"
-                          min={1}
-                          max={100}
-                          className={`mt-1 block w-28 ${inputClass}`}
-                          value={attemptLimit}
-                          onChange={(e) => setAttemptLimit(e.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <WorkspaceMemberSelector
-                      members={members}
-                      selectedIds={assigned}
-                      onChange={setAssigned}
-                    />
+                      </>
+                    )}
                   </Card>
                 )}
                 <div
@@ -1963,8 +2133,9 @@ function ExerciseDetailDialog({
                         Thành viên được giao
                       </h3>
                       <p className="text-xs text-text-faint">
-                        Tìm một thành viên và chọn để xem lịch sử nộp ở bên
-                        phải.
+                        {data.canReview
+                          ? "Tìm một thành viên và chọn để xem lịch sử nộp ở bên phải."
+                          : "Tìm và kiểm tra danh sách thành viên đang được giao bài."}
                       </p>
                     </div>
                     {selectedAssignment && (
@@ -2020,9 +2191,13 @@ function ExerciseDetailDialog({
                           <tr>
                             <th className="p-3">Thành viên</th>
                             <th className="p-3">Trạng thái</th>
-                            <th className="p-3">Lượt nộp</th>
-                            <th className="p-3">Kết quả gần nhất</th>
-                            <th className="p-3">Điểm</th>
+                            {data.canReview && (
+                              <>
+                                <th className="p-3">Lượt nộp</th>
+                                <th className="p-3">Kết quả gần nhất</th>
+                                <th className="p-3">Điểm</th>
+                              </>
+                            )}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border-soft">
@@ -2030,8 +2205,10 @@ function ExerciseDetailDialog({
                             <tr
                               key={item.id}
                               aria-selected={selectedAssignment?.id === item.id}
-                              className={`cursor-pointer transition-colors duration-150 hover:bg-bg ${selectedAssignment?.id === item.id ? "bg-primary/5" : ""}`}
-                              onClick={() => void openHistory(item)}
+                              className={`${data.canReview ? "cursor-pointer hover:bg-bg" : ""} transition-colors duration-150 ${selectedAssignment?.id === item.id ? "bg-primary/5" : ""}`}
+                              onClick={() => {
+                                if (data.canReview) void openHistory(item);
+                              }}
                             >
                               <td className="p-3 font-semibold text-navy">
                                 {item.memberName}
@@ -2039,13 +2216,19 @@ function ExerciseDetailDialog({
                               <td className="p-3">
                                 {assignmentLabel(item.status)}
                               </td>
-                              <td className="p-3">{item.submissionCount}</td>
-                              <td className="p-3">
-                                {item.latestVerdict
-                                  ? verdictLabel(item.latestVerdict)
-                                  : "Chưa nộp"}
-                              </td>
-                              <td className="p-3">{item.latestScore ?? "–"}</td>
+                              {data.canReview && (
+                                <>
+                                  <td className="p-3">{item.submissionCount}</td>
+                                  <td className="p-3">
+                                    {item.latestVerdict
+                                      ? verdictLabel(item.latestVerdict)
+                                      : "Chưa nộp"}
+                                  </td>
+                                  <td className="p-3">
+                                    {item.latestScore ?? "–"}
+                                  </td>
+                                </>
+                              )}
                             </tr>
                           ))}
                         </tbody>
@@ -2192,11 +2375,11 @@ function ExerciseDetailDialog({
           <Button type="button" size="sm" variant="outline" onClick={onClose}>
             Đóng
           </Button>
-          {data?.canManage && (
+          {(data?.canEdit || data?.canAssign) && (
             <Button
               type="button"
               size="sm"
-              disabled={busy || assigned.length === 0}
+              disabled={busy || (data.canAssign && assigned.length === 0)}
               onClick={() => void save()}
             >
               <Check className="h-3.5 w-3.5" />

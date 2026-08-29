@@ -5,13 +5,13 @@ export type WorkspacePermission =
   | "upload_doc"
   | "edit_own_doc"
   | "delete_own_doc"
-  | "manage_doc"
+  | "edit_doc"
   | "approve_doc"
   | "view_exercise"
   | "create_exercise"
   | "edit_own_exercise"
   | "delete_own_exercise"
-  | "manage_exercise"
+  | "delete_exercise"
   | "assign_exercise"
   | "edit_exercise"
   | "delete_doc"
@@ -264,6 +264,7 @@ export interface WorkspaceExercise {
   deleteReason: string | null;
   canEdit: boolean;
   canDelete: boolean;
+  canRestore: boolean;
   xp: number;
   estimatedMinutes: number | null;
   timeLimitMs: number;
@@ -308,7 +309,10 @@ export interface WorkspaceExerciseDetail extends WorkspaceExercise {
   /** Compatibility with workspace-service instances that have not restarted yet. */
   assignments?: WorkspaceAssignment[];
   content: Record<string, unknown> | null;
+  /** @deprecated Use the granular capabilities below. */
   canManage: boolean;
+  canAssign: boolean;
+  canPublish: boolean;
   canReview: boolean;
 }
 export interface WorkspaceSubmission {

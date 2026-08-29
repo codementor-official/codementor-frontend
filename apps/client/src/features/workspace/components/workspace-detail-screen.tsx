@@ -72,10 +72,21 @@ const TABS: Array<{
   label: string;
   icon: typeof Users;
   ownerOnly?: boolean;
+  requiredPermission?: WorkspacePermission;
 }> = [
   { key: "overview", label: "Tổng quan", icon: Target },
-  { key: "documents", label: "Tài liệu", icon: FileText },
-  { key: "exercises", label: "Bài tập", icon: ClipboardList },
+  {
+    key: "documents",
+    label: "Tài liệu",
+    icon: FileText,
+    requiredPermission: "view_doc",
+  },
+  {
+    key: "exercises",
+    label: "Bài tập",
+    icon: ClipboardList,
+    requiredPermission: "view_exercise",
+  },
   { key: "members", label: "Thành viên", icon: Users },
   { key: "progress", label: "Tiến độ", icon: BarChart3 },
   { key: "chat", label: "Chat", icon: MessageCircle },
@@ -114,14 +125,19 @@ const PERMISSION_LABELS: {
     description: "Chuyển tài liệu của chính mình vào mục đã xóa.",
   },
   {
-    key: "manage_doc",
-    label: "Quản lý mọi tài liệu",
-    description: "Sửa, ẩn, khôi phục và xóa mọi tài liệu.",
+    key: "edit_doc",
+    label: "Sửa mọi tài liệu",
+    description: "Sửa metadata tài liệu của mọi thành viên, không bao gồm duyệt hoặc xóa.",
   },
   {
     key: "approve_doc",
     label: "Duyệt tài liệu",
     description: "Duyệt hoặc từ chối tài liệu đang chờ.",
+  },
+  {
+    key: "delete_doc",
+    label: "Xóa mọi tài liệu",
+    description: "Xóa, khôi phục hoặc xóa vĩnh viễn tài liệu của thành viên.",
   },
   {
     key: "view_exercise",
@@ -144,9 +160,14 @@ const PERMISSION_LABELS: {
     description: "Chuyển bài tập của chính mình vào mục đã xóa.",
   },
   {
-    key: "manage_exercise",
-    label: "Quản lý mọi bài tập",
-    description: "Sửa, ẩn, khôi phục và xóa mọi bài tập.",
+    key: "delete_exercise",
+    label: "Xóa mọi bài tập",
+    description: "Ẩn, khôi phục hoặc xóa vĩnh viễn bài tập của mọi tác giả.",
+  },
+  {
+    key: "edit_exercise",
+    label: "Sửa mọi bài tập",
+    description: "Sửa nội dung bài tập của mọi tác giả, không bao gồm xóa.",
   },
   {
     key: "assign_exercise",
@@ -259,10 +280,19 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   }, [detail?.currentMembership.role, detail?.slug]);
 
   const isOwner = detail?.currentMembership.role === "owner";
+  const visibleTabs = TABS.filter(
+    (item) =>
+      (!item.ownerOnly || isOwner) &&
+      (!item.requiredPermission ||
+        detail?.currentMembership.permissions[item.requiredPermission]),
+  );
   const memberChoices = useMemo(
     () => members.filter((member) => member.role !== "owner"),
     [members],
   );
+  const activeTab = visibleTabs.some((item) => item.key === tab)
+    ? tab
+    : "overview";
 
   const leave = async () => {
     setPending(true);
@@ -403,15 +433,15 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
 
       <div className="scrollbar-none mb-5 overflow-x-auto border-b border-border">
         <nav className="flex min-w-max gap-1" aria-label="Mục của nhóm">
-          {TABS.filter((item) => !item.ownerOnly || isOwner).map(
+          {visibleTabs.map(
             ({ key: value, label, icon: Icon }) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => selectTab(value)}
-                aria-current={tab === value ? "page" : undefined}
+                aria-current={activeTab === value ? "page" : undefined}
                 className={`inline-flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
-                  tab === value
+                  activeTab === value
                     ? "border-primary text-navy"
                     : "border-transparent text-text-muted hover:border-border hover:text-navy"
                 }`}
@@ -434,16 +464,17 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         </nav>
       </div>
 
-      {tab === "overview" && <Overview detail={detail} overview={overview} />}
-      {tab === "documents" && <WorkspaceDocumentsTab detail={detail} />}
-      {tab === "exercises" && (
+      {activeTab === "overview" && <Overview detail={detail} overview={overview} />}
+      {activeTab === "documents" && <WorkspaceDocumentsTab detail={detail} />}
+      {activeTab === "exercises" && (
         <WorkspaceExercisesTab detail={detail} members={members} />
       )}
-      {tab === "members" && (
+      {activeTab === "members" && (
         <Members
           slug={detail.slug}
           overview={overview}
           viewerRole={detail.currentMembership.role}
+          viewerPermissions={detail.currentMembership.permissions}
           revision={memberRevision}
           pending={pending}
           onChangeRole={changeRole}
@@ -452,11 +483,11 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           onJoinRequestCountChange={setJoinRequestCount}
         />
       )}
-      {tab === "progress" && (
+      {activeTab === "progress" && (
         <Progress slug={detail.slug} overview={overview} />
       )}
-      {tab === "chat" && <WorkspaceChatTab detail={detail} chat={chat} />}
-      {tab === "settings" && isOwner && (
+      {activeTab === "chat" && <WorkspaceChatTab detail={detail} chat={chat} />}
+      {activeTab === "settings" && isOwner && (
         <SettingsPanel
           detail={detail}
           members={memberChoices}
@@ -496,7 +527,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           </>
         }
       />
-      {tab !== "chat" && (
+      {activeTab !== "chat" && (
         <WorkspaceMiniChat
           workspaceName={detail.name}
           chat={chat}
@@ -1035,7 +1066,7 @@ function Progress({
     });
   return (
     <>
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4 pb-20">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard
             icon={TrendingUp}
@@ -1187,7 +1218,7 @@ function Progress({
           </div>
           <MiniTrend points={overview.activityTrend} />
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="min-w-0 overflow-hidden">
           <div className="border-b border-border-soft p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -1251,7 +1282,7 @@ function Progress({
               />
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="relative min-h-[520px] overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-xs">
               <thead className="bg-bg text-text-faint">
                 <tr>
@@ -1319,7 +1350,7 @@ function Progress({
               </p>
             )}
           </div>
-          <div className="border-t border-border-soft p-3">
+          <div className="min-h-14 border-t border-border-soft p-3">
             <Pagination
               page={page}
               pageCount={totalPages}
@@ -1577,6 +1608,7 @@ function Members({
   slug,
   overview,
   viewerRole,
+  viewerPermissions,
   revision,
   pending,
   pendingJoinRequestCount,
@@ -1587,6 +1619,7 @@ function Members({
   slug: string;
   overview: WorkspaceOverview | null;
   viewerRole: WorkspaceRole;
+  viewerPermissions: Record<WorkspacePermission, boolean>;
   revision: number;
   pending: boolean;
   pendingJoinRequestCount: number;
@@ -1671,6 +1704,8 @@ function Members({
     setPage(1);
   };
   const canManage = viewerRole === "owner" && data.canManage;
+  const canRemoveMembers =
+    viewerRole === "owner" || viewerPermissions.remove_member;
   const canViewPrivate = viewerRole !== "member" && data.canViewPrivate;
   const exportMembers = async () => {
     try {
@@ -1920,7 +1955,6 @@ function Members({
                           {ROLE_LABEL[member.role]}
                         </Badge>
                         {canManage && member.role !== "owner" && (
-                          <>
                             <Button
                               size="sm"
                               variant="outline"
@@ -1939,6 +1973,10 @@ function Members({
                                 ? "Hạ xuống thành viên"
                                 : "Đặt làm Phó nhóm"}
                             </Button>
+                        )}
+                        {canRemoveMembers &&
+                          member.role !== "owner" &&
+                          (viewerRole === "owner" || member.role === "member") && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -1950,8 +1988,7 @@ function Members({
                             >
                               Loại
                             </Button>
-                          </>
-                        )}
+                          )}
                       </div>
                     </li>
                   );
