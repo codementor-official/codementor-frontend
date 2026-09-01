@@ -8,7 +8,7 @@ import type { AppNotification } from "@/types/notification";
 import { useAuth } from "@/providers/auth-provider";
 import { useNotifications } from "./use-notifications";
 
-/** Quá số này thì con số không còn giúp gì, chỉ làm vỡ hình tròn của chấm đỏ. */
+/** Quá số này thì con số không còn giúp gì, chỉ làm vỡ hình tròn của badge. */
 const BADGE_CAP = 9;
 
 export function NotificationBell() {
@@ -60,7 +60,7 @@ export function NotificationBell() {
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-on-ink">
+          <span className="notification-badge absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-2xs font-bold">
             {unreadCount > BADGE_CAP ? `${BADGE_CAP}+` : unreadCount}
           </span>
         )}
@@ -155,7 +155,7 @@ function NotificationRow({
         {!notification.read && (
           <span
             aria-label="Chưa đọc"
-            className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"
+            className="notification-badge mt-1.5 h-2 w-2 shrink-0 rounded-full"
           />
         )}
       </div>

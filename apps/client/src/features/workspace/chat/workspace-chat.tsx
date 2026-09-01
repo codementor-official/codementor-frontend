@@ -168,7 +168,7 @@ export function WorkspaceMiniChat({
         <MessageCircle className="h-5 w-5 text-primary" />
         Chat nhóm
         {chat.unreadCount > 0 && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-on-ink">
+          <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">
             {Math.min(chat.unreadCount, 99)}
           </span>
         )}

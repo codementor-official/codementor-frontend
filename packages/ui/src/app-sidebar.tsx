@@ -140,14 +140,14 @@ export function AppSidebar({
                     {!narrow && <span className="truncate">{item.label}</span>}
                     {badge > 0 &&
                       (narrow ? (
-                        // Thu gọn thì không còn chỗ cho con số — chấm đỏ ở góc biểu tượng
+                        // Thu gọn thì không còn chỗ cho con số — chấm cam ở góc biểu tượng
                         // vẫn nói được "có việc", và đó là phần quan trọng hơn.
                         <span
                           aria-label={`${badge} mục đang chờ`}
-                          className="absolute top-1.5 right-2.5 size-2 rounded-full bg-destructive"
+                          className="notification-badge absolute top-1.5 right-2.5 size-2 rounded-full"
                         />
                       ) : (
-                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-2xs font-bold text-destructive-foreground">
+                        <span className="notification-badge ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-2xs font-bold">
                           {badge > 99 ? "99+" : badge}
                         </span>
                       ))}

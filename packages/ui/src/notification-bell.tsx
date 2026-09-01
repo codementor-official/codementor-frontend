@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, Loader2 } from "lucide-react";
 
-/** Quá số này thì con số không còn giúp gì, chỉ làm vỡ hình tròn của chấm đỏ. */
+/** Quá số này thì con số không còn giúp gì, chỉ làm vỡ hình tròn của badge. */
 const BADGE_CAP = 9;
 const PAGE_SIZE = 20;
 /** Thông báo vừa tới qua socket còn được tô sáng trong bao lâu. */
@@ -308,7 +308,7 @@ export function NotificationBell({
       >
         <Bell aria-hidden="true" className="size-4" />
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-2xs font-bold text-destructive-foreground">
+          <span className="notification-badge absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-2xs font-bold">
             {unreadCount > BADGE_CAP ? `${BADGE_CAP}+` : unreadCount}
           </span>
         )}
@@ -398,7 +398,7 @@ function NotificationRow({
       <div className="flex items-start gap-2">
         <p className="min-w-0 flex-1 text-sm font-semibold">{notification.title}</p>
         {!notification.read && (
-          <span aria-label="Chưa đọc" className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
+          <span aria-label="Chưa đọc" className="notification-badge mt-1.5 size-2 shrink-0 rounded-full" />
         )}
       </div>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{notification.message}</p>

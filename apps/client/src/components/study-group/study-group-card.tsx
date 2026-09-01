@@ -58,7 +58,7 @@ export function StudyGroupCard({
             {ROLE_LABEL[group.role]}
           </Badge>
           {group.unreadCount > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-2xs font-bold text-on-ink">
+            <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-2xs font-bold">
               {group.unreadCount > 99 ? "99+" : group.unreadCount}
             </span>
           )}

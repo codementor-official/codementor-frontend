@@ -491,12 +491,12 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
                 <Icon className="h-4 w-4" />
                 {label}
                 {value === "chat" && chat.unreadCount > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-on-ink">
+                  <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">
                     {Math.min(chat.unreadCount, 99)}
                   </span>
                 )}
                 {value === "members" && joinRequestCount > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-2xs font-bold text-on-ink">
+                  <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">
                     {Math.min(joinRequestCount, 99)}
                   </span>
                 )}
