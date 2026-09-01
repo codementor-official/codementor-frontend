@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Archive, Check, Eye, RotateCcw, Save, Send, Undo2 } from "lucide-react";
+import {
+  Archive,
+  Check,
+  Eye,
+  RotateCcw,
+  Save,
+  Send,
+  Undo2,
+} from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import {
   BreadcrumbTitle,
@@ -15,13 +23,25 @@ import {
 } from "@codementor/ui";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
-import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
+import {
+  clearDraft,
+  draftStorageKey,
+  readDraft,
+  useDraftAutosave,
+  type StoredDraft,
+} from "@/hooks/use-studio-draft";
 import { ArticleEditor } from "@/features/articles/article-editor";
-import { ARTICLE_STATUS_LABELS, ARTICLE_STATUS_TONES, type Article, type Draft } from "@/features/articles/types";
+import {
+  ARTICLE_STATUS_LABELS,
+  ARTICLE_STATUS_TONES,
+  type Article,
+  type Draft,
+} from "@/features/articles/types";
 import { api, type Tag } from "@/lib/api";
 
 /** Ứng dụng người học, để mở xem trước bài. */
-const CLIENT_URL = process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000";
+const CLIENT_URL =
+  process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000";
 
 function toDraft(article: Article): Draft {
   return {
@@ -48,13 +68,19 @@ export default function ArticleStudioPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [savedSignature, setSavedSignature] = useState("");
-  const [pendingDraft, setPendingDraft] = useState<StoredDraft<Draft> | null>(null);
+  const [pendingDraft, setPendingDraft] = useState<StoredDraft<Draft> | null>(
+    null,
+  );
 
   useEffect(() => {
-    void api.tags.list().then(setTags).catch(() => setTags([]));
+    void api.tags
+      .list()
+      .then(setTags)
+      .catch(() => setTags([]));
   }, []);
 
   useEffect(() => {
@@ -85,7 +111,10 @@ export default function ArticleStudioPage() {
   }, [id]);
 
   const dirty = Boolean(draft) && signature(draft as Draft) !== savedSignature;
-  useDraftAutosave(draftStorageKey("article", id), draft as Draft, { ready: draft !== null, dirty });
+  useDraftAutosave(draftStorageKey("article", id), draft as Draft, {
+    ready: draft !== null,
+    dirty,
+  });
   const unsavedDialog = useUnsavedGuard(dirty);
 
   if (error && !article) {
@@ -99,7 +128,11 @@ export default function ArticleStudioPage() {
   }
 
   if (!article || !draft) {
-    return <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">Đang tải…</p>;
+    return (
+      <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">
+        Đang tải…
+      </p>
+    );
   }
 
   const act = async (action: () => Promise<unknown>, done: string) => {
@@ -119,23 +152,25 @@ export default function ArticleStudioPage() {
     }
   };
 
-  const save = () =>
-    act(async () => {
-      await api.articles.update(id, {
-        title: draft.title.trim() || undefined,
-        excerpt: draft.excerpt.trim() || undefined,
-        takeaway: draft.takeaway.trim() || undefined,
-        coverImageUrl: draft.coverImageUrl.trim() || null,
-        readMinutes: draft.readMinutes ? Number(draft.readMinutes) : undefined,
-        tagId: draft.tagId || undefined,
-      });
-      // Tiptap trả "<p></p>" cho tài liệu rỗng; ghi nó sẽ gắn content_ref cho một bài
-      // trống — publish() cho qua, còn người đọc mở ra thấy trắng.
-      if (draft.contentHtml.replace(/<[^>]*>/g, "").trim().length > 0) {
-        await api.articles.saveContent(id, draft.contentHtml);
-      }
-      setSavedAt(new Date());
-    }, "Đã lưu");
+  const persistDraft = async () => {
+    await api.articles.update(id, {
+      title: draft.title.trim() || undefined,
+      excerpt: draft.excerpt.trim() || undefined,
+      takeaway: draft.takeaway.trim() || undefined,
+      coverImageUrl: draft.coverImageUrl.trim() || null,
+      readMinutes: draft.readMinutes ? Number(draft.readMinutes) : undefined,
+      tagId: draft.tagId || undefined,
+    });
+    // Tiptap trả "<p></p>" cho tài liệu rỗng; ghi nó sẽ gắn content_ref cho một bài
+    // trống — publish() cho qua, còn người đọc mở ra thấy trắng.
+    if (draft.contentHtml.replace(/<[^>]*>/g, "").trim().length > 0) {
+      await api.articles.saveContent(id, draft.contentHtml);
+    }
+    setSavedAt(new Date());
+  };
+
+  const save = () => act(persistDraft, "Đã lưu");
+  const busy = saving || coverUploading;
 
   return (
     <>
@@ -185,20 +220,31 @@ export default function ArticleStudioPage() {
         width="sm"
       >
         <p className="text-sm text-muted-foreground">
-          Trang có vẻ đã bị tải lại hoặc mất mạng trước khi kịp lưu. Khôi phục để tiếp tục từ
-          chỗ đang dở, hoặc bỏ qua để dùng đúng bản đã lưu trên hệ thống.
+          Trang có vẻ đã bị tải lại hoặc mất mạng trước khi kịp lưu. Khôi phục
+          để tiếp tục từ chỗ đang dở, hoặc bỏ qua để dùng đúng bản đã lưu trên
+          hệ thống.
         </p>
       </Modal>
 
       {/* Cùng class `.rich-text` mà trình soạn thảo dùng, nên bản xem trước và bản người
           học đọc được dựng từ đúng một bộ luật trình bày. */}
-      <Modal onClose={() => setPreviewing(false)} open={previewing} title="Xem trước bài viết" width="lg">
+      <Modal
+        onClose={() => setPreviewing(false)}
+        open={previewing}
+        title="Xem trước bài viết"
+        width="lg"
+      >
         <article>
           <h1 className="text-2xl leading-snug font-bold">{draft.title}</h1>
           {draft.excerpt ? (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{draft.excerpt}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {draft.excerpt}
+            </p>
           ) : null}
-          <div className="rich-text mt-6" dangerouslySetInnerHTML={{ __html: draft.contentHtml }} />
+          <div
+            className="rich-text mt-6"
+            dangerouslySetInnerHTML={{ __html: draft.contentHtml }}
+          />
         </article>
       </Modal>
 
@@ -206,28 +252,47 @@ export default function ArticleStudioPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {savedAt !== null && (
-              <span aria-live="polite" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span
+                aria-live="polite"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+              >
                 <Check aria-hidden="true" className="size-3.5 text-success" />
                 Đã lưu lúc {savedAt.toLocaleTimeString("vi-VN")}
               </span>
             )}
-            <Button onClick={() => setPreviewing(true)} type="button" variant="outline">
+            <Button
+              onClick={() => setPreviewing(true)}
+              type="button"
+              variant="outline"
+            >
               <Eye aria-hidden="true" className="size-4" />
               Xem trước
             </Button>
             {article.status === "published" && (
-              <a className={buttonClassName("outline")} href={`${CLIENT_URL}/articles/${article.slug}`} rel="noreferrer" target="_blank">
+              <a
+                className={buttonClassName("outline")}
+                href={`${CLIENT_URL}/articles/${article.slug}`}
+                rel="noreferrer"
+                target="_blank"
+              >
                 Xem trên client
               </a>
             )}
-            <Button disabled={saving} onClick={() => void save()} type="button" variant="outline">
+            <Button
+              disabled={busy}
+              onClick={() => void save()}
+              type="button"
+              variant="outline"
+            >
               <Save aria-hidden="true" className="size-4" />
               {saving ? "Đang lưu…" : "Lưu"}
             </Button>
             {article.status === "pending_review" ? (
               <Button
-                disabled={saving}
-                onClick={() => void act(() => api.articles.withdraw(id), "Đã hủy gửi duyệt")}
+                disabled={busy}
+                onClick={() =>
+                  void act(() => api.articles.withdraw(id), "Đã hủy gửi duyệt")
+                }
                 type="button"
                 variant="outline"
               >
@@ -236,8 +301,10 @@ export default function ArticleStudioPage() {
               </Button>
             ) : article.status === "archived" ? (
               <Button
-                disabled={saving}
-                onClick={() => void act(() => api.articles.restore(id), "Đã khôi phục")}
+                disabled={busy}
+                onClick={() =>
+                  void act(() => api.articles.restore(id), "Đã khôi phục")
+                }
                 type="button"
                 variant="outline"
               >
@@ -246,16 +313,32 @@ export default function ArticleStudioPage() {
               </Button>
             ) : (
               <>
-                <Button disabled={saving} onClick={() => void act(() => api.articles.submit(id), "Đã gửi duyệt")} type="button">
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void act(async () => {
+                      await persistDraft();
+                      await api.articles.submit(id);
+                    }, "Đã gửi duyệt")
+                  }
+                  type="button"
+                >
                   <Send aria-hidden="true" className="size-4" />
-                  {article.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
+                  {article.status === "published"
+                    ? "Gửi duyệt lại"
+                    : "Gửi duyệt"}
                 </Button>
                 {article.status === "published" && (
                   <ReasonButton
                     confirmLabel="Gửi yêu cầu"
                     description="Bài viết vẫn công khai cho tới khi quản trị viên duyệt yêu cầu này. Quản trị viên sẽ đọc được đúng lý do bạn nêu."
-                    disabled={saving}
-                    onConfirm={(reason) => act(() => api.articles.requestRemoval(id, reason), "Đã gửi yêu cầu")}
+                    disabled={busy}
+                    onConfirm={(reason) =>
+                      act(
+                        () => api.articles.requestRemoval(id, reason),
+                        "Đã gửi yêu cầu",
+                      )
+                    }
                     placeholder="Vì sao bạn muốn gỡ bài viết này xuống?"
                     title="Xin gỡ bài viết đang công khai?"
                   >
@@ -279,7 +362,13 @@ export default function ArticleStudioPage() {
         title={draft.title || "Bài viết chưa đặt tên"}
       >
         <StudioScroll>
-          <ArticleEditor articleId={id} draft={draft} onChange={setDraft} tags={tags} />
+          <ArticleEditor
+            articleId={id}
+            draft={draft}
+            onChange={setDraft}
+            onUploadingChange={setCoverUploading}
+            tags={tags}
+          />
         </StudioScroll>
       </StudioShell>
     </>

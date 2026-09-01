@@ -15,33 +15,47 @@ export function ArticleEditor({
   articleId,
   draft,
   onChange,
+  onUploadingChange,
   tags,
 }: {
   articleId: string;
   draft: Draft;
   onChange: (draft: Draft) => void;
+  onUploadingChange?: (uploading: boolean) => void;
   tags: Tag[];
 }) {
-  const [uploadConfig, setUploadConfig] = useState<ArticleCoverUploadConfig | null>(null);
+  const [uploadConfig, setUploadConfig] =
+    useState<ArticleCoverUploadConfig | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
-    void api.articles.coverUploadConfig().then(setUploadConfig).catch(() => setUploadConfig(null));
+    void api.articles
+      .coverUploadConfig()
+      .then(setUploadConfig)
+      .catch(() => setUploadConfig(null));
   }, []);
 
   const uploadCover = async (file: File) => {
     setUploadError(null);
     const config = uploadConfig;
     if (!config?.enabled) {
-      setUploadError("Kho ảnh chưa sẵn sàng. Bạn vẫn có thể dán URL ảnh bên dưới.");
+      setUploadError(
+        "Kho ảnh chưa sẵn sàng. Bạn vẫn có thể dán URL ảnh bên dưới.",
+      );
       return;
     }
-    if (!config.acceptedTypes.includes(file.type) || file.size > config.maxBytes) {
-      setUploadError(`Chỉ nhận PNG, JPEG hoặc WebP tối đa ${Math.round(config.maxBytes / 1024 / 1024)} MB.`);
+    if (
+      !config.acceptedTypes.includes(file.type) ||
+      file.size > config.maxBytes
+    ) {
+      setUploadError(
+        `Chỉ nhận PNG, JPEG hoặc WebP tối đa ${Math.round(config.maxBytes / 1024 / 1024)} MB.`,
+      );
       return;
     }
     setUploading(true);
+    onUploadingChange?.(true);
     try {
       const signed = await api.articles.coverUploadUrl(articleId, {
         filename: file.name,
@@ -54,11 +68,34 @@ export function ArticleEditor({
         body: file,
       });
       if (!response.ok) throw new Error("Storage từ chối tệp ảnh.");
+      // Persist ngay sau khi upload để ảnh không bị mất nếu người dùng gửi duyệt
+      // hoặc rời trang trước khi bấm nút Lưu ở thanh công cụ.
+      await api.articles.update(articleId, { coverImageUrl: signed.publicUrl });
       onChange({ ...draft, coverImageUrl: signed.publicUrl });
     } catch (cause) {
-      setUploadError(cause instanceof Error ? cause.message : "Không tải được ảnh bìa.");
+      setUploadError(
+        cause instanceof Error ? cause.message : "Không tải được ảnh bìa.",
+      );
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
+    }
+  };
+
+  const removeCover = async () => {
+    setUploadError(null);
+    setUploading(true);
+    onUploadingChange?.(true);
+    try {
+      await api.articles.update(articleId, { coverImageUrl: null });
+      onChange({ ...draft, coverImageUrl: "" });
+    } catch (cause) {
+      setUploadError(
+        cause instanceof Error ? cause.message : "Không thể xóa ảnh bìa.",
+      );
+    } finally {
+      setUploading(false);
+      onUploadingChange?.(false);
     }
   };
 
@@ -67,7 +104,9 @@ export function ArticleEditor({
       <Field label="Tiêu đề">
         <input
           className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, title: event.target.value })}
+          onChange={(event) =>
+            onChange({ ...draft, title: event.target.value })
+          }
           placeholder="Nhập tiêu đề bài viết…"
           value={draft.title}
         />
@@ -80,7 +119,9 @@ export function ArticleEditor({
       >
         <textarea
           className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, excerpt: event.target.value })}
+          onChange={(event) =>
+            onChange({ ...draft, excerpt: event.target.value })
+          }
           value={draft.excerpt}
         />
       </Field>
@@ -89,59 +130,84 @@ export function ArticleEditor({
         hint="Ảnh ngang 16:9 dùng tại danh sách bài viết, Khám phá và đầu trang chi tiết."
         label="Ảnh bìa"
       >
-        <div className="overflow-hidden rounded-lg border bg-muted/20">
-          {draft.coverImageUrl ? (
-            <div className="relative aspect-[16/7] bg-muted">
-              {/* URL có thể đến từ S3 hoặc CDN được cấu hình ở backend. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img alt="Xem trước ảnh bìa bài viết" className="h-full w-full object-cover" src={draft.coverImageUrl} />
-              <button
-                aria-label="Bỏ ảnh bìa"
-                className="absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-md border bg-background/90 text-foreground"
-                onClick={() => onChange({ ...draft, coverImageUrl: "" })}
-                type="button"
-              >
-                <X aria-hidden="true" className="size-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex min-h-32 flex-col items-center justify-center gap-2 px-4 py-6 text-center text-muted-foreground">
-              <ImageIcon aria-hidden="true" className="size-7" />
-              <p className="text-sm">Chưa có ảnh bìa</p>
-            </div>
-          )}
-          <div className="grid gap-3 border-t p-3 sm:grid-cols-[auto_minmax(0,1fr)]">
-            <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium">
-              {uploading ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <Upload aria-hidden="true" className="size-4" />}
-              {uploading ? "Đang tải…" : "Tải ảnh lên"}
-              <input
-                accept="image/png,image/jpeg,image/webp"
-                className="sr-only"
-                disabled={uploading || uploadConfig?.enabled === false}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void uploadCover(file);
-                  event.currentTarget.value = "";
-                }}
-                type="file"
+        <div className="grid gap-3 rounded-lg border bg-muted/10 p-3 sm:grid-cols-[13rem_minmax(0,1fr)] sm:items-center">
+          <div className="relative aspect-video overflow-hidden rounded-md border bg-muted">
+            {draft.coverImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                alt="Xem trước ảnh bìa bài viết"
+                className="h-full w-full object-cover"
+                src={draft.coverImageUrl}
               />
-            </label>
-            <input
-              aria-label="URL ảnh bìa"
-              className="h-10 w-full rounded-lg border bg-background px-3 text-sm focus-visible:border-ring"
-              onChange={(event) => onChange({ ...draft, coverImageUrl: event.target.value })}
-              placeholder="Hoặc dán URL ảnh https://…"
-              value={draft.coverImageUrl}
-            />
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                <ImageIcon aria-hidden="true" className="size-6" />
+                <span className="text-xs">Chưa có ảnh</span>
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 space-y-3">
+            <div>
+              <p className="text-sm font-medium">
+                {draft.coverImageUrl
+                  ? "Ảnh bìa đã được tải lên"
+                  : "Chọn ảnh bìa cho bài viết"}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                PNG, JPEG hoặc WebP. Ảnh được lưu trực tiếp vào kho lưu trữ của
+                hệ thống.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium">
+                {uploading ? (
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                ) : (
+                  <Upload aria-hidden="true" className="size-4" />
+                )}
+                {uploading ? "Đang tải…" : "Tải ảnh lên"}
+                <input
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  disabled={uploading || uploadConfig?.enabled === false}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadCover(file);
+                    event.currentTarget.value = "";
+                  }}
+                  type="file"
+                />
+              </label>
+              {draft.coverImageUrl && (
+                <button
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium text-destructive disabled:opacity-50"
+                  disabled={uploading}
+                  onClick={() => void removeCover()}
+                  type="button"
+                >
+                  <X aria-hidden="true" className="size-4" />
+                  Xóa ảnh
+                </button>
+              )}
+            </div>
           </div>
         </div>
-        {uploadError && <p className="mt-1.5 text-sm text-destructive" role="alert">{uploadError}</p>}
+        {uploadError && (
+          <p className="mt-1.5 text-sm text-destructive" role="alert">
+            {uploadError}
+          </p>
+        )}
       </Field>
 
-      <Field error={maxLength(draft.takeaway, 500, "Điểm rút ra")} label="Điểm rút ra">
+      <Field
+        error={maxLength(draft.takeaway, 500, "Điểm rút ra")}
+        label="Điểm rút ra"
+      >
         <textarea
           className="min-h-16 w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, takeaway: event.target.value })}
+          onChange={(event) =>
+            onChange({ ...draft, takeaway: event.target.value })
+          }
           value={draft.takeaway}
         />
       </Field>
@@ -153,7 +219,9 @@ export function ArticleEditor({
         <select
           aria-label="Chủ đề"
           className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          onChange={(event) => onChange({ ...draft, tagId: event.target.value })}
+          onChange={(event) =>
+            onChange({ ...draft, tagId: event.target.value })
+          }
           value={draft.tagId}
         >
           <option value="">— Chưa chọn —</option>
@@ -166,14 +234,20 @@ export function ArticleEditor({
       </Field>
 
       <Field
-        error={integer(draft.readMinutes, "Thời gian đọc", { min: 1, max: 1000 })}
+        error={integer(draft.readMinutes, "Thời gian đọc", {
+          min: 1,
+          max: 1000,
+        })}
         label="Thời gian đọc (phút)"
       >
         <input
           className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
           inputMode="numeric"
           onChange={(event) =>
-            onChange({ ...draft, readMinutes: event.target.value.replace(/\D/g, "") })
+            onChange({
+              ...draft,
+              readMinutes: event.target.value.replace(/\D/g, ""),
+            })
           }
           value={draft.readMinutes}
         />
