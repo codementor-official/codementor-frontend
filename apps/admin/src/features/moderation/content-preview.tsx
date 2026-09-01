@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, ChevronDown, ChevronRight, FileText, Inbox, Loader2, MessageSquare, PlayCircle } from "lucide-react";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  ImageIcon,
+  Inbox,
+  Loader2,
+  MessageSquare,
+  PlayCircle,
+} from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { resolveVideo } from "@codementor/utils";
 import { Button, StatusBadge, useToast } from "@codementor/ui";
@@ -51,7 +61,10 @@ export function ContentPreview({ item }: { item: QueueItem }) {
 
   if (error !== null) {
     return (
-      <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+      <p
+        className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        role="alert"
+      >
         Không đọc được nội dung để xem trước: {error}
       </p>
     );
@@ -70,14 +83,16 @@ export function ContentPreview({ item }: { item: QueueItem }) {
     rejectionReason?: string | null;
     submitNote?: string | null;
   };
-  const asking = item.status === "published" && removable.removalRequested === true;
+  const asking =
+    item.status === "published" && removable.removalRequested === true;
   // Ghi chú chỉ tồn tại trong lúc chờ duyệt — sau khi quyết, ô đó mang nghĩa khác.
-  const note = item.status === "pending_review" ? removable.submitNote?.trim() : null;
+  const note =
+    item.status === "pending_review" ? removable.submitNote?.trim() : null;
 
   return (
     <>
       {/* Thẻ yêu cầu gỡ đứng TRƯỚC nội dung: khi mở một request ra, câu hỏi đầu tiên là
-        * "ai xin gỡ cái gì, vì sao", còn bản thân nội dung là thứ để đối chiếu sau đó. */}
+       * "ai xin gỡ cái gì, vì sao", còn bản thân nội dung là thứ để đối chiếu sau đó. */}
       {asking && (
         <RemovalRequestCard
           author={item.authorName}
@@ -87,21 +102,31 @@ export function ContentPreview({ item }: { item: QueueItem }) {
         />
       )}
       {/* Tác giả đã nói họ sửa gì — đọc trước khi mở nội dung ra so, vì đó là thứ duy
-        * nhất cho biết cần xem lại chỗ nào ở một bản đã từng bị trả lại. */}
+       * nhất cho biết cần xem lại chỗ nào ở một bản đã từng bị trả lại. */}
       {note && (
         <section className="mb-4 rounded-lg border border-border bg-muted/40 p-3">
           <div className="mb-1.5 flex items-center gap-2">
-            <MessageSquare aria-hidden="true" className="size-4 shrink-0 text-primary" />
-            <h3 className="text-xs font-bold tracking-wide uppercase">Ghi chú của tác giả</h3>
+            <MessageSquare
+              aria-hidden="true"
+              className="size-4 shrink-0 text-primary"
+            />
+            <h3 className="text-xs font-bold tracking-wide uppercase">
+              Ghi chú của tác giả
+            </h3>
           </div>
           <p className="text-sm whitespace-pre-line">{note}</p>
         </section>
       )}
 
       {/* `hideReason` khi đang xin gỡ: `rejectionReason` lúc này CHÍNH LÀ lý do xin gỡ,
-        * và thẻ ở trên đã in nó ra rồi. Không chặn thì cùng một câu hiện hai lần trong
-        * hai khối viền vàng giống hệt nhau — đúng chỗ nhìn vào thấy rối và trùng. */}
-      <Body contentId={item.id} data={data} hideReason={asking || note !== null} kind={item.kind} />
+       * và thẻ ở trên đã in nó ra rồi. Không chặn thì cùng một câu hiện hai lần trong
+       * hai khối viền vàng giống hệt nhau — đúng chỗ nhìn vào thấy rối và trùng. */}
+      <Body
+        contentId={item.id}
+        data={data}
+        hideReason={asking || note !== null}
+        kind={item.kind}
+      />
     </>
   );
 }
@@ -135,7 +160,9 @@ function RemovalRequestCard({
     <section className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3">
       <div className="mb-2 flex items-center gap-2">
         <Inbox aria-hidden="true" className="size-4 shrink-0 text-warning" />
-        <h3 className="text-xs font-bold tracking-wide uppercase text-warning">Yêu cầu gỡ nội dung</h3>
+        <h3 className="text-xs font-bold tracking-wide uppercase text-warning">
+          Yêu cầu gỡ nội dung
+        </h3>
         <StatusBadge tone="warning">Chờ quyết định</StatusBadge>
       </div>
 
@@ -154,7 +181,8 @@ function RemovalRequestCard({
       </dl>
 
       <p className="mt-2.5 text-xs text-muted-foreground">
-        Nội dung vẫn đang công khai và học viên vẫn dùng bình thường cho tới khi bạn quyết.
+        Nội dung vẫn đang công khai và học viên vẫn dùng bình thường cho tới khi
+        bạn quyết.
       </p>
     </section>
   );
@@ -171,29 +199,67 @@ function Body({
   contentId: string;
   hideReason: boolean;
 }) {
-  if (kind === "articles") return <ArticleBody article={data as ArticlePreview} hideReason={hideReason} />;
-  if (kind === "courses") return <CourseBody course={data as CoursePreview} courseId={contentId} hideReason={hideReason} />;
-  if (kind === "roadmaps") return <RoadmapBody hideReason={hideReason} roadmap={data as RoadmapPreview} />;
-  return <ExerciseSummary exercise={data as ExercisePreview} hideReason={hideReason} />;
+  if (kind === "articles")
+    return (
+      <ArticleBody article={data as ArticlePreview} hideReason={hideReason} />
+    );
+  if (kind === "courses")
+    return (
+      <CourseBody
+        course={data as CoursePreview}
+        courseId={contentId}
+        hideReason={hideReason}
+      />
+    );
+  if (kind === "roadmaps")
+    return (
+      <RoadmapBody hideReason={hideReason} roadmap={data as RoadmapPreview} />
+    );
+  return (
+    <ExerciseSummary
+      exercise={data as ExercisePreview}
+      hideReason={hideReason}
+    />
+  );
 }
 
-function ArticleBody({ article, hideReason }: { article: ArticlePreview; hideReason: boolean }) {
+function ArticleBody({
+  article,
+  hideReason,
+}: {
+  article: ArticlePreview;
+  hideReason: boolean;
+}) {
   return (
     <div>
+      <ArticleCover
+        key={article.coverImageUrl ?? "without-cover"}
+        title={article.title}
+        url={article.coverImageUrl}
+      />
       <Facts
         items={[
-          ["Chủ đề", article.tagName ?? "chưa gắn — bài sẽ không lọc được bên trang người học"],
-          ["Thời gian đọc", article.readMinutes ? `${article.readMinutes} phút` : "—"],
+          [
+            "Chủ đề",
+            article.tagName ??
+              "chưa gắn — bài sẽ không lọc được bên trang người học",
+          ],
+          [
+            "Thời gian đọc",
+            article.readMinutes ? `${article.readMinutes} phút` : "—",
+          ],
         ]}
       />
       <ReasonNote hidden={hideReason} reason={article.rejectionReason} />
       {article.excerpt && <Quote label="Tóm tắt">{article.excerpt}</Quote>}
-      {article.takeaway && <Quote label="Điều đọng lại">{article.takeaway}</Quote>}
+      {article.takeaway && (
+        <Quote label="Điều đọng lại">{article.takeaway}</Quote>
+      )}
 
       {/* Cùng class `.rich-text` mà trình soạn thảo dùng, nên bản xem trước ở đây và bản
-        * người học đọc trông giống nhau — bản xem trước lệch với bản thật thì duyệt bằng
-        * nó cũng bằng không. Hiện TRỌN VẸN, không giới hạn chiều cao: ngăn kiểm duyệt đã
-        * tự cuộn cả khối, giới hạn thêm một lớp bên trong chỉ khiến bài dài bị cắt oan. */}
+       * người học đọc trông giống nhau — bản xem trước lệch với bản thật thì duyệt bằng
+       * nó cũng bằng không. Hiện TRỌN VẸN, không giới hạn chiều cao: ngăn kiểm duyệt đã
+       * tự cuộn cả khối, giới hạn thêm một lớp bên trong chỉ khiến bài dài bị cắt oan. */}
       {article.contentHtml ? (
         <div
           className="rich-text mt-4 rounded-lg border border-border p-4"
@@ -206,15 +272,71 @@ function ArticleBody({ article, hideReason }: { article: ArticlePreview; hideRea
   );
 }
 
-function CourseBody({ course, courseId, hideReason }: { course: CoursePreview; courseId: string; hideReason: boolean }) {
+/** Ảnh mà người học sẽ thấy trên feed và đầu bài phải được admin duyệt cùng nội dung. */
+function ArticleCover({ title, url }: { title: string; url: string | null }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!url) {
+    return (
+      <div className="mb-4 flex min-h-24 items-center justify-center gap-2 rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+        <ImageIcon aria-hidden="true" className="size-4" />
+        Bài viết chưa có ảnh bìa
+      </div>
+    );
+  }
+
+  if (failed) {
+    return (
+      <div
+        className="mb-4 flex min-h-24 items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 text-sm text-destructive"
+        role="alert"
+      >
+        <ImageIcon aria-hidden="true" className="size-4" />
+        Không tải được ảnh bìa — cần yêu cầu tác giả kiểm tra lại
+      </div>
+    );
+  }
+
+  return (
+    <figure className="mb-4 overflow-hidden rounded-lg border border-border bg-muted">
+      {/* Ảnh do storage/CDN của backend cấp URL; dùng img để không phụ thuộc allowlist host của Next Image. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        alt={`Ảnh bìa bài viết ${title}`}
+        className="aspect-[16/7] max-h-72 w-full object-cover"
+        onError={() => setFailed(true)}
+        src={url}
+      />
+      <figcaption className="border-t border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+        Ảnh bìa hiển thị trên trang người học
+      </figcaption>
+    </figure>
+  );
+}
+
+function CourseBody({
+  course,
+  courseId,
+  hideReason,
+}: {
+  course: CoursePreview;
+  courseId: string;
+  hideReason: boolean;
+}) {
   const chapters = course.chapters ?? [];
   return (
     <div>
       <Facts
         items={[
           ["Trình độ", course.level],
-          ["Thời lượng", course.durationHours ? `${course.durationHours} giờ` : "—"],
-          ["Nội dung", `${course.totalChapters} chương · ${course.totalLessons} bài`],
+          [
+            "Thời lượng",
+            course.durationHours ? `${course.durationHours} giờ` : "—",
+          ],
+          [
+            "Nội dung",
+            `${course.totalChapters} chương · ${course.totalLessons} bài`,
+          ],
         ]}
       />
       <ReasonNote hidden={hideReason} reason={course.rejectionReason} />
@@ -225,19 +347,30 @@ function CourseBody({ course, courseId, hideReason }: { course: CoursePreview; c
       ) : (
         <ol className="mt-4 grid gap-2">
           {chapters.map((chapter, index) => (
-            <li className="rounded-lg border border-border p-3" key={chapter.id}>
+            <li
+              className="rounded-lg border border-border p-3"
+              key={chapter.id}
+            >
               <p className="text-sm font-medium">
                 {index + 1}. {chapter.title}
                 {chapter.isOptional && (
-                  <span className="ml-2 text-xs text-muted-foreground">(tuỳ chọn)</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    (tuỳ chọn)
+                  </span>
                 )}
               </p>
               {chapter.lessons.length === 0 ? (
-                <p className="mt-1 text-xs text-destructive">Chương rỗng — không có bài học nào.</p>
+                <p className="mt-1 text-xs text-destructive">
+                  Chương rỗng — không có bài học nào.
+                </p>
               ) : (
                 <ul className="mt-1.5 grid gap-1">
                   {chapter.lessons.map((lesson) => (
-                    <LessonRow courseId={courseId} key={lesson.id} lesson={lesson} />
+                    <LessonRow
+                      courseId={courseId}
+                      key={lesson.id}
+                      lesson={lesson}
+                    />
                   ))}
                 </ul>
               )}
@@ -266,8 +399,12 @@ function LessonRow({
 }) {
   const request = useAdminApi();
   const [open, setOpen] = useState(false);
-  const [lessonContent, setLessonContent] = useState<LessonContentPreview | null | undefined>(undefined);
-  const [exercise, setExercise] = useState<ExercisePreview | null | undefined>(undefined);
+  const [lessonContent, setLessonContent] = useState<
+    LessonContentPreview | null | undefined
+  >(undefined);
+  const [exercise, setExercise] = useState<ExercisePreview | null | undefined>(
+    undefined,
+  );
 
   const isVideo = lesson.type === "video";
   const isTheory = !lesson.exerciseTitle;
@@ -280,7 +417,9 @@ function LessonRow({
     if (!open) return;
     if (isTheory) {
       if (lessonContent !== undefined) return;
-      void moderationApi.lessonContent(request, courseId, lesson.id).then(setLessonContent);
+      void moderationApi
+        .lessonContent(request, courseId, lesson.id)
+        .then(setLessonContent);
     } else if (lesson.exerciseId) {
       if (exercise !== undefined) return;
       void moderationApi
@@ -288,7 +427,16 @@ function LessonRow({
         .then(setExercise)
         .catch(() => setExercise(null));
     }
-  }, [open, isTheory, lessonContent, exercise, request, courseId, lesson.id, lesson.exerciseId]);
+  }, [
+    open,
+    isTheory,
+    lessonContent,
+    exercise,
+    request,
+    courseId,
+    lesson.id,
+    lesson.exerciseId,
+  ]);
 
   return (
     <li className="text-xs text-muted-foreground">
@@ -311,12 +459,16 @@ function LessonRow({
         )}
         <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
         {/* Bài lý thuyết không có `contentRef` là một ô rỗng với học viên — đúng thứ mà
-          * việc duyệt phải bắt được. Bài code chưa công khai thì học viên mở ra cũng
-          * không thấy gì, dù dòng chương trông như đã đủ bài. */}
-        {emptyTheory && <span className="shrink-0 text-destructive">chưa có nội dung</span>}
-        {!isTheory && lesson.exerciseStatus && lesson.exerciseStatus !== "published" && (
-          <span className="shrink-0 text-warning">chưa công khai</span>
+         * việc duyệt phải bắt được. Bài code chưa công khai thì học viên mở ra cũng
+         * không thấy gì, dù dòng chương trông như đã đủ bài. */}
+        {emptyTheory && (
+          <span className="shrink-0 text-destructive">chưa có nội dung</span>
         )}
+        {!isTheory &&
+          lesson.exerciseStatus &&
+          lesson.exerciseStatus !== "published" && (
+            <span className="shrink-0 text-warning">chưa công khai</span>
+          )}
       </button>
 
       {open && (
@@ -330,7 +482,12 @@ function LessonRow({
               video === null ? (
                 <p className="py-2 text-destructive">Bài học chưa có video.</p>
               ) : video.kind === "file" ? (
-                <video className="w-full rounded-md border border-border bg-black" controls preload="metadata" src={video.src} />
+                <video
+                  className="w-full rounded-md border border-border bg-black"
+                  controls
+                  preload="metadata"
+                  src={video.src}
+                />
               ) : (
                 <iframe
                   allowFullScreen
@@ -348,11 +505,15 @@ function LessonRow({
               />
             )
           ) : !lesson.exerciseId ? (
-            <p className="py-2 text-destructive">Bài học chưa gắn bài code nào.</p>
+            <p className="py-2 text-destructive">
+              Bài học chưa gắn bài code nào.
+            </p>
           ) : exercise === undefined ? (
             <Loading />
           ) : exercise === null ? (
-            <p className="py-2 text-destructive">Không đọc được bài code này.</p>
+            <p className="py-2 text-destructive">
+              Không đọc được bài code này.
+            </p>
           ) : (
             <ExerciseSummary compact exercise={exercise} />
           )}
@@ -362,31 +523,50 @@ function LessonRow({
   );
 }
 
-function RoadmapBody({ roadmap, hideReason }: { roadmap: RoadmapPreview; hideReason: boolean }) {
+function RoadmapBody({
+  roadmap,
+  hideReason,
+}: {
+  roadmap: RoadmapPreview;
+  hideReason: boolean;
+}) {
   const courses = roadmap.courses ?? [];
   // Gửi duyệt lộ trình bị chặn khi còn khoá học chưa công khai (`Roadmap.submit()`), nên
   // ở đây con số này lẽ ra luôn là 0 — vẫn tính và hiện ra để bắt được trường hợp một
   // khoá học bị gỡ SAU KHI lộ trình đã vào hàng chờ, thứ mà không màn nào khác báo.
-  const blocking = courses.filter((course) => course.status !== "published").length;
+  const blocking = courses.filter(
+    (course) => course.status !== "published",
+  ).length;
   return (
     <div>
       <Facts
         items={[
           ["Lĩnh vực", roadmap.field],
           ["Trình độ", roadmap.level],
-          ["Thời lượng", roadmap.estimatedHours ? `${roadmap.estimatedHours} giờ` : "—"],
+          [
+            "Thời lượng",
+            roadmap.estimatedHours ? `${roadmap.estimatedHours} giờ` : "—",
+          ],
         ]}
       />
       <ReasonNote hidden={hideReason} reason={roadmap.rejectionReason} />
-      {roadmap.shortDescription && <Quote label="Mô tả ngắn">{roadmap.shortDescription}</Quote>}
-      {roadmap.description && <Quote label="Mô tả">{roadmap.description}</Quote>}
+      {roadmap.shortDescription && (
+        <Quote label="Mô tả ngắn">{roadmap.shortDescription}</Quote>
+      )}
+      {roadmap.description && (
+        <Quote label="Mô tả">{roadmap.description}</Quote>
+      )}
 
       {courses.length === 0 ? (
         <Empty>Lộ trình chưa có khoá học nào.</Empty>
       ) : (
         <ol className="mt-4 grid gap-1.5">
           {courses.map((course, index) => (
-            <RoadmapCourseRow course={course} index={index} key={course.courseId} />
+            <RoadmapCourseRow
+              course={course}
+              index={index}
+              key={course.courseId}
+            />
           ))}
         </ol>
       )}
@@ -413,7 +593,9 @@ function RoadmapCourseRow({
 }) {
   const request = useAdminApi();
   const [open, setOpen] = useState(false);
-  const [detail, setDetail] = useState<CoursePreview | null | undefined>(undefined);
+  const [detail, setDetail] = useState<CoursePreview | null | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     if (!open || detail !== undefined) return;
@@ -431,14 +613,24 @@ function RoadmapCourseRow({
         type="button"
       >
         {open ? (
-          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDown
+            aria-hidden="true"
+            className="size-3.5 shrink-0 text-muted-foreground"
+          />
         ) : (
-          <ChevronRight aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+          <ChevronRight
+            aria-hidden="true"
+            className="size-3.5 shrink-0 text-muted-foreground"
+          />
         )}
         <span className="text-muted-foreground">{index + 1}.</span>
         <span className="min-w-0 flex-1 truncate">{course.title}</span>
-        {course.isOptional && <span className="text-xs text-muted-foreground">tuỳ chọn</span>}
-        <StatusBadge tone={course.status === "published" ? "success" : "warning"}>
+        {course.isOptional && (
+          <span className="text-xs text-muted-foreground">tuỳ chọn</span>
+        )}
+        <StatusBadge
+          tone={course.status === "published" ? "success" : "warning"}
+        >
           {course.status === "published" ? "đã đăng" : course.status}
         </StatusBadge>
       </button>
@@ -448,9 +640,15 @@ function RoadmapCourseRow({
           {detail === undefined ? (
             <Loading />
           ) : detail === null ? (
-            <p className="py-2 text-xs text-destructive">Không đọc được khoá học này.</p>
+            <p className="py-2 text-xs text-destructive">
+              Không đọc được khoá học này.
+            </p>
           ) : (
-            <CourseBody course={detail} courseId={course.courseId} hideReason={false} />
+            <CourseBody
+              course={detail}
+              courseId={course.courseId}
+              hideReason={false}
+            />
           )}
         </div>
       )}
@@ -466,10 +664,20 @@ function RoadmapCourseRow({
  * bên trong một bài học khi khoá học đang chờ duyệt trỏ tới nó — `compact` chỉ bớt cỡ chữ
  * tiêu đề, nội dung hiện đủ như nhau ở cả hai nơi vì admin cần đọc thật, không phải liếc qua.
  */
-function ExerciseSummary({ exercise, compact = false, hideReason = false }: { exercise: ExercisePreview; compact?: boolean; hideReason?: boolean }) {
+function ExerciseSummary({
+  exercise,
+  compact = false,
+  hideReason = false,
+}: {
+  exercise: ExercisePreview;
+  compact?: boolean;
+  hideReason?: boolean;
+}) {
   const content = exercise.content ?? {};
   const testCases = content.testCases ?? [];
-  const languagesWithSolution = (content.languages ?? []).filter((lang) => lang.referenceSolution?.trim());
+  const languagesWithSolution = (content.languages ?? []).filter((lang) =>
+    lang.referenceSolution?.trim(),
+  );
 
   return (
     <div>
@@ -477,11 +685,20 @@ function ExerciseSummary({ exercise, compact = false, hideReason = false }: { ex
         items={[
           ["Dạng bài", exercise.kind],
           ["Độ khó", exercise.difficulty],
-          ["Phạm vi", exercise.visibility === "public" ? "công khai" : "trong nhóm"],
-          ["Ngôn ngữ", (content.languages ?? []).map((item) => item.label).join(", ") || "—"],
+          [
+            "Phạm vi",
+            exercise.visibility === "public" ? "công khai" : "trong nhóm",
+          ],
+          [
+            "Ngôn ngữ",
+            (content.languages ?? []).map((item) => item.label).join(", ") ||
+              "—",
+          ],
         ]}
       />
-      {!compact && <ReasonNote hidden={hideReason} reason={exercise.rejectionReason} />}
+      {!compact && (
+        <ReasonNote hidden={hideReason} reason={exercise.rejectionReason} />
+      )}
       {exercise.summary && <Quote label="Tóm tắt">{exercise.summary}</Quote>}
 
       {content.statement ? (
@@ -495,7 +712,10 @@ function ExerciseSummary({ exercise, compact = false, hideReason = false }: { ex
       {(content.examples ?? []).length > 0 && (
         <div className="mt-3 grid gap-2">
           {(content.examples ?? []).map((example, index) => (
-            <div className="rounded-lg border border-border p-3 text-xs" key={index}>
+            <div
+              className="rounded-lg border border-border p-3 text-xs"
+              key={index}
+            >
               <p className="font-medium">Ví dụ {index + 1}</p>
               <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-muted-foreground">
                 {example.input}
@@ -509,17 +729,30 @@ function ExerciseSummary({ exercise, compact = false, hideReason = false }: { ex
 
       {testCases.length > 0 && (
         <div className="mt-4">
-          <p className={compact ? "text-xs font-medium text-muted-foreground" : "text-sm font-medium"}>
+          <p
+            className={
+              compact
+                ? "text-xs font-medium text-muted-foreground"
+                : "text-sm font-medium"
+            }
+          >
             Test case ({testCases.length})
           </p>
           <ol className="mt-1.5 grid gap-1.5">
             {[...testCases]
               .sort((a, b) => a.order - b.order)
               .map((testCase) => (
-                <li className="rounded-lg border border-border p-2.5 text-xs" key={testCase.order}>
+                <li
+                  className="rounded-lg border border-border p-2.5 text-xs"
+                  key={testCase.order}
+                >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium">Case {testCase.order}</span>
-                    <StatusBadge tone={testCase.visibility === "public" ? "neutral" : "warning"}>
+                    <StatusBadge
+                      tone={
+                        testCase.visibility === "public" ? "neutral" : "warning"
+                      }
+                    >
                       {testCase.visibility === "public" ? "công khai" : "ẩn"}
                     </StatusBadge>
                   </div>
@@ -547,7 +780,13 @@ function ExerciseSummary({ exercise, compact = false, hideReason = false }: { ex
         <div className="mt-4 grid gap-3">
           {languagesWithSolution.map((lang) => (
             <div key={lang.id}>
-              <p className={compact ? "text-xs font-medium text-muted-foreground" : "text-sm font-medium"}>
+              <p
+                className={
+                  compact
+                    ? "text-xs font-medium text-muted-foreground"
+                    : "text-sm font-medium"
+                }
+              >
                 Lời giải mẫu — {lang.label}
               </p>
               <pre className="mt-1 overflow-x-auto rounded-lg border border-border bg-background p-3 text-xs">
@@ -590,7 +829,13 @@ function Facts({ items }: { items: [string, string][] }) {
  * app giảng viên). Admin cần đọc được câu này ngay khi mở xem trước, không phải đoán vì
  * sao nội dung không còn ở trạng thái ban đầu.
  */
-function ReasonNote({ reason, hidden = false }: { reason: string | null; hidden?: boolean }) {
+function ReasonNote({
+  reason,
+  hidden = false,
+}: {
+  reason: string | null;
+  hidden?: boolean;
+}) {
   // `hidden` khi đang có yêu cầu xin gỡ: cùng một ô `rejection_reason` phục vụ hai nghĩa
   // (lý do bị trả lại, và lý do tác giả xin gỡ), nên khối kia đã in thì khối này phải im.
   if (!reason || hidden) return null;

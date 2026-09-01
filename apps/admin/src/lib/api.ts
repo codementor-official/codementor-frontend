@@ -2,7 +2,11 @@ import type { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
 import type { UiNotification } from "@codementor/ui";
 import { KINDS } from "@/features/moderation/types";
-import type { ContentKind, ModerationDecision, QueueItem } from "@/features/moderation/types";
+import type {
+  ContentKind,
+  ModerationDecision,
+  QueueItem,
+} from "@/features/moderation/types";
 
 /**
  * Hàng chờ duyệt. Bốn loại nội dung, bốn service, bốn đường dẫn — không có endpoint gộp
@@ -23,7 +27,11 @@ export interface Page<T> {
  */
 type Request = ReturnType<typeof createApiClient>;
 
-async function unwrap<T>(request: Request, path: string, options?: Parameters<Request>[1]) {
+async function unwrap<T>(
+  request: Request,
+  path: string,
+  options?: Parameters<Request>[1],
+) {
   const response = await request<ApiResponse<T> | undefined>(path, options);
   // 204 No Content — mọi lệnh DELETE trả về thế này. Không có thân thì không có `data` để
   // bóc, và đọc `.data` của `undefined` là chỗ "can't access property data" nổ ra ngay khi
@@ -42,7 +50,7 @@ export const moderationApi = {
       `${KINDS[kind].queuePath}?limit=50${status ? `&status=${status}` : ""}`,
     ),
   /** Bản đầy đủ, để xem trước trước khi quyết. */
-  detail: <T,>(request: Request, kind: ContentKind, id: string) =>
+  detail: <T>(request: Request, kind: ContentKind, id: string) =>
     unwrap<T>(request, KINDS[kind].detailPath(id)),
   decide: (
     request: Request,
@@ -57,7 +65,9 @@ export const moderationApi = {
     }),
   /** Từ chối yêu cầu xin gỡ của tác giả — nội dung vẫn giữ nguyên `published`. */
   denyRemoval: (request: Request, kind: ContentKind, id: string) =>
-    unwrap<QueueItem>(request, KINDS[kind].denyRemovalPath(id), { method: "POST" }),
+    unwrap<QueueItem>(request, KINDS[kind].denyRemovalPath(id), {
+      method: "POST",
+    }),
   /**
    * Thân bài lý thuyết của một bài học, để xem trước bên trong hàng chờ duyệt khoá học.
    *
@@ -66,10 +76,11 @@ export const moderationApi = {
    * mọi khoá học bất kể trạng thái), nên không cần đường riêng cho admin.
    */
   lessonContent: (request: Request, courseId: string, lessonId: string) =>
-    unwrap<{ summary?: string; contentHtml?: string; media?: { url: string } } | null>(
-      request,
-      `/courses/${courseId}/lessons/${lessonId}/content`,
-    ),
+    unwrap<{
+      summary?: string;
+      contentHtml?: string;
+      media?: { url: string };
+    } | null>(request, `/courses/${courseId}/lessons/${lessonId}/content`),
 
   /**
    * Lịch sử kiểm duyệt của MỘT nội dung: ai đã quyết gì, lúc nào, vì sao.
@@ -86,8 +97,10 @@ export const moderationApi = {
 };
 
 export type ReportStatus = "PENDING" | "RESOLVED" | "REJECTED";
-export type ReportTargetType = "DOCUMENT" | "POST" | "COURSE" | "ROADMAP" | "EXERCISE" | "WORKSPACE";
-export type ReportCategory = "SPAM" | "MISLEADING" | "INAPPROPRIATE" | "COPYRIGHT" | "OTHER";
+export type ReportTargetType =
+  "DOCUMENT" | "POST" | "COURSE" | "ROADMAP" | "EXERCISE" | "WORKSPACE";
+export type ReportCategory =
+  "SPAM" | "MISLEADING" | "INAPPROPRIATE" | "COPYRIGHT" | "OTHER";
 
 export interface AdminContentReport {
   id: string;
@@ -109,10 +122,32 @@ export interface AdminContentReport {
 export const reportsApi = {
   list: (
     request: Request,
-    params: { q?: string; status?: ReportStatus; targetType?: ReportTargetType; category?: ReportCategory; page?: number; limit?: number },
-  ) => unwrap<{ items: AdminContentReport[]; page: number; limit: number; total: number; totalPages: number }>(request, `/reports${search(params)}`),
-  resolve: (request: Request, id: string, status: "RESOLVED" | "REJECTED", resolutionNote: string) =>
-    unwrap<AdminContentReport>(request, `/reports/${id}`, { method: "PATCH", body: { status, resolutionNote } }),
+    params: {
+      q?: string;
+      status?: ReportStatus;
+      targetType?: ReportTargetType;
+      category?: ReportCategory;
+      page?: number;
+      limit?: number;
+    },
+  ) =>
+    unwrap<{
+      items: AdminContentReport[];
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    }>(request, `/reports${search(params)}`),
+  resolve: (
+    request: Request,
+    id: string,
+    status: "RESOLVED" | "REJECTED",
+    resolutionNote: string,
+  ) =>
+    unwrap<AdminContentReport>(request, `/reports/${id}`, {
+      method: "PATCH",
+      body: { status, resolutionNote },
+    }),
 };
 
 /** Khớp `TARGET_TYPE` ở `moderation-audit.consumer.ts` — lệch nhau là lịch sử ra rỗng. */
@@ -140,7 +175,10 @@ export interface AdminUser {
   updatedAt: string;
 }
 
-export interface UsersQuery extends Record<string, string | number | undefined> {
+export interface UsersQuery extends Record<
+  string,
+  string | number | undefined
+> {
   q?: string;
   role?: string;
   status?: string;
@@ -252,10 +290,17 @@ export const usersApi = {
   list: (request: Request, query: UsersQuery = {}) =>
     unwrap<Page<AdminUser>>(request, `/users${search(query)}`),
   summary: (request: Request) =>
-    unwrap<{ total: number; byRole: Record<string, number> }>(request, "/users/summary"),
+    unwrap<{ total: number; byRole: Record<string, number> }>(
+      request,
+      "/users/summary",
+    ),
   growth: (request: Request) =>
-    unwrap<{ month: string; newUsers: number; total: number }[]>(request, "/users/growth"),
-  detail: (request: Request, id: string) => unwrap<AdminUserDetail>(request, `/users/${id}`),
+    unwrap<{ month: string; newUsers: number; total: number }[]>(
+      request,
+      "/users/growth",
+    ),
+  detail: (request: Request, id: string) =>
+    unwrap<AdminUserDetail>(request, `/users/${id}`),
 
   // Ba đường dưới đây đều nhận `users.id`, không phải id Keycloak — kể cả lịch sử đăng
   // nhập, dù dữ liệu gốc nằm ở Keycloak. Một hệ định danh duy nhất ở mặt API; backend tự
@@ -263,7 +308,10 @@ export const usersApi = {
   loginHistory: (request: Request, id: string) =>
     unwrap<LoginEvent[]>(request, `/users/${id}/login-history`),
   auditTrail: (request: Request, id: string) =>
-    unwrap<AuditLogEntry[]>(request, `/audit-logs${search({ targetType: "user", targetId: id })}`),
+    unwrap<AuditLogEntry[]>(
+      request,
+      `/audit-logs${search({ targetType: "user", targetId: id })}`,
+    ),
   /** Nhật ký kiểm toán gần đây, mọi đối tượng — cho bảng "Hoạt động gần đây". */
   recentAudit: (request: Request, limit = 8) =>
     unwrap<AuditLogEntry[]>(request, `/audit-logs${search({ limit })}`),
@@ -281,13 +329,25 @@ export const usersApi = {
   // tác giả hợp lệ. "Xoá" ở giao diện quản trị nghĩa là tạm khoá.
   create: (
     request: Request,
-    body: { email: string; displayName: string; role: KeycloakRole; password: string },
+    body: {
+      email: string;
+      displayName: string;
+      role: KeycloakRole;
+      password: string;
+    },
   ) => unwrap<ManagedUser>(request, "/users", { method: "POST", body }),
 
   setRole: (request: Request, externalId: string, role: KeycloakRole) =>
-    unwrap<ManagedUser>(request, `/users/${externalId}/role`, { method: "PATCH", body: { role } }),
+    unwrap<ManagedUser>(request, `/users/${externalId}/role`, {
+      method: "PATCH",
+      body: { role },
+    }),
 
-  setStatus: (request: Request, externalId: string, status: "ACTIVE" | "SUSPENDED") =>
+  setStatus: (
+    request: Request,
+    externalId: string,
+    status: "ACTIVE" | "SUSPENDED",
+  ) =>
     unwrap<ManagedUser>(request, `/users/${externalId}/status`, {
       method: "PATCH",
       body: { status },
@@ -298,7 +358,10 @@ export const usersApi = {
 
 /** Lọc dùng chung cho ba trang quản lý — cùng hình dạng query mà `/admin` của mỗi
  * service chấp nhận (xem `ListCoursesQueryDto` và tương đương ở roadmap/exercise). */
-export interface AdminContentQuery extends Record<string, string | number | undefined> {
+export interface AdminContentQuery extends Record<
+  string,
+  string | number | undefined
+> {
   q?: string;
   status?: string;
   authorId?: string;
@@ -325,8 +388,14 @@ export interface AdminCourseListItem {
 }
 
 export const coursesApi = {
-  list: (request: Request, query: AdminContentQuery & { level?: string } = {}) =>
-    unwrap<Page<AdminCourseListItem>>(request, `/courses/admin${search(query)}`),
+  list: (
+    request: Request,
+    query: AdminContentQuery & { level?: string } = {},
+  ) =>
+    unwrap<Page<AdminCourseListItem>>(
+      request,
+      `/courses/admin${search(query)}`,
+    ),
   update: (
     request: Request,
     id: string,
@@ -353,12 +422,23 @@ export interface AdminRoadmapListItem {
 }
 
 export const roadmapsApi = {
-  list: (request: Request, query: AdminContentQuery & { field?: string; level?: string } = {}) =>
-    unwrap<Page<AdminRoadmapListItem>>(request, `/roadmaps/admin${search(query)}`),
+  list: (
+    request: Request,
+    query: AdminContentQuery & { field?: string; level?: string } = {},
+  ) =>
+    unwrap<Page<AdminRoadmapListItem>>(
+      request,
+      `/roadmaps/admin${search(query)}`,
+    ),
   update: (
     request: Request,
     id: string,
-    body: { title?: string; description?: string | null; field?: string; level?: string },
+    body: {
+      title?: string;
+      description?: string | null;
+      field?: string;
+      level?: string;
+    },
   ) => unwrap<unknown>(request, `/roadmaps/${id}`, { method: "PATCH", body }),
   remove: (request: Request, id: string) =>
     unwrap<void>(request, `/roadmaps/${id}`, { method: "DELETE" }),
@@ -381,8 +461,14 @@ export interface AdminExerciseListItem {
 }
 
 export const exercisesApi = {
-  list: (request: Request, query: AdminContentQuery & { kind?: string; difficulty?: string } = {}) =>
-    unwrap<Page<AdminExerciseListItem>>(request, `/exercises/admin${search(query)}`),
+  list: (
+    request: Request,
+    query: AdminContentQuery & { kind?: string; difficulty?: string } = {},
+  ) =>
+    unwrap<Page<AdminExerciseListItem>>(
+      request,
+      `/exercises/admin${search(query)}`,
+    ),
   update: (
     request: Request,
     id: string,
@@ -400,6 +486,7 @@ export interface AdminArticle {
   slug: string;
   title: string;
   excerpt: string | null;
+  coverImageUrl: string | null;
   status: string;
   readMinutes: number | null;
   authorId: string | null;
@@ -420,10 +507,19 @@ export interface ArticleDetail extends AdminArticle {
 }
 
 export const articlesApi = {
-  list: (request: Request, query: { q?: string; status?: string; limit?: number; cursor?: string } = {}) =>
-    unwrap<Page<AdminArticle>>(request, `/articles/manage${search(query)}`),
-  detail: (request: Request, id: string) => unwrap<ArticleDetail>(request, `/articles/manage/${id}`),
-  summary: (request: Request) => unwrap<Record<string, number>>(request, "/articles/manage/summary"),
+  list: (
+    request: Request,
+    query: {
+      q?: string;
+      status?: string;
+      limit?: number;
+      cursor?: string;
+    } = {},
+  ) => unwrap<Page<AdminArticle>>(request, `/articles/manage${search(query)}`),
+  detail: (request: Request, id: string) =>
+    unwrap<ArticleDetail>(request, `/articles/manage/${id}`),
+  summary: (request: Request) =>
+    unwrap<Record<string, number>>(request, "/articles/manage/summary"),
   create: (request: Request, body: { title: string; slug?: string }) =>
     unwrap<ArticleDetail>(request, "/articles", { method: "POST", body }),
   update: (
@@ -437,7 +533,11 @@ export const articlesApi = {
       readMinutes?: number;
       tagId?: string;
     },
-  ) => unwrap<ArticleDetail>(request, `/articles/${id}`, { method: "PATCH", body }),
+  ) =>
+    unwrap<ArticleDetail>(request, `/articles/${id}`, {
+      method: "PATCH",
+      body,
+    }),
   saveContent: (request: Request, id: string, contentHtml: string) =>
     unwrap<ArticleDetail>(request, `/articles/${id}/content`, {
       method: "PUT",

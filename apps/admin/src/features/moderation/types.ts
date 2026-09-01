@@ -10,7 +10,12 @@ import type { LucideIcon } from "lucide-react";
  */
 export type ContentKind = "articles" | "exercises" | "courses" | "roadmaps";
 
-export const CONTENT_KINDS: ContentKind[] = ["articles", "courses", "roadmaps", "exercises"];
+export const CONTENT_KINDS: ContentKind[] = [
+  "articles",
+  "courses",
+  "roadmaps",
+  "exercises",
+];
 
 interface KindMeta {
   label: string;
@@ -69,12 +74,7 @@ export const KINDS: Record<ContentKind, KindMeta> = {
  * trong nhật ký kiểm toán.
  */
 export type ModerationDecision =
-  | "approve"
-  | "request_changes"
-  | "reject"
-  | "archive"
-  | "restore"
-  | "revert";
+  "approve" | "request_changes" | "reject" | "archive" | "restore" | "revert";
 
 /**
  * Ba khay của khu vực duyệt. Trước đây chỉ có khay đầu, và đó là một ngõ cụt: quyết định
@@ -84,10 +84,18 @@ export type ModerationDecision =
  * "Đã từ chối" gộp cả `changes_requested`: với người vận hành thì cả hai đều là "đã trả
  * lại cho tác giả", và tách làm hai khay chỉ bắt họ đoán mình đã bấm nút nào tuần trước.
  */
-export const MODERATION_TRAYS = ["pending", "removal", "approved", "rejected"] as const;
+export const MODERATION_TRAYS = [
+  "pending",
+  "removal",
+  "approved",
+  "rejected",
+] as const;
 export type ModerationTray = (typeof MODERATION_TRAYS)[number];
 
-export const TRAY_META: Record<ModerationTray, { label: string; statuses: string[] }> = {
+export const TRAY_META: Record<
+  ModerationTray,
+  { label: string; statuses: string[] }
+> = {
   pending: { label: "Đang chờ", statuses: ["pending_review"] },
   /**
    * Yêu cầu xin gỡ. Nội dung vẫn `published` — chỉ khác ở cờ `removalRequested`, nên khay
@@ -99,7 +107,10 @@ export const TRAY_META: Record<ModerationTray, { label: string; statuses: string
    */
   removal: { label: "Xin gỡ", statuses: ["published"] },
   approved: { label: "Đã duyệt", statuses: ["published"] },
-  rejected: { label: "Đã từ chối", statuses: ["rejected", "changes_requested"] },
+  rejected: {
+    label: "Đã từ chối",
+    statuses: ["rejected", "changes_requested"],
+  },
 };
 
 export interface QueueItem {
@@ -122,6 +133,7 @@ export interface ArticlePreview {
   title: string;
   excerpt: string | null;
   takeaway: string | null;
+  coverImageUrl: string | null;
   tagName: string | null;
   readMinutes: number | null;
   contentHtml: string;
@@ -178,7 +190,12 @@ export interface RoadmapPreview {
   rejectionReason: string | null;
   removalRequested: boolean;
   submitNote?: string | null;
-  courses?: { courseId: string; title: string; status: string; isOptional: boolean }[];
+  courses?: {
+    courseId: string;
+    title: string;
+    status: string;
+    isOptional: boolean;
+  }[];
 }
 
 export interface ExercisePreview {
