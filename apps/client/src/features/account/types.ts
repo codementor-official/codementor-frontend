@@ -71,12 +71,25 @@ export interface UserActivityCalendar {
 }
 
 export type BookmarkTarget = "COURSE" | "ROADMAP" | "EXERCISE" | "POST";
+export type BookmarkSort = "newest" | "oldest" | "title";
 export interface UserBookmark {
   id: string;
   targetType: BookmarkTarget;
   targetId: string;
   targetRef: string | null;
   createdAt: string;
+  contentSlug?: string | null;
+  title?: string | null;
+  description?: string | null;
+  coverImageUrl?: string | null;
+  authorName?: string | null;
+  contentStatus?: string | null;
+  available?: boolean;
+  difficulty?: string | null;
+  level?: string | null;
+  durationMinutes?: number | null;
+  itemCount?: number | null;
+  popularity?: number | null;
 }
 export interface BookmarkPage {
   items: UserBookmark[];

@@ -54,6 +54,7 @@ import type {
 import type {
   AccountProfile,
   BookmarkPage,
+  BookmarkSort,
   BookmarkTarget,
   ContentReport,
   ReportCategory,
@@ -143,8 +144,10 @@ export const api = {
       unwrap<UserActivityCalendar>(`/activity/me/calendar${query({ weeks })}`),
     recentActivity: (limit = 10) =>
       unwrap<UserActivityEntry[]>(`/activity/me${query({ limit })}`),
-    bookmarks: (params: { type?: BookmarkTarget; page?: number; limit?: number } = {}) =>
+    bookmarks: (params: { type?: BookmarkTarget; q?: string; sort?: BookmarkSort; page?: number; limit?: number } = {}) =>
       unwrap<BookmarkPage>(`/me/bookmarks${query(params)}`),
+    bookmarkStatus: (targetType: BookmarkTarget, targetId: string) =>
+      unwrap<{ saved: boolean }>(`/me/bookmarks/${targetType}/${targetId}`),
     saveBookmark: (body: { targetType: BookmarkTarget; targetId: string; targetRef?: string }) =>
       unwrap<BookmarkPage["items"][number]>("/me/bookmarks", { method: "POST", body }),
     removeBookmark: (targetType: BookmarkTarget, targetId: string) =>
