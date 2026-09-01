@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Code2, Search, Target } from "lucide-react";
 import { FilterBar, SegmentedTabs, Select, StatStrip } from "@codementor/ui";
@@ -16,7 +16,7 @@ import type { UserActivityCalendar, UserLearningStats } from "@/features/account
 import { SaveButton } from "@/features/saved/components/save-button";
 import { ReportButton } from "@/features/reports/report-button";
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
 const KIND_OPTIONS = [
   { value: "all", label: "Mọi dạng bài" },
   { value: "code", label: "Bài code" },
@@ -59,18 +59,20 @@ export default function PracticePage() {
   const [calendar, setCalendar] = useState<UserActivityCalendar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestSequence = useRef(0);
+
+  const resetPagination = () => {
+    setPage(1);
+    setCursors([undefined]);
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(search.trim()), 350);
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    setPage(1);
-    setCursors([undefined]);
-  }, [query, kind, difficulty]);
-
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
     setError(null);
     try {
@@ -81,18 +83,25 @@ export default function PracticePage() {
         cursor: cursors[page - 1],
         limit: PAGE_SIZE,
       });
-      setItems(response.items);
-      setNextCursor(response.nextCursor);
+      if (sequence === requestSequence.current) {
+        setItems(response.items);
+        setNextCursor(response.nextCursor);
+      }
     } catch (cause) {
-      setItems([]);
-      setNextCursor(null);
-      setError(cause instanceof Error ? cause.message : "Không tải được danh sách bài tập.");
+      if (sequence === requestSequence.current) {
+        setItems([]);
+        setNextCursor(null);
+        setError(cause instanceof Error ? cause.message : "Không tải được danh sách bài tập.");
+      }
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }, [cursors, difficulty, kind, page, query]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
   useEffect(() => {
     void Promise.allSettled([api.account.stats(), api.account.activityCalendar(1)]).then(([statsResult, calendarResult]) => {
       if (statsResult.status === "fulfilled") setStats(statsResult.value);
@@ -137,7 +146,14 @@ export default function PracticePage() {
       />
 
       <div className="mb-4">
-        <SegmentedTabs options={DIFFICULTY_OPTIONS} value={difficulty} onChange={setDifficulty} />
+        <SegmentedTabs
+          options={DIFFICULTY_OPTIONS}
+          value={difficulty}
+          onChange={(value) => {
+            setDifficulty(value);
+            resetPagination();
+          }}
+        />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
@@ -145,12 +161,30 @@ export default function PracticePage() {
           <FilterBar
             className="mb-5"
             searchValue={search}
-            onSearchChange={setSearch}
+            onSearchChange={(value) => {
+              setSearch(value);
+              resetPagination();
+            }}
             searchPlaceholder="Tìm theo tên bài, slug, tác giả..."
             activeFilterCount={Number(kind !== "all") + Number(difficulty !== "all")}
-            onClearFilters={() => { setKind("all"); setDifficulty("all"); setSearch(""); }}
+            onClearFilters={() => {
+              setKind("all");
+              setDifficulty("all");
+              setSearch("");
+              resetPagination();
+            }}
             sheetTitle="Lọc bài tập"
-            controls={<Select label="Dạng bài" value={kind} options={KIND_OPTIONS} onChange={setKind} />}
+            controls={
+              <Select
+                label="Dạng bài"
+                value={kind}
+                options={KIND_OPTIONS}
+                onChange={(value) => {
+                  setKind(value);
+                  resetPagination();
+                }}
+              />
+            }
           />
 
           {error ? <CatalogueError message={error} /> : (
