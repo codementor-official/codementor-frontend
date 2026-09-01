@@ -10,6 +10,7 @@ import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import type { ArticleSummary } from "@/types/catalogue";
 import { SaveButton } from "@/features/saved/components/save-button";
 import { ReportButton } from "@/features/reports/report-button";
+import { RecommendedArticles } from "@/components/recommendation/recommended";
 
 const PAGE_SIZE = 15;
 
@@ -155,6 +156,11 @@ export function ArticleFeed() {
         </div>
 
         <aside className="w-full shrink-0 lg:w-72">
+          {/* Đứng TRÊN dãy chip: đề xuất là thứ đọc được ngay, còn chip là công cụ cho
+              người đã biết mình muốn tìm chủ đề nào. */}
+          <div className="mb-6">
+            <RecommendedArticles />
+          </div>
           <h2 className="mb-3 text-xs font-bold tracking-wide text-text-muted uppercase">
             Xem các bài viết theo chủ đề
           </h2>

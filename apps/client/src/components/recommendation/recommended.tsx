@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Code2, Map as MapIcon } from "lucide-react";
+import { BookOpen, Code2, Map as MapIcon, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { CourseCard } from "@/components/course-card";
 import { EntityCard } from "@/components/entity-card";
@@ -225,5 +225,97 @@ function CardGridSkeleton() {
         <Card key={i} className="h-64 animate-pulse" />
       ))}
     </div>
+  );
+}
+
+/**
+ * Bài viết đề xuất, dạng danh sách hẹp cho cột phải trang `/articles`.
+ *
+ * Không dùng `EntityCard`: cột đó rộng chưa tới 300px và bài viết không có ảnh bìa, lĩnh
+ * vực hay trình độ để lấp một thẻ lớn. Tiêu đề + chủ đề + lý do là tất cả những gì service
+ * trả về, và cũng là tất cả những gì cần để người đọc quyết định có bấm hay không.
+ */
+export function RecommendedArticles({ limit = 5 }: { limit?: number }) {
+  const { items, personalized, isLoading, error } = useRecommendations(() =>
+    api.recommendations.articles(limit),
+  );
+
+  // Cột phụ: hỏng thì im lặng bỏ qua, không đẩy một khối báo lỗi vào chỗ vốn chỉ là gợi ý.
+  if (error) return null;
+  if (isLoading) return <Card className="h-48 animate-pulse" />;
+  if (items.length === 0) return null;
+
+  return (
+    <section>
+      <h2 className="mb-3 text-sm font-bold text-navy">
+        {personalized ? "Bài viết dành cho bạn" : "Bài viết được lưu nhiều"}
+      </h2>
+      <Card className="divide-y divide-border-soft">
+        {items.map((article) => (
+          <Link
+            key={article.id}
+            href={`/articles/${article.slug}`}
+            className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-bg"
+          >
+            <span className="line-clamp-2 text-sm font-semibold text-navy">{article.title}</span>
+            <span className="text-2xs text-text-faint">
+              {article.tags[0] ? `${article.tags[0]} · ` : ""}
+              {article.reasons[0] ?? "Gợi ý cho bạn"}
+            </span>
+          </Link>
+        ))}
+      </Card>
+    </section>
+  );
+}
+
+/**
+ * Nhóm học tập đề xuất. Chỉ nhóm công khai chưa tham gia — service lọc sẵn, ở đây không
+ * lọc lại.
+ *
+ * `popularity` là mức 0..100 so với chính các nhóm trong danh sách này, không phải số
+ * thành viên: hiện "40 thành viên" mà không biết nhóm khác bao nhiêu thì con số đó không
+ * nói lên điều gì.
+ */
+export function RecommendedGroups({ limit = 3 }: { limit?: number }) {
+  const { items, personalized, isLoading, error } = useRecommendations(() =>
+    api.recommendations.groups(limit),
+  );
+
+  if (error) return null;
+  if (isLoading) return <CardGridSkeleton />;
+  if (items.length === 0) {
+    return (
+      <CatalogueEmpty
+        icon={Users}
+        title="Chưa có nhóm nào để đề xuất"
+        description="Bạn đã tham gia mọi nhóm công khai đang hoạt động."
+      />
+    );
+  }
+
+  return (
+    <>
+      {!personalized && <PopularNotice />}
+      <div className={GRID}>
+        {items.map((group, i) => (
+          <EntityCard
+            key={group.id}
+            tile={tileFor(group.title)}
+            tileVariant={i % 2 === 0 ? "primary" : "ink"}
+            coverImage={placeholderCoverUrl(group.slug)}
+            kind={{ icon: Users, label: group.tags[0] ?? "Nhóm học tập" }}
+            title={group.title}
+            description=""
+            note={group.reasons[0]}
+            progress={group.popularity}
+            footer={
+              <span className="text-2xs text-text-faint">Mức sôi động so với nhóm khác</span>
+            }
+            href={`/workspace/${group.slug}`}
+          />
+        ))}
+      </div>
+    </>
   );
 }

@@ -240,6 +240,11 @@ export const api = {
       unwrap<RecommendationList>(`/recommendations/courses${query({ limit })}`),
     exercises: (limit = 6) =>
       unwrap<RecommendationList>(`/recommendations/exercises${query({ limit })}`),
+    articles: (limit = 6) =>
+      unwrap<RecommendationList>(`/recommendations/articles${query({ limit })}`),
+    /** Chỉ nhóm CÔNG KHAI và đang hoạt động; nhóm đã tham gia bị service loại sẵn. */
+    groups: (limit = 6) =>
+      unwrap<RecommendationList>(`/recommendations/groups${query({ limit })}`),
     /** Một bài kế tiếp sau khi vừa nộp đạt — trả về cùng dạng danh sách, nhiều nhất 1 mục. */
     nextExercise: (exerciseId: string) =>
       unwrap<RecommendationList>(`/recommendations/exercises/next${query({ exerciseId })}`),
