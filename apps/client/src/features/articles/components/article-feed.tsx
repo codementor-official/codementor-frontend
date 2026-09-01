@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BadgeCheck, Loader2, Newspaper, Search, X } from "lucide-react";
@@ -12,7 +12,7 @@ import { SaveButton } from "@/features/saved/components/save-button";
 import { ReportButton } from "@/features/reports/report-button";
 import { RecommendedArticles } from "@/components/recommendation/recommended";
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
 
 /**
  * Danh sách bài viết, bố cục hai cột theo mẫu trang "Bài viết nổi bật" của F8: dòng bài
@@ -27,39 +27,56 @@ export function ArticleFeed() {
   const [tags, setTags] = useState<{ name: string; count: number }[]>([]);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [cursor, setCursor] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [cursors, setCursors] = useState<Array<string | undefined>>([undefined]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestSequence = useRef(0);
 
-  const load = useCallback(
-    async (tag: string | null, q: string, nextCursor?: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const page = await api.articles.catalogue({
-          limit: PAGE_SIZE,
-          tag: tag ?? undefined,
-          q: q.trim() || undefined,
-          cursor: nextCursor,
-        });
-        // Có cursor nghĩa là "xem thêm" — nối vào; không có thì đây là lần lọc mới.
-        setItems((current) => (nextCursor ? [...current, ...page.items] : page.items));
-        setCursor(page.nextCursor);
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Không tải được bài viết");
-      } finally {
-        setLoading(false);
+  const resetPagination = () => {
+    setPage(1);
+    setCursors([undefined]);
+  };
+
+  const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.articles.catalogue({
+        limit: PAGE_SIZE,
+        tag: activeTag ?? undefined,
+        q: query || undefined,
+        cursor: cursors[page - 1],
+      });
+      if (sequence === requestSequence.current) {
+        setItems(response.items);
+        setNextCursor(response.nextCursor);
       }
-    },
-    [],
-  );
+    } catch (cause) {
+      if (sequence === requestSequence.current) {
+        setItems([]);
+        setNextCursor(null);
+        setError(cause instanceof Error ? cause.message : "Không tải được bài viết");
+      }
+    } finally {
+      if (sequence === requestSequence.current) setLoading(false);
+    }
+  }, [activeTag, cursors, page, query]);
 
   // Hoãn 300ms: gõ "websocket" mà gọi ngay từng phím là chín request, và request về sau
   // có thể tới trước request trước nó rồi ghi đè kết quả bằng danh sách của tiền tố cũ.
   useEffect(() => {
-    const timer = setTimeout(() => void load(activeTag, search), 300);
+    const timer = setTimeout(() => setQuery(search.trim()), 300);
     return () => clearTimeout(timer);
-  }, [activeTag, search, load]);
+  }, [search]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     void api.articles
@@ -67,6 +84,16 @@ export function ArticleFeed() {
       .then(setTags)
       .catch(() => setTags([]));
   }, []);
+
+  const goNext = () => {
+    if (!nextCursor) return;
+    setCursors((current) => {
+      const copy = current.slice(0, page);
+      copy[page] = nextCursor;
+      return copy;
+    });
+    setPage((current) => current + 1);
+  };
 
   return (
     <div className="mx-auto w-full max-w-7xl">
@@ -90,7 +117,10 @@ export function ArticleFeed() {
             <input
               aria-label="Tìm bài viết"
               className="h-11 w-full rounded-lg border border-border bg-surface pr-10 pl-10 text-sm text-navy transition-colors placeholder:text-text-faint focus-visible:border-primary"
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                resetPagination();
+              }}
               placeholder="Tìm bài viết theo tiêu đề hoặc mô tả…"
               // `text` chứ không phải `search`: `type="search"` khiến Chrome vẽ thêm nút
               // xoá của riêng nó, nằm ngay cạnh nút xoá bên dưới — hai dấu X cạnh nhau.
@@ -101,7 +131,10 @@ export function ArticleFeed() {
               <button
                 aria-label="Xoá tìm kiếm"
                 className="absolute top-1/2 right-3 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-text-faint transition-colors hover:bg-bg hover:text-navy"
-                onClick={() => setSearch("")}
+                onClick={() => {
+                  setSearch("");
+                  resetPagination();
+                }}
                 type="button"
               >
                 <X aria-hidden="true" className="h-3.5 w-3.5" />
@@ -143,15 +176,31 @@ export function ArticleFeed() {
             </ul>
           )}
 
-          {cursor !== null && items.length > 0 && (
-            <button
-              className="mt-6 w-full rounded-lg border border-border bg-surface py-3 text-sm font-semibold text-primary transition-colors hover:bg-bg disabled:opacity-50"
-              disabled={loading}
-              onClick={() => void load(activeTag, search, cursor)}
-              type="button"
+          {(page > 1 || nextCursor) && items.length > 0 && (
+            <nav
+              aria-label="Phân trang bài viết"
+              className="mt-6 flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3"
             >
-              {loading ? "Đang tải…" : "Xem thêm bài viết"}
-            </button>
+              <span className="text-xs text-text-faint">Trang {page}</span>
+              <div className="flex gap-2">
+                <button
+                  className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-bg disabled:opacity-40"
+                  disabled={page === 1 || loading}
+                  onClick={() => setPage((current) => current - 1)}
+                  type="button"
+                >
+                  Trước
+                </button>
+                <button
+                  className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-bg disabled:opacity-40"
+                  disabled={!nextCursor || loading}
+                  onClick={goNext}
+                  type="button"
+                >
+                  Sau
+                </button>
+              </div>
+            </nav>
           )}
         </div>
 
@@ -165,7 +214,13 @@ export function ArticleFeed() {
             Xem các bài viết theo chủ đề
           </h2>
           <div className="flex flex-wrap gap-2">
-            <TagChip active={activeTag === null} onClick={() => setActiveTag(null)}>
+            <TagChip
+              active={activeTag === null}
+              onClick={() => {
+                setActiveTag(null);
+                resetPagination();
+              }}
+            >
               Tất cả
             </TagChip>
             {tags.map((tag) => (
@@ -173,7 +228,10 @@ export function ArticleFeed() {
                 active={activeTag === tag.name}
                 key={tag.name}
                 // Bấm lại chip đang chọn thì bỏ lọc — đỡ phải đi tìm nút "Tất cả".
-                onClick={() => setActiveTag(activeTag === tag.name ? null : tag.name)}
+                onClick={() => {
+                  setActiveTag(activeTag === tag.name ? null : tag.name);
+                  resetPagination();
+                }}
               >
                 {tag.name}
               </TagChip>
