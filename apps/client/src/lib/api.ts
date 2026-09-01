@@ -242,6 +242,12 @@ export const api = {
       unwrap<RecommendationList>(`/recommendations/exercises${query({ limit })}`),
     articles: (limit = 6) =>
       unwrap<RecommendationList>(`/recommendations/articles${query({ limit })}`),
+    /**
+     * Bài viết liên quan bài đang đọc. Service bỏ chính bài đó khỏi kết quả và ưu tiên
+     * bài cùng chủ đề — vẫn xếp theo hồ sơ học tập, không phải danh sách cùng tag thuần.
+     */
+    relatedArticles: (articleId: string, limit = 4) =>
+      unwrap<RecommendationList>(`/recommendations/articles/related${query({ articleId, limit })}`),
     /** Chỉ nhóm CÔNG KHAI và đang hoạt động; nhóm đã tham gia bị service loại sẵn. */
     groups: (limit = 6) =>
       unwrap<RecommendationList>(`/recommendations/groups${query({ limit })}`),

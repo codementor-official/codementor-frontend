@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { Clock3, Lightbulb, Loader2 } from "lucide-react";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
+import { RecommendedArticles } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import type { ArticleDetail } from "@/types/catalogue";
 
@@ -109,6 +110,13 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
           </Card>
         )}
       </article>
+
+      {/* Dưới cùng, sau "điểm cần nhớ": đây là chỗ người đọc vừa đọc xong và đang tìm thứ
+          tiếp theo. `key` theo id để đổi bài thì danh sách tải lại — hook chỉ chạy một lần
+          mỗi lần mount. */}
+      <div className="mt-12 border-t border-border pt-8">
+        <RecommendedArticles key={article.id} limit={4} relatedTo={article.id} />
+      </div>
     </div>
   );
 }

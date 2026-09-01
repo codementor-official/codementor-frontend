@@ -234,10 +234,23 @@ function CardGridSkeleton() {
  * Không dùng `EntityCard`: cột đó rộng chưa tới 300px và bài viết không có ảnh bìa, lĩnh
  * vực hay trình độ để lấp một thẻ lớn. Tiêu đề + chủ đề + lý do là tất cả những gì service
  * trả về, và cũng là tất cả những gì cần để người đọc quyết định có bấm hay không.
+ *
+ * `relatedTo` đổi sang đường "bài liên quan": cùng cách hiển thị, khác ở chỗ service bỏ
+ * bài đang đọc và đẩy bài cùng chủ đề lên trước. Cùng một danh sách nên dùng chung một
+ * component — tách đôi chỉ để đổi một lời gọi API là thêm một file phải sửa hai lần.
  */
-export function RecommendedArticles({ limit = 5 }: { limit?: number }) {
+export function RecommendedArticles({
+  limit = 5,
+  relatedTo,
+}: {
+  limit?: number;
+  /** Id bài đang đọc. Có thì lấy bài liên quan, không thì lấy đề xuất chung. */
+  relatedTo?: string;
+}) {
   const { items, personalized, isLoading, error } = useRecommendations(() =>
-    api.recommendations.articles(limit),
+    relatedTo
+      ? api.recommendations.relatedArticles(relatedTo, limit)
+      : api.recommendations.articles(limit),
   );
 
   // Cột phụ: hỏng thì im lặng bỏ qua, không đẩy một khối báo lỗi vào chỗ vốn chỉ là gợi ý.
@@ -248,7 +261,11 @@ export function RecommendedArticles({ limit = 5 }: { limit?: number }) {
   return (
     <section>
       <h2 className="mb-3 text-sm font-bold text-navy">
-        {personalized ? "Bài viết dành cho bạn" : "Bài viết được lưu nhiều"}
+        {relatedTo
+          ? "Bài viết liên quan"
+          : personalized
+            ? "Bài viết dành cho bạn"
+            : "Bài viết được lưu nhiều"}
       </h2>
       <Card className="divide-y divide-border-soft">
         {items.map((article) => (
