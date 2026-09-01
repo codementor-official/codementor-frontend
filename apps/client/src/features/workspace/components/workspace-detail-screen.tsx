@@ -2434,13 +2434,34 @@ function SettingsPanel({
   const [description, setDescription] = useState(detail.description ?? "");
   const [topic, setTopic] = useState(detail.topic ?? "");
   const [privacy, setPrivacy] = useState(detail.privacy);
-  const [joinPolicy, setJoinPolicy] = useState(detail.joinPolicy);
+  const [joinPolicy, setJoinPolicy] = useState<"open" | "approval" | "invite_only">(
+    detail.privacy === "public" && detail.joinPolicy === "invite_only"
+      ? "approval"
+      : detail.joinPolicy,
+  );
   const [coverPosition, setCoverPosition] = useState(detail.coverPosition);
   const [coverFit, setCoverFit] = useState(detail.coverFit);
   const [coverHeight, setCoverHeight] = useState(detail.coverHeight);
   const [transferTo, setTransferTo] = useState("");
   const [pending, setPending] = useState(false);
   const [coverPreview, setCoverPreview] = useState(detail.coverUrl);
+  const [showPublicConfirmation, setShowPublicConfirmation] = useState(false);
+
+  const changePrivacy = (value: string) => {
+    if (value === "public" && detail.privacy !== "public") {
+      setShowPublicConfirmation(true);
+      return;
+    }
+    setPrivacy(value as "public" | "private");
+  };
+
+  const confirmPublicWorkspace = () => {
+    setPrivacy("public");
+    // A discoverable group must have a usable join flow. Preserve an explicit
+    // open policy, otherwise default to owner approval.
+    if (joinPolicy === "invite_only") setJoinPolicy("approval");
+    setShowPublicConfirmation(false);
+  };
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -2571,7 +2592,7 @@ function SettingsPanel({
                 label="Hiển thị nhóm"
                 className="w-full"
                 value={privacy}
-                onChange={(value) => setPrivacy(value as "public" | "private")}
+                onChange={changePrivacy}
                 options={[
                   { value: "public", label: "Công khai" },
                   { value: "private", label: "Riêng tư" },
@@ -2590,7 +2611,9 @@ function SettingsPanel({
                 options={[
                   { value: "open", label: "Tham gia ngay" },
                   { value: "approval", label: "Cần duyệt" },
-                  { value: "invite_only", label: "Chỉ bằng mã mời" },
+                  ...(privacy === "private"
+                    ? [{ value: "invite_only", label: "Chỉ bằng mã mời" }]
+                    : []),
                 ]}
               />
             </label>
@@ -2753,6 +2776,29 @@ function SettingsPanel({
           </Button>
         </Card>
       </div>
+      <ConfirmDialog
+        open={showPublicConfirmation}
+        onClose={() => setShowPublicConfirmation(false)}
+        onConfirm={confirmPublicWorkspace}
+        title="Đưa nhóm lên khu vực công khai?"
+        message={
+          <span>
+            Nhóm <b>{name || detail.name}</b> sẽ xuất hiện trong Khám phá và tab
+            Nhóm công khai. Người dùng có thể xem thông tin giới thiệu và gửi yêu
+            cầu tham gia.
+          </span>
+        }
+        confirmLabel="Đồng ý công khai"
+        tone="default"
+      >
+        <div className="rounded-md border border-border-soft bg-bg p-3 text-xs leading-relaxed text-text-muted">
+          Hệ thống chỉ dùng tên, mô tả, chủ đề, ảnh bìa, Chủ nhóm, số thành viên và
+          thời gian hoạt động gần nhất để giới thiệu nhóm. Chat, tài liệu và danh
+          sách thành viên chi tiết vẫn được bảo vệ. Nếu nhóm đang chỉ dùng mã mời,
+          cách tham gia sẽ chuyển thành <b>Cần duyệt</b>. Thay đổi chỉ có hiệu lực
+          sau khi bạn bấm <b>Lưu thay đổi</b>.
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }
