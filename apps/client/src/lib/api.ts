@@ -560,6 +560,10 @@ export const api = {
       unwrap<WorkspaceExerciseDetail>(
         `/workspaces/${encodeURIComponent(slug)}/exercises/${id}/detail`,
       ),
+    workspaceExerciseForSolve: (slug: string, id: string) =>
+      unwrap<ExerciseDetail>(
+        `/workspaces/${encodeURIComponent(slug)}/exercises/${id}/solve`,
+      ),
     assignments: (
       slug: string,
       params: {

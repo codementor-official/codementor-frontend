@@ -18,20 +18,27 @@ export function SolveLoader({
   backHref,
   context,
   assignmentId,
+  workspaceSlug,
+  groupExerciseId,
 }: {
   exerciseId: string;
   backHref: string;
   /** Khóa học và bài học mà bài code này được mở từ đó; vắng = luyện tập tự do. */
   context?: LessonContext;
   assignmentId?: string;
+  workspaceSlug?: string;
+  groupExerciseId?: string;
 }) {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    api.exercises
-      .detail(exerciseId)
+    const request =
+      workspaceSlug && groupExerciseId
+        ? api.workspaces.workspaceExerciseForSolve(workspaceSlug, groupExerciseId)
+        : api.exercises.detail(exerciseId);
+    request
       .then((exercise) => {
         if (!cancelled) setProblem(problemFromExercise(exercise));
       })
@@ -41,7 +48,7 @@ export function SolveLoader({
     return () => {
       cancelled = true;
     };
-  }, [exerciseId]);
+  }, [exerciseId, groupExerciseId, workspaceSlug]);
 
   if (error) {
     return (

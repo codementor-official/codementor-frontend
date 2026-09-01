@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -1156,10 +1156,15 @@ export function WorkspaceExercisesTab({
                 </p>
               </div>
               <Button
-                href={`/solve/${ex.exerciseId}`}
+                href={workspaceSolveHref(
+                  detail.slug,
+                  ex.exerciseId,
+                  ex.id,
+                  ex.myAssignment?.id,
+                )}
                 size="sm"
                 variant="outline"
-                onClick={(event) => event.stopPropagation()}
+                onClick={(event: MouseEvent) => event.stopPropagation()}
               >
                 Mở bài
               </Button>
@@ -2540,11 +2545,12 @@ export function WorkspaceAssignmentsTab({
               </div>
               <Link
                 className="text-xs font-semibold text-primary"
-                href={
-                  canReview
-                    ? `/solve/${item.exerciseId}`
-                    : `/solve/${item.exerciseId}?assignmentId=${item.id}`
-                }
+                href={workspaceSolveHref(
+                  detail.slug,
+                  item.exerciseId,
+                  item.groupExerciseId,
+                  canReview ? undefined : item.id,
+                )}
               >
                 {canReview ? "Xem đề" : "Làm bài"}
               </Link>
@@ -2595,6 +2601,21 @@ function Loading() {
     </div>
   );
 }
+function workspaceSolveHref(
+  slug: string,
+  exerciseId: string,
+  groupExerciseId: string,
+  assignmentId?: string,
+) {
+  const params = new URLSearchParams({
+    workspaceSlug: slug,
+    groupExerciseId,
+    returnTo: `/workspace/${slug}?tab=exercises`,
+  });
+  if (assignmentId) params.set("assignmentId", assignmentId);
+  return `/solve/${exerciseId}?${params.toString()}`;
+}
+
 function Empty({
   icon: Icon,
   title,

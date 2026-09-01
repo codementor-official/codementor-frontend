@@ -16,10 +16,13 @@ export default async function SolvePage({
     courseId?: string;
     lessonId?: string;
     assignmentId?: string;
+    workspaceSlug?: string;
+    groupExerciseId?: string;
   }>;
 }) {
   const { exerciseId } = await params;
-  const { returnTo, courseId, lessonId, assignmentId } = await searchParams;
+  const { returnTo, courseId, lessonId, assignmentId, workspaceSlug, groupExerciseId } =
+    await searchParams;
   const backHref = returnTo?.startsWith("/") ? returnTo : "/practice";
 
   // Cả hai cùng có mặt mới tính. Một nửa ngữ cảnh thì judge không biết ghi tiến độ vào đâu,
@@ -33,6 +36,8 @@ export default async function SolvePage({
         backHref={backHref}
         context={context}
         assignmentId={assignmentId}
+        workspaceSlug={workspaceSlug}
+        groupExerciseId={groupExerciseId}
       />
     </div>
   );
