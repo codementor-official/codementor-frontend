@@ -1,4 +1,4 @@
-import { User as OidcUser, UserManager, WebStorageStateStore } from "oidc-client-ts";
+import { ErrorResponse, User as OidcUser, UserManager, WebStorageStateStore } from "oidc-client-ts";
 import type { Role, User } from "@codementor/types";
 
 export interface KeycloakPublicConfig {
@@ -211,7 +211,19 @@ export async function currentUser(manager: UserManager): Promise<OidcUser | null
 
   try {
     return await manager.signinSilent();
-  } catch {
+  } catch (cause) {
+    // A failed refresh leaves the expired user (and its rejected refresh token) in
+    // localStorage. Without removing it, every cold load retries the same token grant,
+    // producing another Keycloak `400 invalid_grant` before the app falls back to the
+    // HttpOnly-cookie session. The failed token can no longer authenticate anything,
+    // so clear only this public-client OIDC record and let the caller try its BFF
+    // session normally.
+    if (
+      cause instanceof ErrorResponse &&
+      ["invalid_grant", "interaction_required", "login_required"].includes(cause.error ?? "")
+    ) {
+      await manager.removeUser();
+    }
     return null;
   }
 }
