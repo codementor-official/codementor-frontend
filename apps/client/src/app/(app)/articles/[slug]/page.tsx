@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import Image from "next/image";
 import { Clock3, Lightbulb, Loader2 } from "lucide-react";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
@@ -10,6 +11,16 @@ import { api } from "@/lib/api";
 import type { ArticleDetail } from "@/types/catalogue";
 
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "long" });
+
+function authorInitials(name: string | null) {
+  return (name ?? "CodeMentor")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
 
 /**
  * Đọc từ learning-service, không phải `src/data/articles.ts`.
@@ -85,9 +96,30 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
             </p>
           )}
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-medium text-navy">{article.authorName ?? "CodeMentor"}</p>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-bold text-on-ink">
+                {authorInitials(article.authorName)}
+              </span>
+              <div className="min-w-0">
+                <p className="text-2xs font-bold tracking-wide text-text-faint uppercase">Tác giả</p>
+                <p className="truncate text-sm font-semibold text-navy">
+                  {article.authorName ?? "CodeMentor"}
+                </p>
+              </div>
+            </div>
             <SaveButton targetType="POST" targetId={article.id} targetRef={article.slug} />
           </div>
+          {article.coverImageUrl && (
+            <Image
+              alt={`Ảnh bìa ${article.title}`}
+              className="mt-6 aspect-[16/7] w-full rounded-xl object-cover"
+              height={560}
+              priority
+              src={article.coverImageUrl}
+              unoptimized
+              width={1280}
+            />
+          )}
         </header>
 
         {/*

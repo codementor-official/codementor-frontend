@@ -27,6 +27,7 @@ function toDraft(article: Article): Draft {
   return {
     title: article.title,
     excerpt: article.excerpt ?? "",
+    coverImageUrl: article.coverImageUrl ?? "",
     takeaway: article.takeaway ?? "",
     readMinutes: article.readMinutes ? String(article.readMinutes) : "",
     tagId: article.tagId ?? "",
@@ -124,6 +125,7 @@ export default function ArticleStudioPage() {
         title: draft.title.trim() || undefined,
         excerpt: draft.excerpt.trim() || undefined,
         takeaway: draft.takeaway.trim() || undefined,
+        coverImageUrl: draft.coverImageUrl.trim() || null,
         readMinutes: draft.readMinutes ? Number(draft.readMinutes) : undefined,
         tagId: draft.tagId || undefined,
       });
@@ -277,7 +279,7 @@ export default function ArticleStudioPage() {
         title={draft.title || "Bài viết chưa đặt tên"}
       >
         <StudioScroll>
-          <ArticleEditor draft={draft} onChange={setDraft} tags={tags} />
+          <ArticleEditor articleId={id} draft={draft} onChange={setDraft} tags={tags} />
         </StudioScroll>
       </StudioShell>
     </>

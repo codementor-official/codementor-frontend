@@ -280,6 +280,7 @@ export interface ArticleDetail {
   slug: string;
   title: string;
   excerpt: string | null;
+  coverImageUrl: string | null;
   takeaway: string | null;
   readMinutes: number | null;
   status: string;
@@ -295,6 +296,7 @@ export interface ArticleSummary {
   slug: string;
   title: string;
   excerpt: string | null;
+  coverImageUrl: string | null;
   readMinutes: number | null;
   authorName: string | null;
   tagName: string | null;

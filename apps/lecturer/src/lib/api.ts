@@ -19,7 +19,7 @@ import type {
   PresignedUpload,
   VideoUploadConfig,
 } from "@/features/courses/types";
-import type { Article, ArticleListItem } from "@/features/articles/types";
+import type { Article, ArticleCoverUpload, ArticleCoverUploadConfig, ArticleListItem } from "@/features/articles/types";
 import type { UiNotification } from "@codementor/ui";
 
 /**
@@ -208,10 +208,17 @@ export const api = {
         title?: string;
         excerpt?: string;
         takeaway?: string;
+        coverImageUrl?: string | null;
         readMinutes?: number;
         tagId?: string;
       },
     ) => unwrap<Article>(`/articles/${id}`, { method: "PATCH", body }),
+    coverUploadConfig: () =>
+      unwrap<ArticleCoverUploadConfig>("/articles/manage/cover-upload-config"),
+    coverUploadUrl: (
+      id: string,
+      body: { filename: string; contentType: string; sizeBytes: number },
+    ) => unwrap<ArticleCoverUpload>(`/articles/${id}/cover-upload-url`, { method: "POST", body }),
     saveContent: (id: string, contentHtml: string) =>
       unwrap<Article>(`/articles/${id}/content`, { method: "PUT", body: { contentHtml } }),
     submit: (id: string) => unwrap<Article>(`/articles/${id}/submit`, { method: "POST" }),

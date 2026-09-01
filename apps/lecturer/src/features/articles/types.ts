@@ -4,6 +4,7 @@ export interface ArticleListItem {
   slug: string;
   title: string;
   excerpt: string | null;
+  coverImageUrl: string | null;
   status: string;
   readMinutes: number | null;
   authorId: string | null;
@@ -58,9 +59,24 @@ export const ARTICLE_STATUS_TONES: Record<
 export interface Draft {
   title: string;
   excerpt: string;
+  coverImageUrl: string;
   takeaway: string;
   readMinutes: string;
   /** "" = chưa chọn chủ đề. */
   tagId: string;
   contentHtml: string;
+}
+
+export interface ArticleCoverUploadConfig {
+  enabled: boolean;
+  maxBytes: number;
+  acceptedTypes: string[];
+}
+
+export interface ArticleCoverUpload {
+  uploadUrl: string;
+  headers: Record<string, string>;
+  publicUrl: string;
+  objectKey: string;
+  expiresInSeconds: number;
 }

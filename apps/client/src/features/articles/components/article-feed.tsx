@@ -6,7 +6,6 @@ import Link from "next/link";
 import { BadgeCheck, Loader2, Newspaper, Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/study-group/study-group-stats";
-import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import type { ArticleSummary } from "@/types/catalogue";
 import { SaveButton } from "@/features/saved/components/save-button";
 import { ReportButton } from "@/features/reports/report-button";
@@ -322,23 +321,23 @@ function ArticleRow({ article }: { article: ArticleSummary }) {
             </div>
           </div>
 
-          <Link
-            aria-hidden="true"
-            className="hidden shrink-0 sm:block"
-            href={`/articles/${article.slug}`}
-            tabIndex={-1}
-          >
-            <Image
-              alt=""
-              className="h-[86px] w-[152px] rounded-lg object-cover"
-              height={172}
-              // `articles` chưa có cột ảnh bìa; ảnh giữ chỗ suy ra từ slug nên mỗi bài
-              // luôn ra cùng một ảnh giữa các lần render.
-              src={placeholderCoverUrl(article.slug, 304, 172)}
-              unoptimized
-              width={304}
-            />
-          </Link>
+          {article.coverImageUrl && (
+            <Link
+              aria-hidden="true"
+              className="hidden shrink-0 sm:block"
+              href={`/articles/${article.slug}`}
+              tabIndex={-1}
+            >
+              <Image
+                alt=""
+                className="h-[86px] w-[152px] rounded-lg object-cover"
+                height={172}
+                src={article.coverImageUrl}
+                unoptimized
+                width={304}
+              />
+            </Link>
+          )}
         </div>
       </article>
     </li>

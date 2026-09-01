@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   BookOpen,
@@ -139,7 +140,10 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
     setLoading(false);
   }, [debouncedSearch, difficulty]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   const showCourses = category === "all" || category === "courses";
   const showProblems = category === "all" || category === "problems";
@@ -201,7 +205,7 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
             <SectionTitle icon={FileText} title="Bài viết mới nhất" href="/articles" />
             <p className="mb-3 text-xs text-text-faint">Kiến thức nền và mẹo thực chiến từ cộng đồng CodeMentor</p>
             {articles.length === 0 ? <EmptySearch label="bài viết" query={search} /> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {articles.slice(0, 6).map((article) => <Link key={article.id} href={`/articles/${article.slug}`} className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><Card className="flex h-full flex-col gap-2 p-4 transition-colors group-hover:border-primary/40"><span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-2xs font-bold tracking-wide text-navy uppercase">{article.tagName ?? "Học tập"}</span><h3 className="text-sm leading-snug font-semibold text-navy">{article.title}</h3><p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{article.excerpt ?? "Nội dung học tập mới trên CodeMentor."}</p><div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2.5 text-2xs text-text-faint"><span className="truncate">{article.authorName ?? "CodeMentor"}</span><span className="shrink-0">{article.readMinutes ?? 1} phút đọc</span></div></Card></Link>)}
+              {articles.slice(0, 6).map((article) => <Link key={article.id} href={`/articles/${article.slug}`} className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><Card className="flex h-full flex-col overflow-hidden transition-colors group-hover:border-primary/40">{article.coverImageUrl && <Image alt={`Ảnh bìa ${article.title}`} className="aspect-[16/7] w-full object-cover" height={210} src={article.coverImageUrl} unoptimized width={480} />}<div className="flex flex-1 flex-col gap-2 p-4"><span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-2xs font-bold tracking-wide text-navy uppercase">{article.tagName ?? "Học tập"}</span><h3 className="text-sm leading-snug font-semibold text-navy">{article.title}</h3><p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{article.excerpt ?? "Nội dung học tập mới trên CodeMentor."}</p><div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2.5 text-2xs text-text-faint"><span className="truncate">{article.authorName ?? "CodeMentor"}</span><span className="shrink-0">{article.readMinutes ?? 1} phút đọc</span></div></div></Card></Link>)}
             </div>}
           </section>}
 
