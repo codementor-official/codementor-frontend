@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Code2, Map as MapIcon, Users } from "lucide-react";
+import { BookOpen, Code2, Map as MapIcon, Newspaper, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { CourseCard } from "@/components/course-card";
 import { EntityCard } from "@/components/entity-card";
@@ -253,10 +253,20 @@ export function RecommendedArticles({
       : api.recommendations.articles(limit),
   );
 
-  // Cột phụ: hỏng thì im lặng bỏ qua, không đẩy một khối báo lỗi vào chỗ vốn chỉ là gợi ý.
-  if (error) return null;
+  // Báo lỗi như ba khối đề xuất kia. Từng nuốt lỗi ở đây cho "gọn", và một route backend
+  // trả 404 vì service chạy bản dist cũ trông y hệt "chưa có gì để đề xuất" — không nhìn
+  // ra được từ màn hình, chỉ tìm ra bằng cách curl thẳng vào cổng service.
+  if (error) return <CatalogueError message={error} />;
   if (isLoading) return <Card className="h-48 animate-pulse" />;
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return (
+      <CatalogueEmpty
+        icon={Newspaper}
+        title={relatedTo ? "Chưa có bài viết liên quan" : "Chưa có bài viết nào để đề xuất"}
+        description="Chưa có bài viết nào khác được công khai."
+      />
+    );
+  }
 
   return (
     <section>
@@ -299,7 +309,7 @@ export function RecommendedGroups({ limit = 3 }: { limit?: number }) {
     api.recommendations.groups(limit),
   );
 
-  if (error) return null;
+  if (error) return <CatalogueError message={error} />;
   if (isLoading) return <CardGridSkeleton />;
   if (items.length === 0) {
     return (
