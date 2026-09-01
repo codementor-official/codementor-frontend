@@ -10,7 +10,6 @@ import {
   Flame,
   Globe,
   LayoutGrid,
-  Map,
   Star,
   Target,
   Trophy,
@@ -29,7 +28,7 @@ import type { LearningLeaderboardEntry, UserLearningPreferences } from "@/featur
 import type { WorkspaceListItem } from "@/features/workspace/types";
 import { api } from "@/lib/api";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
-import type { ArticleSummary, CourseSummary, ExerciseSummary, RoadmapSummary } from "@/types/catalogue";
+import type { ArticleSummary, CourseSummary, ExerciseSummary } from "@/types/catalogue";
 
 type DifficultyFilter = Difficulty | "all";
 type Category = "all" | "courses" | "problems" | "articles" | "community";
@@ -103,7 +102,6 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
   const [exercises, setExercises] = useState<ExerciseSummary[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
-  const [roadmaps, setRoadmaps] = useState<RoadmapSummary[]>([]);
   const [leaderboard, setLeaderboard] = useState<LearningLeaderboardEntry[]>([]);
   const [preferences, setPreferences] = useState<UserLearningPreferences | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,17 +122,15 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
       api.exercises.bank({ q, difficulty: difficultyParam(difficulty), limit: 8 }),
       // Global Explore has its own public catalogue. Unlike `all`, it can never
       // include a private workspace merely because the viewer is a member.
-      api.workspaces.list({ scope: "public", q, page: 1, limit: 3 }),
-      api.roadmaps.catalogue({ q, limit: 3 }),
+      api.workspaces.list({ scope: "public", q, page: 1, limit: 5 }),
       api.account.leaderboard(5),
       api.account.preferences(),
     ]);
-    const [courseResult, articleResult, exerciseResult, workspaceResult, roadmapResult, leaderboardResult, preferenceResult] = results;
+    const [courseResult, articleResult, exerciseResult, workspaceResult, leaderboardResult, preferenceResult] = results;
     if (courseResult.status === "fulfilled") setCourses(courseResult.value.items);
     if (articleResult.status === "fulfilled") setArticles(articleResult.value.items);
     if (exerciseResult.status === "fulfilled") setExercises(exerciseResult.value.items);
     if (workspaceResult.status === "fulfilled") setWorkspaces(workspaceResult.value.items);
-    if (roadmapResult.status === "fulfilled") setRoadmaps(roadmapResult.value.items);
     if (leaderboardResult.status === "fulfilled") setLeaderboard(leaderboardResult.value);
     if (preferenceResult.status === "fulfilled") setPreferences(preferenceResult.value);
     const failed = results.filter((result) => result.status === "rejected").length;
@@ -163,8 +159,7 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
   }, [articles, exercises, preferences]);
 
   const communityItems = useMemo<CommunityItem[]>(() => {
-    const items: CommunityItem[] = [];
-    workspaces.forEach((workspace) => items.push({
+    return workspaces.map((workspace) => ({
       id: `workspace-${workspace.id}`,
       title: workspace.name,
       kind: "Nhóm công khai nổi bật",
@@ -172,12 +167,7 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
       href: `/workspace/${workspace.slug}`,
       icon: Users,
     }));
-    const roadmap = roadmaps[0];
-    if (roadmap) items.push({ id: `roadmap-${roadmap.id}`, title: roadmap.title, kind: "Lộ trình nổi bật", meta: `${roadmap.courseCount} khóa học`, href: `/roadmaps/${roadmap.id}`, icon: Map });
-    const article = articles[0];
-    if (article) items.push({ id: `article-${article.id}`, title: article.title, kind: "Bài viết mới", meta: `${article.readMinutes ?? 1} phút đọc`, href: `/articles/${article.slug}`, icon: FileText });
-    return items;
-  }, [articles, roadmaps, workspaces]);
+  }, [workspaces]);
 
   return (
     <div>
@@ -217,12 +207,12 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="flex min-w-0 flex-col gap-5">
-              {showProblems && <><section><SectionTitle icon={Star} title="Bài luyện tập phổ biến" href="/practice" fillIcon />{exercises.length === 0 ? <EmptySearch label="bài luyện tập" query={search} /> : <Card className="overflow-hidden">{exercises.map((exercise, index) => <ProblemRow key={exercise.id} tile="</>" tileVariant={index % 3 === 1 ? "accent" : index % 3 === 2 ? "primary" : "navy"} title={exercise.title} meta={`Tác giả: ${exercise.authorName ?? "CodeMentor"}`} difficulty={exerciseDifficulty(exercise.difficulty)} href={`/solve/${exercise.id}`} />)}</Card>}</section><section><div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy"><Target className="h-4 w-4 text-primary" /> Chủ đề đề xuất cho bạn</div><p className="mb-3 text-xs text-text-faint">{preferences && (preferences.interestedFields.length || preferences.interestedTechnologies.length) ? "Từ sở thích học tập đã lưu của bạn" : "Chủ đề đang có nội dung mới trên hệ thống"}</p><div className="flex flex-wrap gap-2">{topics.length ? topics.map((topic) => <Link key={topic} href={`/practice?q=${encodeURIComponent(topic)}`} className="rounded-md border border-border bg-surface px-3.5 py-2 text-sm font-medium text-navy hover:border-primary hover:text-primary">{topic}</Link>) : <span className="text-sm text-text-faint">Chưa có chủ đề phù hợp.</span>}</div></section></>}
+              {showProblems && <><section><SectionTitle icon={Star} title="Bài luyện tập phổ biến" href="/practice" fillIcon />{exercises.length === 0 ? <EmptySearch label="bài luyện tập" query={search} /> : <Card className="overflow-hidden">{exercises.map((exercise, index) => <ProblemRow key={exercise.id} tile="</>" tileVariant={index % 3 === 1 ? "accent" : index % 3 === 2 ? "primary" : "navy"} title={exercise.title} meta={`Tác giả: ${exercise.authorName ?? "CodeMentor"}`} difficulty={exerciseDifficulty(exercise.difficulty)} href={`/solve/${exercise.id}`} />)}</Card>}</section><section><div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy"><Target className="h-4 w-4 text-primary" /> Chủ đề đề xuất cho bạn</div><p className="mb-3 text-xs text-text-faint">{preferences && (preferences.interestedFields.length || preferences.interestedTechnologies.length) ? "Từ sở thích học tập đã lưu của bạn" : "Chủ đề đang có nội dung mới trên hệ thống"}</p><div className="flex flex-wrap gap-2">{topics.length ? topics.map((topic) => <button key={topic} type="button" onClick={() => { setSearch(topic); setCategory("all"); }} className="rounded-md border border-border bg-surface px-3.5 py-2 text-sm font-medium text-navy transition-colors hover:border-primary hover:text-primary">{topic}</button>) : <span className="text-sm text-text-faint">Chưa có chủ đề phù hợp.</span>}</div></section></>}
             </div>
 
             {showCommunity && <div className="flex min-w-0 flex-col gap-4">
               <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Trophy className="h-4 w-4 text-primary" /> Bảng xếp hạng XP</div>{leaderboard.length ? <div className="flex flex-col gap-3">{leaderboard.map((learner, index) => <div key={learner.id} className="flex items-center gap-2.5"><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-2xs font-bold ${index < 3 ? "bg-primary text-on-ink" : "bg-border-soft text-navy"}`}>{index + 1}</span><div className="min-w-0 flex-1"><div className="truncate text-xs font-semibold text-navy">{learner.displayName}</div><div className="text-2xs text-text-faint">{learner.solvedCount} bài đã giải</div></div><span className="shrink-0 text-xs font-bold text-primary">{formatXp(learner.xp)} XP</span></div>)}</div> : <p className="text-xs text-text-faint">Chưa có dữ liệu xếp hạng.</p>}</Card>
-              <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Globe className="h-4 w-4 text-primary" /> Cộng đồng</div>{communityItems.length ? <div className="flex flex-col gap-4">{communityItems.map((item) => <Link key={item.id} href={item.href} className="flex items-start gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-primary"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft text-navy"><item.icon className="h-4 w-4" /></div><div className="min-w-0"><div className="mb-0.5 text-2xs font-bold tracking-wide text-primary uppercase">{item.kind}</div><div className="mb-0.5 line-clamp-2 text-sm font-semibold text-navy">{item.title}</div><div className="text-xs text-text-faint">{item.meta}</div></div></Link>)}</div> : <p className="text-xs text-text-faint">Chưa có nội dung cộng đồng phù hợp.</p>}<Link href="/workspace?tab=public" className="mt-4 block rounded-md border border-border py-2.5 text-center text-xs font-semibold text-navy hover:bg-bg">Xem tất cả nhóm công khai →</Link></Card>
+              <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Globe className="h-4 w-4 text-primary" /> Nhóm công khai nổi bật</div>{communityItems.length ? <div className="flex flex-col gap-4">{communityItems.map((item) => <Link key={item.id} href={item.href} className="flex items-start gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-primary"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft text-navy"><item.icon className="h-4 w-4" /></div><div className="min-w-0"><div className="mb-0.5 text-2xs font-bold tracking-wide text-primary uppercase">{item.kind}</div><div className="mb-0.5 line-clamp-2 text-sm font-semibold text-navy">{item.title}</div><div className="text-xs text-text-faint">{item.meta}</div></div></Link>)}</div> : <p className="text-xs text-text-faint">Chưa có nhóm công khai phù hợp.</p>}<Link href="/workspace?tab=public" className="mt-4 block rounded-md border border-border py-2.5 text-center text-xs font-semibold text-navy hover:bg-bg">Xem tất cả nhóm công khai →</Link></Card>
             </div>}
           </div>
         </>
