@@ -20,6 +20,7 @@ import { VERDICT_LABELS, type JudgeRunResult } from "@/types/judge";
 import { DiscussionPanel } from "@/components/workspace/discussion-panel";
 import { MascotAssistant, type MascotState } from "@/components/workspace/mascot-assistant";
 import { ReportButton } from "@/features/reports/report-button";
+import { SaveButton } from "@/features/saved/components/save-button";
 import "highlight.js/styles/github-dark.css";
 
 /**
@@ -198,6 +199,7 @@ export function SolveWorkspace({
                   <h1 className="text-xl font-bold text-navy">{problem.title}</h1>
                 </div>
                 <div className="flex items-center gap-1">
+                  {exerciseId && <SaveButton compact targetType="EXERCISE" targetId={exerciseId} />}
                   {exerciseId && <ReportButton compact targetType="EXERCISE" targetId={exerciseId} />}
                   <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">+{xpReward} XP</span>
                 </div>

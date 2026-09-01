@@ -23,11 +23,25 @@ export function SaveButton({
 
   useEffect(() => {
     let active = true;
-    api.account.bookmarks({ type: targetType, limit: 100 })
-      .then((page) => active && setSaved(page.items.some((item) => item.targetId === targetId)))
+    api.account.bookmarkStatus(targetType, targetId)
+      .then((result) => active && setSaved(result.saved))
       .catch(() => undefined)
       .finally(() => active && setLoading(false));
     return () => { active = false; };
+  }, [targetId, targetType]);
+
+  useEffect(() => {
+    const sync = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        targetType: BookmarkTarget;
+        targetId: string;
+        saved: boolean;
+      }>).detail;
+      if (detail?.targetType === targetType && detail.targetId === targetId)
+        setSaved(detail.saved);
+    };
+    window.addEventListener("bookmark-changed", sync);
+    return () => window.removeEventListener("bookmark-changed", sync);
   }, [targetId, targetType]);
 
   const toggle = async () => {
@@ -35,7 +49,11 @@ export function SaveButton({
     try {
       if (saved) await api.account.removeBookmark(targetType, targetId);
       else await api.account.saveBookmark({ targetType, targetId, targetRef });
-      setSaved((value) => !value);
+      const nextSaved = !saved;
+      setSaved(nextSaved);
+      window.dispatchEvent(new CustomEvent("bookmark-changed", {
+        detail: { targetType, targetId, saved: nextSaved },
+      }));
       toast.success(saved ? "Đã bỏ khỏi danh sách đã lưu." : "Đã lưu để xem lại.");
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Không cập nhật được nội dung đã lưu.");

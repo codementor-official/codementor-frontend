@@ -5,6 +5,7 @@ import { Clock3, Lightbulb, Loader2 } from "lucide-react";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { RecommendedArticles } from "@/components/recommendation/recommended";
+import { SaveButton } from "@/features/saved/components/save-button";
 import { api } from "@/lib/api";
 import type { ArticleDetail } from "@/types/catalogue";
 
@@ -83,9 +84,10 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
               {article.excerpt}
             </p>
           )}
-          {article.authorName && (
-            <p className="mt-5 text-sm font-medium text-navy">{article.authorName}</p>
-          )}
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium text-navy">{article.authorName ?? "CodeMentor"}</p>
+            <SaveButton targetType="POST" targetId={article.id} targetRef={article.slug} />
+          </div>
         </header>
 
         {/*
