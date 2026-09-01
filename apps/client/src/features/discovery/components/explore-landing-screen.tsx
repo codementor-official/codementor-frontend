@@ -122,9 +122,9 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
       api.courses.catalogue({ q, level: courseLevelParam(difficulty), limit: 8 }),
       api.articles.catalogue({ q, limit: 6 }),
       api.exercises.bank({ q, difficulty: difficultyParam(difficulty), limit: 8 }),
-      // Explore phải giới thiệu cả nhóm công khai mà người dùng đã tham gia. `discover`
-      // cố ý loại các nhóm đó nên demo account luôn mất đúng nhóm hoạt động nhất.
-      api.workspaces.list({ scope: "all", q, page: 1, limit: 3 }),
+      // Global Explore has its own public catalogue. Unlike `all`, it can never
+      // include a private workspace merely because the viewer is a member.
+      api.workspaces.list({ scope: "public", q, page: 1, limit: 3 }),
       api.roadmaps.catalogue({ q, limit: 3 }),
       api.account.leaderboard(5),
       api.account.preferences(),
@@ -164,8 +164,14 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
 
   const communityItems = useMemo<CommunityItem[]>(() => {
     const items: CommunityItem[] = [];
-    const workspace = workspaces[0];
-    if (workspace) items.push({ id: `workspace-${workspace.id}`, title: workspace.name, kind: "Nhóm học tập", meta: `${workspace.memberCount} thành viên`, href: `/workspace/${workspace.slug}`, icon: Users });
+    workspaces.forEach((workspace) => items.push({
+      id: `workspace-${workspace.id}`,
+      title: workspace.name,
+      kind: "Nhóm công khai nổi bật",
+      meta: `${workspace.memberCount} thành viên · ${workspace.topic ?? "Học tập"}`,
+      href: `/workspace/${workspace.slug}`,
+      icon: Users,
+    }));
     const roadmap = roadmaps[0];
     if (roadmap) items.push({ id: `roadmap-${roadmap.id}`, title: roadmap.title, kind: "Lộ trình nổi bật", meta: `${roadmap.courseCount} khóa học`, href: `/roadmaps/${roadmap.id}`, icon: Map });
     const article = articles[0];
@@ -216,7 +222,7 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
 
             {showCommunity && <div className="flex min-w-0 flex-col gap-4">
               <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Trophy className="h-4 w-4 text-primary" /> Bảng xếp hạng XP</div>{leaderboard.length ? <div className="flex flex-col gap-3">{leaderboard.map((learner, index) => <div key={learner.id} className="flex items-center gap-2.5"><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-2xs font-bold ${index < 3 ? "bg-primary text-on-ink" : "bg-border-soft text-navy"}`}>{index + 1}</span><div className="min-w-0 flex-1"><div className="truncate text-xs font-semibold text-navy">{learner.displayName}</div><div className="text-2xs text-text-faint">{learner.solvedCount} bài đã giải</div></div><span className="shrink-0 text-xs font-bold text-primary">{formatXp(learner.xp)} XP</span></div>)}</div> : <p className="text-xs text-text-faint">Chưa có dữ liệu xếp hạng.</p>}</Card>
-              <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Globe className="h-4 w-4 text-primary" /> Cộng đồng</div>{communityItems.length ? <div className="flex flex-col gap-4">{communityItems.map((item) => <Link key={item.id} href={item.href} className="flex items-start gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-primary"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft text-navy"><item.icon className="h-4 w-4" /></div><div className="min-w-0"><div className="mb-0.5 text-2xs font-bold tracking-wide text-primary uppercase">{item.kind}</div><div className="mb-0.5 line-clamp-2 text-sm font-semibold text-navy">{item.title}</div><div className="text-xs text-text-faint">{item.meta}</div></div></Link>)}</div> : <p className="text-xs text-text-faint">Chưa có nội dung cộng đồng phù hợp.</p>}<Link href="/workspace" className="mt-4 block rounded-md border border-border py-2.5 text-center text-xs font-semibold text-navy hover:bg-bg">Khám phá nhóm học tập →</Link></Card>
+              <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Globe className="h-4 w-4 text-primary" /> Cộng đồng</div>{communityItems.length ? <div className="flex flex-col gap-4">{communityItems.map((item) => <Link key={item.id} href={item.href} className="flex items-start gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-primary"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft text-navy"><item.icon className="h-4 w-4" /></div><div className="min-w-0"><div className="mb-0.5 text-2xs font-bold tracking-wide text-primary uppercase">{item.kind}</div><div className="mb-0.5 line-clamp-2 text-sm font-semibold text-navy">{item.title}</div><div className="text-xs text-text-faint">{item.meta}</div></div></Link>)}</div> : <p className="text-xs text-text-faint">Chưa có nội dung cộng đồng phù hợp.</p>}<Link href="/workspace?tab=public" className="mt-4 block rounded-md border border-border py-2.5 text-center text-xs font-semibold text-navy hover:bg-bg">Xem tất cả nhóm công khai →</Link></Card>
             </div>}
           </div>
         </>

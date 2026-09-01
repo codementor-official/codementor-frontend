@@ -21,7 +21,7 @@ import type { StudyGroup } from "@/types/study-group";
 import { StudyGroupActions } from "./study-group-actions";
 import { StudyGroupCard } from "./study-group-card";
 
-type Scope = "all" | "mine" | "owned" | "joined" | "discover";
+type Scope = "all" | "mine" | "owned" | "joined" | "public";
 
 const SCOPE_META: Record<
   Scope,
@@ -51,10 +51,10 @@ const SCOPE_META: Record<
     hint: "Nhóm do người khác làm chủ",
     icon: UsersRound,
   },
-  discover: {
-    label: "Khám phá",
-    title: "Khám phá nhóm công khai",
-    hint: "Tìm nhóm phù hợp để gửi yêu cầu tham gia",
+  public: {
+    label: "Nhóm công khai",
+    title: "Nhóm công khai nổi bật",
+    hint: "Chỉ gồm nhóm đã được Chủ nhóm công khai, ưu tiên nhóm đông và hoạt động gần đây",
     icon: Compass,
   },
 };
@@ -106,9 +106,9 @@ function GroupSection({
   );
 }
 
-export function StudyGroupBoard() {
+export function StudyGroupBoard({ initialScope = "mine" }: { initialScope?: Scope }) {
   const toast = useToast();
-  const [scope, setScope] = useState<Scope>("mine");
+  const [scope, setScope] = useState<Scope>(initialScope);
   const [search, setSearch] = useState("");
   const [groups, setGroups] = useState<StudyGroup[]>([]);
   const [summary, setSummary] = useState<WorkspaceSummary | null>(null);
@@ -117,7 +117,7 @@ export function StudyGroupBoard() {
     mine: 1,
     owned: 1,
     joined: 1,
-    discover: 1,
+    public: 1,
   });
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
@@ -187,6 +187,10 @@ export function StudyGroupBoard() {
 
   const changeScope = (nextScope: Scope) => {
     setScope(nextScope);
+    const url = new URL(window.location.href);
+    if (nextScope === "public") url.searchParams.set("tab", "public");
+    else url.searchParams.delete("tab");
+    window.history.replaceState(window.history.state, "", url);
   };
   const changeSearch = (value: string) => {
     setSearch(value);
@@ -257,7 +261,7 @@ export function StudyGroupBoard() {
           { value: "mine", label: "Nhóm của tôi" },
           { value: "owned", label: "Tôi quản lý" },
           { value: "joined", label: "Đã tham gia" },
-          { value: "discover", label: "Khám phá" },
+          { value: "public", label: "Nhóm công khai" },
         ]}
       />
 
@@ -299,7 +303,9 @@ export function StudyGroupBoard() {
             Không có nhóm nào khớp điều kiện
           </p>
           <p className="mt-1 text-xs text-text-faint">
-            Thử từ khóa khác hoặc tham gia nhóm bằng mã mời.
+            {scope === "public"
+              ? "Chưa có nhóm công khai nào phù hợp."
+              : "Thử từ khóa khác hoặc tham gia nhóm bằng mã mời."}
           </p>
         </Card>
       ) : (
