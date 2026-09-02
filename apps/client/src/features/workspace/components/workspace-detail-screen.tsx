@@ -509,7 +509,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       {activeTab === "overview" && <Overview detail={detail} overview={overview} />}
       {activeTab === "documents" && <WorkspaceDocumentsTab detail={detail} />}
       {activeTab === "exercises" && (
-        <WorkspaceExercisesTab detail={detail} members={members} />
+        <WorkspaceExercisesTab key={searchParams.get("groupExerciseId") ?? "list"} detail={detail} members={members} initialExerciseId={searchParams.get("groupExerciseId")} />
       )}
       {activeTab === "members" && (
         <Members

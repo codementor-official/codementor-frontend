@@ -749,9 +749,11 @@ function DocumentReportDialog({
 export function WorkspaceExercisesTab({
   detail,
   members,
+  initialExerciseId,
 }: {
   detail: WorkspaceDetail;
   members: WorkspaceMember[];
+  initialExerciseId?: string | null;
 }) {
   const toast = useToast();
   const [data, setData] = useState(EMPTY_PAGE<WorkspaceExercise>());
@@ -767,7 +769,10 @@ export function WorkspaceExercisesTab({
   const [reminders, setReminders] = useState<WorkspaceExercise[]>([]);
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState<WorkspaceExercise | null>(null);
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(() =>
+    initialExerciseId && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(initialExerciseId)
+      ? initialExerciseId : null,
+  );
   const [authoringOpen, setAuthoringOpen] = useState(false);
   const [studioExercise, setStudioExercise] =
     useState<WorkspaceExerciseDetail | null>(null);
