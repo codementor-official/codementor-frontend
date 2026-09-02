@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@codementor/ui";
 import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
-import { fromAccountPreferences } from "@/features/account/learning-preference-mapper";
+import { fromAccountPreferences, toAccountPreferences } from "@/features/account/learning-preference-mapper";
+import { useAuth } from "@/providers/auth-provider";
 
 const DAY_LABELS: Record<UserLearningPreferences["schedule"][number]["weekday"], string> = {
   mon: "Thứ 2", tue: "Thứ 3", wed: "Thứ 4", thu: "Thứ 5", fri: "Thứ 6", sat: "Thứ 7", sun: "Chủ nhật",
@@ -28,6 +29,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: () =
 
 export function PersonalizationPanel() {
   const toast = useToast();
+  const { user } = useAuth();
   const saveLocalPreference = useLearningPreferenceStore((state) => state.savePreferenceSettings);
   const hydrateLocalPreference = useLearningPreferenceStore((state) => state.hydratePreferenceFromServer);
   const [saved, setSaved] = useState<UserLearningPreferences | null>(null);
@@ -48,7 +50,9 @@ export function PersonalizationPanel() {
   const dirty = useMemo(() => JSON.stringify(saved) !== JSON.stringify(draft), [draft, saved]);
   const valid = Boolean(
     draft?.learningGoal && draft.careerGoal && draft.currentLevel && draft.contentPriority && draft.weeklyStudyHours &&
-    draft.interestedFields.length && draft.interestedTechnologies.length && draft.preferredLearningStyle.length,
+    draft.interestedFields.length && draft.interestedTechnologies.length && draft.preferredLearningStyle.length &&
+    draft.schedule.every((slot) => /^([01]\d|2[0-3]):[0-5]\d$/.test(slot.startTime)) &&
+    /^([01]\d|2[0-3]):[0-5]\d$/.test(draft.reminderTime),
   );
 
   function choose(field: EditableField, rawValue: string) {
@@ -71,7 +75,8 @@ export function PersonalizationPanel() {
     setSaving(true);
     setError(null);
     try {
-      const updated = await api.account.updatePreferences(draft);
+      // API responses include completedAt; only the server may write that field.
+      const updated = await api.account.updatePreferences(toAccountPreferences(fromAccountPreferences(draft)));
       setSaved(updated);
       setDraft(updated);
       saveLocalPreference(fromAccountPreferences(updated));
@@ -89,7 +94,7 @@ export function PersonalizationPanel() {
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-primary/25 bg-primary-tint px-4 py-3 text-sm leading-relaxed text-navy">
-        <strong>Giai đoạn hiện tại chỉ lưu lựa chọn.</strong> Dữ liệu này chưa tự đề xuất khóa học, tạo lộ trình hoặc gọi AI.
+        <strong>Lịch học có thể gửi nhắc tự động.</strong> Các sở thích còn lại được lưu để sử dụng về sau; chưa tự đề xuất khóa học, tạo lộ trình hoặc gọi AI.
       </div>
       {error && <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
 
@@ -112,7 +117,7 @@ export function PersonalizationPanel() {
                       const active = selected.includes(option.value);
                       const Icon = option.icon;
                       return (
-                        <button key={option.value} type="button" onClick={() => choose(key, option.value)} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${active ? "border-primary bg-primary-tint text-primary" : "border-border bg-surface text-text-muted hover:bg-bg hover:text-navy"}`}>
+                        <button key={option.value} type="button" aria-pressed={active} onClick={() => choose(key, option.value)} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${active ? "border-primary bg-primary-tint text-primary" : "border-border bg-surface text-text-muted hover:bg-bg hover:text-navy"}`}>
                           <Icon className="h-3.5 w-3.5" /> {option.label}
                         </button>
                       );
@@ -127,7 +132,8 @@ export function PersonalizationPanel() {
 
       <Card className="p-5 sm:p-6">
         <h2 className="flex items-center gap-2 text-base font-bold text-navy"><CalendarDays className="h-4 w-4 text-primary" /> Lịch học trong tuần</h2>
-        <p className="mt-1 text-xs text-text-faint">Lịch được lưu thành từng khung giờ để có thể dùng cho nhắc học trong tương lai.</p>
+        <p className="mt-1 text-xs text-text-muted">Nhắc vào giờ bắt đầu của từng ngày đã chọn, theo múi giờ {user?.timezone ?? "Asia/Ho_Chi_Minh"}. Bấm Lưu cá nhân hóa để áp dụng.</p>
+        <p className="mt-1 text-xs text-text-faint">Hệ thống kiểm tra mỗi phút, gửi bù tối đa 5 phút khi xử lý chậm và chỉ nhắc một lần mỗi ngày. Lịch đã quá 5 phút sẽ áp dụng từ tuần sau.</p>
         <div className="mt-4 grid gap-2 lg:grid-cols-2">
           {draft.schedule.map((slot, index) => (
             <div key={slot.weekday} className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${slot.enabled ? "border-primary/30 bg-primary-tint" : "border-border"}`}>
@@ -145,10 +151,15 @@ export function PersonalizationPanel() {
       </Card>
 
       <Card className="p-5 sm:p-6">
-        <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Bell className="h-4 w-4 text-primary" /> Cấu hình sử dụng về sau</h2>
+        <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Bell className="h-4 w-4 text-primary" /> Nhắc học theo lịch</h2>
         <div className="mt-3 divide-y divide-border-soft">
-          <div className="flex items-center gap-4 py-4"><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-navy">Cho phép nhắc theo lịch</p><p className="mt-1 text-xs text-text-faint">Lưu giờ nhắc mặc định cho Notification Service khi tính năng được bật.</p></div><Toggle checked={draft.remindersEnabled} onChange={() => setDraft({ ...draft, remindersEnabled: !draft.remindersEnabled })} label="Nhắc học" /></div>
-          {draft.remindersEnabled && <label className="flex items-center justify-between gap-3 py-4 text-sm font-medium text-navy">Giờ nhắc mặc định<input type="time" value={draft.reminderTime} onChange={(event) => setDraft({ ...draft, reminderTime: event.target.value })} className="h-9 rounded-md border border-border bg-surface px-3 text-sm" /></label>}
+          <div className="flex items-center gap-4 py-4"><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-navy">Cho phép nhắc theo lịch</p><p className="mt-1 text-xs text-text-faint">Nhận thông báo trong app theo lịch đã lưu. Để nhận email, hãy xác thực email và bật Thông báo qua email cùng Email học tập trong tab Cài đặt.</p></div><Toggle checked={draft.remindersEnabled} onChange={() => setDraft({ ...draft, remindersEnabled: !draft.remindersEnabled })} label="Nhắc học" /></div>
+          {draft.remindersEnabled && <div className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <div><label htmlFor="study-default-time" className="text-sm font-medium text-navy">Giờ dùng chung</label><p className="mt-1 text-xs text-text-faint">Dùng để điền nhanh các ngày đã chọn, không tạo thêm một lịch nhắc riêng.</p></div>
+            <div className="flex flex-wrap items-center gap-2"><input id="study-default-time" type="time" value={draft.reminderTime} onChange={(event) => setDraft({ ...draft, reminderTime: event.target.value })} className="h-9 rounded-md border border-border bg-surface px-3 text-sm text-navy" />
+              <Button variant="outline" disabled={!draft.reminderTime || !draft.schedule.some((slot) => slot.enabled)} onClick={() => setDraft({ ...draft, schedule: draft.schedule.map((slot) => slot.enabled ? { ...slot, startTime: draft.reminderTime } : slot) })}>Áp dụng cho ngày đã chọn</Button></div>
+          </div>}
+          {draft.remindersEnabled && !draft.schedule.some((slot) => slot.enabled) && <p className="py-3 text-sm text-text-muted">Chưa chọn ngày học. Hãy bật ít nhất một ngày để nhận nhắc theo lịch.</p>}
           <div className="flex items-center gap-4 py-4"><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-navy">Cho phép dùng dữ liệu cho gợi ý tương lai</p><p className="mt-1 text-xs text-text-faint">Chỉ lưu quyền lựa chọn; hiện chưa có recommendation engine hoặc lời gọi AI.</p></div><Toggle checked={draft.adaptiveRecommendations} onChange={() => setDraft({ ...draft, adaptiveRecommendations: !draft.adaptiveRecommendations })} label="Gợi ý tương lai" /></div>
         </div>
       </Card>

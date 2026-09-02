@@ -135,7 +135,7 @@ export const api = {
       unwrap<UserSettings>("/me/settings", { method: "PATCH", body }),
     resetSettings: () => unwrap<UserSettings>("/me/settings", { method: "DELETE" }),
     preferences: () => unwrap<UserLearningPreferences>("/me/preferences"),
-    updatePreferences: (body: Partial<Omit<UserLearningPreferences, "completedAt">>) =>
+    updatePreferences: (body: Partial<Omit<UserLearningPreferences, "completedAt">> & { completedAt?: never }) =>
       unwrap<UserLearningPreferences>("/me/preferences", { method: "PATCH", body }),
     stats: () => unwrap<UserLearningStats>("/me/stats"),
     leaderboard: (limit = 5) =>

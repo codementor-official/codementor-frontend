@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { onboardingSteps } from "@/data/onboarding-steps";
 import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
@@ -18,8 +19,10 @@ function isFieldSatisfied(preference: LearningPreference, field: keyof LearningP
 }
 
 export function OnboardingModal() {
-  const { status } = useAuth();
-  const [serverChecked, setServerChecked] = useState(false);
+  const { status, user } = useAuth();
+  const userId = user?.id ?? null;
+  const pathname = usePathname();
+  const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const {
@@ -29,6 +32,7 @@ export function OnboardingModal() {
     hasCompletedOnboarding,
     hasSkippedOnboarding,
     hasHydrated,
+    setUser,
     openModal,
     goNext,
     goBack,
@@ -39,30 +43,33 @@ export function OnboardingModal() {
     skipOnboarding,
   } = useLearningPreferenceStore();
 
-  // Auto-open once per app load for a user who hasn't completed or skipped
-  // the survey yet — mirrors the mockup opening this right after signup.
-  // Gated on hasHydrated so this doesn't fire on the pre-rehydration default
-  // state and incorrectly reopen the modal for a returning user.
+  // Local state is account-scoped, but the database decides survey completion.
+  // A failed check must not be interpreted as an incomplete survey.
   useEffect(() => {
-    if (!hasHydrated || status !== "authenticated") return;
+    if (!hasHydrated || status === "loading") return;
+    setUser(status === "authenticated" ? userId : null);
+    if (status !== "authenticated" || !userId) return;
+    const revision = useLearningPreferenceStore.getState().preferenceRevision;
     let active = true;
     api.account.preferences()
       .then((stored) => {
         if (!active) return;
-        const mapped = fromAccountPreferences(stored);
-        hydratePreferenceFromServer(mapped, Boolean(stored.completedAt));
+        // A profile save/load may have finished while this request was pending.
+        // Never replace newer preferences with the earlier response.
+        if (useLearningPreferenceStore.getState().preferenceRevision === revision) {
+          hydratePreferenceFromServer(fromAccountPreferences(stored), Boolean(stored.completedAt));
+        }
+        setCheckedUserId(userId);
       })
-      .catch(() => undefined)
-      .finally(() => active && setServerChecked(true));
+      .catch(() => undefined);
     return () => { active = false; };
-  }, [hasHydrated, hydratePreferenceFromServer, status]);
+  }, [hasHydrated, hydratePreferenceFromServer, setUser, status, userId]);
 
   useEffect(() => {
-    if (serverChecked && !hasCompletedOnboarding && !hasSkippedOnboarding) openModal();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serverChecked]);
+    if (status === "authenticated" && userId && checkedUserId === userId && pathname !== "/profile" && !hasCompletedOnboarding && !hasSkippedOnboarding) openModal();
+  }, [checkedUserId, hasCompletedOnboarding, hasSkippedOnboarding, openModal, pathname, status, userId]);
 
-  if (!isModalOpen) return null;
+  if (!isModalOpen || hasCompletedOnboarding || status !== "authenticated" || checkedUserId !== userId || pathname === "/profile") return null;
 
   const totalSteps = onboardingSteps.length;
   const stepConfig = onboardingSteps[currentStep - 1];
@@ -73,7 +80,8 @@ export function OnboardingModal() {
     setSaving(true);
     setError(null);
     try {
-      await api.account.updatePreferences(toAccountPreferences(preference));
+      const updated = await api.account.updatePreferences(toAccountPreferences(preference));
+      hydratePreferenceFromServer(fromAccountPreferences(updated), Boolean(updated.completedAt));
       completeOnboarding();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể lưu cấu hình cá nhân hóa.");

@@ -16,6 +16,9 @@ const MULTI_FIELDS = new Set<keyof LearningPreference>([
 const NUMERIC_FIELDS = new Set<keyof LearningPreference>(["weeklyStudyHours"]);
 
 interface LearningPreferenceState {
+  userId: string | null;
+  preferenceRevision: number;
+  setUser: (userId: string | null) => void;
   preference: LearningPreference;
   currentStep: number;
   isModalOpen: boolean;
@@ -42,6 +45,17 @@ interface LearningPreferenceState {
 export const useLearningPreferenceStore = create<LearningPreferenceState>()(
   persist(
     (set) => ({
+      userId: null,
+      preferenceRevision: 0,
+      setUser: (userId) => set((state) => state.userId === userId ? state : {
+        userId,
+        preference: EMPTY_LEARNING_PREFERENCE,
+        preferenceRevision: state.preferenceRevision + 1,
+        currentStep: 1,
+        isModalOpen: false,
+        hasCompletedOnboarding: false,
+        hasSkippedOnboarding: false,
+      }),
       preference: EMPTY_LEARNING_PREFERENCE,
       currentStep: 1,
       isModalOpen: false,
@@ -80,25 +94,30 @@ export const useLearningPreferenceStore = create<LearningPreferenceState>()(
       savePreferenceSettings: (patch) =>
         set((s) => ({
           preference: { ...s.preference, ...patch },
+          preferenceRevision: s.preferenceRevision + 1,
+          isModalOpen: false,
           hasCompletedOnboarding: true,
           hasSkippedOnboarding: false,
         })),
 
       hydratePreferenceFromServer: (preference, completed) =>
-        set({
+        set((state) => ({
           preference,
+          preferenceRevision: state.preferenceRevision + 1,
           hasCompletedOnboarding: completed,
-          hasSkippedOnboarding: false,
-        }),
+          hasSkippedOnboarding: completed ? false : state.hasSkippedOnboarding,
+          isModalOpen: completed ? false : state.isModalOpen,
+        })),
 
       completeOnboarding: () =>
-        set({ isModalOpen: false, hasCompletedOnboarding: true, hasSkippedOnboarding: false }),
+        set((state) => ({ preferenceRevision: state.preferenceRevision + 1, isModalOpen: false, hasCompletedOnboarding: true, hasSkippedOnboarding: false })),
       skipOnboarding: () => set({ isModalOpen: false, hasSkippedOnboarding: true }),
     }),
     {
       name: "codementor-learning-preference",
       // isModalOpen/currentStep are ephemeral UI state, not user data — never persist them.
       partialize: (state) => ({
+        userId: state.userId,
         preference: state.preference,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedOnboarding: state.hasSkippedOnboarding,
