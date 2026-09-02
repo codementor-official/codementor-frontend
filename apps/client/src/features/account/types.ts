@@ -12,8 +12,21 @@ export interface AccountProfile extends User {
   emailVerified: boolean;
 }
 
+export interface EmailVerificationStatus {
+  email: string;
+  verified: boolean;
+  canSend: boolean;
+  retryAfterSeconds: number;
+}
+
 export interface UserSettings {
   emailNotifications: boolean;
+  assignmentNotifications: boolean;
+  deadlineReminders: boolean;
+  deadline6hReminders: boolean;
+  workspaceEmailUpdates: boolean;
+  systemAnnouncements: boolean;
+  learningInactivityDays: number;
   workspaceNotifications: boolean;
   learningReminders: boolean;
   weeklyDigest: boolean;

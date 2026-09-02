@@ -3,6 +3,7 @@ import { Topbar } from "@/components/topbar";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 import { AppContent } from "@/components/app-content";
 import { RequireAuth } from "@/components/require-auth";
+import { EmailVerificationBanner } from "@/features/account/components/email-verification";
 
 /**
  * Mọi trang trong nhóm này đều cần phiên đăng nhập, nên cổng đặt ở layout chứ không rải
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
+        <EmailVerificationBanner />
         <AppContent>
           <RequireAuth>{children}</RequireAuth>
         </AppContent>

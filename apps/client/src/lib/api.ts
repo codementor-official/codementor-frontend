@@ -53,6 +53,7 @@ import type {
 } from "@/types/catalogue";
 import type {
   AccountProfile,
+  EmailVerificationStatus,
   BookmarkPage,
   BookmarkSort,
   BookmarkTarget,
@@ -126,6 +127,8 @@ function query(
 export const api = {
   me: () => unwrap<AccountProfile>("/me"),
   account: {
+    emailVerification: () => unwrap<EmailVerificationStatus>("/me/email-verification", { cache: "no-store" }),
+    sendVerificationEmail: () => unwrap<EmailVerificationStatus & { sent: boolean }>("/me/email-verification", { method: "POST" }),
     updateProfile: (body: Partial<Pick<AccountProfile, "displayName" | "handle" | "bio" | "avatarUrl" | "websiteUrl" | "githubHandle" | "locale" | "timezone">>) =>
       unwrap<AccountProfile>("/me", { method: "PATCH", body }),
     avatarUploadUrl: (body: { filename: string; contentType: string; sizeBytes: number }) =>

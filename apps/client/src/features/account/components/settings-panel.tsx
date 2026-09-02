@@ -121,9 +121,24 @@ export function SettingsPanel() {
           <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Bell className="h-4 w-4 text-primary" /> Thông báo</h2>
           <div className="mt-3 divide-y divide-border-soft">
             <SettingRow title="Thông báo qua email" description="Nhận những cập nhật quan trọng qua email." checked={draft.emailNotifications} onChange={() => patch("emailNotifications", !draft.emailNotifications)} />
-            <SettingRow title="Hoạt động nhóm học tập" description="Bài tập, tài liệu và thay đổi thành viên trong Workspace." checked={draft.workspaceNotifications} onChange={() => patch("workspaceNotifications", !draft.workspaceNotifications)} />
-            <SettingRow title="Nhắc lịch học" description="Nhận lời nhắc theo lịch đã lưu trong tab Cá nhân hóa." checked={draft.learningReminders} onChange={() => patch("learningReminders", !draft.learningReminders)} />
-            <SettingRow title="Tổng kết hằng tuần" description="Bản tóm tắt tiến độ học tập mỗi tuần." checked={draft.weeklyDigest} onChange={() => patch("weeklyDigest", !draft.weeklyDigest)} />
+            <SettingRow title="Hoạt động nhóm học tập" description="Thông báo trong ứng dụng về bài tập, tài liệu, chat và thay đổi thành viên. Các lựa chọn email bên dưới được áp dụng riêng." checked={draft.workspaceNotifications} onChange={() => patch("workspaceNotifications", !draft.workspaceNotifications)} />
+            <fieldset disabled={!draft.emailNotifications} className="divide-y divide-border-soft disabled:opacity-50">
+              <SettingRow title="Email bài tập" description="Được giao bài mới, cần làm lại hoặc thay đổi hạn nộp." checked={draft.assignmentNotifications} onChange={() => patch("assignmentNotifications", !draft.assignmentNotifications)} />
+              <SettingRow title="Nhắc hạn nộp qua email" description="Nhắc trước 24 giờ và khi quá hạn; dừng khi bài đã hoàn thành." checked={draft.deadlineReminders} onChange={() => patch("deadlineReminders", !draft.deadlineReminders)} />
+              <fieldset disabled={!draft.deadlineReminders} className="disabled:opacity-50">
+                <SettingRow title="Nhắc thêm trước 6 giờ" description="Thêm một lời nhắc trước deadline khi cần." checked={draft.deadline6hReminders} onChange={() => patch("deadline6hReminders", !draft.deadline6hReminders)} />
+              </fieldset>
+              <SettingRow title="Email học tập" description="Nhắc theo lịch đã lưu ở Cá nhân hóa, nhắc tiếp tục khóa học đang dở và chúc mừng khi hoàn thành." checked={draft.learningReminders} onChange={() => patch("learningReminders", !draft.learningReminders)} />
+              <label className="flex items-center justify-between gap-3 py-4 text-sm text-navy">
+                Nhắc khi chưa học trong
+                <select aria-label="Số ngày ngừng học trước khi nhắc" value={draft.learningInactivityDays} onChange={(event) => patch("learningInactivityDays", Number(event.target.value))} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+                  {[1,3,7,14,30].map((days) => <option key={days} value={days}>{days} ngày</option>)}
+                  {![1,3,7,14,30].includes(draft.learningInactivityDays) && <option value={draft.learningInactivityDays}>{draft.learningInactivityDays} ngày</option>}
+                </select>
+              </label>
+              <SettingRow title="Email cập nhật Workspace" description="Tài liệu mới được duyệt, yêu cầu/kết quả duyệt tài liệu theo quyền của bạn, kết quả tham gia và được thêm vào nhóm. Không gửi từng tin nhắn chat." checked={draft.workspaceEmailUpdates} onChange={() => patch("workspaceEmailUpdates", !draft.workspaceEmailUpdates)} />
+              <SettingRow title="Email thông báo hệ thống" description="Các thông báo quan trọng do quản trị viên gửi." checked={draft.systemAnnouncements} onChange={() => patch("systemAnnouncements", !draft.systemAnnouncements)} />
+            </fieldset>
           </div>
         </Card>
 

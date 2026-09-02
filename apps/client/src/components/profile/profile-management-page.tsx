@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import type { AccountProfile, UserActivityCalendar, UserActivityEntry, UserLearningPreferences, UserLearningStats } from "@/features/account/types";
 import { SettingsPanel } from "@/features/account/components/settings-panel";
 import { PersonalizationPanel } from "@/features/account/components/personalization-panel";
+import { EmailVerificationCard } from "@/features/account/components/email-verification";
 import { useAuth } from "@/providers/auth-provider";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -360,6 +361,7 @@ export function ProfileManagementPage({ initialTab = "profile" }: { initialTab?:
       <PageHeader icon={UserRound} title="Hồ sơ cá nhân" subtitle="Quản lý thông tin, cài đặt tài khoản và dữ liệu cá nhân hóa của bạn." />
       <SegmentedTabs className="mb-5" value={tab} onChange={changeTab} options={[{ value: "profile", label: "Hồ sơ" }, { value: "settings", label: "Cài đặt" }, { value: "personalization", label: "Cá nhân hóa" }]} />
       <div role="tabpanel">
+        <EmailVerificationCard />
         {tab === "profile" && <ProfilePanel />}
         {tab === "settings" && <SettingsPanel />}
         {tab === "personalization" && <PersonalizationPanel />}
