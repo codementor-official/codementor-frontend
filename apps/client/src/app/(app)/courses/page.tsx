@@ -16,17 +16,11 @@ import { useCourseProgress } from "@/hooks/use-course-progress";
 import { useMyCourses } from "@/hooks/use-my-courses";
 import { useAuth } from "@/providers/auth-provider";
 import { api } from "@/lib/api";
-import { levelToDifficulty, LEVEL_OPTIONS } from "@/lib/catalogue/level";
+import { LEVEL_OPTIONS } from "@/lib/catalogue/level";
 import { MAX_PAGE_SIZE, type CourseSummary } from "@/types/catalogue";
 
 const TILE_TONE = ["navy", "primary"] as const;
 const PAGE_SIZE = 20;
-
-/** Two initials from the title — the backend sends no thumbnail for a course. */
-function tileFor(title: string): string {
-  const words = title.trim().split(/\s+/);
-  return (words[0]?.[0] ?? "?").concat(words[1]?.[0] ?? "").toUpperCase();
-}
 
 export default function CoursesPage() {
   const { status: authStatus } = useAuth();
@@ -101,15 +95,10 @@ export default function CoursesPage() {
             {mine.items.map((course, index) => (
               <li key={course.id}>
                 <CourseCard
-                  tile={tileFor(course.title)}
+                  course={{ ...course, id: course.courseId }}
                   tileVariant={TILE_TONE[index % TILE_TONE.length]}
-                  coverImage={course.coverImageUrl || undefined}
-                  title={course.title}
-                  desc={`${course.totalChapters} chương · ${course.totalLessons} bài học`}
-                  difficulty={levelToDifficulty(course.level)}
-                  stats={course.durationHours ? [{ label: "giờ", value: course.durationHours }] : []}
-                  completed={course.progressPercent >= 100}
-                  href={`/courses/${course.courseId}`}
+                  state={course.progressPercent >= 100 ? "completed" : undefined}
+                  progressPercent={course.progressPercent}
                 />
               </li>
             ))}
@@ -176,14 +165,12 @@ export default function CoursesPage() {
                   return (
                     <li key={course.id}>
                       <CourseCard
-                        tile={tileFor(course.title)}
+                        course={course}
                         tileVariant={TILE_TONE[index % TILE_TONE.length]}
-                        title={course.title}
-                        desc={`${course.totalChapters} chương · ${course.totalLessons} bài học`}
-                        difficulty={levelToDifficulty(course.level)}
-                        stats={course.durationHours ? [{ label: "giờ", value: course.durationHours }] : []}
-                        completed={enrolled && enrollment.progressPercent >= 100}
-                        href={`/courses/${course.id}`}
+                        state={
+                          enrolled && enrollment.progressPercent >= 100 ? "completed" : undefined
+                        }
+                        progressPercent={enrolled ? enrollment.progressPercent : undefined}
                       />
                     </li>
                   );

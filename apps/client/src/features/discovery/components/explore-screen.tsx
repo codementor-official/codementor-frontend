@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BookOpen, Compass, Dumbbell, FileText, LayoutGrid, Map, Users, type LucideIcon } from "lucide-react";
 import { FilterBar, Select } from "@codementor/ui";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
+import { CourseCard } from "@/components/course-card";
 import { EntityCard } from "@/components/entity-card";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -220,7 +221,7 @@ export function ExploreScreen({ initialQuery = "" }: { initialQuery?: string }) 
         <div className="space-y-7">
           {show("courses") && courses.length > 0 && (
             <DiscoverySection title="Khóa học" icon={BookOpen} href="/courses">
-              {courses.map((course) => <EntityCard key={course.id} tile={initials(course.title)} title={course.title} description={`${course.authorName ?? "CodeMentor"} · ${course.totalLessons} bài học`} tags={[course.level, `${course.durationHours ?? 0} giờ`]} stats={[{ label: "chương", value: course.totalChapters }]} href={`/courses/${course.id}`} />)}
+              {courses.map((course) => <CourseCard key={course.id} course={course} />)}
             </DiscoverySection>
           )}
           {show("roadmaps") && roadmaps.length > 0 && (

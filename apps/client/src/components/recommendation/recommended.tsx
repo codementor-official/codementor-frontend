@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Code2, Map as MapIcon, Newspaper, Users } from "lucide-react";
+import { BookOpen, Code2, Map as MapIcon, Newspaper } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { CourseCard } from "@/components/course-card";
 import { EntityCard } from "@/components/entity-card";
@@ -11,6 +11,7 @@ import { CatalogueEmpty, CatalogueError } from "@/components/ui/catalogue-state"
 import { api } from "@/lib/api";
 import { exerciseDifficulty, levelToDifficulty, FIELD_LABEL } from "@/lib/catalogue/level";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { MAX_PAGE_SIZE, type CourseSummary } from "@/types/catalogue";
 import type { RecommendationList, RecommendedItem } from "@/types/recommendation";
 
 /** Hai chữ cái đầu — recommendation-service trả metadata xếp hạng, không trả ảnh bìa. */
@@ -128,14 +129,20 @@ export function RecommendedExercises() {
   );
 }
 
+/**
+ * Khóa học đề xuất. `recommendation-service` chỉ xếp hạng — nó không mang mô tả, tác giả
+ * hay số chương/bài. Nên lấy thứ tự từ nó rồi hỏi danh mục đúng những id đó, và vẽ bằng
+ * `CourseCard` như mọi lưới khóa học khác: một loại thẻ, một bộ thông tin.
+ */
 export function RecommendedCourses() {
   const { items, personalized, isLoading, error } = useRecommendations(() =>
     api.recommendations.courses(6),
   );
+  const { courses, hydrating } = useHydratedCourses(items);
 
-  if (isLoading) return <CardGridSkeleton />;
+  if (isLoading || hydrating) return <CardGridSkeleton />;
   if (error) return <CatalogueError message={error} />;
-  if (items.length === 0) {
+  if (courses.length === 0) {
     return (
       <CatalogueEmpty
         icon={BookOpen}
@@ -149,23 +156,55 @@ export function RecommendedCourses() {
     <>
       {!personalized && <PopularNotice />}
       <div className={GRID}>
-        {items.map((course, i) => (
+        {courses.map(({ course, reason }, i) => (
           <CourseCard
             key={course.id}
-            tile={tileFor(course.title)}
+            course={course}
             tileVariant={i % 2 === 0 ? "navy" : "primary"}
-            coverImage={placeholderCoverUrl(course.slug)}
-            title={course.title}
-            desc={FIELD_LABEL[course.field ?? ""] ?? "Khóa học"}
-            difficulty={levelToDifficulty(course.level ?? "basic")}
-            tags={course.technologies.slice(0, 3)}
-            note={course.reasons[0]}
-            href={`/courses/${course.id}`}
+            note={reason}
           />
         ))}
       </div>
     </>
   );
+}
+
+/** Đổi danh sách đã xếp hạng lấy bản ghi danh mục đầy đủ, giữ nguyên thứ tự xếp hạng. */
+function useHydratedCourses(items: RecommendedItem[]) {
+  const [courses, setCourses] = useState<{ course: CourseSummary; reason?: string }[]>([]);
+  const [hydrating, setHydrating] = useState(false);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      setCourses([]);
+      return;
+    }
+    let cancelled = false;
+    setHydrating(true);
+    // Cả danh mục rồi ghép theo id, thay vì lọc theo id ở server: `forbidNonWhitelisted`
+    // biến một tham số truy vấn mới thành 400 trên mọi bản backend chưa kịp deploy, và
+    // trang `/courses` vốn đã tải nguyên danh mục theo đúng cách này.
+    api.courses
+      .catalogue({ limit: MAX_PAGE_SIZE })
+      .then((page) => {
+        if (cancelled) return;
+        const byId = new Map(page.items.map((course) => [course.id, course]));
+        setCourses(
+          items.flatMap((item) => {
+            const course = byId.get(item.id);
+            return course ? [{ course, reason: item.reasons[0] }] : [];
+          }),
+        );
+      })
+      // Danh mục hỏng thì dải đề xuất trống, không phải một lưới thẻ thiếu nửa thông tin.
+      .catch(() => !cancelled && setCourses([]))
+      .finally(() => !cancelled && setHydrating(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
+
+  return { courses, hydrating };
 }
 
 /**
@@ -293,56 +332,5 @@ export function RecommendedArticles({
         ))}
       </Card>
     </section>
-  );
-}
-
-/**
- * Nhóm học tập đề xuất. Chỉ nhóm công khai chưa tham gia — service lọc sẵn, ở đây không
- * lọc lại.
- *
- * `popularity` là mức 0..100 so với chính các nhóm trong danh sách này, không phải số
- * thành viên: hiện "40 thành viên" mà không biết nhóm khác bao nhiêu thì con số đó không
- * nói lên điều gì.
- */
-export function RecommendedGroups({ limit = 3 }: { limit?: number }) {
-  const { items, personalized, isLoading, error } = useRecommendations(() =>
-    api.recommendations.groups(limit),
-  );
-
-  if (error) return <CatalogueError message={error} />;
-  if (isLoading) return <CardGridSkeleton />;
-  if (items.length === 0) {
-    return (
-      <CatalogueEmpty
-        icon={Users}
-        title="Chưa có nhóm nào để đề xuất"
-        description="Bạn đã tham gia mọi nhóm công khai đang hoạt động."
-      />
-    );
-  }
-
-  return (
-    <>
-      {!personalized && <PopularNotice />}
-      <div className={GRID}>
-        {items.map((group, i) => (
-          <EntityCard
-            key={group.id}
-            tile={tileFor(group.title)}
-            tileVariant={i % 2 === 0 ? "primary" : "ink"}
-            coverImage={placeholderCoverUrl(group.slug)}
-            kind={{ icon: Users, label: group.tags[0] ?? "Nhóm học tập" }}
-            title={group.title}
-            description=""
-            note={group.reasons[0]}
-            progress={group.popularity}
-            footer={
-              <span className="text-2xs text-text-faint">Mức sôi động so với nhóm khác</span>
-            }
-            href={`/workspace/${group.slug}`}
-          />
-        ))}
-      </div>
-    </>
   );
 }

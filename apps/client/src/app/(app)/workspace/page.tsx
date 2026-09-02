@@ -1,6 +1,6 @@
 import { Users } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { RecommendedGroups } from "@/components/recommendation/recommended";
+import { RecommendedGroups } from "@/components/study-group/recommended-groups";
 import { StudyGroupBoard } from "@/components/study-group/study-group-board";
 
 export default async function WorkspaceListPage({

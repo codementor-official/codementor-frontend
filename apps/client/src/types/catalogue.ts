@@ -178,6 +178,8 @@ export interface CourseEnrollment {
 export interface EnrolledCourse extends CourseEnrollment {
   title: string;
   slug: string;
+  description: string | null;
+  authorName: string | null;
   level: string;
   coverImageUrl: string | null;
   durationHours: number | null;

@@ -1,3 +1,4 @@
+import type { WorkspaceListItem } from "@/features/workspace/types";
 import type {
   StudyGroup,
   StudyGroupRole,
@@ -38,4 +39,49 @@ export function summarizeGroups(groups: StudyGroup[]): StudyGroupSummary {
     joinedCount: groups.length - ownedCount,
     openTaskCount: groups.reduce((sum, g) => sum + g.openTaskCount, 0),
   };
+}
+
+/** Read model → thẻ nhóm. Dùng chung cho danh sách nhóm và dải đề xuất, để hai chỗ
+ * không bao giờ hiển thị cùng một nhóm bằng hai bộ số khác nhau. */
+export function toStudyGroup(group: WorkspaceListItem): StudyGroup {
+  const now = Date.now();
+  return {
+    id: group.slug,
+    tile: initialsOf(group.name),
+    name: group.name,
+    description: group.description ?? "Chưa có mô tả cho nhóm học tập này.",
+    coverUrl: group.coverUrl,
+    coverPosition: group.coverPosition,
+    coverFit: group.coverFit,
+    coverHeight: group.coverHeight,
+    code: "",
+    topic: group.topic ?? "Chưa phân loại",
+    memberCount: group.memberCount,
+    memberPreview: group.memberPreview.map((member) => ({
+      id: member.id,
+      initials: initialsOf(member.displayName),
+      name: member.displayName,
+    })),
+    openTaskCount: group.openTaskCount,
+    progressPercent: group.progressPercent,
+    unreadCount: group.unreadCount,
+    lastActiveMinutesAgo: Math.max(
+      0,
+      Math.floor((now - new Date(group.lastActivityAt).getTime()) / 60_000),
+    ),
+    role: group.role ?? "guest",
+    ownerName: group.owner.displayName,
+  };
+}
+
+export function initialsOf(value: string): string {
+  return (
+    value
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0] ?? "")
+      .join("")
+      .toUpperCase() || "NH"
+  );
 }

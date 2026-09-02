@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { FilterBar, Select } from "@codementor/ui";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
-import { EntityCard } from "@/components/entity-card";
+import { CourseCard } from "@/components/course-card";
 import { PageHeader } from "@/components/page-header";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import { ProblemRow } from "@/components/problem-row";
@@ -28,7 +28,6 @@ import type { Difficulty } from "@/components/ui/badge";
 import type { LearningLeaderboardEntry, UserLearningPreferences } from "@/features/account/types";
 import type { WorkspaceListItem } from "@/features/workspace/types";
 import { api } from "@/lib/api";
-import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import type { ArticleSummary, CourseSummary, ExerciseSummary } from "@/types/catalogue";
 
 type DifficultyFilter = Difficulty | "all";
@@ -59,12 +58,6 @@ const FIELD_LABELS: Record<string, string> = {
   other: "Lập trình",
 };
 
-function courseDifficulty(level: string): Difficulty {
-  if (level === "none" || level === "basic") return "Cơ bản";
-  if (level === "intermediate") return "Trung bình";
-  return "Nâng cao";
-}
-
 function exerciseDifficulty(value: ExerciseSummary["difficulty"]): Difficulty {
   return value === "easy" ? "Cơ bản" : value === "medium" ? "Trung bình" : "Nâng cao";
 }
@@ -75,10 +68,6 @@ function difficultyParam(value: DifficultyFilter) {
 
 function courseLevelParam(value: DifficultyFilter) {
   return value === "Cơ bản" ? "basic" : value === "Trung bình" ? "intermediate" : value === "Nâng cao" ? "experienced" : undefined;
-}
-
-function initials(value: string) {
-  return value.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
 
 function formatXp(value: number) {
@@ -197,7 +186,7 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
           {showCourses && <section className="mb-6">
             <SectionTitle icon={Flame} title="Khóa học đang nổi" href="/courses" />
             {courses.length === 0 ? <EmptySearch label="khóa học" query={search} /> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {courses.map((course, index) => <EntityCard key={course.id} tile={initials(course.title)} tileVariant={index % 2 ? "primary" : "ink"} coverImage={course.coverImageUrl ?? placeholderCoverUrl(course.slug)} kind={{ icon: BookOpen, label: course.authorName ?? "CodeMentor" }} title={course.title} description={course.description ?? "Khóa học có cấu trúc trên CodeMentor."} difficulty={courseDifficulty(course.level)} stats={[{ label: "chương", value: course.totalChapters }, { label: "bài", value: course.totalLessons }, { label: "giờ", value: course.durationHours ?? 0 }]} href={`/courses/${course.id}`} />)}
+              {courses.map((course, index) => <CourseCard key={course.id} course={course} tileVariant={index % 2 ? "primary" : "navy"} />)}
             </div>}
           </section>}
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Loader2, Lock, Map as MapIcon, User } from "lucide-react";
+import { Loader2, Map as MapIcon } from "lucide-react";
 import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
@@ -11,17 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SaveButton } from "@/features/saved/components/save-button";
 import { ReportButton } from "@/features/reports/report-button";
-import { EntityCard } from "@/components/entity-card";
+import { CourseCard } from "@/components/course-card";
 import { api } from "@/lib/api";
-import { placeholderCoverUrl } from "@/lib/placeholder-image";
-import { levelToDifficulty } from "@/lib/catalogue/level";
 import type { CourseDetail, RoadmapDetail, RoadmapProgress } from "@/types/catalogue";
-
-/** Two initials from the title — the backend sends no thumbnail for a course. */
-function tileFor(title: string): string {
-  const words = title.trim().split(/\s+/);
-  return (words[0]?.[0] ?? "?").concat(words[1]?.[0] ?? "").toUpperCase();
-}
 
 const LEVEL_LABEL: Record<string, string> = {
   none: "Chưa có nền",
@@ -184,33 +176,28 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                       {course.position}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <EntityCard
+                      <CourseCard
                         layout="horizontal"
-                        tile={tileFor(course.title)}
-                        coverImage={detail?.coverImageUrl || placeholderCoverUrl(course.slug)}
-                        kind={{ icon: User, label: detail?.authorName ?? "CodeMentor" }}
-                        title={course.title}
-                        description={detail?.description ?? "Chưa có mô tả cho khóa học này."}
-                        difficulty={detail ? levelToDifficulty(detail.level) : undefined}
+                        // Mô tả, tác giả, số chương/bài đến từ `courseDetails`, không từ
+                        // payload lộ trình — `RoadmapDetail.courses` chỉ mang id/vị
+                        // trí/tiêu đề/thời lượng.
+                        course={{
+                          ...detail,
+                          id: course.courseId,
+                          slug: course.slug,
+                          title: course.title,
+                          durationHours: course.durationHours,
+                        }}
                         tags={course.isOptional ? ["Tự chọn"] : []}
-                        badge={
-                          !available ? (
-                            <Badge tone="neutral"><Lock className="h-3 w-3" /> Đang khóa</Badge>
-                          ) : courseProgress?.enrollmentStatus === "completed" ? (
-                            <Badge tone="success"><CheckCircle2 className="h-3 w-3" /> Hoàn thành</Badge>
-                          ) : undefined
+                        state={
+                          !available
+                            ? "locked"
+                            : courseProgress?.enrollmentStatus === "completed"
+                              ? "completed"
+                              : undefined
                         }
-                        // Số chương/bài đến từ `courseDetails`, không từ payload lộ trình —
-                        // `RoadmapDetail.courses` chỉ mang id/vị trí/tiêu đề/thời lượng.
-                        stats={[
-                          ...(detail ? [{ label: "chương", value: detail.totalChapters }] : []),
-                          ...(detail ? [{ label: "bài học", value: detail.totalLessons }] : []),
-                          ...(course.durationHours !== null
-                            ? [{ label: "giờ", value: course.durationHours }]
-                            : []),
-                        ]}
-                        progress={courseProgress?.progressPercent}
-                        href={available ? `/courses/${course.courseId}` : undefined}
+                        progressPercent={courseProgress?.progressPercent}
+                        href={available ? `/courses/${course.courseId}` : null}
                       />
                     </div>
                   </li>

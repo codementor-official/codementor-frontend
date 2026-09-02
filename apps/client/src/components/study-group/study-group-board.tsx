@@ -13,10 +13,8 @@ import { ApiClientError } from "@codementor/api-client";
 import { FilterBar, SegmentedTabs, StatStrip, useToast } from "@codementor/ui";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import type {
-  WorkspaceListItem,
-  WorkspaceSummary,
-} from "@/features/workspace/types";
+import { toStudyGroup } from "@/lib/study-group/study-group-stats";
+import type { WorkspaceSummary } from "@/features/workspace/types";
 import type { StudyGroup } from "@/types/study-group";
 import { StudyGroupActions } from "./study-group-actions";
 import { StudyGroupCard } from "./study-group-card";
@@ -356,49 +354,6 @@ export function StudyGroupBoard({ initialScope = "mine" }: { initialScope?: Scop
         </nav>
       )}
     </div>
-  );
-}
-
-function toStudyGroup(group: WorkspaceListItem): StudyGroup {
-  const now = Date.now();
-  return {
-    id: group.slug,
-    tile: initialsOf(group.name),
-    name: group.name,
-    description: group.description ?? "Chưa có mô tả cho nhóm học tập này.",
-    coverUrl: group.coverUrl,
-    coverPosition: group.coverPosition,
-    coverFit: group.coverFit,
-    coverHeight: group.coverHeight,
-    code: "",
-    topic: group.topic ?? "Chưa phân loại",
-    memberCount: group.memberCount,
-    memberPreview: group.memberPreview.map((member) => ({
-      id: member.id,
-      initials: initialsOf(member.displayName),
-      name: member.displayName,
-    })),
-    openTaskCount: group.openTaskCount,
-    progressPercent: group.progressPercent,
-    unreadCount: group.unreadCount,
-    lastActiveMinutesAgo: Math.max(
-      0,
-      Math.floor((now - new Date(group.lastActivityAt).getTime()) / 60_000),
-    ),
-    role: group.role ?? "guest",
-    ownerName: group.owner.displayName,
-  };
-}
-
-function initialsOf(value: string): string {
-  return (
-    value
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part[0] ?? "")
-      .join("")
-      .toUpperCase() || "NH"
   );
 }
 
