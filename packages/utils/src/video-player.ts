@@ -258,3 +258,31 @@ function attachVimeo(element: HTMLIFrameElement, handlers: PlayerHandlers): Vide
     },
   };
 }
+
+/**
+ * Thời lượng của một tệp video CHƯA tải lên, đọc từ chính tệp trong máy.
+ *
+ * Đây là đường DUY NHẤT đo được thời lượng của video vừa tải lên: `publicUrl` mà kho trả
+ * về là URL thô không ký, nên trình duyệt chỉ tải lại được nó khi bucket cho đọc công
+ * khai. Bucket riêng tư thì thẻ `<video>` xem trước nhận 403, `loadedmetadata` không bao
+ * giờ bắn, và ô "Thời lượng (phút)" đứng im. Tệp thì luôn nằm sẵn trong tay người soạn.
+ *
+ * `null` khi trình duyệt không giải mã được — người gọi phải xử lý được "không biết".
+ */
+export function fileDuration(file: Blob): Promise<number | null> {
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const probe = document.createElement("video");
+    // Không gắn vào DOM: `loadedmetadata` vẫn bắn trên phần tử rời, và một thẻ <video>
+    // vô hình nằm trong cây là thứ không ai nhớ để dọn.
+    const done = (seconds: number | null) => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(seconds);
+    };
+    probe.preload = "metadata";
+    probe.onloadedmetadata = () =>
+      done(Number.isFinite(probe.duration) && probe.duration > 0 ? probe.duration : null);
+    probe.onerror = () => done(null);
+    probe.src = objectUrl;
+  });
+}

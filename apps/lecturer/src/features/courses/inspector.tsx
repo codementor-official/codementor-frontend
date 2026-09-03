@@ -14,6 +14,7 @@ import {
 import { RichTextEditor } from "@codementor/editor";
 import {
   attachPlayer,
+  fileDuration,
   formatDuration,
   integer,
   lessonDurationError,
@@ -654,6 +655,11 @@ function VideoSourcePicker({
 
     setPercent(0);
     try {
+      // Đo TRƯỚC khi tải lên, từ tệp trong máy — xem `fileDuration`. Đợi khung xem trước
+      // đọc hộ là phụ thuộc vào việc bucket có cho đọc công khai hay không, và bucket
+      // riêng tư thì ô "Thời lượng (phút)" sẽ đứng im mãi.
+      const seconds = await fileDuration(file);
+
       // Bài chưa lưu lần nào chưa có id thật, mà khoá đối tượng lại mang id đó — lưu cây
       // trước, đúng như nút "Lưu nội dung bài" vẫn làm.
       const id = lessonId ?? (await ensureLessonId());
@@ -688,6 +694,9 @@ function VideoSourcePicker({
       });
 
       onChange(signed.publicUrl);
+      // SAU `onChange`: đổi nguồn video sẽ xoá thời lượng cũ (xem `changeVideoUrl`), nên
+      // ghi con số mới trước nó là ghi vào chỗ sắp bị dọn.
+      if (seconds !== null) onDuration(seconds);
       toast.success("Đã tải video lên. Bấm “Lưu nội dung bài” để gắn vào bài học.");
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Tải video lên thất bại");
@@ -770,7 +779,22 @@ function VideoSourcePicker({
       </Field>
 
       <div>
-        <p className="mb-1.5 text-sm font-medium">Xem trước</p>
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="text-sm font-medium">Xem trước</p>
+          {value.trim() !== "" && (
+            <button
+              className="text-xs font-semibold text-destructive hover:underline disabled:opacity-50"
+              disabled={disabled || percent !== null}
+              // Chỉ bỏ THAM CHIẾU tới video, tệp vẫn nằm lại trong kho: chưa có đường xoá
+              // đối tượng nào ở backend. Đổi lại, bấm nhầm không mất tệp của người khác
+              // đang trỏ tới cùng khoá đó.
+              onClick={() => onChange("")}
+              type="button"
+            >
+              Xóa video
+            </button>
+          )}
+        </div>
         {resolved === null ? (
           <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
             {value.trim() ? "URL không hợp lệ." : "Chưa có video."}
