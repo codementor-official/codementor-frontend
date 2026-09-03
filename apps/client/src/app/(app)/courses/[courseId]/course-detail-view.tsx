@@ -27,6 +27,7 @@ import { StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
+import { RecommendedCourses } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { consumeCourseCelebration, markCourseCelebrated } from "@/lib/course-celebration";
 import { useAuth } from "@/providers/auth-provider";
@@ -433,6 +434,12 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
             </dl>
           </Card>
         </aside>
+      </div>
+
+      {/* `excludeId`: service chỉ loại khóa học viên ĐÃ ghi danh, nên trang chi tiết của
+          một khóa chưa ghi danh sẽ tự đề xuất chính nó. */}
+      <div className="mt-8">
+        <RecommendedCourses excludeId={courseId} title="Khóa học liên quan" />
       </div>
     </div>
   );

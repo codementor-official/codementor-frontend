@@ -86,32 +86,67 @@ function PopularNotice() {
 }
 
 /**
+ * Khung chung của một dải đề xuất: tiêu đề, lời nhắc khi chưa cá nhân hóa, phần thân.
+ *
+ * Tiêu đề phải nằm TRONG component chứ không ở nơi gọi, vì chữ đúng phụ thuộc vào cờ
+ * `personalized` mà chỉ ở đây mới biết — "dành cho bạn" khi có hồ sơ, "phổ biến" khi không.
+ * Để nơi gọi tự viết tiêu đề là để nó hứa một điều nó không kiểm chứng được.
+ */
+function RecommendationFrame({
+  icon: Icon,
+  title,
+  personalized,
+  children,
+}: {
+  icon: typeof Code2;
+  title: string;
+  personalized: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="mb-3 flex items-center gap-1.5 text-base font-bold text-navy">
+        <Icon className="h-4 w-4 text-primary" /> {title}
+      </h2>
+      {!personalized && <PopularNotice />}
+      {children}
+    </section>
+  );
+}
+
+/**
  * Ba khối đề xuất. Trước đây dashboard đọc `src/data/sample-dashboard.ts`, nên ai đăng
  * nhập cũng thấy đúng một danh sách.
  *
  * Tải phía trình duyệt như các trang duyệt nội dung: token nằm trong cookie mã hoá mà
  * server component không đọc được, còn `/api/backend/*` thì gắn hộ.
+ *
+ * Rỗng thì biến mất hoàn toàn thay vì hiện khung "chưa có gì": cả ba đứng ĐẦU một trang
+ * danh mục vốn đã có trạng thái rỗng riêng, nên hai khung rỗng chồng lên nhau chỉ nói một
+ * chuyện hai lần. Lỗi thì vẫn hiện — một route trả 404 vì service chạy bản dist cũ trông y
+ * hệt "chưa có gì để đề xuất" nếu nuốt mất.
  */
-export function RecommendedExercises() {
+export function RecommendedExercises({
+  limit = 5,
+  title,
+}: {
+  limit?: number;
+  title?: string;
+} = {}) {
   const { items, personalized, isLoading, error } = useRecommendations(() =>
-    api.recommendations.exercises(5),
+    api.recommendations.exercises(limit),
   );
 
   if (isLoading) return <Card className="h-52 animate-pulse" />;
   if (error) return <CatalogueError message={error} />;
-  if (items.length === 0) {
-    return (
-      <CatalogueEmpty
-        icon={Code2}
-        title="Chưa có bài luyện tập nào để đề xuất"
-        description="Ngân hàng bài tập chưa có bài nào công khai."
-      />
-    );
-  }
+  if (items.length === 0) return null;
 
   return (
-    <>
-      {!personalized && <PopularNotice />}
+    <RecommendationFrame
+      icon={Code2}
+      title={title ?? (personalized ? "Bài luyện tập dành cho bạn" : "Bài luyện tập phổ biến")}
+      personalized={personalized}
+    >
       <Card className="overflow-hidden">
         {items.map((item, i) => (
           <ProblemRow
@@ -125,7 +160,7 @@ export function RecommendedExercises() {
           />
         ))}
       </Card>
-    </>
+    </RecommendationFrame>
   );
 }
 
@@ -134,29 +169,35 @@ export function RecommendedExercises() {
  * hay số chương/bài. Nên lấy thứ tự từ nó rồi hỏi danh mục đúng những id đó, và vẽ bằng
  * `CourseCard` như mọi lưới khóa học khác: một loại thẻ, một bộ thông tin.
  */
-export function RecommendedCourses() {
+export function RecommendedCourses({
+  excludeId,
+  limit = 6,
+  title,
+}: {
+  /** Khóa học đang mở trang chi tiết của nó — service không tự loại khóa chưa ghi danh. */
+  excludeId?: string;
+  limit?: number;
+  title?: string;
+} = {}) {
   const { items, personalized, isLoading, error } = useRecommendations(() =>
-    api.recommendations.courses(6),
+    api.recommendations.courses(limit),
   );
   const { courses, hydrating } = useHydratedCourses(items);
 
   if (isLoading || hydrating) return <CardGridSkeleton />;
   if (error) return <CatalogueError message={error} />;
-  if (courses.length === 0) {
-    return (
-      <CatalogueEmpty
-        icon={BookOpen}
-        title="Chưa có khóa học nào để đề xuất"
-        description="Chưa có khóa học nào được xuất bản."
-      />
-    );
-  }
+
+  const visible = courses.filter(({ course }) => course.id !== excludeId).slice(0, 3);
+  if (visible.length === 0) return null;
 
   return (
-    <>
-      {!personalized && <PopularNotice />}
+    <RecommendationFrame
+      icon={BookOpen}
+      title={title ?? (personalized ? "Khóa học dành cho bạn" : "Khóa học phổ biến")}
+      personalized={personalized}
+    >
       <div className={GRID}>
-        {courses.map(({ course, reason }, i) => (
+        {visible.map(({ course, reason }, i) => (
           <CourseCard
             key={course.id}
             course={course}
@@ -165,7 +206,7 @@ export function RecommendedCourses() {
           />
         ))}
       </div>
-    </>
+    </RecommendationFrame>
   );
 }
 
@@ -212,28 +253,31 @@ function useHydratedCourses(items: RecommendedItem[]) {
  * chỉ loại những lộ trình đã ghi danh, nên trang chi tiết của một lộ trình chưa ghi danh
  * sẽ tự đề xuất chính nó.
  */
-export function RecommendedRoadmaps({ excludeId }: { excludeId?: string }) {
+export function RecommendedRoadmaps({
+  excludeId,
+  limit = 6,
+  title,
+}: {
+  excludeId?: string;
+  limit?: number;
+  title?: string;
+} = {}) {
   const { items, personalized, isLoading, error } = useRecommendations(() =>
-    api.recommendations.roadmaps(6),
+    api.recommendations.roadmaps(limit),
   );
 
   if (isLoading) return <CardGridSkeleton />;
   if (error) return <CatalogueError message={error} />;
 
   const visible = items.filter((item) => item.id !== excludeId).slice(0, 3);
-  if (visible.length === 0) {
-    return (
-      <CatalogueEmpty
-        icon={MapIcon}
-        title="Chưa có lộ trình nào khác để đề xuất"
-        description="Bạn đã ghi danh mọi lộ trình đã xuất bản."
-      />
-    );
-  }
+  if (visible.length === 0) return null;
 
   return (
-    <>
-      {!personalized && <PopularNotice />}
+    <RecommendationFrame
+      icon={MapIcon}
+      title={title ?? (personalized ? "Lộ trình dành cho bạn" : "Lộ trình phổ biến")}
+      personalized={personalized}
+    >
       <div className={GRID}>
         {visible.map((roadmap) => (
           <EntityCard
@@ -251,7 +295,7 @@ export function RecommendedRoadmaps({ excludeId }: { excludeId?: string }) {
           />
         ))}
       </div>
-    </>
+    </RecommendationFrame>
   );
 }
 

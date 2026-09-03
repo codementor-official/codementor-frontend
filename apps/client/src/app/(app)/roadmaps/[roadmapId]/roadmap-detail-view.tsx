@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { SaveButton } from "@/features/saved/components/save-button";
 import { ReportButton } from "@/features/reports/report-button";
 import { CourseCard } from "@/components/course-card";
+import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import type { CourseDetail, RoadmapDetail, RoadmapProgress } from "@/types/catalogue";
 
@@ -233,6 +234,12 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
             )}
           </Card>
         </aside>
+      </div>
+
+      {/* `excludeId`: service chỉ loại lộ trình học viên ĐÃ ghi danh, nên trang chi tiết
+          của một lộ trình chưa ghi danh sẽ tự đề xuất chính nó. */}
+      <div className="mt-8">
+        <RecommendedRoadmaps excludeId={roadmapId} title="Lộ trình liên quan" />
       </div>
     </div>
   );

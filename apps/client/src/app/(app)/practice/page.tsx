@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { StreakCard } from "@/components/streak-card";
 import { Card } from "@/components/ui/card";
 import { CatalogueError } from "@/components/ui/catalogue-state";
+import { RecommendedExercises } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { DIFFICULTY_OPTIONS, exerciseDifficulty } from "@/lib/catalogue/level";
 import type { Difficulty } from "@/components/ui/badge";
@@ -144,6 +145,12 @@ export default function PracticePage() {
           { label: "Bài trên trang", value: items.length },
         ]}
       />
+
+      {/* Trên bộ lọc độ khó: gợi ý là câu trả lời cho "làm bài nào tiếp", còn bộ lọc là
+          công cụ cho người đã tự biết mình muốn gì. */}
+      <div className="mb-6">
+        <RecommendedExercises />
+      </div>
 
       <div className="mb-4">
         <SegmentedTabs

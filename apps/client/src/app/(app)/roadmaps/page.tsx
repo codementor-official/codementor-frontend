@@ -11,6 +11,7 @@ import {
   CatalogueError,
   CatalogueSkeleton,
 } from "@/components/ui/catalogue-state";
+import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { useCatalogue } from "@/hooks/use-catalogue";
 import { api } from "@/lib/api";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
@@ -91,6 +92,10 @@ export default function RoadmapsPage() {
         title="Lộ trình"
         subtitle="Mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp, sắp xếp sẵn thứ tự để bạn không phải tự mò mẫm nên học gì trước."
       />
+
+      <div className="mb-6">
+        <RecommendedRoadmaps />
+      </div>
 
       <StatStrip
         className="mb-5"

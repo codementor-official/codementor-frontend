@@ -22,6 +22,11 @@ import { CourseCard } from "@/components/course-card";
 import { PageHeader } from "@/components/page-header";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import { ProblemRow } from "@/components/problem-row";
+import {
+  RecommendedArticles,
+  RecommendedCourses,
+  RecommendedExercises,
+} from "@/components/recommendation/recommended";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Difficulty } from "@/components/ui/badge";
@@ -134,6 +139,11 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  // Đề xuất chỉ có nghĩa khi học viên đang DUYỆT. Vừa gõ tìm kiếm hay chọn độ khó là họ
+  // đã nói rõ muốn gì, và `recommendation-service` không nhận tham số tìm kiếm nào — dải
+  // "dành cho bạn" lúc đó sẽ mâu thuẫn với chính bộ lọc ngay bên trên nó.
+  const browsing = debouncedSearch === "" && difficulty === "all";
+
   const showCourses = category === "all" || category === "courses";
   const showProblems = category === "all" || category === "problems";
   const showArticles = category === "all" || category === "articles";
@@ -183,6 +193,16 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
       {error && <Card className="mb-5 flex items-center justify-between gap-4 border-warning/40 p-4 text-sm text-text-muted"><span>{error}</span><Button variant="outline" size="sm" onClick={() => void load()}>Thử lại</Button></Card>}
       {loading ? <ExploreLandingSkeleton /> : (
         <>
+          {/* Cá nhân hóa đứng TRÊN "đang nổi": trang này mở ra để tìm thứ đáng học tiếp,
+              và thứ hợp với hồ sơ học viên trả lời câu đó sát hơn bảng phổ biến chung. */}
+          {browsing && (
+            <div className="mb-6 flex flex-col gap-6">
+              {showCourses && <RecommendedCourses />}
+              {showProblems && <RecommendedExercises />}
+              {showArticles && <RecommendedArticles limit={5} />}
+            </div>
+          )}
+
           {showCourses && <section className="mb-6">
             <SectionTitle icon={Flame} title="Khóa học đang nổi" href="/courses" />
             {courses.length === 0 ? <EmptySearch label="khóa học" query={search} /> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
