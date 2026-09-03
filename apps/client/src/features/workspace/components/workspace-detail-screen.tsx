@@ -129,7 +129,8 @@ const PERMISSION_LABELS: {
   {
     key: "edit_doc",
     label: "Sửa mọi tài liệu",
-    description: "Sửa metadata tài liệu của mọi thành viên, không bao gồm duyệt hoặc xóa.",
+    description:
+      "Sửa metadata tài liệu của mọi thành viên, không bao gồm duyệt hoặc xóa.",
   },
   {
     key: "approve_doc",
@@ -193,7 +194,8 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const searchParams = useSearchParams();
   const toast = useToast();
   const [detail, setDetail] = useState<WorkspaceDetail | null>(null);
-  const [publicDetail, setPublicDetail] = useState<PublicWorkspaceDetail | null>(null);
+  const [publicDetail, setPublicDetail] =
+    useState<PublicWorkspaceDetail | null>(null);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [overview, setOverview] = useState<WorkspaceOverview | null>(null);
   const [tab, setTab] = useState<Tab>(() =>
@@ -267,7 +269,9 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         setDetail(null);
         setPublicDetail(publicWorkspace);
       } catch {
-        setError(messageOf(cause, "Không tải được nhóm học tập. Vui lòng thử lại."));
+        setError(
+          messageOf(cause, "Không tải được nhóm học tập. Vui lòng thử lại."),
+        );
       }
     } finally {
       setLoading(false);
@@ -400,7 +404,11 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
                 toast.success("Bạn đã tham gia nhóm học tập");
                 await load();
               } else {
-                setPublicDetail((current) => current ? { ...current, joinRequestStatus: "pending" } : current);
+                setPublicDetail((current) =>
+                  current
+                    ? { ...current, joinRequestStatus: "pending" }
+                    : current,
+                );
                 toast.success("Đã gửi yêu cầu tham gia");
               }
             } catch (cause) {
@@ -459,7 +467,12 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           {ROLE_LABEL[detail.currentMembership.role]}
         </Badge>
         {!isOwner && (
-          <ReportButton compact targetType="WORKSPACE" targetId={detail.id} targetRef={detail.slug} />
+          <ReportButton
+            compact
+            targetType="WORKSPACE"
+            targetId={detail.id}
+            targetRef={detail.slug}
+          />
         )}
         {!isOwner && (
           <Button
@@ -475,41 +488,46 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
 
       <div className="scrollbar-none mb-5 overflow-x-auto border-b border-border">
         <nav className="flex min-w-max gap-1" aria-label="Mục của nhóm">
-          {visibleTabs.map(
-            ({ key: value, label, icon: Icon }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => selectTab(value)}
-                aria-current={activeTab === value ? "page" : undefined}
-                className={`inline-flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
-                  activeTab === value
-                    ? "border-primary text-navy"
-                    : "border-transparent text-text-muted hover:border-border hover:text-navy"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-                {value === "chat" && chat.unreadCount > 0 && (
-                  <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">
-                    {Math.min(chat.unreadCount, 99)}
-                  </span>
-                )}
-                {value === "members" && joinRequestCount > 0 && (
-                  <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">
-                    {Math.min(joinRequestCount, 99)}
-                  </span>
-                )}
-              </button>
-            ),
-          )}
+          {visibleTabs.map(({ key: value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => selectTab(value)}
+              aria-current={activeTab === value ? "page" : undefined}
+              className={`inline-flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === value
+                  ? "border-primary text-navy"
+                  : "border-transparent text-text-muted hover:border-border hover:text-navy"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+              {value === "chat" && chat.unreadCount > 0 && (
+                <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">
+                  {Math.min(chat.unreadCount, 99)}
+                </span>
+              )}
+              {value === "members" && joinRequestCount > 0 && (
+                <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">
+                  {Math.min(joinRequestCount, 99)}
+                </span>
+              )}
+            </button>
+          ))}
         </nav>
       </div>
 
-      {activeTab === "overview" && <Overview detail={detail} overview={overview} />}
+      {activeTab === "overview" && (
+        <Overview detail={detail} overview={overview} />
+      )}
       {activeTab === "documents" && <WorkspaceDocumentsTab detail={detail} />}
       {activeTab === "exercises" && (
-        <WorkspaceExercisesTab key={searchParams.get("groupExerciseId") ?? "list"} detail={detail} members={members} initialExerciseId={searchParams.get("groupExerciseId")} />
+        <WorkspaceExercisesTab
+          key={searchParams.get("groupExerciseId") ?? "list"}
+          detail={detail}
+          members={members}
+          initialExerciseId={searchParams.get("groupExerciseId")}
+        />
       )}
       {activeTab === "members" && (
         <Members
@@ -594,37 +612,77 @@ function PublicWorkspaceView({
   return (
     <div>
       <BreadcrumbTitle slug={workspace.slug} title={workspace.name} />
-      <PageHeader icon={Users} title={workspace.name} subtitle="Thông tin công khai của nhóm học tập" />
+      <PageHeader
+        icon={Users}
+        title={workspace.name}
+        subtitle="Thông tin công khai của nhóm học tập"
+      />
       <Card className="overflow-hidden p-0">
         <div
           className="flex min-h-56 items-end bg-navy bg-cover bg-center p-6"
-          style={workspace.coverUrl ? { backgroundImage: `linear-gradient(to top, rgb(0 0 0 / 72%), rgb(0 0 0 / 8%)), url(${workspace.coverUrl})` } : undefined}
+          style={
+            workspace.coverUrl
+              ? {
+                  backgroundImage: `linear-gradient(to top, rgb(0 0 0 / 72%), rgb(0 0 0 / 8%)), url(${workspace.coverUrl})`,
+                }
+              : undefined
+          }
         >
           <div className="max-w-3xl text-on-ink-fixed">
             <Badge tone="neutral">{workspace.topic ?? "Nhóm học tập"}</Badge>
             <h1 className="mt-3 text-2xl font-bold">{workspace.name}</h1>
-            <p className="mt-2 text-sm leading-6 opacity-80">{workspace.description ?? "Nhóm chưa có phần giới thiệu."}</p>
+            <p className="mt-2 text-sm leading-6 opacity-80">
+              {workspace.description ?? "Nhóm chưa có phần giới thiệu."}
+            </p>
           </div>
         </div>
         <div className="grid gap-5 p-6 md:grid-cols-[1fr_auto] md:items-center">
           <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-text-muted">
-            <span><b className="text-navy">{workspace.memberCount}</b> thành viên</span>
-            <span>Chủ nhóm: <b className="text-navy">{workspace.owner.displayName}</b></span>
-            <span>Tham gia: <b className="text-navy">{workspace.joinPolicy === "open" ? "Tự do" : workspace.joinPolicy === "approval" ? "Cần duyệt" : "Chỉ mã mời"}</b></span>
+            <span>
+              <b className="text-navy">{workspace.memberCount}</b> thành viên
+            </span>
+            <span>
+              Chủ nhóm:{" "}
+              <b className="text-navy">{workspace.owner.displayName}</b>
+            </span>
+            <span>
+              Tham gia:{" "}
+              <b className="text-navy">
+                {workspace.joinPolicy === "open"
+                  ? "Tự do"
+                  : workspace.joinPolicy === "approval"
+                    ? "Cần duyệt"
+                    : "Chỉ mã mời"}
+              </b>
+            </span>
           </div>
           <div className="flex items-center gap-2">
-            <ReportButton compact targetType="WORKSPACE" targetId={workspace.id} targetRef={workspace.slug} />
+            <ReportButton
+              compact
+              targetType="WORKSPACE"
+              targetId={workspace.id}
+              targetRef={workspace.slug}
+            />
             <Button
               onClick={() => void onJoin()}
               disabled={pending || requestPending || inviteOnly}
             >
-              {requestPending ? "Đang chờ duyệt" : inviteOnly ? "Cần mã mời" : pending ? "Đang xử lý..." : workspace.joinPolicy === "open" ? "Tham gia nhóm" : "Gửi yêu cầu tham gia"}
+              {requestPending
+                ? "Đang chờ duyệt"
+                : inviteOnly
+                  ? "Cần mã mời"
+                  : pending
+                    ? "Đang xử lý..."
+                    : workspace.joinPolicy === "open"
+                      ? "Tham gia nhóm"
+                      : "Gửi yêu cầu tham gia"}
             </Button>
           </div>
         </div>
       </Card>
       <Card className="mt-5 border-dashed p-6 text-center text-xs text-text-muted">
-        Chat, tài liệu riêng, bài nộp, danh sách thành viên và cài đặt chỉ mở sau khi bạn tham gia nhóm.
+        Chat, tài liệu riêng, bài nộp, danh sách thành viên và cài đặt chỉ mở
+        sau khi bạn tham gia nhóm.
       </Card>
     </div>
   );
@@ -2047,28 +2105,27 @@ function Members({
                           {ROLE_LABEL[member.role]}
                         </Badge>
                         {canManage && member.role !== "owner" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={pending}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                void onChangeRole(
-                                  member,
-                                  member.role === "deputy"
-                                    ? "member"
-                                    : "deputy",
-                                );
-                              }}
-                            >
-                              {member.role === "deputy"
-                                ? "Hạ xuống thành viên"
-                                : "Đặt làm Phó nhóm"}
-                            </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={pending}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void onChangeRole(
+                                member,
+                                member.role === "deputy" ? "member" : "deputy",
+                              );
+                            }}
+                          >
+                            {member.role === "deputy"
+                              ? "Hạ xuống thành viên"
+                              : "Đặt làm Phó nhóm"}
+                          </Button>
                         )}
                         {canRemoveMembers &&
                           member.role !== "owner" &&
-                          (viewerRole === "owner" || member.role === "member") && (
+                          (viewerRole === "owner" ||
+                            member.role === "member") && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -2434,7 +2491,9 @@ function SettingsPanel({
   const [description, setDescription] = useState(detail.description ?? "");
   const [topic, setTopic] = useState(detail.topic ?? "");
   const [privacy, setPrivacy] = useState(detail.privacy);
-  const [joinPolicy, setJoinPolicy] = useState<"open" | "approval" | "invite_only">(
+  const [joinPolicy, setJoinPolicy] = useState<
+    "open" | "approval" | "invite_only"
+  >(
     detail.privacy === "public" && detail.joinPolicy === "invite_only"
       ? "approval"
       : detail.joinPolicy,
@@ -2549,182 +2608,181 @@ function SettingsPanel({
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Card className="p-5">
-        <div className="mb-4 flex items-center gap-2">
-          <Settings className="h-4 w-4 text-text-faint" />
-          <h2 className="text-sm font-bold text-navy">Thông tin nhóm</h2>
-        </div>
-        <form onSubmit={save} className="space-y-3">
-          <label className="block text-xs font-medium text-text-muted">
-            Tên nhóm
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              required
-              maxLength={120}
-              className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
-            />
-          </label>
-          <label className="block text-xs font-medium text-text-muted">
-            Mô tả
-            <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              rows={4}
-              maxLength={2000}
-              className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
-            />
-          </label>
-          <label className="block text-xs font-medium text-text-muted">
-            Chủ đề
-            <input
-              value={topic}
-              onChange={(event) => setTopic(event.target.value)}
-              maxLength={100}
-              className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
-            />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs font-medium text-text-muted">
-              Hiển thị
-              <Select
-                label="Hiển thị nhóm"
-                className="w-full"
-                value={privacy}
-                onChange={changePrivacy}
-                options={[
-                  { value: "public", label: "Công khai" },
-                  { value: "private", label: "Riêng tư" },
-                ]}
-              />
-            </label>
-            <label className="block text-xs font-medium text-text-muted">
-              Cách tham gia
-              <Select
-                label="Cách tham gia"
-                className="w-full"
-                value={joinPolicy}
-                onChange={(value) =>
-                  setJoinPolicy(value as "open" | "approval" | "invite_only")
-                }
-                options={[
-                  { value: "open", label: "Tham gia ngay" },
-                  { value: "approval", label: "Cần duyệt" },
-                  ...(privacy === "private"
-                    ? [{ value: "invite_only", label: "Chỉ bằng mã mời" }]
-                    : []),
-                ]}
-              />
-            </label>
+    <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="space-y-4">
+        <Card className="p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <Settings className="h-4 w-4 text-text-faint" />
+            <h2 className="text-sm font-bold text-navy">Thông tin nhóm</h2>
           </div>
-          <div className="overflow-hidden rounded-lg border border-border-soft">
-            <div
-              className={`flex items-center justify-center bg-navy bg-no-repeat transition-[height] ${
-                coverHeight === "compact"
-                  ? "h-24"
-                  : coverHeight === "tall"
-                    ? "h-48"
-                    : "h-32"
-              }`}
-              style={
-                coverPreview
-                  ? {
-                      backgroundImage: `url(${coverPreview})`,
-                      backgroundPosition: coverPosition,
-                      backgroundSize: coverFit,
-                    }
-                  : undefined
-              }
-            >
-              {coverPreview ? (
-                <span className="rounded bg-navy/60 px-2 py-1 text-xs font-semibold text-on-ink">
-                  Xem trước ảnh bìa
-                </span>
-              ) : (
-                <span className="flex items-center gap-2 text-xs font-semibold text-on-ink">
-                  <ImageIcon className="h-4 w-4" />
-                  Ảnh bìa mặc định
-                </span>
+          <form onSubmit={save} className="space-y-3">
+            <label className="block text-xs font-medium text-text-muted">
+              Tên nhóm
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+                maxLength={120}
+                className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
+              />
+            </label>
+            <label className="block text-xs font-medium text-text-muted">
+              Mô tả
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                rows={4}
+                maxLength={2000}
+                className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
+              />
+            </label>
+            <label className="block text-xs font-medium text-text-muted">
+              Chủ đề
+              <input
+                value={topic}
+                onChange={(event) => setTopic(event.target.value)}
+                maxLength={100}
+                className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
+              />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-xs font-medium text-text-muted">
+                Hiển thị
+                <Select
+                  label="Hiển thị nhóm"
+                  className="w-full"
+                  value={privacy}
+                  onChange={changePrivacy}
+                  options={[
+                    { value: "public", label: "Công khai" },
+                    { value: "private", label: "Riêng tư" },
+                  ]}
+                />
+              </label>
+              <label className="block text-xs font-medium text-text-muted">
+                Cách tham gia
+                <Select
+                  label="Cách tham gia"
+                  className="w-full"
+                  value={joinPolicy}
+                  onChange={(value) =>
+                    setJoinPolicy(value as "open" | "approval" | "invite_only")
+                  }
+                  options={[
+                    { value: "open", label: "Tham gia ngay" },
+                    { value: "approval", label: "Cần duyệt" },
+                    ...(privacy === "private"
+                      ? [{ value: "invite_only", label: "Chỉ bằng mã mời" }]
+                      : []),
+                  ]}
+                />
+              </label>
+            </div>
+            <div className="overflow-hidden rounded-lg border border-border-soft">
+              <div
+                className={`flex items-center justify-center bg-navy bg-no-repeat transition-[height] ${
+                  coverHeight === "compact"
+                    ? "h-24"
+                    : coverHeight === "tall"
+                      ? "h-48"
+                      : "h-32"
+                }`}
+                style={
+                  coverPreview
+                    ? {
+                        backgroundImage: `url(${coverPreview})`,
+                        backgroundPosition: coverPosition,
+                        backgroundSize: coverFit,
+                      }
+                    : undefined
+                }
+              >
+                {coverPreview ? (
+                  <span className="rounded bg-navy/60 px-2 py-1 text-xs font-semibold text-on-ink">
+                    Xem trước ảnh bìa
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2 text-xs font-semibold text-on-ink">
+                    <ImageIcon className="h-4 w-4" />
+                    Ảnh bìa mặc định
+                  </span>
+                )}
+              </div>
+              {coverPreview && (
+                <div className="flex justify-end border-t border-border-soft p-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={pending}
+                    onClick={() => void removeCover()}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Gỡ ảnh bìa
+                  </Button>
+                </div>
               )}
             </div>
-            {coverPreview && (
-              <div className="flex justify-end border-t border-border-soft p-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={pending}
-                  onClick={() => void removeCover()}
-                >
-                  <X className="h-3.5 w-3.5" />
-                  Gỡ ảnh bìa
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Select
-              label="Vị trí ảnh"
-              value={coverPosition}
-              onChange={(value) =>
-                setCoverPosition(value as typeof coverPosition)
-              }
-              className="w-full"
-              options={[
-                { value: "top", label: "Phía trên" },
-                { value: "center", label: "Chính giữa" },
-                { value: "bottom", label: "Phía dưới" },
-              ]}
-            />
-            <Select
-              label="Cách hiển thị"
-              value={coverFit}
-              onChange={(value) => setCoverFit(value as typeof coverFit)}
-              className="w-full"
-              options={[
-                { value: "cover", label: "Phủ đầy khung" },
-                { value: "contain", label: "Hiển thị toàn ảnh" },
-              ]}
-            />
-            <Select
-              label="Chiều cao"
-              value={coverHeight}
-              onChange={(value) => setCoverHeight(value as typeof coverHeight)}
-              className="w-full"
-              options={[
-                { value: "compact", label: "Gọn" },
-                { value: "medium", label: "Vừa" },
-                { value: "tall", label: "Cao" },
-              ]}
-            />
-          </div>
-          <div>
-            <label className="block cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs font-semibold text-navy">
-              Chọn và lưu ảnh bìa
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="sr-only"
-                disabled={pending}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void uploadCover(file);
-                  event.target.value = "";
-                }}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Select
+                label="Vị trí ảnh"
+                value={coverPosition}
+                onChange={(value) =>
+                  setCoverPosition(value as typeof coverPosition)
+                }
+                className="w-full"
+                options={[
+                  { value: "top", label: "Phía trên" },
+                  { value: "center", label: "Chính giữa" },
+                  { value: "bottom", label: "Phía dưới" },
+                ]}
               />
-            </label>
-          </div>
-          <Button size="sm" type="submit" disabled={pending}>
-            <Save className="h-3.5 w-3.5" />
-            Lưu thay đổi
-          </Button>
-        </form>
-      </Card>
-      <div className="space-y-4">
-        {detail.rolePermissions && (
-          <RolePermissionsPanel detail={detail} onSaved={onSaved} />
-        )}
+              <Select
+                label="Cách hiển thị"
+                value={coverFit}
+                onChange={(value) => setCoverFit(value as typeof coverFit)}
+                className="w-full"
+                options={[
+                  { value: "cover", label: "Phủ đầy khung" },
+                  { value: "contain", label: "Hiển thị toàn ảnh" },
+                ]}
+              />
+              <Select
+                label="Chiều cao"
+                value={coverHeight}
+                onChange={(value) =>
+                  setCoverHeight(value as typeof coverHeight)
+                }
+                className="w-full"
+                options={[
+                  { value: "compact", label: "Gọn" },
+                  { value: "medium", label: "Vừa" },
+                  { value: "tall", label: "Cao" },
+                ]}
+              />
+            </div>
+            <div>
+              <label className="block cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs font-semibold text-navy">
+                Chọn và lưu ảnh bìa
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  disabled={pending}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadCover(file);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            <Button size="sm" type="submit" disabled={pending}>
+              <Save className="h-3.5 w-3.5" />
+              Lưu thay đổi
+            </Button>
+          </form>
+        </Card>
         <Card className="p-5">
           <h2 className="mb-2 text-sm font-bold text-navy">
             Chuyển quyền sở hữu
@@ -2776,6 +2834,9 @@ function SettingsPanel({
           </Button>
         </Card>
       </div>
+      {detail.rolePermissions && (
+        <RolePermissionsPanel detail={detail} onSaved={onSaved} />
+      )}
       <ConfirmDialog
         open={showPublicConfirmation}
         onClose={() => setShowPublicConfirmation(false)}
@@ -2784,19 +2845,19 @@ function SettingsPanel({
         message={
           <span>
             Nhóm <b>{name || detail.name}</b> sẽ xuất hiện trong Khám phá và tab
-            Nhóm công khai. Người dùng có thể xem thông tin giới thiệu và gửi yêu
-            cầu tham gia.
+            Nhóm công khai. Người dùng có thể xem thông tin giới thiệu và gửi
+            yêu cầu tham gia.
           </span>
         }
         confirmLabel="Đồng ý công khai"
         tone="default"
       >
         <div className="rounded-md border border-border-soft bg-bg p-3 text-xs leading-relaxed text-text-muted">
-          Hệ thống chỉ dùng tên, mô tả, chủ đề, ảnh bìa, Chủ nhóm, số thành viên và
-          thời gian hoạt động gần nhất để giới thiệu nhóm. Chat, tài liệu và danh
-          sách thành viên chi tiết vẫn được bảo vệ. Nếu nhóm đang chỉ dùng mã mời,
-          cách tham gia sẽ chuyển thành <b>Cần duyệt</b>. Thay đổi chỉ có hiệu lực
-          sau khi bạn bấm <b>Lưu thay đổi</b>.
+          Hệ thống chỉ dùng tên, mô tả, chủ đề, ảnh bìa, Chủ nhóm, số thành viên
+          và thời gian hoạt động gần nhất để giới thiệu nhóm. Chat, tài liệu và
+          danh sách thành viên chi tiết vẫn được bảo vệ. Nếu nhóm đang chỉ dùng
+          mã mời, cách tham gia sẽ chuyển thành <b>Cần duyệt</b>. Thay đổi chỉ
+          có hiệu lực sau khi bạn bấm <b>Lưu thay đổi</b>.
         </div>
       </ConfirmDialog>
     </div>
