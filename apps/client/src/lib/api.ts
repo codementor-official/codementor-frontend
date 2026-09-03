@@ -6,6 +6,7 @@ import type {
   JudgeSpecPayload,
 } from "@codementor/solve";
 import { apiBaseUrl } from "@/lib/env";
+import type { AiStatus, AiDocument, AiTurn, AiConversation, AiConversationSummary, AiPage } from "@/features/ai-tutor/types";
 import type { NotificationPage } from "@/types/notification";
 import type { RecommendationList } from "@/types/recommendation";
 import type {
@@ -125,6 +126,27 @@ function query(
 }
 
 export const api = {
+  ai: {
+    prepare: (slug: string, documentIds: string[]) =>
+      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">[]>(`/workspaces/${encodeURIComponent(slug)}/ai/documents/prepare`, { method: "POST", body: { documentIds } }),
+    documentStates: (slug: string, documentIds: string[]) =>
+      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">[]>(`/workspaces/${encodeURIComponent(slug)}/ai/documents/status`, { method: "POST", body: { documentIds } }),
+    status: (slug: string) => unwrap<AiStatus>(`/workspaces/${encodeURIComponent(slug)}/ai/status`, { cache: "no-store" }),
+    documents: (slug: string, params: { page?: number; limit?: number; q?: string } = {}) =>
+      unwrap<AiPage<AiDocument>>(`/workspaces/${encodeURIComponent(slug)}/ai/documents${query(params)}`, { cache: "no-store" }),
+    index: (slug: string, id: string) =>
+      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">>(`/workspaces/${encodeURIComponent(slug)}/ai/documents/${id}/index`, { method: "POST" }),
+    conversations: (slug: string, page = 1) =>
+      unwrap<AiPage<AiConversationSummary>>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations${query({ page, limit: 10 })}`, { cache: "no-store" }),
+    create: (slug: string, documentIds: string[]) =>
+      unwrap<AiConversation>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations`, { method: "POST", body: { documentIds } }),
+    read: (slug: string, id: string) =>
+      unwrap<AiConversation>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}`, { cache: "no-store" }),
+    remove: (slug: string, id: string) =>
+      unwrap<{ deleted: boolean }>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}`, { method: "DELETE" }),
+    ask: (slug: string, id: string, question: string, requestId: string) =>
+      unwrap<AiTurn>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}/messages`, { method: "POST", body: { question, requestId } }),
+  },
   me: () => unwrap<AccountProfile>("/me"),
   account: {
     emailVerification: () => unwrap<EmailVerificationStatus>("/me/email-verification", { cache: "no-store" }),
