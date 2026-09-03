@@ -11,6 +11,7 @@ import {
   Flame,
   Globe,
   LayoutGrid,
+  Sparkles,
   Star,
   Target,
   Trophy,
@@ -23,17 +24,16 @@ import { PageHeader } from "@/components/page-header";
 import { PersonalizationSettingsTrigger } from "@/components/personalization/personalization-settings-modal";
 import { ProblemRow } from "@/components/problem-row";
 import {
-  RecommendedArticles,
-  RecommendedCourses,
-  RecommendedExercises,
-} from "@/components/recommendation/recommended";
+  hasPersonalizedContent,
+  usePersonalized,
+} from "@/components/recommendation/use-personalized";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Difficulty } from "@/components/ui/badge";
 import type { LearningLeaderboardEntry, UserLearningPreferences } from "@/features/account/types";
 import type { WorkspaceListItem } from "@/features/workspace/types";
 import { api } from "@/lib/api";
-import type { ArticleSummary, CourseSummary, ExerciseSummary } from "@/types/catalogue";
+import { MAX_PAGE_SIZE, type ArticleSummary, type CourseSummary, type ExerciseSummary } from "@/types/catalogue";
 
 type DifficultyFilter = Difficulty | "all";
 type Category = "all" | "courses" | "problems" | "articles" | "community";
@@ -144,6 +144,38 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
   // "dành cho bạn" lúc đó sẽ mâu thuẫn với chính bộ lọc ngay bên trên nó.
   const browsing = debouncedSearch === "" && difficulty === "all";
 
+  // Ba dải đề xuất, ghép sẵn với bản ghi danh mục để vẽ bằng ĐÚNG loại thẻ mà mỗi mục
+  // đang dùng. Chỉ nạp khi đang duyệt; lúc đó `browsing` cũng là lúc `courses`/`articles`/
+  // `exercises` bên dưới đang giữ danh sách không lọc, nên hai bên luôn nói về cùng một tập.
+  const suggestedCourses = usePersonalized<CourseSummary>(
+    () => api.recommendations.courses(8),
+    () => api.courses.catalogue({ limit: MAX_PAGE_SIZE }),
+    browsing,
+  );
+  const suggestedArticles = usePersonalized<ArticleSummary>(
+    () => api.recommendations.articles(6),
+    () => api.articles.catalogue({ limit: MAX_PAGE_SIZE }),
+    browsing,
+  );
+  const suggestedExercises = usePersonalized<ExerciseSummary>(
+    () => api.recommendations.exercises(8),
+    () => api.exercises.bank({ limit: MAX_PAGE_SIZE }),
+    browsing,
+  );
+
+  // Chỉ thay nội dung mặc định khi đề xuất thật sự nói được điều gì mới: có hồ sơ dùng
+  // được VÀ còn mục nào sau khi ghép. Thiếu một trong hai thì giữ nguyên "đang nổi" —
+  // dán nhãn "dành cho bạn" lên đúng bảng phổ biến chỉ làm mất nghĩa của cái nhãn.
+  const courseList = hasPersonalizedContent(suggestedCourses)
+    ? suggestedCourses.items
+    : courses.map((item) => ({ item, reason: undefined }));
+  const articleList = hasPersonalizedContent(suggestedArticles)
+    ? suggestedArticles.items.map(({ item }) => item)
+    : articles;
+  const exerciseList = hasPersonalizedContent(suggestedExercises)
+    ? suggestedExercises.items
+    : exercises.map((item) => ({ item, reason: undefined }));
+
   const showCourses = category === "all" || category === "courses";
   const showProblems = category === "all" || category === "problems";
   const showArticles = category === "all" || category === "articles";
@@ -193,34 +225,32 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
       {error && <Card className="mb-5 flex items-center justify-between gap-4 border-warning/40 p-4 text-sm text-text-muted"><span>{error}</span><Button variant="outline" size="sm" onClick={() => void load()}>Thử lại</Button></Card>}
       {loading ? <ExploreLandingSkeleton /> : (
         <>
-          {/* Cá nhân hóa đứng TRÊN "đang nổi": trang này mở ra để tìm thứ đáng học tiếp,
-              và thứ hợp với hồ sơ học viên trả lời câu đó sát hơn bảng phổ biến chung. */}
-          {browsing && (
-            <div className="mb-6 flex flex-col gap-6">
-              {showCourses && <RecommendedCourses />}
-              {showProblems && <RecommendedExercises />}
-              {showArticles && <RecommendedArticles limit={5} />}
-            </div>
-          )}
-
           {showCourses && <section className="mb-6">
-            <SectionTitle icon={Flame} title="Khóa học đang nổi" href="/courses" />
-            {courses.length === 0 ? <EmptySearch label="khóa học" query={search} /> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {courses.map((course, index) => <CourseCard key={course.id} course={course} tileVariant={index % 2 ? "primary" : "navy"} />)}
+            <SectionTitle
+              icon={hasPersonalizedContent(suggestedCourses) ? Sparkles : Flame}
+              title={hasPersonalizedContent(suggestedCourses) ? "Khóa học dành cho bạn" : "Khóa học đang nổi"}
+              href="/courses"
+            />
+            {courseList.length === 0 ? <EmptySearch label="khóa học" query={search} /> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {courseList.map(({ item: course, reason }, index) => <CourseCard key={course.id} course={course} tileVariant={index % 2 ? "primary" : "navy"} note={reason} />)}
             </div>}
           </section>}
 
           {showArticles && <section className="mb-6">
-            <SectionTitle icon={FileText} title="Bài viết mới nhất" href="/articles" />
-            <p className="mb-3 text-xs text-text-faint">Kiến thức nền và mẹo thực chiến từ cộng đồng CodeMentor</p>
-            {articles.length === 0 ? <EmptySearch label="bài viết" query={search} /> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {articles.slice(0, 6).map((article) => <Link key={article.id} href={`/articles/${article.slug}`} className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><Card className="flex h-full flex-col overflow-hidden transition-colors group-hover:border-primary/40">{article.coverImageUrl && <Image alt={`Ảnh bìa ${article.title}`} className="aspect-[16/7] w-full object-cover" height={210} src={article.coverImageUrl} unoptimized width={480} />}<div className="flex flex-1 flex-col gap-2 p-4"><span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-2xs font-bold tracking-wide text-navy uppercase">{article.tagName ?? "Học tập"}</span><h3 className="text-sm leading-snug font-semibold text-navy">{article.title}</h3><p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{article.excerpt ?? "Nội dung học tập mới trên CodeMentor."}</p><div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2.5 text-2xs text-text-faint"><span className="truncate">{article.authorName ?? "CodeMentor"}</span><span className="shrink-0">{article.readMinutes ?? 1} phút đọc</span></div></div></Card></Link>)}
+            <SectionTitle
+              icon={hasPersonalizedContent(suggestedArticles) ? Sparkles : FileText}
+              title={hasPersonalizedContent(suggestedArticles) ? "Bài viết dành cho bạn" : "Bài viết mới nhất"}
+              href="/articles"
+            />
+            <p className="mb-3 text-xs text-text-faint">{hasPersonalizedContent(suggestedArticles) ? "Chọn theo lĩnh vực, công nghệ và những gì bạn đã học" : "Kiến thức nền và mẹo thực chiến từ cộng đồng CodeMentor"}</p>
+            {articleList.length === 0 ? <EmptySearch label="bài viết" query={search} /> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {articleList.slice(0, 6).map((article) => <Link key={article.id} href={`/articles/${article.slug}`} className="group rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><Card className="flex h-full flex-col overflow-hidden transition-colors group-hover:border-primary/40">{article.coverImageUrl && <Image alt={`Ảnh bìa ${article.title}`} className="aspect-[16/7] w-full object-cover" height={210} src={article.coverImageUrl} unoptimized width={480} />}<div className="flex flex-1 flex-col gap-2 p-4"><span className="w-fit rounded-sm bg-border-soft px-2 py-1 text-2xs font-bold tracking-wide text-navy uppercase">{article.tagName ?? "Học tập"}</span><h3 className="text-sm leading-snug font-semibold text-navy">{article.title}</h3><p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{article.excerpt ?? "Nội dung học tập mới trên CodeMentor."}</p><div className="mt-auto flex items-center justify-between border-t border-border-soft pt-2.5 text-2xs text-text-faint"><span className="truncate">{article.authorName ?? "CodeMentor"}</span><span className="shrink-0">{article.readMinutes ?? 1} phút đọc</span></div></div></Card></Link>)}
             </div>}
           </section>}
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="flex min-w-0 flex-col gap-5">
-              {showProblems && <><section><SectionTitle icon={Star} title="Bài luyện tập phổ biến" href="/practice" fillIcon />{exercises.length === 0 ? <EmptySearch label="bài luyện tập" query={search} /> : <Card className="overflow-hidden">{exercises.map((exercise, index) => <ProblemRow key={exercise.id} tile="</>" tileVariant={index % 3 === 1 ? "accent" : index % 3 === 2 ? "primary" : "navy"} title={exercise.title} meta={`Tác giả: ${exercise.authorName ?? "CodeMentor"}`} difficulty={exerciseDifficulty(exercise.difficulty)} href={`/solve/${exercise.id}`} />)}</Card>}</section><section><div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy"><Target className="h-4 w-4 text-primary" /> Chủ đề đề xuất cho bạn</div><p className="mb-3 text-xs text-text-faint">{preferences && (preferences.interestedFields.length || preferences.interestedTechnologies.length) ? "Từ sở thích học tập đã lưu của bạn" : "Chủ đề đang có nội dung mới trên hệ thống"}</p><div className="flex flex-wrap gap-2">{topics.length ? topics.map((topic) => <button key={topic} type="button" onClick={() => { setSearch(topic); setCategory("all"); }} className="rounded-md border border-border bg-surface px-3.5 py-2 text-sm font-medium text-navy transition-colors hover:border-primary hover:text-primary">{topic}</button>) : <span className="text-sm text-text-faint">Chưa có chủ đề phù hợp.</span>}</div></section></>}
+              {showProblems && <><section><SectionTitle icon={hasPersonalizedContent(suggestedExercises) ? Sparkles : Star} title={hasPersonalizedContent(suggestedExercises) ? "Bài luyện tập dành cho bạn" : "Bài luyện tập phổ biến"} href="/practice" fillIcon={!hasPersonalizedContent(suggestedExercises)} />{exerciseList.length === 0 ? <EmptySearch label="bài luyện tập" query={search} /> : <Card className="overflow-hidden">{exerciseList.map(({ item: exercise, reason }, index) => <ProblemRow key={exercise.id} tile="</>" tileVariant={index % 3 === 1 ? "accent" : index % 3 === 2 ? "primary" : "navy"} title={exercise.title} meta={reason ?? `Tác giả: ${exercise.authorName ?? "CodeMentor"}`} difficulty={exerciseDifficulty(exercise.difficulty)} href={`/solve/${exercise.id}`} />)}</Card>}</section><section><div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy"><Target className="h-4 w-4 text-primary" /> Chủ đề đề xuất cho bạn</div><p className="mb-3 text-xs text-text-faint">{preferences && (preferences.interestedFields.length || preferences.interestedTechnologies.length) ? "Từ sở thích học tập đã lưu của bạn" : "Chủ đề đang có nội dung mới trên hệ thống"}</p><div className="flex flex-wrap gap-2">{topics.length ? topics.map((topic) => <button key={topic} type="button" onClick={() => { setSearch(topic); setCategory("all"); }} className="rounded-md border border-border bg-surface px-3.5 py-2 text-sm font-medium text-navy transition-colors hover:border-primary hover:text-primary">{topic}</button>) : <span className="text-sm text-text-faint">Chưa có chủ đề phù hợp.</span>}</div></section></>}
             </div>
 
             {showCommunity && <div className="flex min-w-0 flex-col gap-4">

@@ -13,6 +13,7 @@ import { exerciseDifficulty, levelToDifficulty, FIELD_LABEL } from "@/lib/catalo
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
 import { MAX_PAGE_SIZE, type CourseSummary } from "@/types/catalogue";
 import type { RecommendationList, RecommendedItem } from "@/types/recommendation";
+import { usePersonalized } from "./use-personalized";
 
 /** Hai chữ cái đầu — recommendation-service trả metadata xếp hạng, không trả ảnh bìa. */
 function tileFor(title: string): string {
@@ -179,15 +180,15 @@ export function RecommendedCourses({
   limit?: number;
   title?: string;
 } = {}) {
-  const { items, personalized, isLoading, error } = useRecommendations(() =>
-    api.recommendations.courses(limit),
+  const { items, personalized, isLoading, error } = usePersonalized<CourseSummary>(
+    () => api.recommendations.courses(limit),
+    () => api.courses.catalogue({ limit: MAX_PAGE_SIZE }),
   );
-  const { courses, hydrating } = useHydratedCourses(items);
 
-  if (isLoading || hydrating) return <CardGridSkeleton />;
+  if (isLoading) return <CardGridSkeleton />;
   if (error) return <CatalogueError message={error} />;
 
-  const visible = courses.filter(({ course }) => course.id !== excludeId).slice(0, 3);
+  const visible = items.filter(({ item }) => item.id !== excludeId).slice(0, 3);
   if (visible.length === 0) return null;
 
   return (
@@ -197,7 +198,7 @@ export function RecommendedCourses({
       personalized={personalized}
     >
       <div className={GRID}>
-        {visible.map(({ course, reason }, i) => (
+        {visible.map(({ item: course, reason }, i) => (
           <CourseCard
             key={course.id}
             course={course}
@@ -208,44 +209,6 @@ export function RecommendedCourses({
       </div>
     </RecommendationFrame>
   );
-}
-
-/** Đổi danh sách đã xếp hạng lấy bản ghi danh mục đầy đủ, giữ nguyên thứ tự xếp hạng. */
-function useHydratedCourses(items: RecommendedItem[]) {
-  const [courses, setCourses] = useState<{ course: CourseSummary; reason?: string }[]>([]);
-  const [hydrating, setHydrating] = useState(false);
-
-  useEffect(() => {
-    if (items.length === 0) {
-      setCourses([]);
-      return;
-    }
-    let cancelled = false;
-    setHydrating(true);
-    // Cả danh mục rồi ghép theo id, thay vì lọc theo id ở server: `forbidNonWhitelisted`
-    // biến một tham số truy vấn mới thành 400 trên mọi bản backend chưa kịp deploy, và
-    // trang `/courses` vốn đã tải nguyên danh mục theo đúng cách này.
-    api.courses
-      .catalogue({ limit: MAX_PAGE_SIZE })
-      .then((page) => {
-        if (cancelled) return;
-        const byId = new Map(page.items.map((course) => [course.id, course]));
-        setCourses(
-          items.flatMap((item) => {
-            const course = byId.get(item.id);
-            return course ? [{ course, reason: item.reasons[0] }] : [];
-          }),
-        );
-      })
-      // Danh mục hỏng thì dải đề xuất trống, không phải một lưới thẻ thiếu nửa thông tin.
-      .catch(() => !cancelled && setCourses([]))
-      .finally(() => !cancelled && setHydrating(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [items]);
-
-  return { courses, hydrating };
 }
 
 /**
