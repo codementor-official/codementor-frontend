@@ -84,11 +84,3 @@ export interface LearningRoadmap {
   updatedAt: string;
   userProgress: RoadmapProgress | null;
 }
-
-export interface RecommendationResult {
-  roadmapId: string;
-  score: number;
-  matchedReasons: string[];
-}
-
-export type RankedRoadmap = LearningRoadmap & RecommendationResult;
