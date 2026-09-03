@@ -23,7 +23,8 @@ import {
 } from "@/lib/catalogue/level";
 import { MAX_PAGE_SIZE, type RoadmapDetail, type RoadmapSummary } from "@/types/catalogue";
 
-const PAGE_SIZE = 20;
+/** Danh sách một lộ trình một dòng, nên sáu dòng là vừa một màn hình. */
+const PAGE_SIZE = 6;
 const TILE_TONE = ["ink", "primary"] as const;
 const CHIP_LIMIT = 3;
 

@@ -188,7 +188,7 @@ export function RecommendedCourses({
   if (isLoading) return <CardGridSkeleton />;
   if (error) return <CatalogueError message={error} />;
 
-  const visible = items.filter(({ item }) => item.id !== excludeId).slice(0, 3);
+  const visible = items.filter(({ item }) => item.id !== excludeId).slice(0, VISIBLE);
   if (visible.length === 0) return null;
 
   return (
@@ -232,7 +232,7 @@ export function RecommendedRoadmaps({
   if (isLoading) return <CardGridSkeleton />;
   if (error) return <CatalogueError message={error} />;
 
-  const visible = items.filter((item) => item.id !== excludeId).slice(0, 3);
+  const visible = items.filter((item) => item.id !== excludeId).slice(0, VISIBLE);
   if (visible.length === 0) return null;
 
   return (
@@ -262,12 +262,19 @@ export function RecommendedRoadmaps({
   );
 }
 
-const GRID = "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3";
+/**
+ * Cùng bộ điểm ngắt với lưới danh mục ở dưới cùng trang. Dải đề xuất đứng ngay trên nó,
+ * nên lệch số cột là thấy ngay: hai lưới cùng loại thẻ mà không thẳng hàng nhau.
+ */
+const GRID = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+
+/** Số thẻ hiện trên dải đề xuất — vừa đúng một hàng ở màn hình rộng. */
+const VISIBLE = 4;
 
 function CardGridSkeleton() {
   return (
     <div className={GRID}>
-      {Array.from({ length: 3 }).map((_, i) => (
+      {Array.from({ length: VISIBLE }).map((_, i) => (
         <Card key={i} className="h-64 animate-pulse" />
       ))}
     </div>

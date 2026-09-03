@@ -21,7 +21,12 @@ import { LEVEL_OPTIONS } from "@/lib/catalogue/level";
 import { MAX_PAGE_SIZE, type CourseSummary } from "@/types/catalogue";
 
 const TILE_TONE = ["navy", "primary"] as const;
-const PAGE_SIZE = 20;
+/**
+ * Hai hàng đầy ở màn hình rộng (lưới 4 cột). Đặt 20 thì với catalogue cỡ hiện tại mọi thứ
+ * lọt hết vào một trang, và thanh phân trang — vốn tự ẩn khi chỉ có một trang — không bao
+ * giờ xuất hiện.
+ */
+const PAGE_SIZE = 8;
 
 export default function CoursesPage() {
   const { status: authStatus } = useAuth();
