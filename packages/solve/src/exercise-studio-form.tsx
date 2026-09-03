@@ -39,7 +39,53 @@ import {
   type JudgeSpecPayload,
   type TypeIR,
 } from "./types";
-import { integer, slug as slugRule, text } from "@codementor/utils";
+import {
+  integer,
+  isClean,
+  retitleSlug,
+  slug as slugRule,
+  text,
+  type FieldError,
+} from "@codementor/utils";
+
+/**
+ * Luật kiểm của phần "Thông tin chung", khớp trần của `UpdateExerciseDto` ở backend.
+ *
+ * Một chỗ duy nhất vì hai nơi cần đúng luật này: form tô đỏ từng ô, còn trang studio khoá
+ * nút "Lưu". Tách ra hai bản là để chúng lệch nhau — form báo sai mà nút vẫn bấm được.
+ */
+export function exerciseBriefErrors(
+  draft: ExerciseDraft,
+  { slugLocked = false } = {},
+): Record<string, FieldError> {
+  return {
+    title: text(draft.title, 200, "Tiêu đề"),
+    // Slug đã khoá thì không phải lỗi của người đang sửa — đừng tô đỏ thứ họ không đổi được.
+    slug: slugLocked ? undefined : slugRule(draft.slug),
+    summary: draft.summary.trim().length > 500 ? "Tóm tắt tối đa 500 ký tự" : undefined,
+    estimatedMinutes: integer(draft.estimatedMinutes, "Thời lượng", { min: 1, max: 100000 }),
+    timeLimitMs: integer(draft.timeLimitMs, "Giới hạn thời gian chạy", {
+      min: 100,
+      max: 60_000,
+      optional: false,
+    }),
+    memoryLimitKb: integer(draft.memoryLimitKb, "Giới hạn bộ nhớ", {
+      min: 1024,
+      max: 4_194_304,
+      optional: false,
+    }),
+  };
+}
+
+/** Câu chặn nút "Lưu", hoặc `undefined` khi mọi ô hợp lệ. */
+export function exerciseBriefBlocker(
+  draft: ExerciseDraft,
+  options?: { slugLocked?: boolean },
+): string | undefined {
+  return isClean(exerciseBriefErrors(draft, options))
+    ? undefined
+    : "Còn ô chưa hợp lệ ở “Thông tin chung”";
+}
 
 /** Khớp trần phía backend (`MAX_TAGS` trong aggregate Exercise). */
 const MAX_TAGS = 8;
@@ -107,9 +153,20 @@ export function ExerciseBriefForm({
   slugLocked = false,
 }: Props) {
   const [previewStatement, setPreviewStatement] = useState(false);
+  const errors = exerciseBriefErrors(value, { slugLocked });
 
   const patch = (partial: Partial<ExerciseDraft>) =>
     onChange({ ...value, ...partial });
+  /**
+   * Đổi tiêu đề thì slug đi theo — xem `retitleSlug`. Slug đã khoá thì KHÔNG đụng vào:
+   * backend từ chối đổi, và một ô disabled tự nhảy chữ chỉ làm người soạn tưởng mình vừa
+   * đổi được đường dẫn đã phát ra ngoài.
+   */
+  const patchTitle = (title: string) =>
+    patch({
+      title,
+      ...(slugLocked ? {} : { slug: retitleSlug(value.slug, value.title, title) }),
+    });
   const patchContent = (partial: Partial<ExerciseContent>) =>
     onChange({ ...value, content: { ...value.content, ...partial } });
 
@@ -123,14 +180,14 @@ export function ExerciseBriefForm({
         />
 
         <Field
-          error={text(value.title, 200, "Tiêu đề")}
+          error={errors.title}
           htmlFor="title"
           label="Tiêu đề"
         >
           <input
             className={inputClassName}
             id="title"
-            onChange={(event) => patch({ title: event.target.value })}
+            onChange={(event) => patchTitle(event.target.value)}
             value={value.title}
           />
         </Field>
@@ -141,8 +198,7 @@ export function ExerciseBriefForm({
               ? "Đã công khai nên không đổi được — đường dẫn đã phát ra ngoài."
               : "Phần định danh trong đường dẫn. Chỉ đổi được khi chưa công khai."
           }
-          // Slug đã khoá thì không phải lỗi của người đang sửa — đừng tô đỏ thứ họ không đổi được.
-          error={slugLocked ? undefined : slugRule(value.slug)}
+          error={errors.slug}
           htmlFor="slug"
           label="Slug"
         >
@@ -156,11 +212,7 @@ export function ExerciseBriefForm({
         </Field>
 
         <Field
-          error={
-            value.summary.trim().length > 500
-              ? "Tóm tắt tối đa 500 ký tự"
-              : undefined
-          }
+          error={errors.summary}
           htmlFor="summary"
           label="Tóm tắt"
           hint="Một dòng hiện ở danh sách."
@@ -190,10 +242,7 @@ export function ExerciseBriefForm({
           </Field>
 
           <Field
-            error={integer(value.estimatedMinutes, "Thời lượng", {
-              min: 1,
-              max: 100000,
-            })}
+            error={errors.estimatedMinutes}
             htmlFor="estimatedMinutes"
             label="Thời lượng ước tính (phút)"
           >
@@ -209,6 +258,7 @@ export function ExerciseBriefForm({
           </Field>
 
           <Field
+            error={errors.timeLimitMs}
             htmlFor="timeLimitMs"
             hint="100–60000 ms"
             label="Giới hạn thời gian chạy (ms)"
@@ -223,6 +273,7 @@ export function ExerciseBriefForm({
           </Field>
 
           <Field
+            error={errors.memoryLimitKb}
             htmlFor="memoryLimitKb"
             hint="1024–4194304 KB"
             label="Giới hạn bộ nhớ (KB)"

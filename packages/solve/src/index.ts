@@ -2,6 +2,8 @@ export { SolvePreview } from "./solve-preview";
 export {
   ExerciseBriefForm,
   ExerciseCodeForm,
+  exerciseBriefBlocker,
+  exerciseBriefErrors,
   type ExerciseDraft,
   type TagOption,
   type ExerciseStudioJudge,

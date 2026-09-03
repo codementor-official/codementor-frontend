@@ -360,6 +360,33 @@ function LessonInspector({
     setVideoSeconds(null);
   }, []);
 
+  /*
+   * `applyVideoDuration` phải giữ chữ ký ỔN ĐỊNH: nó đi thẳng vào deps của hiệu ứng gắn
+   * trình phát ở `VideoPlayer`, nên đổi chữ ký mỗi lần render là dựng lại trình phát
+   * YouTube sau từng phím gõ. Giá trị mới nhất vì thế đi qua ref chứ không qua deps.
+   */
+  const latest = useRef({ durationMinutes: lesson.durationMinutes, onPatch });
+  useEffect(() => {
+    latest.current = { durationMinutes: lesson.durationMinutes, onPatch };
+  });
+
+  /**
+   * Đo được thời lượng video thì điền luôn vào ô "Thời lượng (phút)" — người soạn không
+   * phải tự bấm máy tính cho một con số mà trình phát vừa nói ra.
+   *
+   * Chỉ điền khi ô đang trống hoặc ĐANG NGẮN HƠN video: một con số dài hơn là người soạn
+   * cố ý cộng thêm thời gian đọc tài liệu/làm bài, và ghi đè nó là xoá một quyết định.
+   */
+  const applyVideoDuration = useCallback((seconds: number) => {
+    setVideoSeconds(seconds);
+    const { durationMinutes, onPatch: patch } = latest.current;
+    const needed = minimumLessonMinutes(seconds);
+    const current = durationMinutes.trim() ? Number(durationMinutes) : null;
+    if (current === null || !Number.isFinite(current) || current < needed) {
+      patch({ durationMinutes: String(needed) });
+    }
+  }, []);
+
   // Bài video ghi `media`, bài lý thuyết ghi `contentHtml`. Gửi cả hai trong mọi trường
   // hợp sẽ ghi đè thân bài cũ bằng chuỗi rỗng khi người soạn đổi một bài lý thuyết sang
   // video rồi đổi ngược lại. `lessonId` do trang cha truyền vào — studio chỉ còn một nút
@@ -539,7 +566,7 @@ function LessonInspector({
                 lessonMinutes={lesson.durationMinutes.trim() ? Number(lesson.durationMinutes) : null}
                 loaded={loaded}
                 onChange={changeVideoUrl}
-                onDuration={setVideoSeconds}
+                onDuration={applyVideoDuration}
                 onUseVideoDuration={(minutes) => onPatch({ durationMinutes: String(minutes) })}
                 value={videoUrl}
               />

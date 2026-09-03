@@ -31,6 +31,7 @@ import {
 import {
   ExerciseBriefForm,
   ExerciseCodeForm,
+  exerciseBriefBlocker,
   type ExerciseDraft,
 } from "@/features/exercises/code-problem-form";
 import {
@@ -191,6 +192,11 @@ export default function ExerciseStudioPage() {
   }
 
   const locked = exercise.status === "pending_review";
+  // Cùng bộ luật mà form đang tô đỏ từng ô — xem `exerciseBriefErrors`. Không khoá ở đây
+  // thì nút "Lưu" vẫn bấm được và backend mới là nơi từ chối, sau một vòng mạng.
+  const blocker = exerciseBriefBlocker(draft, {
+    slugLocked: exercise.status === "published",
+  });
 
   return (
     <>
@@ -273,8 +279,9 @@ export default function ExerciseStudioPage() {
             ) : (
               <>
                 <Button
-                  disabled={saving}
+                  disabled={saving || blocker !== undefined}
                   onClick={() => void save()}
+                  title={blocker}
                   type="button"
                   variant="outline"
                 >
@@ -282,7 +289,8 @@ export default function ExerciseStudioPage() {
                   {saving ? "Đang lưu…" : "Lưu"}
                 </Button>
                 <Button
-                  disabled={saving}
+                  disabled={saving || blocker !== undefined}
+                  title={blocker}
                   onClick={() =>
                     run(() => api.exercises.submit(id), "Đã gửi duyệt")
                   }

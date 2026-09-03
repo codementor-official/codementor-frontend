@@ -36,7 +36,16 @@ import {
 import type { ExerciseListItem } from "@codementor/solve";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@/features/roadmaps/types";
 import { api, type Tag } from "@/lib/api";
-import { integer, isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
+import {
+  integer,
+  isClean,
+  maxLength,
+  retitleSlug,
+  slug as slugRule,
+  text,
+  url,
+  type FieldError,
+} from "@codementor/utils";
 
 interface Meta {
   slug: string;
@@ -284,6 +293,17 @@ export default function CourseStudioPage() {
   const locked = course.status === "pending_review";
   const patchMeta = (partial: Partial<Meta>) => setMeta({ ...meta, ...partial });
 
+  /**
+   * Đổi tiêu đề thì slug đi theo — xem `retitleSlug`. Khóa đã công khai thì KHÔNG đụng
+   * vào slug: backend từ chối đổi, và một ô disabled tự nhảy chữ chỉ làm người soạn tưởng
+   * mình vừa đổi được đường dẫn đã phát ra ngoài.
+   */
+  const patchTitle = (title: string) =>
+    patchMeta({
+      title,
+      ...(course.status === "published" ? {} : { slug: retitleSlug(meta.slug, meta.title, title) }),
+    });
+
   const metaErrors = validateMeta(meta);
   const metaValid = isClean(metaErrors);
   // Bài học cũng phải hợp lệ: cây được ghi trong cùng một lệnh với metadata, nên một bài
@@ -299,7 +319,9 @@ export default function CourseStudioPage() {
     }),
   )[0];
   const chapterProblem = chapters.flatMap((chapter, chapterIndex) => {
-    const problem = text(chapter.title, 200, `Tiêu đề chương ${chapterIndex + 1}`);
+    const problem =
+      text(chapter.title, 200, `Tiêu đề chương ${chapterIndex + 1}`) ??
+      maxLength(chapter.description, 2000, `Mô tả chương ${chapterIndex + 1}`);
     return problem ? [problem] : [];
   })[0];
 
@@ -552,7 +574,7 @@ export default function CourseStudioPage() {
               <input
                 className={inputClassName}
                 id="title"
-                onChange={(event) => patchMeta({ title: event.target.value })}
+                onChange={(event) => patchTitle(event.target.value)}
                 value={meta.title}
               />
             </Field>

@@ -3,9 +3,47 @@
 import { useEffect, useState } from "react";
 import { ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { RichTextEditor } from "@codementor/editor";
-import { integer, maxLength } from "@codementor/utils";
+import {
+  integer,
+  isClean,
+  maxLength,
+  retitleSlug,
+  slug as slugRule,
+  text,
+  url,
+  type FieldError,
+} from "@codementor/utils";
 import { api, type Tag } from "@/lib/api";
 import type { ArticleCoverUploadConfig, Draft } from "./types";
+
+/**
+ * Luật kiểm của form bài viết, khớp trần của `UpdateArticleDto` ở backend.
+ *
+ * Một chỗ duy nhất vì hai nơi cần đúng luật này: form tô đỏ từng ô, còn trang studio khoá
+ * nút "Lưu" và "Gửi duyệt". Tách ra hai bản là để chúng lệch nhau.
+ */
+export function articleErrors(
+  draft: Draft,
+  { slugLocked = false } = {},
+): Record<string, FieldError> {
+  return {
+    title: text(draft.title, 200, "Tiêu đề"),
+    // Slug đã khoá thì không phải lỗi của người đang sửa — đừng tô đỏ thứ họ không đổi được.
+    slug: slugLocked ? undefined : slugRule(draft.slug),
+    excerpt: maxLength(draft.excerpt, 500, "Tóm tắt"),
+    takeaway: maxLength(draft.takeaway, 500, "Điểm rút ra"),
+    coverImageUrl: url(draft.coverImageUrl, "Ảnh bìa"),
+    readMinutes: integer(draft.readMinutes, "Thời gian đọc", { min: 1, max: 1000 }),
+  };
+}
+
+/** Câu chặn nút "Lưu", hoặc `undefined` khi mọi ô hợp lệ. */
+export function articleBlocker(
+  draft: Draft,
+  options?: { slugLocked?: boolean },
+): string | undefined {
+  return isClean(articleErrors(draft, options)) ? undefined : "Còn ô chưa hợp lệ ở form bài viết";
+}
 
 /**
  * Form giữ toàn bộ metadata bài viết ở một nơi. Ảnh đi thẳng từ trình duyệt tới kho qua
@@ -16,14 +54,18 @@ export function ArticleEditor({
   draft,
   onChange,
   onUploadingChange,
+  slugLocked = false,
   tags,
 }: {
   articleId: string;
   draft: Draft;
   onChange: (draft: Draft) => void;
   onUploadingChange?: (uploading: boolean) => void;
+  /** Bài đã từng công khai thì backend từ chối đổi slug — đường dẫn đã phát ra ngoài. */
+  slugLocked?: boolean;
   tags: Tag[];
 }) {
+  const errors = articleErrors(draft, { slugLocked });
   const [uploadConfig, setUploadConfig] =
     useState<ArticleCoverUploadConfig | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -101,19 +143,42 @@ export function ArticleEditor({
 
   return (
     <div className="grid gap-4">
-      <Field label="Tiêu đề">
+      <Field error={errors.title} label="Tiêu đề">
         <input
           className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          onChange={(event) =>
-            onChange({ ...draft, title: event.target.value })
-          }
+          onChange={(event) => {
+            const title = event.target.value;
+            // Slug đi theo tiêu đề chừng nào người viết chưa tự sửa nó — xem `retitleSlug`.
+            onChange({
+              ...draft,
+              title,
+              ...(slugLocked ? {} : { slug: retitleSlug(draft.slug, draft.title, title) }),
+            });
+          }}
           placeholder="Nhập tiêu đề bài viết…"
           value={draft.title}
         />
       </Field>
 
       <Field
-        error={maxLength(draft.excerpt, 500, "Tóm tắt")}
+        error={errors.slug}
+        hint={
+          slugLocked
+            ? "Bài đã từng công khai nên không đổi được — đường dẫn đã phát ra ngoài."
+            : "Phần định danh trong đường dẫn, tự sinh từ tiêu đề. Sửa tay thì nó thôi đi theo tiêu đề."
+        }
+        label="Slug"
+      >
+        <input
+          className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring disabled:opacity-60"
+          disabled={slugLocked}
+          onChange={(event) => onChange({ ...draft, slug: event.target.value })}
+          value={draft.slug}
+        />
+      </Field>
+
+      <Field
+        error={errors.excerpt}
         hint="Bắt buộc mới đăng được. Câu này cũng chính là nội dung thông báo gửi tới người học."
         label="Tóm tắt"
       >
@@ -127,6 +192,7 @@ export function ArticleEditor({
       </Field>
 
       <Field
+        error={errors.coverImageUrl}
         hint="Ảnh ngang 16:9 dùng tại danh sách bài viết, Khám phá và đầu trang chi tiết."
         label="Ảnh bìa"
       >
@@ -200,7 +266,7 @@ export function ArticleEditor({
       </Field>
 
       <Field
-        error={maxLength(draft.takeaway, 500, "Điểm rút ra")}
+        error={errors.takeaway}
         label="Điểm rút ra"
       >
         <textarea
@@ -234,10 +300,7 @@ export function ArticleEditor({
       </Field>
 
       <Field
-        error={integer(draft.readMinutes, "Thời gian đọc", {
-          min: 1,
-          max: 1000,
-        })}
+        error={errors.readMinutes}
         label="Thời gian đọc (phút)"
       >
         <input

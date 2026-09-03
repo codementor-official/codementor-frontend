@@ -30,7 +30,7 @@ import {
   useDraftAutosave,
   type StoredDraft,
 } from "@/hooks/use-studio-draft";
-import { ArticleEditor } from "@/features/articles/article-editor";
+import { ArticleEditor, articleBlocker } from "@/features/articles/article-editor";
 import {
   ARTICLE_STATUS_LABELS,
   ARTICLE_STATUS_TONES,
@@ -46,6 +46,7 @@ const CLIENT_URL =
 function toDraft(article: Article): Draft {
   return {
     title: article.title,
+    slug: article.slug,
     excerpt: article.excerpt ?? "",
     coverImageUrl: article.coverImageUrl ?? "",
     takeaway: article.takeaway ?? "",
@@ -135,6 +136,12 @@ export default function ArticleStudioPage() {
     );
   }
 
+  // Bài đã từng công khai thì backend từ chối đổi slug — khoá ô ngay ở form thay vì để
+  // người viết gõ xong mới nhận lỗi từ một vòng mạng.
+  const slugLocked = article.publishedAt !== null;
+  // Cùng bộ luật mà form đang tô đỏ từng ô — xem `articleErrors`.
+  const blocker = articleBlocker(draft, { slugLocked });
+
   const act = async (action: () => Promise<unknown>, done: string) => {
     setSaving(true);
     try {
@@ -154,6 +161,8 @@ export default function ArticleStudioPage() {
 
   const persistDraft = async () => {
     await api.articles.update(id, {
+      // Chỉ gửi khi thực sự đổi: backend từ chối đổi slug của bài đã từng công khai.
+      ...(draft.slug !== article.slug ? { slug: draft.slug } : {}),
       title: draft.title.trim() || undefined,
       excerpt: draft.excerpt.trim() || undefined,
       takeaway: draft.takeaway.trim() || undefined,
@@ -171,6 +180,9 @@ export default function ArticleStudioPage() {
 
   const save = () => act(persistDraft, "Đã lưu");
   const busy = saving || coverUploading;
+  // Ô sai chỉ chặn ĐƯỜNG GHI. "Hủy gửi duyệt" và "Khôi phục" không gửi form đi đâu cả,
+  // khoá chúng lại là nhốt người viết trong một trạng thái họ không thoát ra được.
+  const cantWrite = busy || blocker !== undefined;
 
   return (
     <>
@@ -202,7 +214,10 @@ export default function ArticleStudioPage() {
             <Button
               onClick={() => {
                 if (!pendingDraft) return;
-                setDraft(pendingDraft.value);
+                // Nháp lưu từ bản build cũ chưa có `slug`. Đắp lên bản vừa tải về chứ
+                // không thay hẳn: thiếu một khoá là `draft.slug` thành `undefined`, và
+                // luật kiểm slug gọi `.trim()` trên đó là trắng cả trang.
+                setDraft({ ...toDraft(article), ...pendingDraft.value });
                 setPendingDraft(null);
               }}
               type="button"
@@ -279,8 +294,9 @@ export default function ArticleStudioPage() {
               </a>
             )}
             <Button
-              disabled={busy}
+              disabled={cantWrite}
               onClick={() => void save()}
+              title={blocker}
               type="button"
               variant="outline"
             >
@@ -314,13 +330,14 @@ export default function ArticleStudioPage() {
             ) : (
               <>
                 <Button
-                  disabled={busy}
+                  disabled={cantWrite}
                   onClick={() =>
                     void act(async () => {
                       await persistDraft();
                       await api.articles.submit(id);
                     }, "Đã gửi duyệt")
                   }
+                  title={blocker}
                   type="button"
                 >
                   <Send aria-hidden="true" className="size-4" />
@@ -367,6 +384,7 @@ export default function ArticleStudioPage() {
             draft={draft}
             onChange={setDraft}
             onUploadingChange={setCoverUploading}
+            slugLocked={slugLocked}
             tags={tags}
           />
         </StudioScroll>

@@ -58,6 +58,8 @@ export const ARTICLE_STATUS_TONES: Record<
 /** Bản nháp đang sửa ở studio bài viết. */
 export interface Draft {
   title: string;
+  /** Định danh trong đường dẫn. Khoá lại sau khi bài đã từng công khai. */
+  slug: string;
   excerpt: string;
   coverImageUrl: string;
   takeaway: string;

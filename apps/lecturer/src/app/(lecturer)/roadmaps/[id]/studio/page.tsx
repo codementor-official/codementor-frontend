@@ -39,7 +39,15 @@ import { SortableOverlay } from "@/components/sortable";
 import { addCourse, CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
 import type { CourseListItem } from "@/features/courses/types";
 import { api, type Tag } from "@/lib/api";
-import { isClean, slug as slugRule, text, url, type FieldError } from "@codementor/utils";
+import {
+  isClean,
+  maxLength,
+  retitleSlug,
+  slug as slugRule,
+  text,
+  url,
+  type FieldError,
+} from "@codementor/utils";
 import {
   CONTENT_STATUS_LABELS,
   CONTENT_STATUS_TONES,
@@ -251,12 +259,23 @@ export default function RoadmapStudioPage() {
   const locked = roadmap.status === "pending_review";
   const patch = (partial: Partial<Draft>) => setDraft({ ...draft, ...partial });
 
+  /**
+   * Đổi tiêu đề thì slug đi theo — xem `retitleSlug`. Lộ trình đã công khai thì KHÔNG đụng
+   * vào slug: backend từ chối đổi, và một ô disabled tự nhảy chữ chỉ làm người soạn tưởng
+   * mình vừa đổi được đường dẫn đã phát ra ngoài.
+   */
+  const patchTitle = (title: string) =>
+    patch({
+      title,
+      ...(roadmap.status === "published" ? {} : { slug: retitleSlug(draft.slug, draft.title, title) }),
+    });
+
   // Cùng giới hạn mà `UpdateRoadmapDto` áp ở backend — form chặn sớm, backend vẫn là nơi quyết.
   const errors: Record<string, FieldError> = {
     title: text(draft.title, 200, "Tiêu đề"),
     slug: slugRule(draft.slug),
-    shortDescription:
-      draft.shortDescription.trim().length > 500 ? "Mô tả ngắn tối đa 500 ký tự" : undefined,
+    // 300, không phải 500: `UpdateRoadmapDto` chốt ở 300 và backend là nơi đúng.
+    shortDescription: maxLength(draft.shortDescription, 300, "Mô tả ngắn"),
     description: draft.description.trim().length > 5000 ? "Mô tả tối đa 5000 ký tự" : undefined,
     coverImageUrl: url(draft.coverImageUrl, "Ảnh bìa"),
     prerequisiteNote:
@@ -490,7 +509,7 @@ export default function RoadmapStudioPage() {
             <input
               className={inputClassName}
               id="title"
-              onChange={(event) => patch({ title: event.target.value })}
+              onChange={(event) => patchTitle(event.target.value)}
               value={draft.title}
             />
           </Field>

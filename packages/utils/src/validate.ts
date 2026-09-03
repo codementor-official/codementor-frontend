@@ -82,3 +82,32 @@ export function integer(
 export function isClean(errors: Record<string, FieldError>): boolean {
   return Object.values(errors).every((error) => error === undefined);
 }
+
+/**
+ * Tiêu đề → slug. Bản SAO của `Slug.fromTitle` / `slugify` ở backend (cùng thứ tự phép
+ * biến đổi, cùng trần 70 ký tự) — form sinh trước để người soạn thấy và sửa được, backend
+ * vẫn là nơi chốt và là nơi xử va chạm slug trùng.
+ *
+ * Bỏ dấu tiếng Việt TRƯỚC khi lọc ký tự: không bỏ thì "Đệ quy" ra "quy", mất luôn từ đầu.
+ */
+export function slugify(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/gi, "d")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 70);
+}
+
+/**
+ * Slug sau khi đổi tiêu đề — dùng ở mọi ô "Tiêu đề" của studio.
+ *
+ * Chỉ sinh lại khi slug hiện tại ĐÚNG là bản sinh từ tiêu đề cũ. Người soạn từng tự sửa
+ * slug (hoặc backend đã gắn hậu tố chống trùng) thì giữ nguyên: một đường dẫn đã được
+ * chọn tay không được lặng lẽ đổi vì ai đó sửa một chữ trong tiêu đề.
+ */
+export function retitleSlug(currentSlug: string, prevTitle: string, nextTitle: string): string {
+  return currentSlug === slugify(prevTitle) ? slugify(nextTitle) : currentSlug;
+}
