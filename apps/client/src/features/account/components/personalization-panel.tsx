@@ -94,7 +94,7 @@ export function PersonalizationPanel() {
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-primary/25 bg-primary-tint px-4 py-3 text-sm leading-relaxed text-navy">
-        <strong>Lịch học có thể gửi nhắc tự động.</strong> Các sở thích còn lại được lưu để sử dụng về sau; chưa tự đề xuất khóa học, tạo lộ trình hoặc gọi AI.
+        <strong>Cá nhân hóa nội dung và lịch học.</strong> Khi bật gợi ý, hệ thống xếp hạng nội dung theo lĩnh vực, công nghệ, trình độ, mục tiêu nghề nghiệp và tiến độ bài tập. Recommendation này không gọi AI và không tự tạo lộ trình. Lịch học được dùng để gửi nhắc tự động.
       </div>
       {error && <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
 
@@ -160,7 +160,7 @@ export function PersonalizationPanel() {
               <Button variant="outline" disabled={!draft.reminderTime || !draft.schedule.some((slot) => slot.enabled)} onClick={() => setDraft({ ...draft, schedule: draft.schedule.map((slot) => slot.enabled ? { ...slot, startTime: draft.reminderTime } : slot) })}>Áp dụng cho ngày đã chọn</Button></div>
           </div>}
           {draft.remindersEnabled && !draft.schedule.some((slot) => slot.enabled) && <p className="py-3 text-sm text-text-muted">Chưa chọn ngày học. Hãy bật ít nhất một ngày để nhận nhắc theo lịch.</p>}
-          <div className="flex items-center gap-4 py-4"><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-navy">Cho phép dùng dữ liệu cho gợi ý tương lai</p><p className="mt-1 text-xs text-text-faint">Chỉ lưu quyền lựa chọn; hiện chưa có recommendation engine hoặc lời gọi AI.</p></div><Toggle checked={draft.adaptiveRecommendations} onChange={() => setDraft({ ...draft, adaptiveRecommendations: !draft.adaptiveRecommendations })} label="Gợi ý tương lai" /></div>
+          <div className="flex items-center gap-4 py-4"><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-navy">Cá nhân hóa nội dung đề xuất</p><p className="mt-1 text-xs text-text-faint">Bật: dùng sở thích và tiến độ học tập để chấm điểm. Tắt: xếp theo mức phổ biến chung; vẫn loại nhóm đã tham gia và ưu tiên nội dung chưa học. Không gửi dữ liệu tới AI.</p></div><Toggle checked={draft.adaptiveRecommendations} onChange={() => setDraft({ ...draft, adaptiveRecommendations: !draft.adaptiveRecommendations })} label="Cá nhân hóa đề xuất" /></div>
         </div>
       </Card>
 

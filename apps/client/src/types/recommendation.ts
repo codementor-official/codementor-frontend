@@ -28,8 +28,8 @@ export interface RecommendedItem {
 
 export interface RecommendationList {
   /**
-   * `false` khi học viên tắt gợi ý thích ứng hoặc chưa làm khảo sát — danh sách khi đó là
-   * bảng phổ biến chung, không dùng gì trong hồ sơ cá nhân.
+   * `false` khi học viên tắt gợi ý hoặc chưa có hồ sơ/lịch sử dùng để cá nhân hóa.
+   * Khi đó danh sách xếp theo mức phổ biến chung.
    */
   personalized: boolean;
   items: RecommendedItem[];

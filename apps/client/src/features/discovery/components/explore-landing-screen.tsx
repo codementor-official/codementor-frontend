@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -34,9 +34,18 @@ import type { LearningLeaderboardEntry, UserLearningPreferences } from "@/featur
 import type { WorkspaceListItem } from "@/features/workspace/types";
 import { api } from "@/lib/api";
 import { MAX_PAGE_SIZE, type ArticleSummary, type CourseSummary, type ExerciseSummary } from "@/types/catalogue";
+import { useLearningPreferenceStore } from "@/lib/store/learning-preference-store";
+
 
 type DifficultyFilter = Difficulty | "all";
 type Category = "all" | "courses" | "problems" | "articles" | "community";
+
+const recommendCourses = () => api.recommendations.courses(8);
+const recommendArticles = () => api.recommendations.articles(6);
+const recommendExercises = () => api.recommendations.exercises(8);
+const recommendedCourses = (ids: string[]) => api.courses.catalogue({ ids: ids.join(","), limit: ids.length });
+const recommendedArticles = () => api.articles.catalogue({ limit: MAX_PAGE_SIZE });
+const recommendedExercises = () => api.exercises.bank({ limit: MAX_PAGE_SIZE });
 
 const CATEGORY_OPTIONS: CategoryFilterOption[] = [
   { value: "all", label: "Tất cả", description: "Toàn bộ nội dung, mới và cũ", icon: LayoutGrid },
@@ -89,6 +98,8 @@ interface CommunityItem {
 }
 
 export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: string }) {
+  const preferenceRevision = useLearningPreferenceStore((state) => state.preferenceRevision);
+  const requestSequence = useRef(0);
   const [search, setSearch] = useState(initialQuery);
   const [debouncedSearch, setDebouncedSearch] = useState(initialQuery.trim());
   const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
@@ -108,8 +119,10 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
   }, [search]);
 
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
     setError(null);
+    setPreferences(null);
     const q = debouncedSearch || undefined;
     const results = await Promise.allSettled([
       api.courses.catalogue({ q, level: courseLevelParam(difficulty), limit: 8 }),
@@ -122,6 +135,7 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
       api.account.preferences(),
     ]);
     const [courseResult, articleResult, exerciseResult, workspaceResult, leaderboardResult, preferenceResult] = results;
+    if (sequence !== requestSequence.current) return;
     if (courseResult.status === "fulfilled") setCourses(courseResult.value.items);
     if (articleResult.status === "fulfilled") setArticles(articleResult.value.items);
     if (exerciseResult.status === "fulfilled") setExercises(exerciseResult.value.items);
@@ -136,8 +150,11 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
+    return () => {
+      window.clearTimeout(timer);
+      requestSequence.current += 1;
+    };
+  }, [load, preferenceRevision]);
 
   // Đề xuất chỉ có nghĩa khi học viên đang DUYỆT. Vừa gõ tìm kiếm hay chọn độ khó là họ
   // đã nói rõ muốn gì, và `recommendation-service` không nhận tham số tìm kiếm nào — dải
@@ -148,18 +165,18 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
   // đang dùng. Chỉ nạp khi đang duyệt; lúc đó `browsing` cũng là lúc `courses`/`articles`/
   // `exercises` bên dưới đang giữ danh sách không lọc, nên hai bên luôn nói về cùng một tập.
   const suggestedCourses = usePersonalized<CourseSummary>(
-    () => api.recommendations.courses(8),
-    () => api.courses.catalogue({ limit: MAX_PAGE_SIZE }),
+    recommendCourses,
+    recommendedCourses,
     browsing,
   );
   const suggestedArticles = usePersonalized<ArticleSummary>(
-    () => api.recommendations.articles(6),
-    () => api.articles.catalogue({ limit: MAX_PAGE_SIZE }),
+    recommendArticles,
+    recommendedArticles,
     browsing,
   );
   const suggestedExercises = usePersonalized<ExerciseSummary>(
-    () => api.recommendations.exercises(8),
-    () => api.exercises.bank({ limit: MAX_PAGE_SIZE }),
+    recommendExercises,
+    recommendedExercises,
     browsing,
   );
 
@@ -182,10 +199,10 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
   const showCommunity = category === "all" || category === "community";
 
   const topics = useMemo(() => {
-    const selected = [
+    const selected = preferences?.adaptiveRecommendations && preferences.completedAt ? [
       ...(preferences?.interestedTechnologies ?? []),
       ...(preferences?.interestedFields ?? []).map((field) => FIELD_LABELS[field] ?? field),
-    ].filter((topic) => !/\bai\b|trí tuệ nhân tạo/i.test(topic));
+    ] : [];
     const available = [
       ...articles.map((article) => article.tagName).filter((tag): tag is string => Boolean(tag)),
       ...exercises.map((exercise) => exercise.kind === "code" ? "Coding" : exercise.kind === "quiz" ? "Trắc nghiệm" : "Tự luận"),
@@ -250,7 +267,8 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="flex min-w-0 flex-col gap-5">
-              {showProblems && <><section><SectionTitle icon={hasPersonalizedContent(suggestedExercises) ? Sparkles : Star} title={hasPersonalizedContent(suggestedExercises) ? "Bài luyện tập dành cho bạn" : "Bài luyện tập phổ biến"} href="/practice" fillIcon={!hasPersonalizedContent(suggestedExercises)} />{exerciseList.length === 0 ? <EmptySearch label="bài luyện tập" query={search} /> : <Card className="overflow-hidden">{exerciseList.map(({ item: exercise, reason }, index) => <ProblemRow key={exercise.id} tile="</>" tileVariant={index % 3 === 1 ? "accent" : index % 3 === 2 ? "primary" : "navy"} title={exercise.title} meta={reason ?? `Tác giả: ${exercise.authorName ?? "CodeMentor"}`} difficulty={exerciseDifficulty(exercise.difficulty)} href={`/solve/${exercise.id}`} />)}</Card>}</section><section><div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy"><Target className="h-4 w-4 text-primary" /> Chủ đề đề xuất cho bạn</div><p className="mb-3 text-xs text-text-faint">{preferences && (preferences.interestedFields.length || preferences.interestedTechnologies.length) ? "Từ sở thích học tập đã lưu của bạn" : "Chủ đề đang có nội dung mới trên hệ thống"}</p><div className="flex flex-wrap gap-2">{topics.length ? topics.map((topic) => <button key={topic} type="button" onClick={() => { setSearch(topic); setCategory("all"); }} className="rounded-md border border-border bg-surface px-3.5 py-2 text-sm font-medium text-navy transition-colors hover:border-primary hover:text-primary">{topic}</button>) : <span className="text-sm text-text-faint">Chưa có chủ đề phù hợp.</span>}</div></section></>}
+              {showProblems && <><section><SectionTitle icon={hasPersonalizedContent(suggestedExercises) ? Sparkles : Star} title={hasPersonalizedContent(suggestedExercises) ? "Bài luyện tập dành cho bạn" : "Bài luyện tập phổ biến"} href="/practice" fillIcon={!hasPersonalizedContent(suggestedExercises)} />{exerciseList.length === 0 ? <EmptySearch label="bài luyện tập" query={search} /> : <Card className="overflow-hidden">{exerciseList.map(({ item: exercise, reason }, index) => <ProblemRow key={exercise.id} tile="</>" tileVariant={index % 3 === 1 ? "accent" : index % 3 === 2 ? "primary" : "navy"} title={exercise.title} meta={reason ?? `Tác giả: ${exercise.authorName ?? "CodeMentor"}`} difficulty={exerciseDifficulty(exercise.difficulty)} href={`/solve/${exercise.id}`} />)}</Card>}</section><section><div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy"><Target className="h-4 w-4 text-primary" /> Chủ đề đề xuất cho bạn</div><p className="mb-3 text-xs text-text-faint">{preferences?.adaptiveRecommendations && preferences.completedAt && (preferences.interestedFields.length || preferences.interestedTechnologies.length) ? "Từ sở thích học tập đã lưu của bạn" : "Chủ đề đang có nội dung mới trên hệ thống"}</p><div className="flex flex-wrap gap-2">{topics.length ? topics.map((topic) => <button key={topic} type="button" onClick={() => { setSearch(topic); setCategory("all"); }} className="rounded-md border border-border bg-surface px-3.5 py-2 text-sm font-medium text-navy transition-colors hover:border-primary hover:text-primary">{topic}</button>) : <span className="text-sm text-text-faint">Chưa có chủ đề phù hợp.</span>}</div></section></>}
+
             </div>
 
             {showCommunity && <div className="flex min-w-0 flex-col gap-4">

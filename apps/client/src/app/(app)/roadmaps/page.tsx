@@ -5,13 +5,13 @@ import { Map as MapIcon } from "lucide-react";
 import { FilterBar, Select, StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { EntityCard } from "@/components/entity-card";
+import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { Pagination } from "@/components/ui/pagination";
 import {
   CatalogueEmpty,
   CatalogueError,
   CatalogueSkeleton,
 } from "@/components/ui/catalogue-state";
-import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { useCatalogue } from "@/hooks/use-catalogue";
 import { api } from "@/lib/api";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
@@ -94,9 +94,6 @@ export default function RoadmapsPage() {
         subtitle="Mỗi lộ trình gộp nhiều khóa học theo một hướng nghề nghiệp, sắp xếp sẵn thứ tự để bạn không phải tự mò mẫm nên học gì trước."
       />
 
-      <div className="mb-6">
-        <RecommendedRoadmaps />
-      </div>
 
       <StatStrip
         className="mb-5"
@@ -145,6 +142,10 @@ export default function RoadmapsPage() {
           </>
         }
       />
+
+      {!search.trim() && field === "all" && level === "all" && currentPage === 1 && <section className="mb-6" aria-label="Lộ trình đề xuất">
+        <RecommendedRoadmaps />
+      </section>}
 
       {isLoading ? (
         <CatalogueSkeleton />

@@ -7,8 +7,8 @@ import { FilterBar, SegmentedTabs, Select, StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { StreakCard } from "@/components/streak-card";
 import { Card } from "@/components/ui/card";
-import { CatalogueError } from "@/components/ui/catalogue-state";
 import { RecommendedExercises } from "@/components/recommendation/recommended";
+import { CatalogueError } from "@/components/ui/catalogue-state";
 import { api } from "@/lib/api";
 import { DIFFICULTY_OPTIONS, exerciseDifficulty } from "@/lib/catalogue/level";
 import type { Difficulty } from "@/components/ui/badge";
@@ -146,12 +146,6 @@ export default function PracticePage() {
         ]}
       />
 
-      {/* Trên bộ lọc độ khó: gợi ý là câu trả lời cho "làm bài nào tiếp", còn bộ lọc là
-          công cụ cho người đã tự biết mình muốn gì. */}
-      <div className="mb-6">
-        <RecommendedExercises />
-      </div>
-
       <div className="mb-4">
         <SegmentedTabs
           options={DIFFICULTY_OPTIONS}
@@ -165,6 +159,9 @@ export default function PracticePage() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
         <main className="min-w-0">
+          {!search.trim() && difficulty === "all" && kind === "all" && page === 1 && <section className="mb-6" aria-label="Bài tập đề xuất">
+            <RecommendedExercises />
+          </section>}
           <FilterBar
             className="mb-5"
             searchValue={search}

@@ -183,7 +183,7 @@ export const api = {
     progress: (id: string) => unwrap<RoadmapProgress>(`/roadmaps/${id}/progress`),
   },
   courses: {
-    catalogue: (params: CatalogueParams = {}) =>
+    catalogue: (params: CatalogueParams & { ids?: string } = {}) =>
       unwrap<Page<CourseSummary>>(`/courses${query(params)}`),
     detail: (id: string) => unwrap<CourseDetail>(`/courses/${id}`),
 
@@ -323,6 +323,7 @@ export const api = {
       ),
     list: (
       params: {
+        ids?: string;
         scope?: "all" | "mine" | "owned" | "joined" | "public" | "discover";
         q?: string;
         topic?: string;

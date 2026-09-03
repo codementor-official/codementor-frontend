@@ -5,13 +5,13 @@ import { BookOpen } from "lucide-react";
 import { FilterBar, Select, SegmentedTabs, StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { CourseCard } from "@/components/course-card";
+import { RecommendedCourses } from "@/components/recommendation/recommended";
 import { Pagination } from "@/components/ui/pagination";
 import {
   CatalogueEmpty,
   CatalogueError,
   CatalogueSkeleton,
 } from "@/components/ui/catalogue-state";
-import { RecommendedCourses } from "@/components/recommendation/recommended";
 import { useCatalogue } from "@/hooks/use-catalogue";
 import { useCourseProgress } from "@/hooks/use-course-progress";
 import { useMyCourses } from "@/hooks/use-my-courses";
@@ -112,11 +112,6 @@ export default function CoursesPage() {
         )
       ) : (
         <>
-          {/* Trên StatStrip và bộ lọc: học viên mở trang này để chọn học gì, nên thứ hợp
-              với họ phải đến trước công cụ duyệt cả danh mục. */}
-          <div className="mb-6">
-            <RecommendedCourses />
-          </div>
 
           <StatStrip
             className="mb-5"
@@ -153,6 +148,10 @@ export default function CoursesPage() {
               />
             }
           />
+
+          {!search.trim() && level === "all" && currentPage === 1 && <section className="mb-6" aria-label="Khóa học đề xuất">
+            <RecommendedCourses />
+          </section>}
 
           {isLoading ? (
             <CatalogueSkeleton />
