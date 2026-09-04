@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpen } from "lucide-react";
 import { FilterBar, Select, SegmentedTabs, StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
@@ -19,6 +19,8 @@ import { useAuth } from "@/providers/auth-provider";
 import { api } from "@/lib/api";
 import { LEVEL_OPTIONS } from "@/lib/catalogue/level";
 import { MAX_PAGE_SIZE, type CourseSummary } from "@/types/catalogue";
+import type { CatalogueTopicSummary } from "@/types/catalogue";
+import { TopicFilter } from "@/features/practice/components/topic-filter";
 
 const TILE_TONE = ["navy", "primary"] as const;
 /**
@@ -33,6 +35,10 @@ export default function CoursesPage() {
   const [tab, setTab] = useState<"all" | "mine">("all");
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState("all");
+  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [topics, setTopics] = useState<CatalogueTopicSummary[]>([]);
+  const [topicsLoading, setTopicsLoading] = useState(true);
+  const [topicsError, setTopicsError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   const mine = useMyCourses(authStatus === "authenticated");
@@ -44,12 +50,22 @@ export default function CoursesPage() {
     api.courses.catalogue({ limit: MAX_PAGE_SIZE }),
   );
 
+  useEffect(() => {
+    let active = true;
+    void api.courses.topics()
+      .then((result) => active && setTopics(result))
+      .catch(() => active && setTopicsError("Không tải được chủ đề khóa học."))
+      .finally(() => active && setTopicsLoading(false));
+    return () => { active = false; };
+  }, []);
+
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return items
       .filter((c) => level === "all" || c.level === level)
-      .filter((c) => !query || `${c.title} ${c.slug} ${c.authorName ?? ""}`.toLowerCase().includes(query));
-  }, [items, search, level]);
+      .filter((c) => selectedTopicIds.length === 0 || (c.topics ?? []).some((topic) => selectedTopicIds.includes(topic.id)))
+      .filter((c) => !query || `${c.title} ${c.slug} ${c.authorName ?? ""} ${(c.topics ?? []).map((topic) => topic.name).join(" ")}`.toLowerCase().includes(query));
+  }, [items, search, level, selectedTopicIds]);
 
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -122,6 +138,17 @@ export default function CoursesPage() {
             ]}
           />
 
+          <div className="mb-4">
+            <TopicFilter
+              topics={topics}
+              selectedIds={selectedTopicIds}
+              loading={topicsLoading}
+              error={topicsError}
+              onChange={(ids) => { setSelectedTopicIds(ids); setPage(1); }}
+              onClear={() => { setSelectedTopicIds([]); setPage(1); }}
+            />
+          </div>
+
           <FilterBar
             className="mb-5"
             searchValue={search}
@@ -130,9 +157,10 @@ export default function CoursesPage() {
               setPage(1);
             }}
             searchPlaceholder="Tìm khóa học theo tên, slug, tác giả..."
-            activeFilterCount={Number(level !== "all")}
+            activeFilterCount={Number(level !== "all") + selectedTopicIds.length}
             onClearFilters={() => {
               setLevel("all");
+              setSelectedTopicIds([]);
               setPage(1);
             }}
             sheetTitle="Lọc khóa học"
@@ -149,7 +177,7 @@ export default function CoursesPage() {
             }
           />
 
-          {!search.trim() && level === "all" && currentPage === 1 && <section className="mb-6" aria-label="Khóa học đề xuất">
+          {!search.trim() && level === "all" && selectedTopicIds.length === 0 && currentPage === 1 && <section className="mb-6" aria-label="Khóa học đề xuất">
             <RecommendedCourses />
           </section>}
 
@@ -177,6 +205,7 @@ export default function CoursesPage() {
                     <li key={course.id}>
                       <CourseCard
                         course={course}
+                        tags={(course.topics ?? []).slice(0, 3).map((topic) => topic.name)}
                         tileVariant={TILE_TONE[index % TILE_TONE.length]}
                         state={
                           enrolled && enrollment.progressPercent >= 100 ? "completed" : undefined

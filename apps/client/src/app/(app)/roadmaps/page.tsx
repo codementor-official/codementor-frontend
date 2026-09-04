@@ -22,6 +22,8 @@ import {
   levelToDifficulty,
 } from "@/lib/catalogue/level";
 import { MAX_PAGE_SIZE, type RoadmapDetail, type RoadmapSummary } from "@/types/catalogue";
+import type { CatalogueTopicSummary } from "@/types/catalogue";
+import { TopicFilter } from "@/features/practice/components/topic-filter";
 
 /** Danh sách một lộ trình một dòng, nên sáu dòng là vừa một màn hình. */
 const PAGE_SIZE = 6;
@@ -46,19 +48,33 @@ export default function RoadmapsPage() {
   const [search, setSearch] = useState("");
   const [field, setField] = useState("all");
   const [level, setLevel] = useState("all");
+  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [topics, setTopics] = useState<CatalogueTopicSummary[]>([]);
+  const [topicsLoading, setTopicsLoading] = useState(true);
+  const [topicsError, setTopicsError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   const { items, isLoading, error } = useCatalogue<RoadmapSummary>(() =>
     api.roadmaps.catalogue({ limit: MAX_PAGE_SIZE }),
   );
 
+  useEffect(() => {
+    let active = true;
+    void api.roadmaps.topics()
+      .then((result) => active && setTopics(result))
+      .catch(() => active && setTopicsError("Không tải được chủ đề lộ trình."))
+      .finally(() => active && setTopicsLoading(false));
+    return () => { active = false; };
+  }, []);
+
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return items
       .filter((r) => field === "all" || r.field === field)
       .filter((r) => level === "all" || r.level === level)
-      .filter((r) => !query || `${r.title} ${r.slug} ${r.authorName ?? ""}`.toLowerCase().includes(query));
-  }, [items, search, field, level]);
+      .filter((r) => selectedTopicIds.length === 0 || (r.topics ?? []).some((topic) => selectedTopicIds.includes(topic.id)))
+      .filter((r) => !query || `${r.title} ${r.slug} ${r.authorName ?? ""} ${(r.topics ?? []).map((topic) => topic.name).join(" ")}`.toLowerCase().includes(query));
+  }, [items, search, field, level, selectedTopicIds]);
 
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -104,6 +120,17 @@ export default function RoadmapsPage() {
         ]}
       />
 
+      <div className="mb-4">
+        <TopicFilter
+          topics={topics}
+          selectedIds={selectedTopicIds}
+          loading={topicsLoading}
+          error={topicsError}
+          onChange={(ids) => { setSelectedTopicIds(ids); setPage(1); }}
+          onClear={() => { setSelectedTopicIds([]); setPage(1); }}
+        />
+      </div>
+
       <FilterBar
         className="mb-5"
         searchValue={search}
@@ -112,10 +139,11 @@ export default function RoadmapsPage() {
           setPage(1);
         }}
         searchPlaceholder="Tìm lộ trình theo tên, slug, tác giả..."
-        activeFilterCount={Number(field !== "all") + Number(level !== "all")}
+        activeFilterCount={Number(field !== "all") + Number(level !== "all") + selectedTopicIds.length}
         onClearFilters={() => {
           setField("all");
           setLevel("all");
+          setSelectedTopicIds([]);
           setPage(1);
         }}
         sheetTitle="Lọc lộ trình"
@@ -143,7 +171,7 @@ export default function RoadmapsPage() {
         }
       />
 
-      {!search.trim() && field === "all" && level === "all" && currentPage === 1 && <section className="mb-6" aria-label="Lộ trình đề xuất">
+      {!search.trim() && field === "all" && level === "all" && selectedTopicIds.length === 0 && currentPage === 1 && <section className="mb-6" aria-label="Lộ trình đề xuất">
         <RecommendedRoadmaps />
       </section>}
 
@@ -185,7 +213,7 @@ export default function RoadmapsPage() {
                     }
                     // Độ khó xuống hàng số liệu, KHÔNG để cạnh chip: hàng chip giờ toàn tên
                     // khóa học, thêm một badge "Cơ bản" vào đó thì nó đọc như tên khóa thứ ba.
-                    tags={courseChips(detail)}
+                    tags={(roadmap.topics ?? []).length ? (roadmap.topics ?? []).slice(0, CHIP_LIMIT).map((topic) => topic.name) : courseChips(detail)}
                     stats={[
                       { label: "", value: levelToDifficulty(roadmap.level) },
                       { label: "khóa học", value: roadmap.courseCount },

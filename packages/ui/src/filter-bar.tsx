@@ -44,12 +44,13 @@ export function FilterBar({
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={expanded}
+            aria-label={`${sheetTitle}${activeFilterCount > 0 ? `, ${activeFilterCount} bộ lọc đang áp dụng` : ""}`}
             className="flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-foreground hover:bg-muted"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{sheetTitle}</span>
             {activeFilterCount > 0 && (
-              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-bold text-primary-foreground">
                 {activeFilterCount}
               </span>
             )}

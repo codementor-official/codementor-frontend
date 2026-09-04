@@ -41,7 +41,9 @@ import type {
   CourseSummary,
   EnrolledCourse,
   ExerciseDetail,
+  ExerciseProgressSummary,
   ExerciseSummary,
+  ExerciseTopicSummary,
   LessonContent,
   LessonProgress,
   Page,
@@ -195,6 +197,7 @@ export const api = {
   roadmaps: {
     catalogue: (params: CatalogueParams = {}) =>
       unwrap<Page<RoadmapSummary>>(`/roadmaps${query(params)}`),
+    topics: () => unwrap<ExerciseTopicSummary[]>("/roadmaps/topics"),
     /** Takes the UUID, not the slug — the service has no slug lookup. */
     detail: (id: string) => unwrap<RoadmapDetail>(`/roadmaps/${id}`),
     mine: () => unwrap<EnrolledRoadmap[]>("/roadmaps/enrollments/mine"),
@@ -207,6 +210,7 @@ export const api = {
   courses: {
     catalogue: (params: CatalogueParams & { ids?: string } = {}) =>
       unwrap<Page<CourseSummary>>(`/courses${query(params)}`),
+    topics: () => unwrap<ExerciseTopicSummary[]>("/courses/topics"),
     detail: (id: string) => unwrap<CourseDetail>(`/courses/${id}`),
 
     /** "Khoá học của tôi" — every course I'm enrolled in, most recently active first. */
@@ -252,6 +256,8 @@ export const api = {
   exercises: {
     bank: (params: CatalogueParams = {}) =>
       unwrap<Page<ExerciseSummary>>(`/exercises${query(params)}`),
+    topics: () => unwrap<ExerciseTopicSummary[]>("/exercises/topics"),
+    progressSummary: () => unwrap<ExerciseProgressSummary>("/exercises/progress-summary"),
     /** Takes the UUID, not the slug — the service has no slug lookup. */
     detail: (id: string) => unwrap<ExerciseDetail>(`/exercises/${id}`),
   },
