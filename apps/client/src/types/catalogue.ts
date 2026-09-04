@@ -34,7 +34,7 @@ export interface RoadmapSummary {
   courseCount: number;
   createdBy: string | null;
   authorName: string | null;
-  topics: CatalogueTopic[];
+  topics?: CatalogueTopic[];
   updatedAt: string;
 }
 
@@ -51,7 +51,7 @@ export interface CourseSummary {
   totalLessons: number;
   createdBy: string | null;
   authorName: string | null;
-  topics: CatalogueTopic[];
+  topics?: CatalogueTopic[];
   updatedAt: string;
 }
 
@@ -85,6 +85,8 @@ export type ExerciseTopic = CatalogueTopic;
 
 export interface ExerciseTopicSummary extends ExerciseTopic {
   count: number;
+  solved?: number;
+  attempted?: number;
 }
 
 export type CatalogueTopicSummary = ExerciseTopicSummary;

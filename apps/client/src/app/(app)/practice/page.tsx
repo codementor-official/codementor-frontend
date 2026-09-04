@@ -217,24 +217,9 @@ export default function PracticePage() {
                 <RecommendedExercises limit={3} title="Gợi ý tiếp theo" />
               </section>
             )}
-          <div className="mb-4">
-            <TopicFilter
-              topics={topics}
-              selectedIds={selectedTopicIds}
-              loading={topicsLoading}
-              error={topicsError}
-              onChange={(ids) => {
-                setSelectedTopicIds(ids);
-                resetPagination();
-              }}
-              onClear={() => {
-                setSelectedTopicIds([]);
-                resetPagination();
-              }}
-            />
-          </div>
+          <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
           <FilterBar
-            className="mb-3"
+            className="border-b border-border bg-bg p-3 [&>div:first-child]:bg-surface"
             searchValue={search}
             onSearchChange={(value) => {
               setSearch(value);
@@ -283,11 +268,26 @@ export default function PracticePage() {
               </>
             }
           />
+          <TopicFilter
+            topics={topics}
+            selectedIds={selectedTopicIds}
+            loading={topicsLoading}
+            error={topicsError}
+            label="Chủ đề bài tập"
+            onChange={(ids) => {
+              setSelectedTopicIds(ids);
+              resetPagination();
+            }}
+            onClear={() => {
+              setSelectedTopicIds([]);
+              resetPagination();
+            }}
+          />
 
           {error ? (
-            <CatalogueError message={error} />
+            <div className="p-4"><CatalogueError message={error} /></div>
           ) : (
-            <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+            <>
               <div className="flex items-center gap-3 border-b border-border bg-bg px-4 py-3">
                 <span className="hidden w-7 md:block" />
                 <span className="hidden w-8 sm:block" />
@@ -347,8 +347,9 @@ export default function PracticePage() {
                   </div>
                 </nav>
               )}
-            </section>
+            </>
           )}
+          </section>
         </main>
 
         <aside className="space-y-4 xl:sticky xl:top-5 xl:self-start">

@@ -138,17 +138,6 @@ export default function CoursesPage() {
             ]}
           />
 
-          <div className="mb-4">
-            <TopicFilter
-              topics={topics}
-              selectedIds={selectedTopicIds}
-              loading={topicsLoading}
-              error={topicsError}
-              onChange={(ids) => { setSelectedTopicIds(ids); setPage(1); }}
-              onClear={() => { setSelectedTopicIds([]); setPage(1); }}
-            />
-          </div>
-
           <FilterBar
             className="mb-5"
             searchValue={search}
@@ -176,6 +165,19 @@ export default function CoursesPage() {
               />
             }
           />
+
+          <div className="mb-5">
+            <TopicFilter
+              standalone
+              label="Lọc chủ đề khóa học"
+              topics={topics}
+              selectedIds={selectedTopicIds}
+              loading={topicsLoading}
+              error={topicsError}
+              onChange={(ids) => { setSelectedTopicIds(ids); setPage(1); }}
+              onClear={() => { setSelectedTopicIds([]); setPage(1); }}
+            />
+          </div>
 
           {!search.trim() && level === "all" && selectedTopicIds.length === 0 && currentPage === 1 && <section className="mb-6" aria-label="Khóa học đề xuất">
             <RecommendedCourses />
