@@ -17,3 +17,4 @@ export {
   writeDraft,
   type StoredDraft,
 } from "./studio-draft";
+export { StudioShell, StudioScroll } from "./studio-shell";

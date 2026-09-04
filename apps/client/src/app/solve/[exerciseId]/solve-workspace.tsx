@@ -216,12 +216,18 @@ export function SolveWorkspace({
             <article className="prose-sm max-w-none text-sm leading-relaxed text-text [&_code]:rounded-sm [&_code]:bg-border-soft [&_code]:px-1 [&_code]:font-mono [&_code]:text-xs [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-ink-fixed [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:text-on-ink-fixed [&_strong]:font-semibold [&_strong]:text-navy">
               <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{problem.description}</ReactMarkdown>
             </article>
-            <div className="mt-4 text-xs font-bold tracking-wide text-text-faint uppercase">Ràng buộc</div>
-            <ul className="mt-2 list-disc pl-4 text-xs leading-relaxed text-text-muted">
-              {problem.constraints.map((c) => (
-                <li key={c}>{c}</li>
-              ))}
-            </ul>
+            {/* Bài không đặt ràng buộc thì không có gì để đọc — tiêu đề trần đứng một mình
+                khiến người học tưởng phần này chưa tải xong. */}
+            {problem.constraints.length > 0 && (
+              <>
+                <div className="mt-4 text-xs font-bold tracking-wide text-text-faint uppercase">Ràng buộc</div>
+                <ul className="mt-2 list-disc pl-4 text-xs leading-relaxed text-text-muted">
+                  {problem.constraints.map((c) => (
+                    <li key={c}>{c}</li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
         );
       case "discussion":

@@ -324,7 +324,7 @@ export function ExerciseBriefForm({
             </Button>
           }
           className="mb-3"
-          hint="Viết bằng Markdown: mô tả bài toán, ràng buộc đầu vào, dạng đầu ra. Bấm “Xem trước” để đọc như học viên đọc."
+          hint="Viết bằng Markdown: mô tả bài toán, dạng đầu vào, dạng đầu ra. Ràng buộc có ô riêng bên dưới. Bấm “Xem trước” để đọc như học viên đọc."
           icon={FileText}
           title="Đề bài"
         />
@@ -346,8 +346,69 @@ export function ExerciseBriefForm({
             value={value.content.statement ?? ""}
           />
         )}
+
+        {/* Màn giải bài dựng khối "Ràng buộc" từ `content.constraints`, một dòng một gạch
+            đầu dòng. Trước đây KHÔNG studio nào ghi được trường đó: chỉ đường nhập đề từ
+            LeetCode và bản nháp AI lẳng lặng đổ dữ liệu vào, người soạn không xem cũng
+            không sửa được. Một ô nhiều dòng là đủ — mỗi dòng là một ràng buộc. */}
+        <LinesField
+          label="Ràng buộc — mỗi dòng một ý"
+          onChange={(constraints) => patchContent({ constraints })}
+          placeholder={"1 <= n <= 10^5\n|a[i]| <= 10^9"}
+          readOnly={readOnly}
+          value={value.content.constraints ?? []}
+        />
       </Card>
     </fieldset>
+  );
+}
+
+/**
+ * Ô nhập một DANH SÁCH dòng.
+ *
+ * Cùng lý do với `JsonField`: giá trị thật là mảng đã bỏ dòng trống, nhưng nếu lấy thẳng
+ * `join("\n")` làm text của ô thì vừa gõ Enter là dòng trống bị cắt ngay và không xuống
+ * dòng được. Text nằm ở state cục bộ, chỉ nhận lại từ ngoài khi mảng thật sự đổi.
+ */
+function LinesField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  readOnly = false,
+}: {
+  label: string;
+  value: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+  readOnly?: boolean;
+}) {
+  const incoming = value.join("\n");
+  const [state, setState] = useState({ text: incoming, source: incoming });
+
+  if (incoming !== state.source) setState({ text: incoming, source: incoming });
+
+  const change = (text: string) => {
+    const next = text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    setState({ text, source: next.join("\n") });
+    onChange(next);
+  };
+
+  return (
+    <label className="mt-4 block text-xs text-muted-foreground">
+      {label}
+      <textarea
+        aria-label={label}
+        className={`${textareaClassName} mt-1.5 min-h-20 font-mono`}
+        disabled={readOnly}
+        onChange={(event) => change(event.target.value)}
+        placeholder={placeholder}
+        value={state.text}
+      />
+    </label>
   );
 }
 

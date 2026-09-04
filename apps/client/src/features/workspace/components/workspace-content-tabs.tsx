@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Check,
@@ -20,32 +21,14 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { ApiClientError } from "@codementor/api-client";
-import {
-  ExerciseBriefForm,
-  ExerciseCodeForm,
-  clearDraft,
-  draftStorageKey,
-  exerciseBriefBlocker,
-  readDraft,
-  useDraftAutosave,
-  type ExerciseContent,
-  type ExerciseDraft,
-  type TagOption,
-} from "@codementor/solve";
-import {
-  ResizeHandle,
-  Select,
-  useResolvedTheme,
-  useToast,
-} from "@codementor/ui";
-import { Group, Panel } from "react-resizable-panels";
+import { Select, useToast } from "@codementor/ui";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { api } from "@/lib/api";
 import { downloadCsv } from "@/lib/download-csv";
+import { messageOf, toLocalInput } from "../exercise-authoring";
 import type { ExerciseSummary } from "@/types/catalogue";
 import type {
   WorkspaceAssignment,
@@ -761,6 +744,7 @@ export function WorkspaceExercisesTab({
   members: WorkspaceMember[];
   initialExerciseId?: string | null;
 }) {
+  const router = useRouter();
   const toast = useToast();
   const [data, setData] = useState(EMPTY_PAGE<WorkspaceExercise>());
   const [bank, setBank] = useState<ExerciseSummary[]>([]);
@@ -779,9 +763,6 @@ export function WorkspaceExercisesTab({
     initialExerciseId && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(initialExerciseId)
       ? initialExerciseId : null,
   );
-  const [authoringOpen, setAuthoringOpen] = useState(false);
-  const [studioExercise, setStudioExercise] =
-    useState<WorkspaceExerciseDetail | null>(null);
   const assignable = members.filter((m) => m.role !== "owner");
   const [memberIds, setMemberIds] = useState<string[]>(
     assignable.map((m) => m.id),
@@ -925,10 +906,7 @@ export function WorkspaceExercisesTab({
             {canCreate && (
               <Button
                 size="sm"
-                onClick={() => {
-                  setStudioExercise(null);
-                  setAuthoringOpen(true);
-                }}
+                href={`/workspace/${encodeURIComponent(detail.slug)}/exercises/new`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Tạo bài mới
@@ -1255,23 +1233,10 @@ export function WorkspaceExercisesTab({
           onUpdated={load}
           onOpenStudio={(exercise) => {
             setDetailId(null);
-            setStudioExercise(exercise);
-            setAuthoringOpen(true);
+            router.push(
+              `/workspace/${encodeURIComponent(detail.slug)}/exercises/${exercise.id}/studio`,
+            );
           }}
-        />
-      )}
-      {authoringOpen && (
-        <ExerciseAuthoringDialog
-          slug={detail.slug}
-          members={assignable}
-          initialMemberIds={memberIds}
-          canAssign={canAssign}
-          initialExercise={studioExercise}
-          onClose={() => {
-            setAuthoringOpen(false);
-            setStudioExercise(null);
-          }}
-          onSaved={load}
         />
       )}
       <ConfirmDialog
@@ -1286,553 +1251,6 @@ export function WorkspaceExercisesTab({
   );
 }
 
-function ExerciseAuthoringDialog({
-  slug,
-  members,
-  initialMemberIds,
-  canAssign,
-  initialExercise,
-  onClose,
-  onSaved,
-}: {
-  slug: string;
-  members: WorkspaceMember[];
-  initialMemberIds: string[];
-  canAssign: boolean;
-  initialExercise: WorkspaceExerciseDetail | null;
-  onClose: () => void;
-  onSaved: () => Promise<void>;
-}) {
-  const toast = useToast();
-  const theme = useResolvedTheme();
-  const [mode, setMode] = useState<"manual" | "import" | "ai">("manual");
-  const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
-    "medium",
-  );
-  const [statement, setStatement] = useState("");
-  const [dueAt, setDueAt] = useState("");
-  const [rawImport, setRawImport] = useState("");
-  const [sourcePlatform, setSourcePlatform] = useState("leetcode");
-  const [sourceUrl, setSourceUrl] = useState("");
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [documentPage, setDocumentPage] = useState(1);
-  const [documentQuery, setDocumentQuery] = useState("");
-  const [documents, setDocuments] = useState(EMPTY_PAGE<WorkspaceDocument>());
-  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
-  const [documentsLoading, setDocumentsLoading] = useState(false);
-  const [generatedByAi, setGeneratedByAi] = useState(false);
-  const [exerciseSlug, setExerciseSlug] = useState("");
-  const [estimatedMinutes, setEstimatedMinutes] = useState("30");
-  const [timeLimitMs, setTimeLimitMs] = useState("1000");
-  const [memoryLimitKb, setMemoryLimitKb] = useState("262144");
-  const [studioContent, setStudioContent] = useState<ExerciseContent>({
-    statement: "",
-    ioMode: "stdin_stdout",
-    testCases: [],
-    languages: [],
-    evaluation: { checker: "trimmed", stopOnFirstFailure: false },
-  });
-  const [memberIds, setMemberIds] = useState(initialMemberIds);
-  const [tagIds, setTagIds] = useState<string[]>([]);
-  const [tags, setTags] = useState<TagOption[]>([]);
-  const [busy, setBusy] = useState(false);
-  // Bài đang sửa khoá theo id; bài mới khoá theo workspace — một workspace chỉ soạn dở
-  // một bài mới tại một thời điểm.
-  const storageKey = draftStorageKey(
-    "workspace-exercise",
-    initialExercise?.id ?? `new:${slug}`,
-  );
-  const [restored, setRestored] = useState(false);
-
-  // Chủ đề chỉ để CHỌN: `POST /tags` dành cho admin và giảng viên, nên không truyền
-  // `onCreateTag` — hỏng thì bỏ luôn khối chủ đề, soạn bài không dừng vì một ô phụ.
-  useEffect(() => {
-    let cancelled = false;
-    api.tags
-      .list()
-      .then((loaded) => !cancelled && setTags(loaded))
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!initialExercise) {
-      setTitle("");
-      setSummary("");
-      setDifficulty("medium");
-      setStatement("");
-      setDueAt("");
-      setGeneratedByAi(false);
-      setExerciseSlug("");
-      setEstimatedMinutes("30");
-      setTimeLimitMs("1000");
-      setMemoryLimitKb("262144");
-      setStudioContent({
-        statement: "",
-        ioMode: "stdin_stdout",
-        testCases: [],
-        languages: [],
-        evaluation: { checker: "trimmed", stopOnFirstFailure: false },
-      });
-      setMemberIds(initialMemberIds);
-      setTagIds([]);
-      return;
-    }
-    const content = initialExercise.content ?? {};
-    setTitle(initialExercise.title);
-    setSummary(initialExercise.summary ?? "");
-    setDifficulty(initialExercise.difficulty);
-    setStatement(String(content.statement ?? ""));
-    setExerciseSlug(initialExercise.slug);
-    setEstimatedMinutes(String(initialExercise.estimatedMinutes ?? 30));
-    setTimeLimitMs(String(initialExercise.timeLimitMs ?? 1000));
-    setMemoryLimitKb(String(initialExercise.memoryLimitKb ?? 262144));
-    setStudioContent(content as ExerciseContent);
-    setDueAt(initialExercise.dueAt ? toLocalInput(initialExercise.dueAt) : "");
-    setMemberIds(
-      initialExercise.assignedMemberIds ??
-        initialExercise.assignments?.map((assignment) => assignment.memberId) ??
-        [],
-    );
-    setTagIds(initialExercise.tagIds ?? []);
-  }, [initialExercise?.id]);
-
-  const studioDraft: ExerciseDraft = {
-    slug: exerciseSlug || slugifyExercise(title),
-    title,
-    summary,
-    difficulty,
-    tagIds,
-    estimatedMinutes,
-    timeLimitMs,
-    memoryLimitKb,
-    content: { ...studioContent, statement },
-  };
-  const updateStudioDraft = (next: ExerciseDraft) => {
-    setExerciseSlug(next.slug);
-    setTitle(next.title);
-    setSummary(next.summary);
-    setDifficulty(next.difficulty as "easy" | "medium" | "hard");
-    setTagIds(next.tagIds ?? []);
-    setEstimatedMinutes(next.estimatedMinutes);
-    setTimeLimitMs(next.timeLimitMs);
-    setMemoryLimitKb(next.memoryLimitKb);
-    setStatement(next.content.statement ?? "");
-    setStudioContent(next.content);
-  };
-
-  /**
-   * Nháp đóng dở nằm trong localStorage. Studio này là hộp thoại, không phải trang riêng,
-   * nên khôi phục thẳng kèm một dòng báo thay vì dựng hộp thoại lồng hộp thoại để hỏi.
-   */
-  const restoredKey = useRef<string | null>(null);
-  useEffect(() => {
-    // StrictMode chạy effect hai lần ở dev; không có chốt này thì báo khôi phục hai lượt.
-    if (restoredKey.current === storageKey) return;
-    restoredKey.current = storageKey;
-    const stored = readDraft<ExerciseDraft>(storageKey);
-    setRestored(true);
-    if (!stored) return;
-    updateStudioDraft(stored.value);
-    toast.success("Đã khôi phục bản nháp chưa lưu");
-    // Chỉ chạy một lần cho mỗi bài mở ra; `updateStudioDraft` dựng lại mỗi lần render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey]);
-
-  const blocker = exerciseBriefBlocker(studioDraft, {
-    slugLocked: Boolean(initialExercise),
-  });
-  useDraftAutosave(storageKey, studioDraft, {
-    ready: restored,
-    dirty: Boolean(title.trim() || statement.trim()),
-  });
-
-  const loadApprovedDocuments = useCallback(async () => {
-    setDocumentsLoading(true);
-    try {
-      setDocuments(
-        await api.workspaces.documents(slug, {
-          page: documentPage,
-          limit: 8,
-          q: documentQuery.trim() || undefined,
-          status: "published",
-        }),
-      );
-    } catch (error) {
-      toast.error(messageOf(error, "Không thể tải tài liệu đã duyệt."));
-    } finally {
-      setDocumentsLoading(false);
-    }
-  }, [documentPage, documentQuery, slug, toast]);
-
-  useEffect(() => {
-    if (mode !== "ai") return;
-    const timer = window.setTimeout(() => void loadApprovedDocuments(), 200);
-    return () => window.clearTimeout(timer);
-  }, [mode, loadApprovedDocuments]);
-
-  const importText = () => {
-    setGeneratedByAi(false);
-    const parsed = parseProblemText(rawImport);
-    const importedStatement = [
-      parsed.statement,
-      parsed.inputFormat ? `## Đầu vào\n${parsed.inputFormat}` : "",
-      parsed.outputFormat ? `## Đầu ra\n${parsed.outputFormat}` : "",
-      sourceUrl.trim()
-        ? `Nguồn tham khảo (${sourcePlatform}): ${sourceUrl.trim()}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-    setTitle(parsed.title);
-    setSummary(parsed.summary);
-    setExerciseSlug(slugifyExercise(parsed.title));
-    setStatement(importedStatement);
-    setStudioContent((current) => ({
-      ...current,
-      statement: importedStatement,
-      constraints: splitLines(parsed.constraints),
-      examples: parseInputOutputPairs(parsed.examples).map((item) => ({
-        input: item.input,
-        output: item.output,
-      })),
-    }));
-    toast.success("Đã chuyển nội dung sang form; hãy rà soát trước khi lưu");
-  };
-  const generate = async () => {
-    if (!aiPrompt.trim() || selectedDocumentIds.length === 0) {
-      toast.error("Hãy nhập yêu cầu và chọn ít nhất một tài liệu đã duyệt");
-      return;
-    }
-    setBusy(true);
-    try {
-      const draft = await api.workspaces.generateWorkspaceExerciseDraft(slug, {
-        prompt: aiPrompt.trim(),
-        difficulty,
-        documentIds: selectedDocumentIds,
-      });
-      setTitle(draft.title);
-      setSummary(draft.summary);
-      setDifficulty(draft.difficulty);
-      setStatement(String(draft.content.statement ?? ""));
-      setExerciseSlug(slugifyExercise(draft.title));
-      setStudioContent(draft.content as ExerciseContent);
-      setGeneratedByAi(true);
-      toast.success(
-        `Đã tạo bản nháp từ ${draft.sourceDocuments.length} tài liệu đã duyệt`,
-      );
-      setMode("manual");
-    } catch (error) {
-      toast.error(messageOf(error));
-    } finally {
-      setBusy(false);
-    }
-  };
-  const save = async () => {
-    if (!title.trim() || !statement.trim()) {
-      toast.error("Vui lòng nhập tiêu đề và đề bài");
-      return;
-    }
-    setBusy(true);
-    try {
-      const content = {
-        ...studioContent,
-        statement: statement.trim(),
-      };
-      const metadata = {
-        tagIds,
-        slug: studioDraft.slug.trim(),
-        estimatedMinutes: Number(estimatedMinutes) || null,
-        timeLimitMs: Number(timeLimitMs) || 1000,
-        memoryLimitKb: Number(memoryLimitKb) || 262144,
-      };
-      if (initialExercise) {
-        await api.workspaces.updateWorkspaceExercise(slug, initialExercise.id, {
-          ...metadata,
-          title: title.trim(),
-          summary: summary.trim() || null,
-          difficulty,
-          ...(canAssign
-            ? {
-                dueAt: dueAt ? new Date(dueAt).toISOString() : null,
-                memberIds,
-              }
-            : {}),
-          content,
-        });
-      } else
-        await api.workspaces.createWorkspaceExercise(slug, {
-          ...metadata,
-          title: title.trim(),
-          summary: summary.trim() || undefined,
-          difficulty,
-          source: generatedByAi ? "ai" : "manual",
-          dueAt:
-            canAssign && dueAt ? new Date(dueAt).toISOString() : undefined,
-          memberIds: canAssign ? memberIds : [],
-          content,
-        });
-      clearDraft(storageKey);
-      toast.success(
-        initialExercise
-          ? "Đã cập nhật bài tập từ Studio"
-          : "Đã tạo và phân công bài tập",
-      );
-      await onSaved();
-      onClose();
-    } catch (error) {
-      toast.error(messageOf(error));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-fixed/35 p-3 backdrop-blur-[4px]"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Tạo bài tập Workspace"
-    >
-      <Card className="flex h-[96dvh] w-full max-w-[1600px] flex-col overflow-hidden p-0">
-        <div className="sticky top-0 z-10 flex shrink-0 items-center gap-3 border-b border-border-soft bg-surface p-4">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-base font-bold text-navy">
-              {initialExercise
-                ? "Chỉnh sửa bài tập trong Studio"
-                : "Studio bài tập Workspace"}
-            </h2>
-            <p className="mt-1 text-xs text-text-muted">
-              {initialExercise
-                ? "Rà soát nội dung và phân công trước khi lưu thay đổi."
-                : "Mặc định tự nhập; có thể nhập đề từ nền tảng hoặc tạo bản nháp từ tài liệu."}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded p-1 text-text-muted hover:bg-bg"
-            aria-label="Đóng"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-          <div className="grid gap-2 sm:grid-cols-3">
-            {(
-              [
-                ["manual", "Tự nhập"],
-                ["import", "Từ LeetCode / Codeforces"],
-                ["ai", "AI từ tài liệu"],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setMode(value)}
-                className={`rounded-md border px-3 py-2 text-sm font-semibold ${mode === value ? "border-primary bg-primary/5 text-primary" : "border-border text-text-muted"}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          {mode === "import" && (
-            <Card className="space-y-3 p-4">
-              <p className="text-xs text-text-muted">
-                Chọn nguồn, dán URL để lưu tham chiếu và dán nội dung đề bài.
-                Studio nhận diện các mục Description, Input, Output, Constraints
-                và Example trước khi chuyển sang form chỉnh sửa.
-              </p>
-              <div className="grid gap-3 md:grid-cols-[220px_1fr]">
-                <Select
-                  label="Nền tảng"
-                  value={sourcePlatform}
-                  onChange={setSourcePlatform}
-                  options={[
-                    { value: "leetcode", label: "LeetCode" },
-                    { value: "codeforces", label: "Codeforces" },
-                    { value: "other", label: "Nền tảng khác" },
-                  ]}
-                />
-                <Field
-                  label="URL bài tập (không bắt buộc)"
-                  value={sourceUrl}
-                  onChange={setSourceUrl}
-                  placeholder="https://leetcode.com/problems/..."
-                />
-              </div>
-              <textarea
-                className={`${inputClass} min-h-48 w-full resize-y font-mono`}
-                value={rawImport}
-                onChange={(event) => setRawImport(event.target.value)}
-                placeholder="Dán đề bài từ LeetCode, Codeforces hoặc nền tảng khác..."
-              />
-              <Button
-                size="sm"
-                onClick={importText}
-                disabled={!rawImport.trim()}
-              >
-                Chuyển sang form
-              </Button>
-            </Card>
-          )}
-          {mode === "ai" && (
-            <Card className="space-y-3 p-4">
-              <p className="text-xs text-text-muted">
-                Hệ thống chỉ đọc tài liệu đã duyệt của Workspace và trả về bản
-                nháp để bạn rà soát.
-              </p>
-              <div className="rounded-lg border border-border-soft bg-bg/40 p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="relative min-w-52 flex-1">
-                    <span className="sr-only">Tìm tài liệu đã duyệt</span>
-                    <input
-                      className={`${inputClass} h-9 w-full py-1.5 text-xs`}
-                      value={documentQuery}
-                      onChange={(event) => {
-                        setDocumentQuery(event.target.value);
-                        setDocumentPage(1);
-                      }}
-                      placeholder="Tìm tài liệu đã duyệt..."
-                    />
-                  </label>
-                  <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                    {selectedDocumentIds.length} tài liệu đã chọn
-                  </span>
-                </div>
-                <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-                  {documentsLoading ? (
-                    <p className="col-span-full py-4 text-center text-xs text-text-faint">
-                      Đang tải tài liệu...
-                    </p>
-                  ) : documents.items.length === 0 ? (
-                    <p className="col-span-full py-4 text-center text-xs text-text-faint">
-                      Không tìm thấy tài liệu đã duyệt.
-                    </p>
-                  ) : (
-                    documents.items.map((document) => {
-                      const checked = selectedDocumentIds.includes(document.id);
-                      return (
-                        <label
-                          key={document.id}
-                          className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-xs ${checked ? "border-primary bg-primary/5" : "border-border-soft"}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              setSelectedDocumentIds((current) =>
-                                current.includes(document.id)
-                                  ? current.filter((id) => id !== document.id)
-                                  : [...current, document.id],
-                              )
-                            }
-                          />
-                          <span className="min-w-0 flex-1 truncate font-medium text-navy">
-                            {document.title}
-                          </span>
-                          <span className="shrink-0 text-text-faint">
-                            {document.docType}
-                          </span>
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-                {documents.totalPages > 1 && (
-                  <div className="mt-2">
-                    <Pagination
-                      page={documentPage}
-                      pageCount={documents.totalPages}
-                      onChange={setDocumentPage}
-                      label="Phân trang tài liệu đã duyệt"
-                    />
-                  </div>
-                )}
-              </div>
-              <textarea
-                className={`${inputClass} min-h-28 w-full resize-y`}
-                value={aiPrompt}
-                onChange={(event) => setAiPrompt(event.target.value)}
-                placeholder="Ví dụ: Tạo bài tập BFS tìm đường đi ngắn nhất..."
-              />
-              <Button
-                size="sm"
-                onClick={() => void generate()}
-                disabled={
-                  busy || !aiPrompt.trim() || !selectedDocumentIds.length
-                }
-              >
-                {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Tạo bản nháp
-              </Button>
-            </Card>
-          )}
-          <div className="h-[min(66vh,760px)] min-h-[540px] overflow-hidden rounded-xl border border-border-soft bg-bg/30">
-            <Group orientation="horizontal" className="h-full">
-              <Panel id="workspace-brief" defaultSize="50%" minSize="30%">
-                <div className="h-full overflow-y-auto p-3">
-                  <ExerciseBriefForm
-                    value={studioDraft}
-                    onChange={updateStudioDraft}
-                    slugLocked={Boolean(initialExercise)}
-                    tagOptions={tags}
-                  />
-                </div>
-              </Panel>
-              <ResizeHandle orientation="horizontal" />
-              <Panel id="workspace-code" defaultSize="50%" minSize="30%">
-                <div className="h-full overflow-y-auto p-3">
-                  <ExerciseCodeForm
-                    value={studioDraft}
-                    onChange={updateStudioDraft}
-                    judge={api.judge}
-                    theme={theme}
-                  />
-                </div>
-              </Panel>
-            </Group>
-          </div>
-          {canAssign && (
-            <>
-              <label className="block text-xs font-medium text-text-muted">
-                Hạn nộp của Workspace
-                <input
-                  type="datetime-local"
-                  className={`${inputClass} mt-1 block w-full max-w-sm`}
-                  value={dueAt}
-                  onChange={(event) => setDueAt(event.target.value)}
-                />
-              </label>
-              <WorkspaceMemberSelector
-                members={members}
-                selectedIds={memberIds}
-                onChange={setMemberIds}
-              />
-            </>
-          )}
-        </div>
-        <div className="flex justify-end gap-2 border-t border-border-soft p-4">
-          <Button variant="outline" onClick={onClose} disabled={busy}>
-            Hủy
-          </Button>
-          <Button
-            onClick={() => void save()}
-            disabled={busy || blocker !== undefined}
-            title={blocker}
-          >
-            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {initialExercise ? "Lưu thay đổi" : "Lưu bài tập"}
-          </Button>
-        </div>
-      </Card>
-    </div>
-  );
-}
 
 function Field({
   label,
@@ -2700,68 +2118,9 @@ function Empty({
     </Card>
   );
 }
-function messageOf(error: unknown, fallback = "Có lỗi xảy ra") {
-  return error instanceof ApiClientError
-    ? error.message
-    : error instanceof Error
-      ? error.message
-      : fallback;
-}
 
-function splitLines(value: string) {
-  return value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
 
-function parseInputOutputPairs(value: string) {
-  return splitLines(value).flatMap((line) => {
-    const separator = line.includes("=>")
-      ? "=>"
-      : line.includes("→")
-        ? "→"
-        : null;
-    if (!separator) return [];
-    const [input, ...output] = line.split(separator);
-    return input.trim() && output.join(separator).trim()
-      ? [{ input: input.trim(), output: output.join(separator).trim() }]
-      : [];
-  });
-}
 
-function parseProblemText(raw: string) {
-  const text = raw.replace(/\r/g, "").trim();
-  const title =
-    text
-      .split("\n")
-      .find((line) => line.trim())
-      ?.replace(/^#+\s*/, "") ?? "";
-  const section = (names: string[]) => {
-    const escaped = names
-      .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .join("|");
-    const headings =
-      "Description|Problem|Input(?: Format)?|Output(?: Format)?|Constraints?|Examples?";
-    const match = text.match(
-      new RegExp(
-        `(?:^|\\n)(?:#+\\s*)?(?:${escaped})\\s*:?\\s*\\n?([\\s\\S]*?)(?=\\n(?:#+\\s*)?(?:${headings})\\s*:?|$)`,
-        "i",
-      ),
-    );
-    return match?.[1]?.trim() ?? "";
-  };
-  const statement = section(["Description", "Problem", "Mô tả", "Đề bài"]);
-  return {
-    title,
-    summary: statement.split("\n")[0]?.slice(0, 500) ?? "",
-    statement: statement || text,
-    inputFormat: section(["Input", "Input Format", "Đầu vào"]),
-    outputFormat: section(["Output", "Output Format", "Đầu ra"]),
-    constraints: section(["Constraint", "Constraints", "Ràng buộc"]),
-    examples: section(["Example", "Examples", "Ví dụ"]),
-  };
-}
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "short",
@@ -2860,22 +2219,7 @@ function verdictLabel(value: string) {
     )[value] ?? value
   );
 }
-function toLocalInput(value: string) {
-  const date = new Date(value);
-  const offset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
-}
 
-function slugifyExercise(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/đ/g, "d")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 160);
-}
 function putFile(
   url: string,
   headers: Record<string, string>,

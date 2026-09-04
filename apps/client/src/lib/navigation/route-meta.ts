@@ -32,7 +32,7 @@ const ROUTES: Record<string, RouteMeta> = {
  * as "Lộ trình › X › Y" — a crumb for the bare word "courses" would point at a route that
  * does not exist. Same for "lessons" in /courses/x/lessons/y.
  */
-const TRANSPARENT_SEGMENTS = ["courses", "learn", "lessons"];
+const TRANSPARENT_SEGMENTS = ["courses", "learn", "lessons", "exercises", "studio"];
 
 /**
  * @param pathname  the current `usePathname()` value
