@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -24,8 +24,14 @@ import { ApiClientError } from "@codementor/api-client";
 import {
   ExerciseBriefForm,
   ExerciseCodeForm,
+  clearDraft,
+  draftStorageKey,
+  exerciseBriefBlocker,
+  readDraft,
+  useDraftAutosave,
   type ExerciseContent,
   type ExerciseDraft,
+  type TagOption,
 } from "@codementor/solve";
 import {
   ResizeHandle,
@@ -1329,7 +1335,29 @@ function ExerciseAuthoringDialog({
     evaluation: { checker: "trimmed", stopOnFirstFailure: false },
   });
   const [memberIds, setMemberIds] = useState(initialMemberIds);
+  const [tagIds, setTagIds] = useState<string[]>([]);
+  const [tags, setTags] = useState<TagOption[]>([]);
   const [busy, setBusy] = useState(false);
+  // Bài đang sửa khoá theo id; bài mới khoá theo workspace — một workspace chỉ soạn dở
+  // một bài mới tại một thời điểm.
+  const storageKey = draftStorageKey(
+    "workspace-exercise",
+    initialExercise?.id ?? `new:${slug}`,
+  );
+  const [restored, setRestored] = useState(false);
+
+  // Chủ đề chỉ để CHỌN: `POST /tags` dành cho admin và giảng viên, nên không truyền
+  // `onCreateTag` — hỏng thì bỏ luôn khối chủ đề, soạn bài không dừng vì một ô phụ.
+  useEffect(() => {
+    let cancelled = false;
+    api.tags
+      .list()
+      .then((loaded) => !cancelled && setTags(loaded))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!initialExercise) {
@@ -1351,6 +1379,7 @@ function ExerciseAuthoringDialog({
         evaluation: { checker: "trimmed", stopOnFirstFailure: false },
       });
       setMemberIds(initialMemberIds);
+      setTagIds([]);
       return;
     }
     const content = initialExercise.content ?? {};
@@ -1369,6 +1398,7 @@ function ExerciseAuthoringDialog({
         initialExercise.assignments?.map((assignment) => assignment.memberId) ??
         [],
     );
+    setTagIds(initialExercise.tagIds ?? []);
   }, [initialExercise?.id]);
 
   const studioDraft: ExerciseDraft = {
@@ -1376,6 +1406,7 @@ function ExerciseAuthoringDialog({
     title,
     summary,
     difficulty,
+    tagIds,
     estimatedMinutes,
     timeLimitMs,
     memoryLimitKb,
@@ -1386,12 +1417,39 @@ function ExerciseAuthoringDialog({
     setTitle(next.title);
     setSummary(next.summary);
     setDifficulty(next.difficulty as "easy" | "medium" | "hard");
+    setTagIds(next.tagIds ?? []);
     setEstimatedMinutes(next.estimatedMinutes);
     setTimeLimitMs(next.timeLimitMs);
     setMemoryLimitKb(next.memoryLimitKb);
     setStatement(next.content.statement ?? "");
     setStudioContent(next.content);
   };
+
+  /**
+   * Nháp đóng dở nằm trong localStorage. Studio này là hộp thoại, không phải trang riêng,
+   * nên khôi phục thẳng kèm một dòng báo thay vì dựng hộp thoại lồng hộp thoại để hỏi.
+   */
+  const restoredKey = useRef<string | null>(null);
+  useEffect(() => {
+    // StrictMode chạy effect hai lần ở dev; không có chốt này thì báo khôi phục hai lượt.
+    if (restoredKey.current === storageKey) return;
+    restoredKey.current = storageKey;
+    const stored = readDraft<ExerciseDraft>(storageKey);
+    setRestored(true);
+    if (!stored) return;
+    updateStudioDraft(stored.value);
+    toast.success("Đã khôi phục bản nháp chưa lưu");
+    // Chỉ chạy một lần cho mỗi bài mở ra; `updateStudioDraft` dựng lại mỗi lần render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+
+  const blocker = exerciseBriefBlocker(studioDraft, {
+    slugLocked: Boolean(initialExercise),
+  });
+  useDraftAutosave(storageKey, studioDraft, {
+    ready: restored,
+    dirty: Boolean(title.trim() || statement.trim()),
+  });
 
   const loadApprovedDocuments = useCallback(async () => {
     setDocumentsLoading(true);
@@ -1486,6 +1544,7 @@ function ExerciseAuthoringDialog({
         statement: statement.trim(),
       };
       const metadata = {
+        tagIds,
         slug: studioDraft.slug.trim(),
         estimatedMinutes: Number(estimatedMinutes) || null,
         timeLimitMs: Number(timeLimitMs) || 1000,
@@ -1517,6 +1576,7 @@ function ExerciseAuthoringDialog({
           memberIds: canAssign ? memberIds : [],
           content,
         });
+      clearDraft(storageKey);
       toast.success(
         initialExercise
           ? "Đã cập nhật bài tập từ Studio"
@@ -1720,6 +1780,7 @@ function ExerciseAuthoringDialog({
                     value={studioDraft}
                     onChange={updateStudioDraft}
                     slugLocked={Boolean(initialExercise)}
+                    tagOptions={tags}
                   />
                 </div>
               </Panel>
@@ -1759,7 +1820,11 @@ function ExerciseAuthoringDialog({
           <Button variant="outline" onClick={onClose} disabled={busy}>
             Hủy
           </Button>
-          <Button onClick={() => void save()} disabled={busy}>
+          <Button
+            onClick={() => void save()}
+            disabled={busy || blocker !== undefined}
+            title={blocker}
+          >
             {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {initialExercise ? "Lưu thay đổi" : "Lưu bài tập"}
           </Button>

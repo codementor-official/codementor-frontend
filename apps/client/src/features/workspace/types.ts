@@ -329,6 +329,7 @@ export interface WorkspaceExerciseDetail extends WorkspaceExercise {
   /** Compatibility with workspace-service instances that have not restarted yet. */
   assignments?: WorkspaceAssignment[];
   content: Record<string, unknown> | null;
+  tagIds?: string[];
   /** @deprecated Use the granular capabilities below. */
   canManage: boolean;
   canAssign: boolean;

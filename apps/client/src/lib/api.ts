@@ -285,6 +285,14 @@ export const api = {
   },
 
   /**
+   * Từ vựng chủ đề dùng chung, cho ô chọn chủ đề ở Studio bài tập workspace.
+   * Chỉ đọc: `POST /tags` giới hạn cho admin và giảng viên, người học không tạo chủ đề mới.
+   */
+  tags: {
+    list: () => unwrap<{ id: string; slug: string; name: string }[]>("/tags"),
+  },
+
+  /**
    * Bài viết. Trước đây trang `/articles` đọc `src/data/articles.ts` — nghĩa là bài admin
    * vừa đăng, và cả liên kết trong thông báo trỏ tới nó, đều ra 404.
    */
@@ -510,6 +518,7 @@ export const api = {
         timeLimitMs?: number;
         memoryLimitKb?: number;
         content: Record<string, unknown>;
+        tagIds?: string[];
         dueAt?: string;
         attemptLimit?: number;
         allowRetry?: boolean;
@@ -562,6 +571,7 @@ export const api = {
         difficulty?: "easy" | "medium" | "hard";
         publicationStatus?: "published" | "hidden";
         content?: Record<string, unknown>;
+        tagIds?: string[];
       },
     ) =>
       unwrap<{ updated: boolean }>(

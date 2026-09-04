@@ -290,7 +290,11 @@ export function ExerciseBriefForm({
 
         {tagOptions && (
           <TopicPicker
-            hint="Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới."
+            hint={
+              onCreateTag
+                ? "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới."
+                : "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; chỉ chọn được chủ đề đã có."
+            }
             max={MAX_TAGS}
             onChange={(tagIds) => patch({ tagIds })}
             onCreate={onCreateTag}

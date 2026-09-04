@@ -9,3 +9,11 @@ export {
   type ExerciseStudioJudge,
 } from "./exercise-studio-form";
 export * from "./types";
+export {
+  clearDraft,
+  draftStorageKey,
+  readDraft,
+  useDraftAutosave,
+  writeDraft,
+  type StoredDraft,
+} from "./studio-draft";
