@@ -34,6 +34,7 @@ export interface RoadmapSummary {
   courseCount: number;
   createdBy: string | null;
   authorName: string | null;
+  topics?: CatalogueTopic[];
   updatedAt: string;
 }
 
@@ -50,6 +51,7 @@ export interface CourseSummary {
   totalLessons: number;
   createdBy: string | null;
   authorName: string | null;
+  topics?: CatalogueTopic[];
   updatedAt: string;
 }
 
@@ -57,14 +59,43 @@ export interface ExerciseSummary {
   id: string;
   slug: string;
   title: string;
+  summary: string | null;
   kind: string;
   difficulty: "easy" | "medium" | "hard";
   status: ContentStatus;
   visibility: string;
   authorId: string | null;
   authorName: string | null;
+  topics: ExerciseTopic[];
+  progressStatus: "todo" | "attempted" | "solved";
+  attemptCount: number;
+  bestScore: number | null;
   forkedFromId: string | null;
   updatedAt: string;
+}
+
+export interface CatalogueTopic {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+}
+
+export type ExerciseTopic = CatalogueTopic;
+
+export interface ExerciseTopicSummary extends ExerciseTopic {
+  count: number;
+  solved?: number;
+  attempted?: number;
+}
+
+export type CatalogueTopicSummary = ExerciseTopicSummary;
+
+export interface ExerciseProgressSummary {
+  total: number;
+  solved: number;
+  attempted: number;
+  unsolved: number;
 }
 
 /** `GET /roadmaps/:id` — the summary plus its ordered course list. */
@@ -229,7 +260,6 @@ export interface CourseDetail extends CourseSummary {
  * custom checker source. Author/admin clients receive the full authoring contract.
  */
 export interface ExerciseDetail extends ExerciseSummary {
-  summary: string | null;
   xpReward: number;
   estimatedMinutes: number | null;
   timeLimitMs: number;
@@ -272,6 +302,9 @@ export interface CatalogueParams {
   level?: string;
   difficulty?: string;
   kind?: string;
+  /** Comma-separated UUIDs; exercise catalogue matches at least one selected topic. */
+  topicIds?: string;
+  progress?: "solved" | "attempted" | "unsolved";
   cursor?: string;
   limit?: number;
 }

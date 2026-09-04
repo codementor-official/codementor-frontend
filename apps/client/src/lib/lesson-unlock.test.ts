@@ -31,6 +31,7 @@ const course: CourseDetail = {
   totalLessons: 3,
   createdBy: null,
   authorName: null,
+  topics: [],
   updatedAt: "2026-01-01T00:00:00.000Z",
   description: null,
   coverImageUrl: null,
