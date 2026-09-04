@@ -92,6 +92,29 @@ export interface FunctionSignature {
 export type IoMode = "stdin_stdout" | "function";
 
 /**
+ * Gợi ý test case do AI sinh — CHỈ phần đầu vào.
+ *
+ * Không có `expected` ở đây, và đó là điểm quan trọng nhất của tính năng: đáp án lấy từ nút
+ * "Sinh đáp án", tức là từ việc chạy lời giải mẫu thật qua judge. AI không đoán kết quả nên
+ * không có kết quả bịa nào lọt được vào bài.
+ */
+export interface SuggestedTestCase {
+  args?: unknown[];
+  input?: string;
+  /** Một câu nói case này bắt lỗi gì. Chỉ hiện ở UI — `exercise_contents` không nhận trường lạ. */
+  rationale: string;
+}
+
+export interface SuggestTestCasesInput {
+  statement: string;
+  ioMode: IoMode;
+  signature?: FunctionSignature;
+  constraints?: string[];
+  existing?: { args?: unknown[]; input?: string }[];
+  count?: number;
+}
+
+/**
  * Phần `spec` gửi cho judge.
  *
  * Một kiểu dùng chung cho cả `judge.run` lẫn `judge.starter`: hai lời gọi phải mô tả CÙNG một

@@ -9,6 +9,8 @@ import type {
   JudgeRunPayload,
   JudgeRunResult,
   JudgeSpecPayload,
+  SuggestTestCasesInput,
+  SuggestedTestCase,
   Page,
 } from "@codementor/solve";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
@@ -127,6 +129,23 @@ export const api = {
       unwrap<Roadmap>(`/roadmaps/${id}/request-removal`, { method: "POST", body: { reason } }),
     restore: (id: string) => unwrap<Roadmap>(`/roadmaps/${id}/restore`, { method: "POST" }),
     remove: (id: string) => unwrap<void>(`/roadmaps/${id}`, { method: "DELETE" }),
+  },
+
+  /**
+   * Gợi ý test case — ai-service, KHÔNG qua Nest.
+   *
+   * Cùng lý do `judge.run` gọi thẳng judge: người soạn đã được xác thực, kết quả không đụng
+   * vào dữ liệu nào, và thêm một vòng qua backend chỉ để chuyển tiếp một lời gọi thì không
+   * mua thêm gì. ai-service tự kiểm JWT Keycloak trên `/api/v1/ai/*`.
+   */
+  aiStudio: {
+    suggestTestCases: async (body: SuggestTestCasesInput) =>
+      (
+        await unwrap<{ cases: SuggestedTestCase[] }>("/ai/suggest/test-cases", {
+          method: "POST",
+          body: { ...body },
+        })
+      ).cases,
   },
 
   /**

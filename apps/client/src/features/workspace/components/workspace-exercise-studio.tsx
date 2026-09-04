@@ -407,6 +407,7 @@ export function WorkspaceExerciseStudio({
                   <ExerciseCodeForm
                     value={draft}
                     onChange={updateDraft}
+                    ai={api.aiStudio}
                     judge={api.judge}
                     theme={theme}
                   />

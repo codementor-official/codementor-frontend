@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Braces,
+  ChevronDown,
   Eye,
   FileText,
   FlaskConical,
@@ -13,6 +14,7 @@ import {
   Pencil,
   Plus,
   Scale,
+  Sparkles,
   Wand2,
   Workflow,
   X,
@@ -34,6 +36,8 @@ import {
   type IoMode,
   type LanguageConfig,
   type TestCase,
+  type SuggestTestCasesInput,
+  type SuggestedTestCase,
   type JudgeRunPayload,
   type JudgeRunResult,
   type JudgeSpecPayload,
@@ -127,6 +131,18 @@ interface Props {
   /** Slug của bài đã công khai không đổi được — đường dẫn đã phát ra ngoài. */
   slugLocked?: boolean;
   theme?: "light" | "dark";
+}
+
+/**
+ * Gợi ý test case. Tiêm vào giống `judge` chứ không import `api` — `packages/solve` dùng chung
+ * cho apps/client và apps/lecturer, và hai app đó có hai đường ra backend khác nhau.
+ *
+ * Không truyền thì nút gợi ý biến mất. Một nút gọi vào khoảng không còn tệ hơn không có nút.
+ */
+export interface ExerciseStudioAi {
+  suggestTestCases: (
+    body: SuggestTestCasesInput,
+  ) => Promise<SuggestedTestCase[]>;
 }
 
 export interface ExerciseStudioJudge {
@@ -628,16 +644,40 @@ function SignatureCard({
   );
 }
 
+/**
+ * Khoảng cho phép của một lượt gợi ý. Khớp với `MIN/MAX/DEFAULT_SUGGESTIONS` ở
+ * `apps/ai-service/app/suggest.py` — server từ chối con số ngoài khoảng, nên đây chỉ là để
+ * không gửi một yêu cầu chắc chắn hỏng.
+ *
+ * Mặc định 3 chứ không phải 5: đó là số case người soạn duyệt xong trong một hơi.
+ */
+const MIN_SUGGESTIONS = 1;
+const MAX_SUGGESTIONS = 5;
+const DEFAULT_SUGGESTIONS = 3;
+const SUGGESTION_COUNTS = Array.from(
+  { length: MAX_SUGGESTIONS - MIN_SUGGESTIONS + 1 },
+  (_, index) => MIN_SUGGESTIONS + index,
+);
+
 /** Nửa còn lại: ngôn ngữ kèm mã mẫu, test case, và cách so khớp đầu ra. */
 export function ExerciseCodeForm({
   value,
   onChange,
   judge,
+  ai,
   readOnly = false,
   theme = "light",
-}: Props & { judge: ExerciseStudioJudge }) {
+}: Props & { judge: ExerciseStudioJudge; ai?: ExerciseStudioAi }) {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  // Gợi ý sống RIÊNG, không chạm vào `value.content.testCases` cho tới khi người soạn bấm
+  // giữ. Hai lý do: draft tự lưu, nên thứ chưa duyệt mà rơi vào đó là rác người khác phải
+  // dọn; và `rationale` không có chỗ trong `exercise_contents` (validator strict).
+  const [suggestions, setSuggestions] = useState<SuggestedTestCase[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [suggestCount, setSuggestCount] = useState(DEFAULT_SUGGESTIONS);
+  const [suggestMenuOpen, setSuggestMenuOpen] = useState(false);
   //: languageId → lý do chữ ký này không diễn tả được ở ngôn ngữ đó. Judge quyết định, không
   //  phải client — chỉ judge biết C không có `map`.
   const [unsupported, setUnsupported] = useState<Record<string, string>>({});
@@ -738,7 +778,7 @@ export function ExerciseCodeForm({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [isFunction, signatureKey, languageKey]);
+  }, [isFunction, judge, signatureKey, languageKey]);
 
   const toggleLanguage = (option: LanguageConfig) => {
     if (selectedIds.has(option.id)) {
@@ -795,6 +835,101 @@ export function ExerciseCodeForm({
         .filter((_, position) => position !== index)
         .map((testCase, position) => ({ ...testCase, order: position + 1 })),
     });
+
+  /**
+   * Chặn trước khi gọi AI. Trả về câu cần hiện, hoặc `null` khi đủ điều kiện.
+   *
+   * Đề bài rỗng là trường hợp phải chặn cứng: model không từ chối, nó tự nghĩ ra một bài
+   * toán rồi sinh đầu vào cho bài toán tưởng tượng đó — và người soạn chỉ phát hiện ra bằng
+   * cách tự đọc lại từng case. Server chặn lại lần nữa; đây chỉ là để khỏi tốn một lời gọi.
+   */
+  const suggestBlocker = (): string | null => {
+    if ((value.content.statement ?? "").trim().length < 20)
+      return "Cần viết đề bài trước khi gợi ý test case.";
+    if (!isFunction) return null;
+    if (!signature.functionName.trim())
+      return "Cần tên hàm ở phần Chữ ký hàm trước đã.";
+    if (parameters.length === 0)
+      return "Cần ít nhất một tham số để sinh được đầu vào.";
+    return null;
+  };
+
+  /**
+   * Lấy câu tiếng Việt backend gửi kèm, không phải "Request failed with status 400".
+   *
+   * Đọc theo hình dạng thay vì `instanceof ApiClientError`: `packages/solve` chưa phụ thuộc
+   * `@codementor/api-client`, và thêm một dependency chỉ để đọc một trường thì không đáng.
+   */
+  const describeError = (cause: unknown, fallback: string): string => {
+    const body = (cause as { body?: { message?: unknown } } | null)?.body;
+    if (typeof body?.message === "string") return body.message;
+    return cause instanceof Error ? cause.message : fallback;
+  };
+
+  const suggestTestCases = async (count = suggestCount) => {
+    if (!ai) return;
+    const blocker = suggestBlocker();
+    if (blocker) {
+      setSuggestError(blocker);
+      setSuggestions([]);
+      return;
+    }
+
+    // Ô chọn chỉ chào ra 1–5, nhưng kẹp lại vẫn rẻ hơn một round-trip trả về 422.
+    const safeCount = Math.min(
+      MAX_SUGGESTIONS,
+      Math.max(MIN_SUGGESTIONS, Math.round(count)),
+    );
+
+    setSuggesting(true);
+    setSuggestError(null);
+    try {
+      const produced = await ai.suggestTestCases({
+        statement: value.content.statement!.trim(),
+        ioMode,
+        ...(isFunction ? { signature } : {}),
+        constraints: value.content.constraints ?? [],
+        // Gửi case đã có để không nhận lại thứ mình đang nhìn. Chỉ phần đầu vào — đáp án
+        // không liên quan gì tới việc nghĩ ra đầu vào mới.
+        existing: testCases.map((testCase) =>
+          isFunction
+            ? { args: testCase.args ?? [] }
+            : { input: testCase.input ?? "" },
+        ),
+        count: safeCount,
+      });
+      setSuggestions(produced);
+      if (produced.length === 0)
+        setSuggestError(
+          "Chưa nghĩ ra case nào khác với những case đã có. Thử bổ sung ràng buộc vào đề bài.",
+        );
+    } catch (cause) {
+      setSuggestError(describeError(cause, "Không gợi ý được test case"));
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  /** Giữ một gợi ý: nó thành test case thật, và rời khỏi danh sách chờ duyệt. */
+  const acceptSuggestion = (index: number) => {
+    const picked = suggestions[index];
+    setSuggestions((current) =>
+      current.filter((_, position) => position !== index),
+    );
+    patchContent({
+      testCases: [
+        ...testCases,
+        {
+          // `order` là int trong validator Mongo và phải bắt đầu từ 1, không phải 0.
+          order: testCases.length + 1,
+          visibility: "hidden",
+          ...(isFunction
+            ? { args: picked.args ?? [] }
+            : { input: picked.input ?? "" }),
+        },
+      ],
+    });
+  };
 
   /**
    * Chạy lời giải mẫu qua các `args` đã nhập để lấy `expected`.
@@ -1009,6 +1144,49 @@ export function ExerciseCodeForm({
             />
           </h2>
           <div className="flex items-center gap-2">
+            {ai && (
+              <div className="relative">
+                <Button
+                  aria-expanded={suggestMenuOpen}
+                  aria-haspopup="menu"
+                  disabled={suggesting}
+                  onClick={() => setSuggestMenuOpen((open) => !open)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {suggesting ? (
+                    <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles aria-hidden="true" className="size-3.5" />
+                  )}
+                  {suggesting ? "Đang nghĩ…" : `Gợi ý ${suggestCount} case`}
+                  {!suggesting && <ChevronDown aria-hidden="true" className="size-3.5" />}
+                </Button>
+                {suggestMenuOpen && !suggesting && (
+                  <div
+                    className="absolute right-0 z-10 mt-1 min-w-36 rounded-lg border bg-background p-1 shadow-lg"
+                    role="menu"
+                  >
+                    {SUGGESTION_COUNTS.map((count) => (
+                      <button
+                        className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                        key={count}
+                        onClick={() => {
+                          setSuggestCount(count);
+                          setSuggestMenuOpen(false);
+                          void suggestTestCases(count);
+                        }}
+                        role="menuitem"
+                        type="button"
+                      >
+                        Gợi ý {count} case
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {isFunction && (
               <Button
                 disabled={generating || testCases.length === 0}
@@ -1048,7 +1226,81 @@ export function ExerciseCodeForm({
           </p>
         )}
 
-        {testCases.length === 0 && (
+        {suggestError && (
+          <p
+            className="mb-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
+            role="alert"
+          >
+            {suggestError}
+          </p>
+        )}
+
+        {suggestions.length > 0 && (
+          <div className="mb-3 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <Sparkles aria-hidden="true" className="size-3.5" />
+                {suggestions.length} gợi ý — giữ cái nào bạn thấy đúng
+              </span>
+              <Button
+                onClick={() => setSuggestions([])}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                Bỏ hết
+              </Button>
+            </div>
+            {suggestions.map((suggestion, index) => (
+              <div
+                className="mt-2 flex items-start gap-2 rounded-md border bg-background p-2.5 first:mt-0"
+                key={index}
+              >
+                <div className="min-w-0 flex-1">
+                  <pre className="overflow-x-auto font-mono text-xs">
+                    {isFunction
+                      ? JSON.stringify(suggestion.args)
+                      : suggestion.input}
+                  </pre>
+                  {suggestion.rationale && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {suggestion.rationale}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  aria-label={`Giữ gợi ý ${index + 1}`}
+                  onClick={() => acceptSuggestion(index)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <Plus className="size-3.5" />
+                  Giữ
+                </Button>
+                <Button
+                  aria-label={`Bỏ gợi ý ${index + 1}`}
+                  onClick={() =>
+                    setSuggestions((current) =>
+                      current.filter((_, position) => position !== index),
+                    )
+                  }
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+            ))}
+            <p className="mt-2 text-xs text-muted-foreground">
+              Chỉ là đầu vào. Bấm “Sinh đáp án” sau khi giữ để chạy lời giải mẫu
+              ra kết quả.
+            </p>
+          </div>
+        )}
+
+        {testCases.length === 0 && suggestions.length === 0 && (
           <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
             Chưa có test case nào.
           </p>

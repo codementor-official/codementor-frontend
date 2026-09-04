@@ -4,6 +4,8 @@ import type {
   JudgeRunPayload,
   JudgeRunResult,
   JudgeSpecPayload,
+  SuggestTestCasesInput,
+  SuggestedTestCase,
 } from "@codementor/solve";
 import { apiBaseUrl } from "@/lib/env";
 import type { AiStatus, AiDocument, AiTurn, AiConversation, AiConversationSummary, AiPage } from "@/features/ai-tutor/types";
@@ -811,6 +813,23 @@ export const api = {
           body: { permissions },
         },
       ),
+  },
+
+  /**
+   * Gợi ý test case — ai-service, KHÔNG qua Nest.
+   *
+   * Cùng lý do `judge.run` gọi thẳng judge: người soạn đã được xác thực, kết quả không đụng
+   * vào dữ liệu nào, và thêm một vòng qua backend chỉ để chuyển tiếp một lời gọi thì không
+   * mua thêm gì. ai-service tự kiểm JWT Keycloak trên `/api/v1/ai/*`.
+   */
+  aiStudio: {
+    suggestTestCases: async (body: SuggestTestCasesInput) =>
+      (
+        await unwrap<{ cases: SuggestedTestCase[] }>("/ai/suggest/test-cases", {
+          method: "POST",
+          body: { ...body },
+        })
+      ).cases,
   },
 
   /**

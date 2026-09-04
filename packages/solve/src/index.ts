@@ -6,6 +6,7 @@ export {
   exerciseBriefErrors,
   type ExerciseDraft,
   type TagOption,
+  type ExerciseStudioAi,
   type ExerciseStudioJudge,
 } from "./exercise-studio-form";
 export * from "./types";

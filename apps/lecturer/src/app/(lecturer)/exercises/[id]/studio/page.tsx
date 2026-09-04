@@ -322,63 +322,66 @@ export default function ExerciseStudioPage() {
         {/* Bên trái là bài đọc ra sao, bên phải là bài chạy và chấm ra sao. Hai nửa dài
           gần bằng nhau và người soạn đi lại giữa chúng liên tục, nên chúng là hai pane
           cuộn độc lập chứ không phải một cột dài. */}
-        <Group orientation="horizontal" className="h-full">
-          <Panel id="brief" defaultSize="50%" minSize="25%" className="min-h-0">
-            <div className="h-full overflow-y-auto p-3">
-              <ExerciseBriefForm
-                onChange={setDraft}
-                readOnly={locked}
-                slugLocked={exercise.status === "published"}
-                onCreateTag={async (name) => {
-                  const created = await api.tags.create(name);
-                  // Đưa ngay vào từ vựng tại chỗ: không chờ tải lại thì chip mới vẫn có
-                  // tên để hiện, và lần gõ sau đã thấy nó trong gợi ý.
-                  setTags((current) =>
-                    current.some((tag) => tag.id === created.id)
-                      ? current
-                      : [...current, created].sort((a, b) => a.name.localeCompare(b.name, "vi")),
-                  );
-                  return created;
-                }}
-                tagOptions={tags}
-                value={draft}
-              />
-
-              <div className="mt-6 border-t border-border pt-6">
-                <DangerZone
-                  actionLabel="Xoá bài này"
-                  confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}
-                  confirmTitle="Xoá bài code này?"
-                  description="Xoá bài code này cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận."
-                  disabled={saving}
-                  onConfirm={() => {
-                    scheduleDelete({
-                      id,
-                      message: `Đã xoá bài code "${draft.title || exercise.slug}".`,
-                      commit: () => api.exercises.remove(id),
-                    });
-                    router.push("/exercises");
+        <div className="h-full min-h-0 overflow-hidden rounded-xl border border-border bg-background/30">
+          <Group orientation="horizontal" className="h-full">
+            <Panel id="brief" defaultSize="50%" minSize="25%" className="min-h-0">
+              <div className="h-full overflow-y-auto p-3">
+                <ExerciseBriefForm
+                  onChange={setDraft}
+                  readOnly={locked}
+                  slugLocked={exercise.status === "published"}
+                  onCreateTag={async (name) => {
+                    const created = await api.tags.create(name);
+                    // Đưa ngay vào từ vựng tại chỗ: không chờ tải lại thì chip mới vẫn có
+                    // tên để hiện, và lần gõ sau đã thấy nó trong gợi ý.
+                    setTags((current) =>
+                      current.some((tag) => tag.id === created.id)
+                        ? current
+                        : [...current, created].sort((a, b) => a.name.localeCompare(b.name, "vi")),
+                    );
+                    return created;
                   }}
-                  title="Xoá bài code"
+                  tagOptions={tags}
+                  value={draft}
+                />
+
+                <div className="mt-6 border-t border-border pt-6">
+                  <DangerZone
+                    actionLabel="Xoá bài này"
+                    confirmDescription={`Bài “${draft.title || exercise.slug}” sẽ bị xoá cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận.`}
+                    confirmTitle="Xoá bài code này?"
+                    description="Xoá bài code này cùng đề bài, test case và lời giải mẫu. Khóa học nào đang gắn bài này sẽ mất ô bài code đó. Có vài giây để hoàn tác sau khi xác nhận."
+                    disabled={saving}
+                    onConfirm={() => {
+                      scheduleDelete({
+                        id,
+                        message: `Đã xoá bài code "${draft.title || exercise.slug}".`,
+                        commit: () => api.exercises.remove(id),
+                      });
+                      router.push("/exercises");
+                    }}
+                    title="Xoá bài code"
+                  />
+                </div>
+              </div>
+            </Panel>
+
+            <ResizeHandle orientation="horizontal" />
+
+            <Panel id="code" defaultSize="50%" minSize="25%" className="min-h-0">
+              <div className="h-full overflow-y-auto p-3">
+                <ExerciseCodeForm
+                  ai={api.aiStudio}
+                  judge={api.judge}
+                  onChange={setDraft}
+                  readOnly={locked}
+                  theme={theme}
+                  value={draft}
                 />
               </div>
-            </div>
-          </Panel>
-
-          <ResizeHandle orientation="horizontal" />
-
-          <Panel id="code" defaultSize="50%" minSize="25%" className="min-h-0">
-            <div className="h-full overflow-y-auto p-3">
-              <ExerciseCodeForm
-                judge={api.judge}
-                onChange={setDraft}
-                readOnly={locked}
-                theme={theme}
-                value={draft}
-              />
-            </div>
-          </Panel>
-        </Group>
+            </Panel>
+          </Group>
+        </div>
       </StudioShell>
     </>
   );
