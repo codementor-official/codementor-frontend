@@ -29,11 +29,21 @@ import type { UiNotification } from "@codementor/ui";
  * moving a resource between services, or putting a different gateway in front, is a
  * change to kong.yml and to nothing in this application.
  */
-let readAccessToken: () => string | null = () => null;
+let accessTokenReader: () => string | null = () => null;
+
+/**
+ * Token hiện hành, đọc lại ở mỗi lời gọi.
+ *
+ * Lecter cần nó ngoài `createApiClient`: `HttpAgent` của AG-UI chốt header lúc dựng, mà một
+ * phiên chat dài thì token sẽ hết hạn giữa chừng — xem `features/lecter/lecter-agent.ts`.
+ */
+export function readAccessToken(): string | null {
+  return accessTokenReader();
+}
 
 /** Called once by the auth provider; keeps the client free of React imports. */
 export function setAccessTokenReader(reader: () => string | null): void {
-  readAccessToken = reader;
+  accessTokenReader = reader;
 }
 
 const request = createApiClient({
@@ -138,6 +148,21 @@ export const api = {
    * vào dữ liệu nào, và thêm một vòng qua backend chỉ để chuyển tiếp một lời gọi thì không
    * mua thêm gì. ai-service tự kiểm JWT Keycloak trên `/api/v1/ai/*`.
    */
+  /**
+   * Lecter — agent soạn nội dung. Lượt chat đi bằng SSE nên KHÔNG nằm ở đây (xem
+   * `features/lecter/lecter-agent.ts`); ba đường dưới đây chỉ là lịch sử hội thoại.
+   */
+  lecter: {
+    sessions: () =>
+      unwrap<{ items: { id: string; title: string; updatedAt: string }[] }>("/ai/lecter/sessions"),
+    session: (threadId: string) =>
+      unwrap<{ id: string; title: string; messages: unknown[]; updatedAt: string }>(
+        `/ai/lecter/sessions/${threadId}`,
+      ),
+    removeSession: (threadId: string) =>
+      unwrap<void>(`/ai/lecter/sessions/${threadId}`, { method: "DELETE" }),
+  },
+
   aiStudio: {
     suggestTestCases: async (body: SuggestTestCasesInput) =>
       (

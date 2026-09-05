@@ -13,6 +13,7 @@ const HOME = "/dashboard";
 
 const ROUTES: Record<string, RouteMeta> = {
   "/dashboard": { label: "Bảng điều khiển" },
+  "/lecter": { label: "Lecter", parent: HOME },
   "/roadmaps": { label: "Lộ trình", parent: HOME },
   "/courses": { label: "Khóa học", parent: HOME },
   "/exercises": { label: "Bài code", parent: HOME },
