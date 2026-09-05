@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { BookOpen, Code2, FileText, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -152,7 +153,16 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
 }
 
 export function LecterPage() {
-  const [threadId, setThreadId] = useState(() => crypto.randomUUID());
+  const router = useRouter();
+  // Hội thoại đang mở nằm trong URL, không phải trong state. Trước đây nó là `useState`, nên bấm
+  // "Mở Studio" rồi nhấn Back là quay về `/lecter` trắng trơn — hội thoại vừa nãy không có địa
+  // chỉ nào để quay lại. `/lecter` và `/lecter/[id]` dùng chung đúng component này.
+  const routeId = useParams<{ id?: string }>().id;
+  // Id cho lần mở `/lecter` trần. Sinh một lần rồi đẩy vào URL ngay, chứ không đợi tin nhắn đầu:
+  // người soạn có thể bấm "Mở Studio" từ thẻ kết quả trước khi kịp gõ gì thêm.
+  const [freshId] = useState(() => crypto.randomUUID());
+  const threadId = routeId ?? freshId;
+
   // Token lúc mở trang. Đây là đường duy nhất đặt được header TRƯỚC lần gọi đầu tiên: provider
   // đẩy `mergedHeaders` vào core trong effect của nó, sau mọi effect con. Định danh phải ổn định
   // — object mới mỗi lần render sẽ khiến provider chạy lại effect đó (kèm `connect()`) liên tục.
@@ -161,10 +171,19 @@ export function LecterPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState(false);
 
-  // Đổi `threadId` là đủ để mở hội thoại khác: CopilotKit gọi lại `/agent/lecter/connect`, và
-  // route runtime phát lại lịch sử từ `ai_agent_sessions`. Trang không cầm mảng tin nhắn nữa.
-  const openThread = useCallback((id: string) => setThreadId(id), []);
-  const newThread = useCallback(() => setThreadId(crypto.randomUUID()), []);
+  useEffect(() => {
+    // `replace` chứ không `push`: `/lecter` trần không đáng chiếm một mục trong lịch sử trình
+    // duyệt, Back từ đây phải về trang trước đó chứ không kẹt lại chính nó.
+    if (!routeId) router.replace(`/lecter/${freshId}`);
+  }, [routeId, freshId, router]);
+
+  // Đổi hội thoại là điều hướng thật: URL đổi thì `threadId` đổi, CopilotKit gọi lại
+  // `/agent/lecter/connect`, và route runtime phát lại lịch sử từ `ai_agent_sessions`.
+  const openThread = useCallback((id: string) => router.push(`/lecter/${id}`), [router]);
+  const newThread = useCallback(
+    () => router.push(`/lecter/${crypto.randomUUID()}`),
+    [router],
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col">
