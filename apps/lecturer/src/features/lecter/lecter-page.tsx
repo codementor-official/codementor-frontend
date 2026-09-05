@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { BookOpen, Code2, FileText, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
+import { useToast } from "@codementor/ui";
 import { CopilotChat, CopilotKitProvider, useAgent } from "@copilotkit/react-core/v2";
 import "@copilotkit/react-core/v2/styles.css";
 import { api } from "@/lib/api";
@@ -56,7 +57,8 @@ function WelcomeState(props: unknown) {
   );
 }
 
-function ChatPanel({ onRunEnd }: { onRunEnd: () => void }) {
+function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => void }) {
+  const toast = useToast();
   const { agent } = useAgent({ agentId: LECTER_AGENT_ID });
   const running = agent.isRunning;
   const wasRunning = useRef(false);
@@ -72,11 +74,22 @@ function ChatPanel({ onRunEnd }: { onRunEnd: () => void }) {
       <div className="min-h-0 flex-1">
         <CopilotChat
           agentId={LECTER_AGENT_ID}
+          /* Bỏ prop này là hội thoại bị tách: CopilotKit tự sinh một threadId ngẫu nhiên
+             (`providedThreadId ?? randomUUID()`) rồi GHI ĐÈ `agent.threadId`, nên server lưu
+             dưới một id khác với id mà rail đang hiển thị — mỗi lần mount là một phiên mới. */
+          threadId={threadId}
           labels={{
             chatInputPlaceholder: "Nhờ Lecter soạn bài code…",
             chatDisclaimerText: "Lecter có thể sai. Mọi thay đổi đều cần bạn xác nhận.",
           }}
           messageView={{ assistantMessage: { markdownRenderer: Markdown } }}
+          /* Không có prop này thì lỗi của một lượt chỉ đi vào console: người soạn thấy chat im
+             lặng và không biết là phải gõ lại. */
+          onError={(event) => {
+            // Kiểu của prop này gộp cả `onError` của <div>, nên phải thu hẹp trước khi đọc.
+            if (!("error" in event)) return;
+            toast.error(event.error.message || "Lượt này hỏng. Thử lại giúp mình.");
+          }}
           welcomeScreen={WelcomeState}
         />
       </div>
@@ -138,7 +151,7 @@ export function LecterPage() {
         >
           <ToolRenderers />
           <LecterHumanInTheLoop />
-          <ChatPanel onRunEnd={() => setReloadKey((value) => value + 1)} />
+          <ChatPanel onRunEnd={() => setReloadKey((value) => value + 1)} threadId={threadId} />
         </CopilotKitProvider>
       </div>
     </div>

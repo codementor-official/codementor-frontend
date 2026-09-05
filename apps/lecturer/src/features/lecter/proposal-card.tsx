@@ -23,6 +23,12 @@ export interface ProposalCardProps {
   confirmLabel?: string;
   onConfirm: () => Promise<string>;
   onReject: () => void | Promise<void>;
+  /**
+   * Backend từ chối lệnh ghi. Bắt buộc phải báo NGƯỢC cho agent, không chỉ hiện toast: người
+   * soạn không sửa được payload do model sinh ra, nên nếu agent không biết là mình vừa sai thì
+   * hộp này thành ngõ cụt — chỉ còn nút "Bỏ qua".
+   */
+  onFailure: (reason: string) => void | Promise<void>;
 }
 
 export function ProposalCard({
@@ -33,10 +39,12 @@ export function ProposalCard({
   confirmLabel = "Xác nhận",
   onConfirm,
   onReject,
+  onFailure,
 }: ProposalCardProps) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [settled, setSettled] = useState<"applied" | "rejected" | null>(null);
+  const [settled, setSettled] = useState<"applied" | "rejected" | "failed" | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
   // Bài đã công khai thì học viên đang học nó; sửa là thay đổi thứ người khác đang nhìn thấy.
   // Cờ này đọc từ backend NGAY TRONG hộp, không lấy từ tham số tool: model không đặt được nó.
   const [published, setPublished] = useState(false);
@@ -52,6 +60,20 @@ export function ProposalCard({
       cancelled = true;
     };
   }, [exerciseId]);
+
+  if (settled === "failed") {
+    return (
+      <p className="my-2 flex items-start gap-2 text-sm text-destructive">
+        <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          Không lưu được: {failure}
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            Lecter đã nhận lỗi này và sẽ sửa lại đề xuất.
+          </span>
+        </span>
+      </p>
+    );
+  }
 
   if (settled) {
     return (
@@ -73,10 +95,17 @@ export function ProposalCard({
       setSettled("applied");
       toast.success(message);
     } catch (cause) {
-      // Thông điệp của backend nói rõ thiếu gì; đừng thay bằng câu chung chung.
-      const body = cause instanceof ApiClientError ? (cause.body as { message?: string }) : undefined;
-      toast.error(body?.message ?? (cause instanceof Error ? cause.message : "Không áp dụng được"));
-      setBusy(false);
+      // Thông điệp của backend nói rõ thiếu gì; đừng thay bằng câu chung chung. `message` là
+      // MẢNG khi lỗi đến từ ValidationPipe của Nest ("constraints must be an array") và là chuỗi
+      // khi đến từ domain — gộp lại trước khi hiện, không thì toast ra "[object Object]".
+      const body =
+        cause instanceof ApiClientError ? (cause.body as { message?: string | string[] }) : undefined;
+      const detail = Array.isArray(body?.message) ? body.message.join("; ") : body?.message;
+      const reason = detail ?? (cause instanceof Error ? cause.message : "Không áp dụng được");
+      setFailure(reason);
+      setSettled("failed");
+      toast.error(reason);
+      await onFailure(reason);
     }
   };
 

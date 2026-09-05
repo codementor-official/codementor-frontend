@@ -115,6 +115,9 @@ export function LecterHumanInTheLoop() {
               );
               return "Đã tạo bài nháp";
             }}
+            onFailure={(reason) =>
+              respond?.(`Áp dụng thất bại, KHÔNG tạo được bài: ${reason}. Sửa rồi đề xuất lại.`)
+            }
             onReject={() => respond?.("Người dùng bỏ qua đề xuất tạo bài.")}
           />
         );
@@ -155,6 +158,9 @@ export function LecterHumanInTheLoop() {
               await respond?.("Đã lưu thông tin chung.");
               return "Đã lưu";
             }}
+            onFailure={(reason) =>
+              respond?.(`Áp dụng thất bại, thông tin chưa đổi: ${reason}. Sửa rồi đề xuất lại.`)
+            }
             onReject={() => respond?.("Người dùng bỏ qua đề xuất sửa thông tin.")}
           />
         );
@@ -168,8 +174,8 @@ export function LecterHumanInTheLoop() {
       name: "save_exercise_content",
       description:
         "Lưu đề bài, test case, lời giải mẫu và cấu hình chấm của một bài code. Chỉ gọi SAU KHI đã " +
-        "chạy run_solution và lời giải mẫu chạy đúng. Mọi language phải có referenceSolution; cần " +
-        "ít nhất 3 test case và ít nhất một case visibility='public'.",
+        "chạy run_solution và validate_exercise_content trả về HỢP LỆ. Mọi language phải có " +
+        "referenceSolution; cần ít nhất 3 test case và ít nhất một case visibility='public'.",
       parameters: z.object({ id: z.string(), content: contentSchema }),
       render: ({ status, args, respond }) => {
         if (status === "inProgress") return <p className="my-2 text-sm text-muted-foreground">Đang soạn đề bài…</p>;
@@ -191,6 +197,12 @@ export function LecterHumanInTheLoop() {
               await respond?.("Đã lưu nội dung bài. Người dùng tự gửi duyệt khi thấy ổn.");
               return "Đã lưu nội dung";
             }}
+            onFailure={(reason) =>
+              respond?.(
+                `Áp dụng thất bại, nội dung CHƯA lưu: ${reason}. Sửa nội dung, kiểm lại bằng ` +
+                  "validate_exercise_content, rồi đề xuất lại.",
+              )
+            }
             onReject={() => respond?.("Người dùng bỏ qua đề xuất lưu nội dung.")}
           >
             {content.statement && (
