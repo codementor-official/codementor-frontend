@@ -5,6 +5,7 @@ import { Check, Loader2, TriangleAlert, X } from "lucide-react";
 import { Button, useToast } from "@codementor/ui";
 import { ApiClientError } from "@codementor/api-client";
 import { api } from "@/lib/api";
+import { ExerciseCreatedCard } from "./exercise-created-card";
 
 /**
  * Hộp xác nhận cho một đề xuất ghi của Lecter.
@@ -27,6 +28,8 @@ export interface ProposalOutcome {
   slug?: string;
   title?: string;
   reason?: string;
+  /** Chỉ `create_exercise` đặt: bài mới LUÔN là nháp (`exercises.status @default(draft)`). */
+  status?: "draft";
   /** Câu chỉ dẫn dành cho model, không hiện lên giao diện. */
   note?: string;
 }
@@ -55,9 +58,15 @@ export function readOutcome(result: string | undefined): ProposalOutcome | null 
 export function SettledProposal({
   title,
   outcome,
+  lines,
+  exerciseId,
 }: {
   title: string;
   outcome: ProposalOutcome | null;
+  /** Tóm tắt để hiện lại trên thẻ kết quả; cùng mảng đã đưa cho `ProposalCard`. */
+  lines?: string[];
+  /** Bài được sửa. Với `create_exercise` thì id chỉ có trong `outcome`, không có trong args. */
+  exerciseId?: string;
 }) {
   if (outcome?.outcome === "failed") {
     return (
@@ -82,7 +91,20 @@ export function SettledProposal({
     );
   }
 
-  // `applied`, hoặc hội thoại cũ có `result` văn xuôi — cả hai đều là "đã xử lý xong".
+  const id = exerciseId ?? outcome?.id;
+  if (outcome?.outcome === "applied" && id) {
+    return (
+      <ExerciseCreatedCard
+        exerciseId={id}
+        lines={lines}
+        status={outcome.status}
+        title={outcome.title ?? title}
+      />
+    );
+  }
+
+  // Hội thoại lưu trước khi `respond()` trả JSON: không có id để dựng đường sang studio, nên
+  // giữ nguyên dòng cũ thay vì hiện một thẻ không bấm được.
   return (
     <p className="my-2 flex items-center gap-2 text-sm text-muted-foreground">
       <Check aria-hidden="true" className="size-4 text-success" />

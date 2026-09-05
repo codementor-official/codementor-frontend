@@ -95,16 +95,17 @@ export function LecterHumanInTheLoop() {
       render: ({ status, args, result, respond }) => {
         if (status === "inProgress") return <p className="my-2 text-sm text-muted-foreground">Đang soạn đề xuất…</p>;
         const title = `Tạo bài nháp: ${args.title}`;
+        const lines = [
+          `Độ khó: ${args.difficulty}`,
+          args.summary ? `Tóm tắt: ${args.summary}` : "Chưa có tóm tắt",
+        ];
         // Đã xử lý xong, nạp lại từ lịch sử: KHÔNG vẽ lại nút. Xem `SettledProposal`.
-        if (status === "complete") return <SettledProposal outcome={readOutcome(result)} title={title} />;
+        if (status === "complete")
+          return <SettledProposal lines={lines} outcome={readOutcome(result)} title={title} />;
         return (
           <ProposalCard
             title={title}
-            lines={[
-              `Độ khó: ${args.difficulty}`,
-              args.summary ? `Tóm tắt: ${args.summary}` : "Chưa có tóm tắt",
-              args.slug ? `Slug: ${args.slug}` : "Slug: hệ thống tự sinh",
-            ]}
+            lines={[...lines, args.slug ? `Slug: ${args.slug}` : "Slug: hệ thống tự sinh"]}
             confirmLabel="Tạo bài nháp"
             onConfirm={async () => {
               const created = await api.exercises.create({
@@ -119,6 +120,7 @@ export function LecterHumanInTheLoop() {
                   id: created.id,
                   slug: created.slug,
                   title: created.title,
+                  status: "draft",
                   note: "Đã tạo bài nháp. Dùng id này cho các bước sau.",
                 }),
               );
@@ -218,20 +220,27 @@ export function LecterHumanInTheLoop() {
       parameters: z.object({ id: z.string(), content: contentSchema }),
       render: ({ status, args, result, respond }) => {
         if (status === "inProgress") return <p className="my-2 text-sm text-muted-foreground">Đang soạn đề bài…</p>;
-        if (status === "complete")
-          return <SettledProposal outcome={readOutcome(result)} title="Lưu đề bài và test case" />;
         const content = args.content as ExerciseContent;
         const cases = content.testCases ?? [];
+        const lines = [
+          `Chế độ: ${content.ioMode ?? "stdin_stdout"}`,
+          `${cases.length} test case (${cases.filter((c) => c.visibility === "public").length} công khai)`,
+          `Ngôn ngữ: ${(content.languages ?? []).map((l) => l.id).join(", ") || "chưa có"}`,
+        ];
+        if (status === "complete")
+          return (
+            <SettledProposal
+              exerciseId={args.id}
+              lines={lines}
+              outcome={readOutcome(result)}
+              title="Lưu đề bài và test case"
+            />
+          );
         return (
           <ProposalCard
             title="Lưu đề bài và test case"
             exerciseId={args.id}
-            lines={[
-              `Chế độ: ${content.ioMode ?? "stdin_stdout"}`,
-              `${cases.length} test case (${cases.filter((c) => c.visibility === "public").length} công khai)`,
-              `Ngôn ngữ: ${(content.languages ?? []).map((l) => l.id).join(", ") || "chưa có"}`,
-              `Chấm: ${content.evaluation?.checker ?? "exact"}`,
-            ]}
+            lines={[...lines, `Chấm: ${content.evaluation?.checker ?? "exact"}`]}
             confirmLabel="Lưu nội dung"
             onConfirm={async () => {
               const saved = await api.exercises.saveContent(args.id, content);
