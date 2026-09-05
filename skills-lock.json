@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "skills": {
+    "copilotkit": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "b9d440933e704b111ce048a3f1768d38ba2c1949b4f9f7903dd0f8452d2a6107"
+    },
+    "copilotkit-agui": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "skills/copilotkit-agui/SKILL.md",
+      "computedHash": "31944231c1732c348dfbbbe00ced798c1ebc94f335101c3df374fe4e2a50ef20"
+    },
+    "copilotkit-contribute": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "skills/copilotkit-contribute/SKILL.md",
+      "computedHash": "27507715bc0d711dfd8a7ff37f1cf3e3e1eb775220b22a6798d0baf5b55cc3bb"
+    },
+    "copilotkit-debug": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "skills/copilotkit-debug/SKILL.md",
+      "computedHash": "bcef1dc7347d66667f900bf8fc3f67158b6bbe403bc65e9d76da37676b16295e"
+    },
+    "copilotkit-develop": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "skills/copilotkit-develop/SKILL.md",
+      "computedHash": "181340c88fe7a770551de20a1e3d0887a3cbd78808bcfaa879c6001672bd014b"
+    },
+    "copilotkit-integrations": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "skills/copilotkit-integrations/SKILL.md",
+      "computedHash": "a76ebfb872e9e7fd45d1490b1d36f9bc1bdbfea07d36bc6bcbc23a57e0e7b223"
+    },
+    "copilotkit-self-update": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "skills/copilotkit-self-update/SKILL.md",
+      "computedHash": "5ab82173c6405a03dfd3a1076ce30291eb31b29e85c04dfd1037f7b9f51b37bd"
+    },
+    "copilotkit-setup": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "skills/copilotkit-setup/SKILL.md",
+      "computedHash": "e48d96457f4ea7f0a68a72dbb5c7a5bcb1325f699e6cfc73c141efb1fa679791"
+    },
+    "copilotkit-upgrade": {
+      "source": "copilotkit/skills",
+      "sourceType": "github",
+      "skillPath": "skills/copilotkit-upgrade/SKILL.md",
+      "computedHash": "4a7d2d41a2c3f193a02611743a29fae16e1ff88f0e562828ffa6a99eda0bded9"
+    }
+  }
+}
