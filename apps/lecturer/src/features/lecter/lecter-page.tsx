@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Code2, FileText, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -22,11 +22,9 @@ function Markdown({ content }: { content: string }) {
   );
 }
 
-function WelcomeState(props: unknown) {
-  const { input } = props as { input: ReactNode };
+function WelcomeContent() {
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-5 py-10 text-center">
-      <div className="max-w-xl">
+    <div className="w-full max-w-xl">
         <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Sparkles aria-hidden="true" className="size-7" />
         </div>
@@ -51,8 +49,14 @@ function WelcomeState(props: unknown) {
             </div>
           ))}
         </div>
-      </div>
-      <div className="mt-10 w-full max-w-2xl">{input}</div>
+    </div>
+  );
+}
+
+function EmptyStateOverlay() {
+  return (
+    <div className="pointer-events-none absolute inset-0 flex w-full items-center justify-center px-5 pb-28 text-center">
+      <WelcomeContent />
     </div>
   );
 }
@@ -61,6 +65,7 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
   const toast = useToast();
   const { agent } = useAgent({ agentId: LECTER_AGENT_ID });
   const running = agent.isRunning;
+  const empty = agent.messages.length === 0;
   const wasRunning = useRef(false);
 
   // Lượt vừa kết thúc = server vừa ghi xong hội thoại; nạp lại rail để tiêu đề mới xuất hiện.
@@ -71,7 +76,7 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1">
+      <div className="relative min-h-0 w-full flex-1">
         <CopilotChat
           agentId={LECTER_AGENT_ID}
           /* Bỏ prop này là hội thoại bị tách: CopilotKit tự sinh một threadId ngẫu nhiên
@@ -90,8 +95,9 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
             if (!("error" in event)) return;
             toast.error(event.error.message || "Lượt này hỏng. Thử lại giúp mình.");
           }}
-          welcomeScreen={WelcomeState}
+          welcomeScreen={false}
         />
+        {empty && <EmptyStateOverlay />}
       </div>
     </div>
   );
