@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Code2, FileText, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -23,32 +23,35 @@ const LECTER_AGENT_ID = "lecter";
 /** Trễ tối đa giữa lúc token được gia hạn và lúc CopilotKit biết. */
 const TOKEN_SYNC_MS = 30_000;
 
+function bearer(): string {
+  return `Bearer ${readAccessToken() ?? ""}`;
+}
+
 /**
- * Bơm access token hiện hành vào CopilotKit.
+ * Giữ cho header `Authorization` của CopilotKit luôn là token hiện hành.
  *
- * Cần một thành phần riêng vì hai bên đều chốt giá trị: `AuthProvider` giữ token trong `useRef`
- * và CỐ TÌNH không re-render khi `automaticSilentRenew` đổi token (~5 phút một lần, token
- * Keycloak sống 300s), còn CopilotKit trải phẳng prop `headers` một lần bằng `Object.entries`
- * rồi giữ bản sao đó. Không có cầu nối này thì sau ~5 phút mọi lượt trả
- * `401 Token không hợp lệ` — trông hệt như "agent tự nhiên hỏng".
+ * `AuthProvider` giữ token trong `useRef` và CỐ TÌNH không re-render khi `automaticSilentRenew`
+ * đổi token (~5 phút một lần, token Keycloak sống 300s), còn CopilotKit trải phẳng prop
+ * `headers` MỘT LẦN bằng `Object.entries` rồi giữ bản sao. Nên getter hay hàm đặt trong prop đó
+ * đều vô dụng, và không có cầu nối này thì sau ~5 phút mọi lượt trả 401.
  *
- * `setHeaders` chỉ gọi khi token thật sự đổi: nó thông báo cho subscriber, gọi mỗi lần đọc là
- * churn vô ích.
+ * So sánh với `copilotkit.headers` chứ không với một ref cục bộ: `CopilotKitProvider` cũng gọi
+ * `setHeaders(mergedHeaders)` trong effect CỦA CHÍNH NÓ, mà effect của cha chạy SAU effect của
+ * con — mọi giá trị đặt ở đây lúc mount đều bị nó ghi đè. Đọc lại trạng thái thật của core
+ * khiến vòng này tự chữa: lần chạy kế tiếp thấy header sai thì đặt lại. Giá trị đúng ngay từ
+ * request đầu tiên đến từ prop `headers` của trang, không phải từ đây.
  *
  * ponytail: hỏi thăm theo chu kỳ thay vì nghe sự kiện `userLoaded` của oidc-client-ts — ngắn
- * hơn, không phụ thuộc vào việc gia hạn đi qua đúng đường sự kiện nào. Đổi sang nghe sự kiện
- * nếu có lúc cần token mới trong vòng dưới 30 giây.
+ * hơn, và bắt được cả trường hợp header bị ghi đè chứ không chỉ lúc token đổi.
  */
 function AuthHeaderSync() {
   const { copilotkit } = useCopilotKit();
-  const applied = useRef<string | null>(null);
 
   useEffect(() => {
     const apply = () => {
-      const token = readAccessToken() ?? "";
-      if (token === applied.current) return;
-      applied.current = token;
-      copilotkit.setHeaders({ Authorization: `Bearer ${token}` });
+      const value = bearer();
+      if (copilotkit.headers?.Authorization === value) return;
+      copilotkit.setHeaders({ Authorization: value });
     };
     apply();
     const timer = setInterval(apply, TOKEN_SYNC_MS);
@@ -150,6 +153,11 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
 
 export function LecterPage() {
   const [threadId, setThreadId] = useState(() => crypto.randomUUID());
+  // Token lúc mở trang. Đây là đường duy nhất đặt được header TRƯỚC lần gọi đầu tiên: provider
+  // đẩy `mergedHeaders` vào core trong effect của nó, sau mọi effect con. Định danh phải ổn định
+  // — object mới mỗi lần render sẽ khiến provider chạy lại effect đó (kèm `connect()`) liên tục.
+  // Gia hạn về sau do <AuthHeaderSync> lo.
+  const initialAuthHeaders = useMemo(() => ({ Authorization: bearer() }), []);
   const [reloadKey, setReloadKey] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState(false);
 
@@ -174,6 +182,7 @@ export function LecterPage() {
           // vào giữa trang giảng viên. `showDevConsole` KHÔNG còn điều khiển nó (đã deprecated);
           // `enableInspector` mới là cờ đúng.
           enableInspector={false}
+          headers={initialAuthHeaders}
           // Tầng Node cùng origin, không phải Kong: xem `app/api/copilotkit/[[...path]]/route.ts`.
           runtimeUrl="/api/copilotkit"
         >
