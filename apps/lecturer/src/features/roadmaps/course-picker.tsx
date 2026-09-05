@@ -2,16 +2,28 @@
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { Button, Select, StatusBadge } from "@codementor/ui";
+import { BookOpen, ExternalLink, FileText, GripVertical, ListTree, Plus, Trash2 } from "lucide-react";
+import {
+  Button,
+  DetailMeta,
+  DetailRow,
+  DetailSection,
+  DrawerDetail,
+  Select,
+  SideDrawer,
+  StatusBadge,
+} from "@codementor/ui";
 import { ListPager, ListSearch, usePagedList } from "@/components/page/paged-list";
 import { DropIndicator, dropZoneClasses, useSortableRow } from "@/components/sortable";
 import type { CourseListItem } from "@/features/courses/types";
+import { api } from "@/lib/api";
 import {
   CONTENT_STATUSES,
   CONTENT_STATUS_LABELS,
   CONTENT_STATUS_TONES,
+  LEVEL_LABELS,
   type RoadmapCourseItem,
 } from "@/features/roadmaps/types";
 
@@ -96,6 +108,7 @@ export function PickedCourses({ picked, onChange, disabled }: Omit<Props, "avail
  */
 export function CourseLibrary({ picked, available, onChange, disabled }: Props) {
   const [status, setStatus] = useState("");
+  const [selected, setSelected] = useState<CourseListItem | null>(null);
 
   const chosen = new Set(picked.map((course) => course.courseId));
   const rest = available.filter(
@@ -150,6 +163,7 @@ export function CourseLibrary({ picked, available, onChange, disabled }: Props) 
               disabled={disabled}
               key={course.id}
               onAdd={() => onChange(addCourse(picked, course))}
+              onOpen={() => setSelected(course)}
             />
           ))}
         </ul>
@@ -162,6 +176,8 @@ export function CourseLibrary({ picked, available, onChange, disabled }: Props) 
         total={list.total}
         unit="khóa học"
       />
+
+      {selected && <CourseDrawer course={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
@@ -235,10 +251,12 @@ function DraggableCourse({
   course,
   disabled,
   onAdd,
+  onOpen,
 }: {
   course: CourseListItem;
   disabled?: boolean;
   onAdd: () => void;
+  onOpen: () => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `pool:${course.id}`,
@@ -258,12 +276,16 @@ function DraggableCourse({
         type="button"
         {...attributes}
         {...listeners}
+        onClick={onOpen}
       >
         <GripVertical aria-hidden="true" className="size-4 shrink-0 cursor-grab text-muted-foreground" />
         <span className="min-w-0">
           <p className="truncate text-sm font-medium">{course.title}</p>
           <p className="truncate text-xs text-muted-foreground">
-            {course.durationHours ? `${course.durationHours} giờ · ` : ""}
+            {course.authorName ?? "Chưa rõ tác giả"} · {course.totalChapters} chương · {course.totalLessons} bài
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {course.durationHours ? `${course.durationHours} giờ · ` : "Chưa có thời lượng · "}
             {CONTENT_STATUS_LABELS[course.status]}
           </p>
         </span>
@@ -272,5 +294,75 @@ function DraggableCourse({
         <Plus aria-hidden="true" className="size-3.5" />
       </Button>
     </li>
+  );
+}
+
+function CourseDrawer({ course, onClose }: { course: CourseListItem; onClose: () => void }) {
+  const router = useRouter();
+
+  return (
+    <SideDrawer
+      footer={
+        <Button onClick={() => router.push(`/courses/${course.id}/studio`)} type="button">
+          <ExternalLink aria-hidden="true" className="size-4" />
+          Mở studio
+        </Button>
+      }
+      onClose={onClose}
+      open
+      title={course.title}
+      width="default"
+    >
+      <DrawerDetail key={course.id} load={() => api.courses.get(course.id)}>
+        {(detail) => (
+          <>
+            <DetailMeta>
+              <DetailRow label="Tác giả" value={course.authorName ?? "Chưa rõ tác giả"} />
+              <DetailRow label="Trình độ" value={LEVEL_LABELS[detail.level]} />
+              <DetailRow label="Nội dung" value={`${detail.totalChapters} chương · ${detail.totalLessons} bài`} />
+              <DetailRow
+                label="Thời lượng"
+                value={detail.durationHours ? `${detail.durationHours} giờ` : "Chưa có"}
+              />
+              <DetailRow label="Trạng thái" value={<StatusBadge tone={CONTENT_STATUS_TONES[detail.status]}>{CONTENT_STATUS_LABELS[detail.status]}</StatusBadge>} />
+              <DetailRow label="Slug" value={detail.slug} />
+            </DetailMeta>
+
+            {detail.description && (
+              <DetailSection icon={FileText} title="Mô tả">
+                <p className="text-sm leading-relaxed">{detail.description}</p>
+              </DetailSection>
+            )}
+
+            <DetailSection icon={ListTree} title="Chương trình học">
+              {(detail.chapters?.length ?? 0) === 0 ? (
+                <p className="text-sm text-muted-foreground">Khóa học chưa có chương nào.</p>
+              ) : (
+                <ol className="grid gap-2">
+                  {detail.chapters?.map((chapter, index) => (
+                    <li className="rounded-md border" key={chapter.id ?? chapter.title}>
+                      <div className="flex items-baseline gap-2 px-3 py-2">
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                          {index + 1}. {chapter.title}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {chapter.lessons.length} bài
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </DetailSection>
+
+            <DetailSection icon={BookOpen} title="Thông tin thêm">
+              <p className="text-sm text-muted-foreground">
+                Mở studio để chỉnh sửa thông tin, chương học và bài học của khóa học.
+              </p>
+            </DetailSection>
+          </>
+        )}
+      </DrawerDetail>
+    </SideDrawer>
   );
 }
