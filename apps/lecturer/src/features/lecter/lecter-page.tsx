@@ -1,17 +1,62 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen, Code2, FileText, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { useToast } from "@codementor/ui";
-import { CopilotChat, CopilotKitProvider, useAgent } from "@copilotkit/react-core/v2";
+import {
+  CopilotChat,
+  CopilotKitProvider,
+  useAgent,
+  useCopilotKit,
+} from "@copilotkit/react-core/v2";
 import "@copilotkit/react-core/v2/styles.css";
-import { api } from "@/lib/api";
-import { createLecterAgent, LECTER_AGENT_ID } from "./lecter-agent";
+import { readAccessToken } from "@/lib/api";
 import { HistoryRail } from "./history-rail";
 import { LecterHumanInTheLoop } from "./hitl";
 import { ToolRenderers } from "./tool-renderers";
+
+/** Cùng tên với `LangGraphAgent(name="lecter")` ở ai-service và khoá agent trong route runtime. */
+const LECTER_AGENT_ID = "lecter";
+
+/** Trễ tối đa giữa lúc token được gia hạn và lúc CopilotKit biết. */
+const TOKEN_SYNC_MS = 30_000;
+
+/**
+ * Bơm access token hiện hành vào CopilotKit.
+ *
+ * Cần một thành phần riêng vì hai bên đều chốt giá trị: `AuthProvider` giữ token trong `useRef`
+ * và CỐ TÌNH không re-render khi `automaticSilentRenew` đổi token (~5 phút một lần, token
+ * Keycloak sống 300s), còn CopilotKit trải phẳng prop `headers` một lần bằng `Object.entries`
+ * rồi giữ bản sao đó. Không có cầu nối này thì sau ~5 phút mọi lượt trả
+ * `401 Token không hợp lệ` — trông hệt như "agent tự nhiên hỏng".
+ *
+ * `setHeaders` chỉ gọi khi token thật sự đổi: nó thông báo cho subscriber, gọi mỗi lần đọc là
+ * churn vô ích.
+ *
+ * ponytail: hỏi thăm theo chu kỳ thay vì nghe sự kiện `userLoaded` của oidc-client-ts — ngắn
+ * hơn, không phụ thuộc vào việc gia hạn đi qua đúng đường sự kiện nào. Đổi sang nghe sự kiện
+ * nếu có lúc cần token mới trong vòng dưới 30 giây.
+ */
+function AuthHeaderSync() {
+  const { copilotkit } = useCopilotKit();
+  const applied = useRef<string | null>(null);
+
+  useEffect(() => {
+    const apply = () => {
+      const token = readAccessToken() ?? "";
+      if (token === applied.current) return;
+      applied.current = token;
+      copilotkit.setHeaders({ Authorization: `Bearer ${token}` });
+    };
+    apply();
+    const timer = setInterval(apply, TOKEN_SYNC_MS);
+    return () => clearInterval(timer);
+  }, [copilotkit]);
+
+  return null;
+}
 
 /** Markdown của repo, không phải của CopilotKit: cùng `.rich-text` mà AI Tutor và studio dùng. */
 function Markdown({ content }: { content: string }) {
@@ -105,36 +150,13 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
 
 export function LecterPage() {
   const [threadId, setThreadId] = useState(() => crypto.randomUUID());
-  const [initialMessages, setInitialMessages] = useState<unknown[] | undefined>(undefined);
   const [reloadKey, setReloadKey] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState(false);
 
-  // Agent mới cho mỗi hội thoại: `HttpAgent` giữ mảng messages trong chính nó, nên đổi hội thoại
-  // là đổi instance, không phải đổi một prop.
-  const agents = useMemo(
-    () => ({
-      [LECTER_AGENT_ID]: createLecterAgent(
-        threadId,
-        initialMessages as Parameters<typeof createLecterAgent>[1],
-      ),
-    }),
-    [threadId, initialMessages],
-  );
-
-  const openThread = useCallback((id: string) => {
-    api.lecter
-      .session(id)
-      .then((session) => {
-        setInitialMessages(session.messages);
-        setThreadId(id);
-      })
-      .catch(() => undefined);
-  }, []);
-
-  const newThread = useCallback(() => {
-    setInitialMessages(undefined);
-    setThreadId(crypto.randomUUID());
-  }, []);
+  // Đổi `threadId` là đủ để mở hội thoại khác: CopilotKit gọi lại `/agent/lecter/connect`, và
+  // route runtime phát lại lịch sử từ `ai_agent_sessions`. Trang không cầm mảng tin nhắn nữa.
+  const openThread = useCallback((id: string) => setThreadId(id), []);
+  const newThread = useCallback(() => setThreadId(crypto.randomUUID()), []);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -148,13 +170,16 @@ export function LecterPage() {
           reloadKey={reloadKey}
         />
         <CopilotKitProvider
-          key={threadId}
-          selfManagedAgents={agents}
           // Inspector bật mặc định ở dev và chèn cả banner quảng cáo sản phẩm của CopilotKit
           // vào giữa trang giảng viên. `showDevConsole` KHÔNG còn điều khiển nó (đã deprecated);
           // `enableInspector` mới là cờ đúng.
           enableInspector={false}
+          // Tầng Node cùng origin, không phải Kong: xem `app/api/copilotkit/[[...path]]/route.ts`.
+          runtimeUrl="/api/copilotkit"
         >
+          {/* Trước <ChatPanel>: effect của con chạy theo thứ tự khai báo, header phải có
+              trước lần connect đầu tiên. */}
+          <AuthHeaderSync />
           <ToolRenderers />
           <LecterHumanInTheLoop />
           <ChatPanel onRunEnd={() => setReloadKey((value) => value + 1)} threadId={threadId} />

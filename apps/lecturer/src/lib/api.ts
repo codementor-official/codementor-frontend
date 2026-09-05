@@ -34,8 +34,8 @@ let accessTokenReader: () => string | null = () => null;
 /**
  * Token hiện hành, đọc lại ở mỗi lời gọi.
  *
- * Lecter cần nó ngoài `createApiClient`: `HttpAgent` của AG-UI chốt header lúc dựng, mà một
- * phiên chat dài thì token sẽ hết hạn giữa chừng — xem `features/lecter/lecter-agent.ts`.
+ * Lecter cần nó ngoài `createApiClient`: CopilotKit chốt header một lần, mà một phiên chat dài
+ * thì token sẽ hết hạn giữa chừng — xem `AuthHeaderSync` trong `features/lecter/lecter-page.tsx`.
  */
 export function readAccessToken(): string | null {
   return accessTokenReader();
@@ -150,7 +150,7 @@ export const api = {
    */
   /**
    * Lecter — agent soạn nội dung. Lượt chat đi bằng SSE nên KHÔNG nằm ở đây (xem
-   * `features/lecter/lecter-agent.ts`); ba đường dưới đây chỉ là lịch sử hội thoại.
+   * `app/api/copilotkit/[[...path]]/route.ts`); ba đường dưới đây chỉ là lịch sử hội thoại.
    */
   lecter: {
     sessions: () =>

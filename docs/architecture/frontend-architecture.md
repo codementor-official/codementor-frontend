@@ -139,6 +139,8 @@ Keycloak is the identity and authorization provider. Shared role helpers belong 
 
 The Admin application uses a Backend-for-Frontend (BFF) authorization-code flow with PKCE. Keycloak is proxied through the Admin host under `/auth`; the BFF validates state, nonce, issuer, audience, and signatures before creating an encrypted `HttpOnly` session cookie. Browser JavaScript never receives access or refresh tokens. Admin API calls go through `/api/backend`, where the BFF refreshes the session and attaches the bearer token server-side.
 
+The Lecturer application keeps its access token in browser JavaScript (no BFF, no session cookie). Its one server-side route, `/api/copilotkit`, hosts the CopilotKit runtime that fronts the Lecter agent; it is a relay, not a BFF. The browser sends its own `Authorization` header, the runtime forwards it to ai-service, and ai-service verifies the Keycloak JWT. The route holds no credential of its own and cannot act on anyone's behalf.
+
 Each application owns its own route guards, allowed navigation, and required roles:
 
 - Web: member/student roles.
