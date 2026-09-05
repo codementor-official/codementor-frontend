@@ -13,6 +13,84 @@ import { api } from "@/lib/api";
  * trước màn hình, đi qua đúng guard `@Roles('lecturer')` của exercise-service. ai-service không
  * cầm credential ghi nào; nó chỉ đề xuất.
  */
+/**
+ * Kết cục của một đề xuất, dạng CHUỖI mà `respond()` đã trả về.
+ *
+ * Đây là thứ duy nhất còn lại sau khi tải lại trang: `ProposalCard` giữ kết cục trong `useState`,
+ * còn lịch sử hội thoại chỉ mang theo `result` của lời gọi tool. Vì vậy `respond()` trả JSON —
+ * xem `hitl.tsx`. Hội thoại lưu trước thay đổi đó có `result` là văn xuôi; parse hỏng thì rơi về
+ * `null` chứ không được ném lỗi.
+ */
+export interface ProposalOutcome {
+  outcome: "applied" | "rejected" | "failed";
+  id?: string;
+  slug?: string;
+  title?: string;
+  reason?: string;
+  /** Câu chỉ dẫn dành cho model, không hiện lên giao diện. */
+  note?: string;
+}
+
+export function readOutcome(result: string | undefined): ProposalOutcome | null {
+  if (!result) return null;
+  try {
+    const parsed = JSON.parse(result) as ProposalOutcome;
+    return parsed && typeof parsed.outcome === "string" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Một đề xuất ĐÃ xử lý xong, nạp lại từ lịch sử.
+ *
+ * Không có nút, và đó là điểm chính. Trước đây nhánh `complete` của `useHumanInTheLoop` không
+ * được xử lý, nên sau khi tải lại trang một đề xuất đã áp dụng hiện lại nguyên thẻ xác nhận: bấm
+ * "Tạo bài nháp" lần nữa là tạo thêm một bài trùng, bấm "Lưu nội dung" là PUT lại. Ở trạng thái
+ * này `respond` là `undefined` nên agent cũng không biết gì mà sửa.
+ *
+ * Cũng nhờ đổi component mà `ProposalCard` không mount nữa: nó gọi `GET /exercises/{id}` lúc
+ * mount để cảnh báo bài công khai, và mỗi thẻ lịch sử là một request thừa mỗi lần mở hội thoại.
+ */
+export function SettledProposal({
+  title,
+  outcome,
+}: {
+  title: string;
+  outcome: ProposalOutcome | null;
+}) {
+  if (outcome?.outcome === "failed") {
+    return (
+      <p className="my-2 flex items-start gap-2 text-sm text-destructive">
+        <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          Không lưu được: {outcome.reason ?? "không rõ lý do"}
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            Lecter đã nhận lỗi này và sẽ sửa lại đề xuất.
+          </span>
+        </span>
+      </p>
+    );
+  }
+
+  if (outcome?.outcome === "rejected") {
+    return (
+      <p className="my-2 flex items-center gap-2 text-sm text-muted-foreground">
+        <X aria-hidden="true" className="size-4" />
+        Đã bỏ qua: {title}
+      </p>
+    );
+  }
+
+  // `applied`, hoặc hội thoại cũ có `result` văn xuôi — cả hai đều là "đã xử lý xong".
+  return (
+    <p className="my-2 flex items-center gap-2 text-sm text-muted-foreground">
+      <Check aria-hidden="true" className="size-4 text-success" />
+      Đã áp dụng: {title}
+    </p>
+  );
+}
+
 export interface ProposalCardProps {
   title: string;
   /** Tóm tắt thay đổi, mỗi dòng một ý. Đủ để duyệt mà không phải mở studio. */
@@ -61,30 +139,14 @@ export function ProposalCard({
     };
   }, [exerciseId]);
 
-  if (settled === "failed") {
-    return (
-      <p className="my-2 flex items-start gap-2 text-sm text-destructive">
-        <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-        <span>
-          Không lưu được: {failure}
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            Lecter đã nhận lỗi này và sẽ sửa lại đề xuất.
-          </span>
-        </span>
-      </p>
-    );
-  }
-
+  // Cùng một hình dạng với lúc nạp lại từ lịch sử. Trạng thái cục bộ này chỉ phủ khoảng khắc
+  // giữa lúc bấm nút và lúc lời gọi tool chuyển sang `complete`.
   if (settled) {
     return (
-      <p className="my-2 flex items-center gap-2 text-sm text-muted-foreground">
-        {settled === "applied" ? (
-          <Check aria-hidden="true" className="size-4 text-success" />
-        ) : (
-          <X aria-hidden="true" className="size-4" />
-        )}
-        {settled === "applied" ? `Đã áp dụng: ${title}` : `Đã bỏ qua: ${title}`}
-      </p>
+      <SettledProposal
+        outcome={{ outcome: settled, reason: failure ?? undefined }}
+        title={title}
+      />
     );
   }
 

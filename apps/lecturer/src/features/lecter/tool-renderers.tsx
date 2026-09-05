@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Check, Loader2, Play, Search, Sparkles, Tags, TriangleAlert } from "lucide-react";
+import { Check, ListChecks, Loader2, Play, Search, Sparkles, Tags, TriangleAlert } from "lucide-react";
 import { useDefaultRenderTool, useRenderTool } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 
@@ -135,6 +135,23 @@ export function ToolRenderers() {
           status={status}
           detail={status === "complete" ? firstLine(result) : undefined}
           failed={Boolean(result && !result.startsWith("verdict=accepted"))}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "validate_exercise_content",
+      parameters: z.object({}),
+      render: ({ status, result }) => (
+        <ToolRow
+          icon={<ListChecks aria-hidden="true" className="size-3.5" />}
+          label="Kiểm nội dung trước khi lưu"
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+          failed={Boolean(result?.startsWith("CHƯA LƯU ĐƯỢC"))}
         />
       ),
     },

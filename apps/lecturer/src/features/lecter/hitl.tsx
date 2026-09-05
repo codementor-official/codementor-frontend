@@ -4,7 +4,7 @@ import { useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 import type { ExerciseContent } from "@codementor/solve";
 import { api } from "@/lib/api";
-import { ProposalCard } from "./proposal-card";
+import { ProposalCard, SettledProposal, readOutcome } from "./proposal-card";
 
 /**
  * Ba tool GHI, và chỉ ba. Chúng được khai báo ở TRÌNH DUYỆT, không ở ai-service: agent phát ra
@@ -92,11 +92,14 @@ export function LecterHumanInTheLoop() {
         summary: z.string().max(500).optional().describe("Tóm tắt MỘT câu, tối đa 500 ký tự. Dài hơn là backend từ chối."),
         slug: z.string().max(80).optional().describe("Bỏ trống thì hệ thống tự sinh từ tiêu đề."),
       }),
-      render: ({ status, args, respond }) => {
+      render: ({ status, args, result, respond }) => {
         if (status === "inProgress") return <p className="my-2 text-sm text-muted-foreground">Đang soạn đề xuất…</p>;
+        const title = `Tạo bài nháp: ${args.title}`;
+        // Đã xử lý xong, nạp lại từ lịch sử: KHÔNG vẽ lại nút. Xem `SettledProposal`.
+        if (status === "complete") return <SettledProposal outcome={readOutcome(result)} title={title} />;
         return (
           <ProposalCard
-            title={`Tạo bài nháp: ${args.title}`}
+            title={title}
             lines={[
               `Độ khó: ${args.difficulty}`,
               args.summary ? `Tóm tắt: ${args.summary}` : "Chưa có tóm tắt",
@@ -111,14 +114,33 @@ export function LecterHumanInTheLoop() {
                 summary: args.summary ?? null,
               });
               await respond?.(
-                `Đã tạo bài nháp id=${created.id} slug=${created.slug}. Dùng id này cho các bước sau.`,
+                JSON.stringify({
+                  outcome: "applied",
+                  id: created.id,
+                  slug: created.slug,
+                  title: created.title,
+                  note: "Đã tạo bài nháp. Dùng id này cho các bước sau.",
+                }),
               );
               return "Đã tạo bài nháp";
             }}
             onFailure={(reason) =>
-              respond?.(`Áp dụng thất bại, KHÔNG tạo được bài: ${reason}. Sửa rồi đề xuất lại.`)
+              respond?.(
+                JSON.stringify({
+                  outcome: "failed",
+                  reason,
+                  note: "KHÔNG tạo được bài. Sửa rồi đề xuất lại.",
+                }),
+              )
             }
-            onReject={() => respond?.("Người dùng bỏ qua đề xuất tạo bài.")}
+            onReject={() =>
+              respond?.(
+                JSON.stringify({
+                  outcome: "rejected",
+                  note: "Người dùng bỏ qua đề xuất tạo bài.",
+                }),
+              )
+            }
           />
         );
       },
@@ -142,8 +164,10 @@ export function LecterHumanInTheLoop() {
         memoryLimitKb: z.number().int().optional(),
         tagIds: z.array(z.string()).optional(),
       }),
-      render: ({ status, args, respond }) => {
+      render: ({ status, args, result, respond }) => {
         if (status === "inProgress") return <p className="my-2 text-sm text-muted-foreground">Đang soạn đề xuất…</p>;
+        if (status === "complete")
+          return <SettledProposal outcome={readOutcome(result)} title="Sửa thông tin bài" />;
         const { id, ...changes } = args;
         return (
           <ProposalCard
@@ -155,13 +179,28 @@ export function LecterHumanInTheLoop() {
             confirmLabel="Lưu thay đổi"
             onConfirm={async () => {
               await api.exercises.update(id, changes as Record<string, unknown>);
-              await respond?.("Đã lưu thông tin chung.");
+              await respond?.(
+                JSON.stringify({ outcome: "applied", id, note: "Đã lưu thông tin chung." }),
+              );
               return "Đã lưu";
             }}
             onFailure={(reason) =>
-              respond?.(`Áp dụng thất bại, thông tin chưa đổi: ${reason}. Sửa rồi đề xuất lại.`)
+              respond?.(
+                JSON.stringify({
+                  outcome: "failed",
+                  reason,
+                  note: "Thông tin CHƯA đổi. Sửa rồi đề xuất lại.",
+                }),
+              )
             }
-            onReject={() => respond?.("Người dùng bỏ qua đề xuất sửa thông tin.")}
+            onReject={() =>
+              respond?.(
+                JSON.stringify({
+                  outcome: "rejected",
+                  note: "Người dùng bỏ qua đề xuất sửa thông tin.",
+                }),
+              )
+            }
           />
         );
       },
@@ -177,8 +216,10 @@ export function LecterHumanInTheLoop() {
         "chạy run_solution và validate_exercise_content trả về HỢP LỆ. Mọi language phải có " +
         "referenceSolution; cần ít nhất 3 test case và ít nhất một case visibility='public'.",
       parameters: z.object({ id: z.string(), content: contentSchema }),
-      render: ({ status, args, respond }) => {
+      render: ({ status, args, result, respond }) => {
         if (status === "inProgress") return <p className="my-2 text-sm text-muted-foreground">Đang soạn đề bài…</p>;
+        if (status === "complete")
+          return <SettledProposal outcome={readOutcome(result)} title="Lưu đề bài và test case" />;
         const content = args.content as ExerciseContent;
         const cases = content.testCases ?? [];
         return (
@@ -193,17 +234,37 @@ export function LecterHumanInTheLoop() {
             ]}
             confirmLabel="Lưu nội dung"
             onConfirm={async () => {
-              await api.exercises.saveContent(args.id, content);
-              await respond?.("Đã lưu nội dung bài. Người dùng tự gửi duyệt khi thấy ổn.");
+              const saved = await api.exercises.saveContent(args.id, content);
+              await respond?.(
+                JSON.stringify({
+                  outcome: "applied",
+                  id: args.id,
+                  slug: saved.slug,
+                  title: saved.title,
+                  note: "Đã lưu nội dung bài. Người dùng tự gửi duyệt khi thấy ổn.",
+                }),
+              );
               return "Đã lưu nội dung";
             }}
             onFailure={(reason) =>
               respond?.(
-                `Áp dụng thất bại, nội dung CHƯA lưu: ${reason}. Sửa nội dung, kiểm lại bằng ` +
-                  "validate_exercise_content, rồi đề xuất lại.",
+                JSON.stringify({
+                  outcome: "failed",
+                  reason,
+                  note:
+                    "Nội dung CHƯA lưu. Sửa nội dung, kiểm lại bằng validate_exercise_content, " +
+                    "rồi đề xuất lại.",
+                }),
               )
             }
-            onReject={() => respond?.("Người dùng bỏ qua đề xuất lưu nội dung.")}
+            onReject={() =>
+              respond?.(
+                JSON.stringify({
+                  outcome: "rejected",
+                  note: "Người dùng bỏ qua đề xuất lưu nội dung.",
+                }),
+              )
+            }
           >
             {content.statement && (
               <details className="mt-3">
