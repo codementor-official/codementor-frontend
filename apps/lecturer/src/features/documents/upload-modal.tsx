@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDropzone, type FileRejection } from "react-dropzone";
 import { FileText, UploadCloud, X } from "lucide-react";
 import { Button, Modal } from "@codementor/ui";
@@ -14,6 +15,15 @@ import { formatSize } from "./types";
  *
  * Bám sát hộp tương ứng bên ứng dụng người học (`study-group/upload-documents-modal.tsx`); chép
  * ý chứ không import, vì mã không đi ngang giữa các app (AGENTS.md).
+ *
+ * Portal ra `body`, bắt buộc chứ không phải cho gọn — cùng lý do đã ghi ở `AttachPicker`. Một
+ * trong hai nơi dùng hộp này là menu đính kèm của Lecter, và nó nằm bên trong khung ô nhập của
+ * CopilotChatView: khung đó là `pointer-events-none` (thuộc tính này DI TRUYỀN xuống con) và
+ * `absolute z-20` (tạo stacking context riêng, nhốt `z-50` của Modal lại). Để nguyên tại chỗ thì
+ * hộp vẫn hiện nhưng không bấm được gì cả: không chọn tệp, không kéo thả, không đóng được.
+ *
+ * Đặt portal ở ĐÂY chứ không ở nơi gọi: trang Tài liệu không cần nó, nhưng portal ở đó cũng vô
+ * hại, và một component tự lo chỗ đứng của mình thì nơi gọi thứ ba không phải nhớ luật này.
  */
 
 export const ACCEPTED = {
@@ -91,7 +101,12 @@ export function DocumentUploadModal({
     onClose();
   };
 
-  return (
+  // Sau MỌI hook — `useDropzone` ở trên vẫn phải chạy mỗi lần render. `document` chỉ tồn tại ở
+  // trình duyệt; `open` luôn là `false` ở lần render đầu nên nhánh này không chạy lúc SSR, và
+  // điều kiện dưới đây là hàng rào cho trường hợp một nơi gọi sau này mở sẵn từ server.
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
     <Modal
       description={`Tối đa ${maxFiles} tệp mỗi lần, mỗi tệp không quá ${formatSize(maxBytes)}. Tài liệu tự xóa sau 30 ngày.`}
       footer={
@@ -171,7 +186,7 @@ export function DocumentUploadModal({
           ))}
         </ul>
       )}
-
-    </Modal>
+    </Modal>,
+    document.body,
   );
 }
