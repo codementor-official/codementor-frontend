@@ -9,7 +9,7 @@ import {
   roadmapCourseArgSchema,
   toRoadmapCoursesPayload,
 } from "./roadmap-payload";
-import { ProposalCard, SettledProposal, readOutcome } from "./proposal-card";
+import { ProposalCard, SettledProposal, readOutcome, savedWithErrors } from "./proposal-card";
 
 /**
  * Tool GHI của nghiệp vụ soạn lộ trình. Cùng luật với `hitl.tsx` và `hitl-course.tsx`: khai ở
@@ -25,7 +25,8 @@ import { ProposalCard, SettledProposal, readOutcome } from "./proposal-card";
  * TOÀN BỘ danh sách, nên khóa nào vắng mặt trong payload sẽ bị gỡ khỏi lộ trình. Ba lớp chắn
  * giống hệt bên khóa học, không lớp nào là prompt:
  *   1. `check={…}` chạy `POST /ai/lecter/check/roadmap-courses` trên ĐÚNG mảng sắp ghi. Còn lỗi
- *      thì nút bị khoá — lớp duy nhất agent không đi vòng được.
+ *      và kết quả đi ngược về agent kể cả khi người soạn vẫn bấm lưu — lớp duy nhất agent
+ *      không đi vòng được.
  *   2. Danh sách khóa sẽ biến mất do SERVER tính, bằng cách so payload với danh sách thật.
  *   3. `removeIds` chỉ để tách Ý ĐỊNH gỡ khỏi dữ liệu.
  *
@@ -231,7 +232,7 @@ export function LecterRoadmapHumanInTheLoop() {
             }
             lines={lines}
             confirmLabel="Lưu danh sách"
-            onConfirm={async () => {
+            onConfirm={async (check) => {
               assertRealCourseIds(args.courses);
               const saved = await api.roadmaps.replaceCourses(
                 args.id,
@@ -251,7 +252,12 @@ export function LecterRoadmapHumanInTheLoop() {
                     status: course.status,
                     isOptional: course.isOptional,
                   })),
-                  note: "Đã lưu danh sách. Tổng thời lượng do backend tự tính lại từ các khóa thành phần.",
+                  note:
+                    savedWithErrors(
+                      check,
+                      "Đọc lại bằng `read_roadmap`, sửa, kiểm bằng `validate_roadmap_courses` rồi lưu lại.",
+                    ) ??
+                    "Đã lưu danh sách. Tổng thời lượng do backend tự tính lại từ các khóa thành phần.",
                 }),
               );
               return "Đã lưu danh sách khóa học";

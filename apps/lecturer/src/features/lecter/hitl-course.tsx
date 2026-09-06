@@ -10,7 +10,13 @@ import {
   toCurriculumPayload,
   toLessonContentPayload,
 } from "./curriculum-payload";
-import { ProposalCard, SettledProposal, describeApiError, readOutcome } from "./proposal-card";
+import {
+  ProposalCard,
+  SettledProposal,
+  describeApiError,
+  readOutcome,
+  savedWithErrors,
+} from "./proposal-card";
 
 /**
  * Tool GHI của nghiệp vụ soạn khóa học. Cùng luật với `hitl.tsx`: khai ở TRÌNH DUYỆT, agent chỉ
@@ -26,13 +32,15 @@ import { ProposalCard, SettledProposal, describeApiError, readOutcome } from "./
  * TOÀN BỘ cây, nên chương hay bài nào vắng mặt trong payload sẽ bị xóa cùng `lesson_progress` của
  * mọi học viên đang học. Ba lớp chắn, không lớp nào là prompt:
  *   1. `check={…}` chạy `POST /ai/lecter/check/curriculum` trên ĐÚNG mảng sắp ghi, ngay khi thẻ
- *      hiện ra. Còn lỗi thì nút bị khoá. Đây là lớp duy nhất agent không đi vòng được — tool
- *      `validate_curriculum` thì nó có thể bỏ qua, và payload đưa cho tool đó không nhất thiết là
- *      payload gửi đi lưu.
+ *      hiện ra, và kết quả đi ngược về agent kể cả khi người soạn vẫn bấm lưu. Đây là lớp duy
+ *      nhất agent không đi vòng được — tool `validate_curriculum` thì nó có thể bỏ qua, và
+ *      payload đưa cho tool đó không nhất thiết là payload gửi đi lưu.
  *   2. Danh sách mục sẽ biến mất do SERVER tính, bằng cách so payload với cây thật. Trước đây thẻ
  *      tra tên từ `removeIds` do chính agent khai, nên một lượt quên echo id thì nó không hiện gì.
- *   3. `removeIds` vẫn còn, nhưng chỉ để tách Ý ĐỊNH xóa khỏi dữ liệu: khai rồi thì không còn là
- *      lỗi chặn, chưa khai thì vẫn hiện đỏ.
+ *   3. `removeIds` tách Ý ĐỊNH xóa khỏi dữ liệu, và đó là thứ quyết định nút có bấm được không.
+ *      Lỗi nội dung chỉ còn là cảnh báo — người soạn vẫn lưu được để khỏi mất công — nhưng một
+ *      mục sắp biến mất mà agent CHƯA khai vào `removeIds` thì vẫn khoá nút: gần như luôn là nó
+ *      quên echo id, và một cú bấm ở đó xóa `lesson_progress` của người khác, không lấy lại được.
  */
 
 const level = z.enum(["none", "basic", "intermediate", "experienced"]);
@@ -218,7 +226,7 @@ export function LecterCourseHumanInTheLoop() {
             }
             lines={lines}
             confirmLabel="Lưu cây chương trình"
-            onConfirm={async () => {
+            onConfirm={async (check) => {
               const saved = await api.courses.saveCurriculum(
                 args.id,
                 toCurriculumPayload(args.chapters),
@@ -239,7 +247,11 @@ export function LecterCourseHumanInTheLoop() {
                       chapter: chapter.title,
                     })),
                   ),
-                  note: "Đã lưu cây. Dùng lessonId ở trên cho save_lesson_contents.",
+                  note:
+                    savedWithErrors(
+                      check,
+                      "Đọc lại bằng `read_course`, sửa, kiểm bằng `validate_curriculum` rồi lưu lại.",
+                    ) ?? "Đã lưu cây. Dùng lessonId ở trên cho save_lesson_contents.",
                 }),
               );
               return "Đã lưu cây chương trình";
