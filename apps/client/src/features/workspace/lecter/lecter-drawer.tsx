@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { History, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { History, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { SideDrawer, useToast } from "@codementor/ui";
 import { Button } from "@/components/ui/button";
@@ -294,7 +294,9 @@ export function LecterDrawer({
       open={open}
       onClose={onClose}
       title="Lecter"
-      description="Trợ lý soạn bài đọc tài liệu ĐÃ DUYỆT của nhóm và trả về bản nháp để bạn rà soát."
+      /* Thanh công cụ bên dưới đã có tên, nút đóng và lịch sử: thêm header dựng sẵn nữa là hai
+         hàng cùng nội dung, ăn mất chiều cao của khung chat. */
+      showHeader={false}
       footer={
         <LecterComposer
           slug={slug}
@@ -313,16 +315,26 @@ export function LecterDrawer({
             <Plus aria-hidden="true" className="size-3.5" />
             Hội thoại mới
           </Button>
-          <HistoryMenu
-            sessions={sessions}
-            activeId={currentId}
-            onPick={(id) => {
-              setActiveId(id);
-              setInput("");
-              setAttachments([]);
-            }}
-            onRemove={remove}
-          />
+          <div className="flex items-center gap-1.5">
+            <HistoryMenu
+              sessions={sessions}
+              activeId={currentId}
+              onPick={(id) => {
+                setActiveId(id);
+                setInput("");
+                setAttachments([]);
+              }}
+              onRemove={remove}
+            />
+            <button
+              type="button"
+              aria-label="Đóng"
+              onClick={onClose}
+              className="flex size-8 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg hover:text-navy"
+            >
+              <X aria-hidden="true" className="size-4" />
+            </button>
+          </div>
         </div>
 
         {messages.length === 0 && !busy ? (
