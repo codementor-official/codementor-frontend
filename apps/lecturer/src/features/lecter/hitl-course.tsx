@@ -25,9 +25,14 @@ import { ProposalCard, SettledProposal, describeApiError, readOutcome } from "./
  * `save_curriculum` là tool nguy hiểm nhất trong cả hệ thống: `PUT /courses/:id/curriculum` thay
  * TOÀN BỘ cây, nên chương hay bài nào vắng mặt trong payload sẽ bị xóa cùng `lesson_progress` của
  * mọi học viên đang học. Ba lớp chắn, không lớp nào là prompt:
- *   1. `validate_curriculum` phía server chặn payload thiếu id (`app/lecter/validate.py`).
- *   2. `removeIds` bắt model khai ý định xóa tách khỏi dữ liệu, nên "quên" không thành "xóa".
- *   3. Hộp xác nhận tra tên những mục đó TỪ BACKEND và hiện banner đỏ trước khi người duyệt bấm.
+ *   1. `check={…}` chạy `POST /ai/lecter/check/curriculum` trên ĐÚNG mảng sắp ghi, ngay khi thẻ
+ *      hiện ra. Còn lỗi thì nút bị khoá. Đây là lớp duy nhất agent không đi vòng được — tool
+ *      `validate_curriculum` thì nó có thể bỏ qua, và payload đưa cho tool đó không nhất thiết là
+ *      payload gửi đi lưu.
+ *   2. Danh sách mục sẽ biến mất do SERVER tính, bằng cách so payload với cây thật. Trước đây thẻ
+ *      tra tên từ `removeIds` do chính agent khai, nên một lượt quên echo id thì nó không hiện gì.
+ *   3. `removeIds` vẫn còn, nhưng chỉ để tách Ý ĐỊNH xóa khỏi dữ liệu: khai rồi thì không còn là
+ *      lỗi chặn, chưa khai thì vẫn hiện đỏ.
  */
 
 const level = z.enum(["none", "basic", "intermediate", "experienced"]);
@@ -204,7 +209,13 @@ export function LecterCourseHumanInTheLoop() {
           <ProposalCard
             title="Lưu cây chương trình"
             target={{ kind: "course", id: args.id }}
-            removeIds={args.removeIds}
+            check={() =>
+              api.lecter.checkCurriculum({
+                courseId: args.id,
+                chapters: args.chapters,
+                removeIds: args.removeIds,
+              })
+            }
             lines={lines}
             confirmLabel="Lưu cây chương trình"
             onConfirm={async () => {

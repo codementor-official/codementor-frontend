@@ -240,6 +240,10 @@ export function LecterHumanInTheLoop() {
           <ProposalCard
             title="Lưu đề bài và test case"
             target={{ kind: "exercise", id: args.id }}
+            /* Chạy chính lời giải trong `content` này qua bộ chấm. `run_solution` là một tool
+               riêng với đoạn code agent tự chọn — đã có lần bộ chấm nhận `print('placeholder')`
+               còn thứ lưu xuống là một chương trình khác hẳn. */
+            check={() => api.lecter.checkExerciseContent(content)}
             lines={[...lines, `Chấm: ${content.evaluation?.checker ?? "exact"}`]}
             confirmLabel="Lưu nội dung"
             onConfirm={async () => {

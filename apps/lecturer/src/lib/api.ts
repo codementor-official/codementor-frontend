@@ -77,6 +77,15 @@ export interface Tag {
 }
 
 /** Tham số danh sách dùng chung; mỗi domain chỉ đọc những khoá nó hiểu. */
+/** Kết quả kiểm ở biên ghi. `errors` khác rỗng = không được ghi. */
+export interface WriteCheck {
+  errors: string[];
+  warnings: string[];
+  /** Chỉ cây chương trình: mục sẽ biến mất, tính từ cây THẬT chứ không từ lời agent khai. */
+  removals?: { kind: "chapter" | "lesson"; id: string; title: string; declared: boolean }[];
+  status?: string;
+}
+
 export interface ListExercisesParams {
   q?: string;
   difficulty?: string;
@@ -161,6 +170,21 @@ export const api = {
       ),
     removeSession: (threadId: string) =>
       unwrap<void>(`/ai/lecter/sessions/${threadId}`, { method: "DELETE" }),
+
+    /**
+     * Kiểm NGAY TRƯỚC khi ghi, không phải lúc agent xin ý kiến.
+     *
+     * `validate_curriculum` / `validate_exercise_content` là tool agent TÙY Ý gọi, và mảng nó
+     * đưa cho tool đó không nhất thiết là mảng nó gửi đi lưu — đã xảy ra: validate với
+     * `id: null`, lưu với `id: "new-1"`. Hai hàm này nhận đúng payload sắp ghi.
+     */
+    checkCurriculum: (body: { courseId: string; chapters: unknown[]; removeIds?: string[] }) =>
+      unwrap<WriteCheck>("/ai/lecter/check/curriculum", { method: "POST", body }),
+    checkExerciseContent: (content: unknown) =>
+      unwrap<WriteCheck>("/ai/lecter/check/exercise-content", {
+        method: "POST",
+        body: { content } as Record<string, unknown>,
+      }),
   },
 
   aiStudio: {
