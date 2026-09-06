@@ -1,4 +1,13 @@
-import { BookOpen, Braces, LayoutDashboard, Newspaper, Route, Sparkles, User } from "lucide-react";
+import {
+  BookOpen,
+  Braces,
+  FileText,
+  LayoutDashboard,
+  Newspaper,
+  Route,
+  Sparkles,
+  User,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface LecturerNavItem {
@@ -33,6 +42,9 @@ export const lecturerNavigation: LecturerNavGroup[] = [
       { href: "/courses", icon: BookOpen, label: "Khóa học" },
       { href: "/exercises", icon: Braces, label: "Bài code" },
       { href: "/articles", icon: Newspaper, label: "Bài viết" },
+      // Cuối nhóm, sau bốn mục trên: chúng là nội dung phát hành cho người học, còn Tài liệu
+      // là nguyên liệu đầu vào của Lecter và không bao giờ ra tới trang người học.
+      { href: "/documents", icon: FileText, label: "Tài liệu" },
     ],
   },
   {
