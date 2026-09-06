@@ -22,15 +22,16 @@ import { ProposalCard, SettledProposal, readOutcome } from "./proposal-card";
  * Lộ trình Lecter tạo ra mặc định là nháp: `Roadmap.create` đặt cứng `status: 'draft'`.
  *
  * `save_roadmap_courses` là bản lộ trình của `save_curriculum`: `PUT /roadmaps/:id/courses` thay
- * TOÀN BỘ danh sách, nên khóa nào vắng mặt trong payload sẽ bị gỡ khỏi lộ trình cùng mọi cạnh
- * điều kiện mở khóa trỏ vào nó. Ba lớp chắn giống hệt bên khóa học, không lớp nào là prompt:
+ * TOÀN BỘ danh sách, nên khóa nào vắng mặt trong payload sẽ bị gỡ khỏi lộ trình. Ba lớp chắn
+ * giống hệt bên khóa học, không lớp nào là prompt:
  *   1. `check={…}` chạy `POST /ai/lecter/check/roadmap-courses` trên ĐÚNG mảng sắp ghi. Còn lỗi
  *      thì nút bị khoá — lớp duy nhất agent không đi vòng được.
  *   2. Danh sách khóa sẽ biến mất do SERVER tính, bằng cách so payload với danh sách thật.
  *   3. `removeIds` chỉ để tách Ý ĐỊNH gỡ khỏi dữ liệu.
  *
  * Hậu quả nhẹ hơn cây chương trình một bậc và thẻ xác nhận nói đúng như vậy: `course_enrollments`
- * và `lesson_progress` treo ở khóa học, nên gỡ một khóa khỏi lộ trình KHÔNG xoá tiến độ của ai.
+ * và `lesson_progress` treo ở khóa học, nên gỡ một khóa khỏi lộ trình KHÔNG xoá dữ liệu nào. Thứ
+ * đổi là phái sinh — `fn_recalc_roadmap_progress` tính lại phần trăm trên số khóa còn lại.
  */
 
 const field = z.enum(["frontend", "backend", "fullstack", "mobile", "data_ai", "foundation"]);

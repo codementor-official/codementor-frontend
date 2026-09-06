@@ -259,11 +259,12 @@ export function ProposalCard({
   );
   const blocked = (checked?.errors?.length ?? 0) > 0;
   // Hậu quả của việc gỡ KHÁC nhau giữa hai domain, và nói sai là làm người soạn sợ nhầm chỗ:
-  // `lesson_progress` treo ở bài học nên xóa một chương là mất tiến độ thật, còn gỡ một khóa khỏi
-  // lộ trình thì `course_enrollments` của khóa đó vẫn nguyên — thứ mất là cạnh điều kiện mở khóa.
+  // `lesson_progress` treo ở bài học nên xóa một chương là mất tiến độ thật và không lấy lại được.
+  // Gỡ một khóa khỏi lộ trình thì `course_enrollments` của khóa đó vẫn nguyên — chỉ phần trăm
+  // hoàn thành lộ trình được tính lại trên số khóa còn lại.
   const removalNotice =
     target?.kind === "roadmap"
-      ? `Sẽ GỠ ${removals.length} khóa học khỏi lộ trình. Tiến độ từng khóa của học viên vẫn còn, nhưng điều kiện mở khóa trỏ vào chúng thì mất.`
+      ? `Sẽ GỠ ${removals.length} khóa học khỏi lộ trình. Tiến độ trong từng khóa vẫn còn, nhưng phần trăm hoàn thành lộ trình của học viên đang theo sẽ đổi.`
       : `Sẽ XÓA ${removals.length} mục. Tiến độ của học viên ở phần này mất theo và không khôi phục được.`;
 
   // Cùng một hình dạng với lúc nạp lại từ lịch sử. Trạng thái cục bộ này chỉ phủ khoảng khắc
