@@ -5,16 +5,16 @@ import { useCallback, useState } from "react";
 /**
  * Nội dung mà giảng viên đính kèm vào tin nhắn kế tiếp gửi cho Lecter.
  *
- * Chỉ mang CON TRỎ (`kind`, `id`, `title`), không mang nội dung. Lecter đã có `read_exercise` và
- * `read_course` để tự đọc, nên chép nội dung vào đây chỉ đổi lấy hai thứ tệ hơn: một ảnh chụp cũ
- * ngay khi giảng viên sửa trong studio, và vài KB context mỗi lượt.
+ * Chỉ mang CON TRỎ (`kind`, `id`, `title`), không mang nội dung. Lecter đã có `read_exercise`,
+ * `read_course` và `read_roadmap` để tự đọc, nên chép nội dung vào đây chỉ đổi lấy hai thứ tệ
+ * hơn: một ảnh chụp cũ ngay khi giảng viên sửa trong studio, và vài KB context mỗi lượt.
  *
  * Tham chiếu đi vào CHÍNH nội dung tin nhắn (xem `serialize`), không đi qua `useAgentContext`. Nhờ
  * vậy nó nằm trong lịch sử hội thoại đã lưu ở Mongo — mở lại trang vẫn còn — và người soạn nhìn
  * thấy đúng thứ mình vừa gửi thay vì một ngữ cảnh ẩn.
  */
 
-export type AttachKind = "exercise" | "course";
+export type AttachKind = "exercise" | "course" | "roadmap";
 
 export interface AttachedItem {
   kind: AttachKind;
@@ -25,6 +25,7 @@ export interface AttachedItem {
 export const ATTACH_LABELS: Record<AttachKind, string> = {
   exercise: "Bài code",
   course: "Khóa học",
+  roadmap: "Lộ trình",
 };
 
 export function useAttachedContent() {

@@ -14,6 +14,7 @@ import {
 } from "@codementor/solve";
 import { ListPager, ListSearch, usePagedList } from "@/components/page/paged-list";
 import type { CourseListItem } from "@/features/courses/types";
+import { FIELD_LABELS, type RoadmapListItem } from "@/features/roadmaps/types";
 import { api } from "@/lib/api";
 import { ATTACH_LABELS, type AttachKind, type AttachedItem } from "./use-attached-content";
 
@@ -35,30 +36,36 @@ const FETCH_LIMIT = 100;
 const NO_ROWS: Row[] = [];
 
 /**
- * `status` khai kiểu `ExerciseStatus` cho cả hai loại, và đó là kiểu rộng hơn chứ không phải kiểu
- * sai: bài code có thêm `closed` và `hidden` ngoài sáu trạng thái dùng chung, còn khóa học chỉ
- * dùng sáu cái chung. Dùng bảng `CONTENT_STATUS_*` ở đây thì hai trạng thái riêng của bài code
- * hiện ra rỗng.
+ * `status` khai kiểu `ExerciseStatus` cho cả ba loại, và đó là kiểu rộng hơn chứ không phải kiểu
+ * sai: bài code có thêm `closed` và `hidden` ngoài sáu trạng thái dùng chung, còn khóa học và lộ
+ * trình chỉ dùng sáu cái chung. Dùng bảng `CONTENT_STATUS_*` ở đây thì hai trạng thái riêng của
+ * bài code hiện ra rỗng.
  */
 type Row = { item: AttachedItem; caption: string; status: ExerciseStatus };
 
-function toRows(kind: AttachKind, data: (ExerciseListItem | CourseListItem)[]): Row[] {
-  return data.map((entry) =>
-    kind === "exercise"
-      ? {
-          item: { kind, id: entry.id, title: entry.title },
-          caption: `${DIFFICULTY_LABELS[(entry as ExerciseListItem).difficulty]} · ${entry.slug}`,
-          status: entry.status,
-        }
-      : {
-          item: { kind, id: entry.id, title: entry.title },
-          caption:
-            `${LEVEL_LABELS[(entry as CourseListItem).level]} · ` +
-            `${(entry as CourseListItem).totalChapters} chương, ` +
-            `${(entry as CourseListItem).totalLessons} bài`,
-          status: entry.status,
-        },
-  );
+type ListEntry = ExerciseListItem | CourseListItem | RoadmapListItem;
+
+/**
+ * Dòng phụ dưới tiêu đề: thứ phân biệt được hai mục trùng tên, mỗi loại một cách.
+ *
+ * `toRows` phải ép kiểu để gọi được, và điều đó an toàn vì `kind` chọn CẢ lời gọi API lẫn hàm
+ * ở đây — cùng một biến, trong cùng một effect.
+ */
+const CAPTIONS: Record<AttachKind, (entry: never) => string> = {
+  exercise: (entry: ExerciseListItem) => `${DIFFICULTY_LABELS[entry.difficulty]} · ${entry.slug}`,
+  course: (entry: CourseListItem) =>
+    `${LEVEL_LABELS[entry.level]} · ${entry.totalChapters} chương, ${entry.totalLessons} bài`,
+  roadmap: (entry: RoadmapListItem) =>
+    `${FIELD_LABELS[entry.field]} · ${LEVEL_LABELS[entry.level]} · ${entry.courseCount} khóa`,
+};
+
+function toRows(kind: AttachKind, data: ListEntry[]): Row[] {
+  const caption = CAPTIONS[kind] as (entry: ListEntry) => string;
+  return data.map((entry) => ({
+    item: { kind, id: entry.id, title: entry.title },
+    caption: caption(entry),
+    status: entry.status,
+  }));
 }
 
 export function AttachPicker({
@@ -85,7 +92,9 @@ export function AttachPicker({
     const request =
       kind === "exercise"
         ? api.exercises.mine({ limit: FETCH_LIMIT })
-        : api.courses.mine({ limit: FETCH_LIMIT });
+        : kind === "course"
+          ? api.courses.mine({ limit: FETCH_LIMIT })
+          : api.roadmaps.mine({ limit: FETCH_LIMIT });
     request
       .then((page) => !cancelled && setLoaded({ kind, rows: toRows(kind, page.items) }))
       .catch(
