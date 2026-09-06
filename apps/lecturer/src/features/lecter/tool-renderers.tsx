@@ -1,7 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Check, ListChecks, Loader2, Play, Search, Sparkles, Tags, TriangleAlert } from "lucide-react";
+import {
+  Check,
+  FileText,
+  ListChecks,
+  Loader2,
+  Play,
+  Search,
+  Sparkles,
+  Tags,
+  TriangleAlert,
+} from "lucide-react";
 import { useDefaultRenderTool, useRenderTool } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 
@@ -266,6 +276,40 @@ export function ToolRenderers() {
           detail={status === "complete" ? firstLine(result) : undefined}
           // Cùng hai chuỗi mở đầu với hai tool kiểm kia — xem chú thích ở `validate_curriculum`.
           failed={Boolean(result?.startsWith("CHƯA LƯU ĐƯỢC") || result?.startsWith("CHƯA KIỂM ĐƯỢC"))}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "read_document",
+      parameters: z.object({ document_id: z.string() }),
+      render: ({ status, result }) => (
+        <ToolRow
+          icon={<FileText aria-hidden="true" className="size-3.5" />}
+          label="Đọc tài liệu đính kèm"
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+          failed={Boolean(
+            result?.startsWith("Không tìm thấy") || result?.includes("KHÔNG thành công"),
+          )}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "search_document",
+      parameters: z.object({ query: z.string() }),
+      render: ({ status, parameters }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label={`Tìm trong tài liệu: \u201c${parameters?.query ?? ""}\u201d`}
+          status={status}
         />
       ),
     },
