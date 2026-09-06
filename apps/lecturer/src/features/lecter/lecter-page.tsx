@@ -16,6 +16,8 @@ import "@copilotkit/react-core/v2/styles.css";
 import { readAccessToken } from "@/lib/api";
 import { HistoryRail } from "./history-rail";
 import { LecterHumanInTheLoop } from "./hitl";
+import { LecterCourseHumanInTheLoop } from "./hitl-course";
+import { LecterComposer } from "./lecter-composer";
 import { ToolRenderers } from "./tool-renderers";
 
 /** Cùng tên với `LangGraphAgent(name="lecter")` ở ai-service và khoá agent trong route runtime. */
@@ -137,6 +139,9 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
             chatDisclaimerText: "Lecter có thể sai. Mọi thay đổi đều cần bạn xác nhận.",
           }}
           messageView={{ assistantMessage: { markdownRenderer: Markdown } }}
+          /* Slot, không phải prop: `inputValue`/`onInputChange`/`onSubmitMessage` truyền
+             thẳng cho <CopilotChat> đều bị chính nó ghi đè. Xem `lecter-composer.tsx`. */
+          input={LecterComposer}
           /* Không có prop này thì lỗi của một lượt chỉ đi vào console: người soạn thấy chat im
              lặng và không biết là phải gõ lại. */
           onError={(event) => {
@@ -210,6 +215,7 @@ export function LecterPage() {
           <AuthHeaderSync />
           <ToolRenderers />
           <LecterHumanInTheLoop />
+          <LecterCourseHumanInTheLoop />
           <ChatPanel onRunEnd={() => setReloadKey((value) => value + 1)} threadId={threadId} />
         </CopilotKitProvider>
       </div>

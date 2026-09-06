@@ -174,7 +174,7 @@ export function LecterHumanInTheLoop() {
         return (
           <ProposalCard
             title="Sửa thông tin bài"
-            exerciseId={id}
+            target={{ kind: "exercise", id }}
             lines={Object.entries(changes)
               .filter(([, value]) => value !== undefined)
               .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`)}
@@ -230,7 +230,7 @@ export function LecterHumanInTheLoop() {
         if (status === "complete")
           return (
             <SettledProposal
-              exerciseId={args.id}
+              target={{ kind: "exercise", id: args.id }}
               lines={lines}
               outcome={readOutcome(result)}
               title="Lưu đề bài và test case"
@@ -239,7 +239,7 @@ export function LecterHumanInTheLoop() {
         return (
           <ProposalCard
             title="Lưu đề bài và test case"
-            exerciseId={args.id}
+            target={{ kind: "exercise", id: args.id }}
             lines={[...lines, `Chấm: ${content.evaluation?.checker ?? "exact"}`]}
             confirmLabel="Lưu nội dung"
             onConfirm={async () => {

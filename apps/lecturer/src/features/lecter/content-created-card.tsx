@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { StatusBadge, buttonClassName } from "@codementor/ui";
-import { STATUS_LABELS, STATUS_TONES, type ExerciseStatus } from "@codementor/solve";
+import {
+  CONTENT_STATUS_LABELS,
+  CONTENT_STATUS_TONES,
+  type ContentStatus,
+} from "@codementor/types";
 
 /**
  * Kết quả của một lệnh ghi đã áp dụng, dạng thẻ có đường đi tiếp.
@@ -18,21 +22,23 @@ import { STATUS_LABELS, STATUS_TONES, type ExerciseStatus } from "@codementor/so
  *   một bảng điều khiển. Đồng bộ ngược lại nghĩa là mỗi thẻ cũ là một request mỗi lần mở hội
  *   thoại — đúng thứ vừa bỏ đi ở `SettledProposal`.
  * - **Route do frontend dựng từ id.** Model không bao giờ sinh URL; nó chỉ trả danh tính tài
- *   nguyên. Trang khác trong app cũng viết thẳng như vậy (`exercises/page.tsx:500`).
+ *   nguyên, và caller dựng `href`. Trang khác trong app cũng viết thẳng như vậy
+ *   (`exercises/page.tsx:500`).
  * - **Không tự điều hướng.** Agent có thể đang chạy tiếp, và người soạn có thể muốn xem hết rồi
  *   mới mở. Bấm nút là hành động của họ.
  */
-export function ExerciseCreatedCard({
+export function ContentCreatedCard({
   title,
-  exerciseId,
+  href,
   lines,
   status,
 }: {
   title: string;
-  exerciseId: string;
+  /** Đường sang studio, do caller dựng — bài code và khóa học nằm ở hai route khác nhau. */
+  href: string;
   lines?: string[];
-  /** Chỉ đặt khi BIẾT chắc, đừng đoán: bài đã công khai mà gắn nhãn "Nháp" là nói sai. */
-  status?: ExerciseStatus;
+  /** Chỉ đặt khi BIẾT chắc, đừng đoán: nội dung đã công khai mà gắn nhãn "Nháp" là nói sai. */
+  status?: ContentStatus;
 }) {
   return (
     <section className="my-2 rounded-lg border border-border bg-card p-3.5">
@@ -40,7 +46,7 @@ export function ExerciseCreatedCard({
         <h3 className="min-w-0 break-words text-sm font-semibold">{title}</h3>
         {status && (
           <span className="shrink-0">
-            <StatusBadge tone={STATUS_TONES[status]}>{STATUS_LABELS[status]}</StatusBadge>
+            <StatusBadge tone={CONTENT_STATUS_TONES[status]}>{CONTENT_STATUS_LABELS[status]}</StatusBadge>
           </span>
         )}
       </div>
@@ -54,7 +60,7 @@ export function ExerciseCreatedCard({
       )}
 
       <div className="mt-3 flex justify-end">
-        <Link className={buttonClassName()} href={`/exercises/${exerciseId}/studio`}>
+        <Link className={buttonClassName()} href={href}>
           Mở Studio
           <ArrowRight aria-hidden="true" className="size-4" />
         </Link>

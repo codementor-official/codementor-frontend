@@ -158,6 +158,71 @@ export function ToolRenderers() {
     [],
   );
 
+  useRenderTool(
+    {
+      name: "search_courses",
+      parameters: z.object({ query: z.string() }),
+      render: ({ status, parameters, result }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label={`Tìm khóa học: “${parameters?.query ?? ""}”`}
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "read_course",
+      parameters: z.object({ course_id: z.string() }),
+      render: ({ status }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label="Đọc khóa học và cây chương trình"
+          status={status}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "read_lesson_content",
+      parameters: z.object({ lesson_id: z.string() }),
+      render: ({ status }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label="Đọc nội dung bài học"
+          status={status}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "validate_curriculum",
+      parameters: z.object({}),
+      render: ({ status, result }) => (
+        <ToolRow
+          icon={<ListChecks aria-hidden="true" className="size-3.5" />}
+          label="Kiểm cây chương trình trước khi lưu"
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+          // Cùng chuỗi mở đầu với `validate_exercise_content`, và cả hai cùng dùng nó để báo
+          // "sẽ xóa mất dữ liệu" — dấu hiệu quan trọng nhất, phải hiện đỏ chứ không lẫn vào.
+          failed={Boolean(result?.startsWith("CHƯA LƯU ĐƯỢC") || result?.startsWith("CHƯA KIỂM ĐƯỢC"))}
+        />
+      ),
+    },
+    [],
+  );
+
   // Tool nào chưa có renderer riêng vẫn hiện được, thay vì biến mất khỏi hội thoại.
   useDefaultRenderTool();
   return null;
