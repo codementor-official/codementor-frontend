@@ -15,6 +15,12 @@ import {
 import { ListPager, ListSearch, usePagedList } from "@/components/page/paged-list";
 import type { CourseListItem } from "@/features/courses/types";
 import { FIELD_LABELS, type RoadmapListItem } from "@/features/roadmaps/types";
+import {
+  DOCUMENT_STATE_LABELS,
+  formatSize,
+  isUsable,
+  type AiDocument,
+} from "@/features/documents/types";
 import { api } from "@/lib/api";
 import { ATTACH_LABELS, type AttachKind, type AttachedItem } from "./use-attached-content";
 
@@ -41,9 +47,16 @@ const NO_ROWS: Row[] = [];
  * trình chỉ dùng sáu cái chung. Dùng bảng `CONTENT_STATUS_*` ở đây thì hai trạng thái riêng của
  * bài code hiện ra rỗng.
  */
-type Row = { item: AttachedItem; caption: string; status: ExerciseStatus };
+type Row = {
+  item: AttachedItem;
+  caption: string;
+  /** Nội dung phát hành mới có trạng thái duyệt; tài liệu thì không. */
+  status?: ExerciseStatus;
+  /** Tài liệu chưa xử lý xong thì không chọn được — Lecter chưa đọc được nó. */
+  disabled?: boolean;
+};
 
-type ListEntry = ExerciseListItem | CourseListItem | RoadmapListItem;
+type ListEntry = ExerciseListItem | CourseListItem | RoadmapListItem | AiDocument;
 
 /**
  * Dòng phụ dưới tiêu đề: thứ phân biệt được hai mục trùng tên, mỗi loại một cách.
@@ -57,15 +70,26 @@ const CAPTIONS: Record<AttachKind, (entry: never) => string> = {
     `${LEVEL_LABELS[entry.level]} · ${entry.totalChapters} chương, ${entry.totalLessons} bài`,
   roadmap: (entry: RoadmapListItem) =>
     `${FIELD_LABELS[entry.field]} · ${LEVEL_LABELS[entry.level]} · ${entry.courseCount} khóa`,
+  document: (entry: AiDocument) =>
+    `${entry.docType.toUpperCase()} · ${formatSize(entry.sizeBytes)} · ` +
+    `${DOCUMENT_STATE_LABELS[entry.state] ?? entry.state}`,
 };
 
 function toRows(kind: AttachKind, data: ListEntry[]): Row[] {
   const caption = CAPTIONS[kind] as (entry: ListEntry) => string;
-  return data.map((entry) => ({
-    item: { kind, id: entry.id, title: entry.title },
-    caption: caption(entry),
-    status: entry.status,
-  }));
+  return data.map((entry) =>
+    kind === "document"
+      ? {
+          item: { kind, id: entry.id, title: entry.title, state: "ready" as const },
+          caption: caption(entry),
+          disabled: !isUsable(entry as AiDocument),
+        }
+      : {
+          item: { kind, id: entry.id, title: entry.title },
+          caption: caption(entry),
+          status: (entry as Exclude<ListEntry, AiDocument>).status,
+        },
+  );
 }
 
 export function AttachPicker({
@@ -94,7 +118,10 @@ export function AttachPicker({
         ? api.exercises.mine({ limit: FETCH_LIMIT })
         : kind === "course"
           ? api.courses.mine({ limit: FETCH_LIMIT })
-          : api.roadmaps.mine({ limit: FETCH_LIMIT });
+          : kind === "roadmap"
+            ? api.roadmaps.mine({ limit: FETCH_LIMIT })
+            // Tài liệu trả thẳng một mảng, không phân trang — xem `api.aiDocuments.list`.
+            : api.aiDocuments.list().then((items) => ({ items }));
     request
       .then((page) => !cancelled && setLoaded({ kind, rows: toRows(kind, page.items) }))
       .catch(
@@ -158,11 +185,12 @@ export function AttachPicker({
         <ul className="grid gap-1.5">
           {list.visible.map((row) => {
             const attached = attachedIds.includes(row.item.id);
+            const blocked = attached || Boolean(row.disabled);
             return (
               <li key={row.item.id}>
                 <button
                   className="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-muted/40 disabled:opacity-50"
-                  disabled={attached}
+                  disabled={blocked}
                   onClick={() => {
                     onPick(row.item);
                     onClose();
@@ -175,9 +203,11 @@ export function AttachPicker({
                       {row.caption}
                     </span>
                   </span>
-                  <StatusBadge tone={STATUS_TONES[row.status]}>
-                    {STATUS_LABELS[row.status]}
-                  </StatusBadge>
+                  {row.status && (
+                    <StatusBadge tone={STATUS_TONES[row.status]}>
+                      {STATUS_LABELS[row.status]}
+                    </StatusBadge>
+                  )}
                   {attached && <Check aria-hidden="true" className="size-4 shrink-0 text-primary" />}
                 </button>
               </li>

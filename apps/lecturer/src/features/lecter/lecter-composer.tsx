@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, Code2, Plus, Route, X } from "lucide-react";
+import { BookOpen, Code2, FileText, Loader2, Plus, Route, Upload, X } from "lucide-react";
 import { CopilotChatInput } from "@copilotkit/react-core/v2";
+import { useToast } from "@codementor/ui";
+import { DocumentUploadModal } from "@/features/documents/upload-modal";
+import { uploadDocument, waitForReady } from "@/features/documents/upload";
 import { AttachPicker } from "./attach-picker";
 import {
   ATTACH_LABELS,
+  MAX_ATTACHMENTS,
   useAttachedContent,
   type AttachKind,
   type AttachedItem,
@@ -38,18 +42,28 @@ const ICONS: Record<AttachKind, typeof Code2> = {
   exercise: Code2,
   course: BookOpen,
   roadmap: Route,
+  document: FileText,
 };
 
-const ATTACH_KINDS = ["exercise", "course", "roadmap"] as const;
+const ATTACH_KINDS = ["exercise", "course", "roadmap", "document"] as const;
 
 /**
- * Menu đính kèm: nút `+` cộng một bảng chọn ba loại nội dung.
+ * Menu đính kèm: nút `+` cộng một bảng chọn bốn loại nội dung, và một mục tải tệp mới.
+ *
+ * Hai đường tới cùng một chỗ: tệp tải lên từ đây nằm lại trang Tài liệu như mọi tệp khác, nên
+ * "Tài liệu" ở trên và "Tải tài liệu lên" ở dưới không phải hai kho, chỉ là hai lối vào.
  *
  * Portal ra `body` và định vị bằng `getBoundingClientRect`, cùng lý do đã ghi ở `AttachPicker`:
  * ô nhập nằm trong một khung `pointer-events-none` + `absolute z-20`, nên một bảng chọn đặt tại
  * chỗ có thể bị cắt hoặc nằm dưới lớp khác. Mở LÊN TRÊN vì ô nhập nằm sát đáy màn hình.
  */
-function AttachMenu({ onPick }: { onPick: (kind: AttachKind) => void }) {
+function AttachMenu({
+  onPick,
+  onUpload,
+}: {
+  onPick: (kind: AttachKind) => void;
+  onUpload: () => void;
+}) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -114,6 +128,19 @@ function AttachMenu({ onPick }: { onPick: (kind: AttachKind) => void }) {
                 </button>
               );
             })}
+            <div className="my-1 h-px bg-border" role="separator" />
+            <button
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted"
+              onClick={() => {
+                setRect(null);
+                onUpload();
+              }}
+              role="menuitem"
+              type="button"
+            >
+              <Upload aria-hidden="true" className="size-4 text-muted-foreground" />
+              Tải tài liệu lên
+            </button>
           </div>,
           document.body,
         )}
@@ -134,8 +161,23 @@ function ChipBar({ items, onRemove }: { items: AttachedItem[]; onRemove: (id: st
             className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-xs"
             key={item.id}
           >
-            <Icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="truncate">{item.title}</span>
+            {item.state === "uploading" || item.state === "indexing" ? (
+              <Loader2 aria-hidden="true" className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
+            ) : (
+              <Icon
+                aria-hidden="true"
+                className={`size-3.5 shrink-0 ${item.state === "failed" ? "text-destructive" : "text-muted-foreground"}`}
+              />
+            )}
+            <span className={`truncate ${item.state === "failed" ? "text-destructive" : ""}`}>
+              {item.title}
+            </span>
+            {item.state === "uploading" && (
+              <span className="shrink-0 text-muted-foreground">đang tải…</span>
+            )}
+            {item.state === "indexing" && (
+              <span className="shrink-0 text-muted-foreground">đang xử lý…</span>
+            )}
             <button
               aria-label={`Bỏ đính kèm ${item.title}`}
               className="shrink-0 rounded text-muted-foreground hover:text-foreground"
@@ -152,26 +194,76 @@ function ChipBar({ items, onRemove }: { items: AttachedItem[]; onRemove: (id: st
 }
 
 function Composer(props: ComponentProps<typeof CopilotChatInput>) {
-  const { items, attach, remove, clear, serialize } = useAttachedContent();
+  const toast = useToast();
+  const { items, attach, update, remove, clear, serialize } = useAttachedContent();
   const [picker, setPicker] = useState<AttachKind | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Huỷ mọi vòng chờ đang chạy khi ô nhập bị tháo — người soạn đóng tab giữa chừng thì không
+  // còn ai đọc kết quả, và một `setInterval` sống sót sẽ gọi API mãi.
+  const aborts = useRef<AbortController[]>([]);
+  useEffect(
+    () => () => {
+      for (const controller of aborts.current) controller.abort();
+    },
+    [],
+  );
+
+  const full = () => {
+    toast.error(`Mỗi lượt gửi tối đa ${MAX_ATTACHMENTS} mục đính kèm.`);
+    return false;
+  };
+
+  const pick = (item: AttachedItem) => {
+    if (!attach(item)) full();
+  };
+
+  const upload = async (files: File[]) => {
+    for (const file of files) {
+      // Chip xuất hiện NGAY, trước cả khi có id thật: người soạn phải thấy tệp mình vừa chọn
+      // trong lúc chờ, chứ không phải một ô nhập im lặng vài chục giây.
+      const placeholder = `upload:${crypto.randomUUID()}`;
+      if (!attach({ kind: "document", id: placeholder, title: file.name, state: "uploading" })) {
+        full();
+        return;
+      }
+      const controller = new AbortController();
+      aborts.current.push(controller);
+      try {
+        const created = await uploadDocument(file);
+        // Đổi sang id THẬT: đó là thứ đi vào tin nhắn cho Lecter đọc.
+        update(placeholder, { id: created.id, title: created.title, state: "indexing" });
+        await waitForReady(created.id, controller.signal);
+        update(created.id, { state: "ready" });
+      } catch (cause) {
+        if (controller.signal.aborted) return;
+        update(placeholder, { state: "failed" });
+        toast.error(cause instanceof Error ? cause.message : "Không tải được tài liệu.");
+      }
+    }
+  };
 
   // Danh tính PHẢI ổn định: slot là một component type, nên một arrow dựng inline sẽ là type mới
   // ở mỗi render và React tháo rồi dựng lại cả nút — bảng chọn đang mở sẽ tự đóng ngay khi người
-  // soạn gõ thêm một ký tự. `setPicker` là setState nên deps rỗng là đủ.
+  // soạn gõ thêm một ký tự. Cả hai setState đều ổn định nên deps rỗng là đủ.
   const addMenuButton = useCallback(
-    () => <AttachMenu onPick={setPicker} />,
+    () => <AttachMenu onPick={setPicker} onUpload={() => setUploading(true)} />,
     [],
   ) as unknown as typeof CopilotChatInput.AddMenuButton;
 
+  // Tệp chưa xử lý xong thì Lecter đọc ra rỗng rồi nói sai với giảng viên. Khoá nút Gửi bằng
+  // cách bỏ hẳn `onSubmitMessage`: `canSend` của CopilotChatInput chỉ kiểm `!!onSubmitMessage`.
+  const waiting = items.some((item) => item.state === "uploading" || item.state === "indexing");
   const { onSubmitMessage } = props;
   // Giữ nguyên `undefined` khi agent chưa sẵn sàng. Luôn trả về một hàm sẽ làm nút Gửi sáng lên
-  // trước lúc gửi được (`canSend` chỉ kiểm `!!onSubmitMessage`).
-  const submit = onSubmitMessage
-    ? (value: string) => {
-        onSubmitMessage(value + serialize());
-        clear();
-      }
-    : undefined;
+  // trước lúc gửi được.
+  const submit =
+    onSubmitMessage && !waiting
+      ? (value: string) => {
+          onSubmitMessage(value + serialize());
+          clear();
+        }
+      : undefined;
 
   return (
     <>
@@ -185,7 +277,14 @@ function Composer(props: ComponentProps<typeof CopilotChatInput>) {
         attachedIds={items.map((item) => item.id)}
         kind={picker}
         onClose={() => setPicker(null)}
-        onPick={attach}
+        onPick={pick}
+      />
+      <DocumentUploadModal
+        maxBytes={20 * 1024 * 1024}
+        maxFiles={MAX_ATTACHMENTS}
+        onClose={() => setUploading(false)}
+        onUpload={(files) => void upload(files)}
+        open={uploading}
       />
     </>
   );
