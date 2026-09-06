@@ -36,6 +36,8 @@ import type {
   WorkspaceMember,
 } from "../types";
 import { LecterDrawer } from "../lecter/lecter-drawer";
+import { applyPatch } from "../lecter/patch";
+import type { LecterDraftPatch } from "../lecter/types";
 import { WorkspaceMemberSelector } from "./workspace-member-selector";
 
 const inputClass =
@@ -241,21 +243,22 @@ export function WorkspaceExerciseStudio({
     dirty: baseline.current !== null && serialized !== baseline.current,
   });
 
-  const applyAiDraft = (generated: {
-    title: string;
-    summary: string;
-    difficulty: "easy" | "medium" | "hard";
-    content: Record<string, unknown>;
-  }) => {
-    setTitle(generated.title);
-    setSummary(generated.summary);
-    setDifficulty(generated.difficulty);
-    setStatement(String(generated.content.statement ?? ""));
-    setExerciseSlug(slugifyExercise(generated.title));
-    setStudioContent(generated.content as ExerciseContent);
+  /**
+   * Áp một đề nghị của Lecter vào form — TỪNG PHẦN, không thay trọn gói.
+   *
+   * Không lưu gì cả: người soạn vẫn bấm "Lưu bài tập" như mọi lần. Đó là chủ ý — bài tập nhóm
+   * không có trạng thái nháp (`createExercise` đặt luôn `status = published` rồi bắn thông báo
+   * cho thành viên được giao), nên biểu mẫu này chính là vùng nháp duy nhất đang có.
+   *
+   * Drawer KHÔNG tự đóng: người soạn thường muốn nói tiếp ("thêm một case biên nữa"), và đóng
+   * lại sau mỗi lần áp buộc họ mở lại rồi tìm lại hội thoại.
+   */
+  const applyLecterPatch = (patch: LecterDraftPatch) => {
+    const next = applyPatch(draft, patch);
+    updateDraft(patch.title ? { ...next, slug: slugifyExercise(patch.title) } : next);
     setGeneratedByAi(true);
-    setAiOpen(false);
     setTab("content");
+    toast.success("Đã đưa vào biểu mẫu. Bấm Lưu khi bạn thấy ổn.");
   };
 
   const save = async () => {
@@ -450,9 +453,10 @@ export function WorkspaceExerciseStudio({
       <LecterDrawer
         open={aiOpen}
         slug={slug}
-        difficulty={difficulty}
+        draft={draft}
+        editingSaved={Boolean(exerciseId)}
         onClose={() => setAiOpen(false)}
-        onApply={applyAiDraft}
+        onApply={applyLecterPatch}
       />
     </>
   );

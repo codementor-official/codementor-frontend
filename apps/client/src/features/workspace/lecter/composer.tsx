@@ -1,109 +1,158 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
-import { FileText, Loader2, SendHorizonal, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
+import { FileText, Loader2, X } from "lucide-react";
+import { CopilotChatInput } from "@copilotkit/react-core/v2";
+import { useToast } from "@codementor/ui";
+import { MAX_ATTACHMENTS, prepareDocument, serializeAttachments } from "./attach";
+import { useLecterContext } from "./context";
 import { LecterDocumentMenu } from "./document-menu";
-import type { LecterAttachment } from "./sessions";
+import type { LecterAttachment } from "./types";
 
 /**
- * Ô nhập của Lecter: chip tài liệu đính kèm, khung nhập, hàng công cụ và nút gửi.
+ * Ô nhập của Lecter: `CopilotChatInput` gốc, thêm menu tài liệu và hàng chip.
  *
- * Dựng lại theo `CopilotChatInput` mà app giảng viên đang dùng để hai bên nhìn như một sản
- * phẩm: khối bo tròn 28px không viền, đổ bóng mảnh, ô gõ chiếm trọn hàng trên, còn nút `+`
- * và nút gửi nằm ở hàng công cụ bên dưới thay vì kẹp hai bên ô gõ.
- *
- * Enter gửi, Shift+Enter xuống dòng — quy ước của mọi khung chat, và người soạn hay dán đề
- * bài nhiều dòng vào đây.
+ * Vì sao phải là một slot chứ không phải prop trên `<CopilotChat>`: `CopilotChat` đặt
+ * `inputValue`, `onInputChange` và `onSubmitMessage` SAU khi trải `...restProps`, nên ba prop đó
+ * truyền từ ngoài vào bị ghi đè im lặng. Slot `input` là chỗ duy nhất nhận được hàm gửi thật để
+ * bọc lại — và ở đây "bọc lại" nghĩa là ghép danh sách tài liệu đính kèm vào cuối tin nhắn.
  */
-export function LecterComposer({
-  slug,
-  value,
-  onChange,
-  attachments,
-  onAttachmentsChange,
-  onSend,
-  busy,
+function ChipBar({
+  items,
+  onRemove,
 }: {
-  slug: string;
-  value: string;
-  onChange: (value: string) => void;
-  attachments: LecterAttachment[];
-  onAttachmentsChange: (next: LecterAttachment[]) => void;
-  onSend: () => void;
-  busy: boolean;
+  items: LecterAttachment[];
+  onRemove: (id: string) => void;
 }) {
-  // Không có tài liệu thì Lecter không có gì để đọc: `generate-draft` đòi ít nhất một bản đã duyệt.
-  const ready = value.trim().length > 0 && attachments.length > 0 && !busy;
-
-  const keyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== "Enter" || event.shiftKey) return;
-    event.preventDefault();
-    if (ready) onSend();
-  };
-
+  if (items.length === 0) return null;
   return (
-    <div className="w-full">
-      {attachments.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-1.5 px-2">
-          {attachments.map((item) => (
-            <span
-              key={item.id}
-              className="flex max-w-full items-center gap-1.5 rounded-md border border-border-soft bg-surface px-2 py-1 text-xs"
-            >
-              <FileText aria-hidden="true" className="size-3.5 shrink-0 text-text-muted" />
-              <span className="truncate text-navy">{item.title}</span>
-              <button
-                type="button"
-                aria-label={`Bỏ đính kèm ${item.title}`}
-                onClick={() =>
-                  onAttachmentsChange(attachments.filter((entry) => entry.id !== item.id))
-                }
-                className="shrink-0 rounded text-text-muted hover:text-navy"
-              >
-                <X aria-hidden="true" className="size-3.5" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Vòng focus chuyển lên cả khối: ô gõ trong suốt nên một vòng riêng quanh nó sẽ cắt
-          ngang giữa khung, đúng chỗ CopilotKit để trống. */}
-      <div className="flex w-full flex-col rounded-[28px] bg-surface shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] focus-within:ring-2 focus-within:ring-primary/40">
-        <textarea
-          rows={1}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          onKeyDown={keyDown}
-          placeholder="Nhờ Lecter soạn bài từ tài liệu đã duyệt…"
-          className="max-h-40 min-h-11 w-full resize-none bg-transparent px-5 pt-3.5 text-base leading-relaxed text-navy placeholder:text-text-faint focus-visible:outline-none"
-        />
-
-        <div className="flex items-center justify-between px-2.5 pb-2 pt-1">
-          <LecterDocumentMenu
-            slug={slug}
-            selected={attachments}
-            onChange={onAttachmentsChange}
-          />
+    // `pointer-events-auto`: khung chứa ô nhập của CopilotChatView là `pointer-events-none`,
+    // mỗi phần tử con phải tự bật lại thì nút × mới bấm được.
+    <div className="pointer-events-auto mx-auto flex w-full max-w-3xl flex-wrap gap-1.5 px-4 pb-1.5">
+      {items.map((item) => (
+        <span
+          key={item.id}
+          className="flex max-w-full items-center gap-1.5 rounded-md border border-border-soft bg-surface px-2 py-1 text-xs"
+        >
+          {item.state === "indexing" ? (
+            <Loader2 aria-hidden="true" className="size-3.5 shrink-0 animate-spin text-text-muted" />
+          ) : (
+            <FileText
+              aria-hidden="true"
+              className={`size-3.5 shrink-0 ${item.state === "failed" ? "text-danger" : "text-text-muted"}`}
+            />
+          )}
+          <span className={`truncate ${item.state === "failed" ? "text-danger" : "text-navy"}`}>
+            {item.title}
+          </span>
+          {item.state === "indexing" && (
+            <span className="shrink-0 text-text-faint">đang xử lý…</span>
+          )}
+          {item.state === "failed" && <span className="shrink-0 text-danger">không đọc được</span>}
           <button
             type="button"
-            onClick={onSend}
-            disabled={!ready}
-            aria-label="Gửi cho Lecter"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-on-ink transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={`Bỏ đính kèm ${item.title}`}
+            onClick={() => onRemove(item.id)}
+            className="shrink-0 rounded text-text-muted hover:text-navy"
           >
-            {busy ? (
-              <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-            ) : (
-              <SendHorizonal aria-hidden="true" className="size-4" />
-            )}
+            <X aria-hidden="true" className="size-3.5" />
           </button>
-        </div>
-      </div>
-
-      <p className="mt-2 text-center text-2xs text-text-faint">
-        Lecter có thể sai. Bản nháp vẫn cần bạn rà soát trước khi lưu.
-      </p>
+        </span>
+      ))}
     </div>
   );
 }
+
+function Composer(props: ComponentProps<typeof CopilotChatInput>) {
+  const { slug } = useLecterContext();
+  const toast = useToast();
+  const [items, setItems] = useState<LecterAttachment[]>([]);
+
+  // Huỷ mọi vòng chờ đang chạy khi ô nhập bị tháo — người soạn đóng drawer giữa chừng thì không
+  // còn ai đọc kết quả, và một vòng poll sống sót sẽ gọi API mãi.
+  const aborts = useRef<AbortController[]>([]);
+  useEffect(
+    () => () => {
+      for (const controller of aborts.current) controller.abort();
+    },
+    [],
+  );
+
+  const remove = useCallback(
+    (id: string) => setItems((previous) => previous.filter((item) => item.id !== id)),
+    [],
+  );
+
+  const attach = useCallback(
+    async (document: { id: string; title: string }) => {
+      let added = false;
+      setItems((previous) => {
+        if (previous.some((item) => item.id === document.id)) return previous;
+        if (previous.length >= MAX_ATTACHMENTS) return previous;
+        added = true;
+        return [...previous, { ...document, state: "indexing" }];
+      });
+      if (!added) {
+        toast.error(`Mỗi lượt gửi tối đa ${MAX_ATTACHMENTS} tài liệu.`);
+        return;
+      }
+      const controller = new AbortController();
+      aborts.current.push(controller);
+      try {
+        const state = await prepareDocument(slug, document.id, controller.signal);
+        setItems((previous) =>
+          previous.map((item) => (item.id === document.id ? { ...item, state } : item)),
+        );
+        if (state === "failed") toast.error(`Không đọc được "${document.title}".`);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setItems((previous) =>
+          previous.map((item) => (item.id === document.id ? { ...item, state: "failed" } : item)),
+        );
+        toast.error(error instanceof Error ? error.message : "Không xử lý được tài liệu.");
+      }
+    },
+    [slug, toast],
+  );
+
+  // Danh tính PHẢI ổn định giữa các lần render có cùng dữ liệu: slot là một component TYPE, nên
+  // một arrow dựng inline là type mới mỗi render và React tháo rồi dựng lại cả nút — bảng chọn
+  // đang mở sẽ tự đóng ngay khi người soạn gõ thêm một ký tự.
+  const addMenuButton = useCallback(
+    () => (
+      <LecterDocumentMenu
+        slug={slug}
+        selected={items.map(({ id, title }) => ({ id, title }))}
+        onPick={(document) => void attach(document)}
+        onRemove={remove}
+      />
+    ),
+    [attach, items, remove, slug],
+  ) as unknown as typeof CopilotChatInput.AddMenuButton;
+
+  // Tài liệu chưa xử lý xong thì Lecter đọc ra rỗng rồi nói sai với người soạn. Khoá nút Gửi
+  // bằng cách bỏ hẳn `onSubmitMessage`: `canSend` chỉ kiểm `!!onSubmitMessage`.
+  const waiting = items.some((item) => item.state === "indexing");
+  const { onSubmitMessage } = props;
+  const submit =
+    onSubmitMessage && !waiting
+      ? (value: string) => {
+          onSubmitMessage(value + serializeAttachments(items));
+          setItems([]);
+        }
+      : undefined;
+
+  return (
+    <>
+      <ChipBar items={items} onRemove={remove} />
+      <CopilotChatInput {...props} addMenuButton={addMenuButton} onSubmitMessage={submit} />
+    </>
+  );
+}
+
+/**
+ * Kiểu của slot là `SlotValue<typeof CopilotChatInput>`, tức đòi cả những static gắn trên
+ * namespace (`SendButton`, `TextArea`, …) chứ không chỉ chữ ký component. Chép chúng sang đây là
+ * chín dòng mà không ai đọc: `renderSlotElement` chỉ gọi `React.createElement(slot, props)`.
+ */
+export const LecterComposer = Composer as unknown as typeof CopilotChatInput;
