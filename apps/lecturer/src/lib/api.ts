@@ -81,8 +81,13 @@ export interface Tag {
 export interface WriteCheck {
   errors: string[];
   warnings: string[];
-  /** Chỉ cây chương trình: mục sẽ biến mất, tính từ cây THẬT chứ không từ lời agent khai. */
-  removals?: { kind: "chapter" | "lesson"; id: string; title: string; declared: boolean }[];
+  /** Mục sẽ biến mất, tính từ nội dung THẬT chứ không từ lời agent khai. */
+  removals?: {
+    kind: "chapter" | "lesson" | "course";
+    id: string;
+    title: string;
+    declared: boolean;
+  }[];
   status?: string;
 }
 
@@ -185,6 +190,11 @@ export const api = {
         method: "POST",
         body: { content } as Record<string, unknown>,
       }),
+    checkRoadmapCourses: (body: {
+      roadmapId: string;
+      courses: unknown[];
+      removeIds?: string[];
+    }) => unwrap<WriteCheck>("/ai/lecter/check/roadmap-courses", { method: "POST", body }),
   },
 
   aiStudio: {

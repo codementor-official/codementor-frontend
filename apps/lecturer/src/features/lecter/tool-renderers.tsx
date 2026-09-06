@@ -223,6 +223,55 @@ export function ToolRenderers() {
     [],
   );
 
+  useRenderTool(
+    {
+      name: "search_roadmaps",
+      parameters: z.object({ query: z.string() }),
+      render: ({ status, parameters, result }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label={`Tìm lộ trình: “${parameters?.query ?? ""}”`}
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "read_roadmap",
+      parameters: z.object({ roadmap_id: z.string() }),
+      render: ({ status }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label="Đọc lộ trình và danh sách khóa học"
+          status={status}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "validate_roadmap_courses",
+      parameters: z.object({}),
+      render: ({ status, result }) => (
+        <ToolRow
+          icon={<ListChecks aria-hidden="true" className="size-3.5" />}
+          label="Kiểm danh sách khóa học trước khi lưu"
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+          // Cùng hai chuỗi mở đầu với hai tool kiểm kia — xem chú thích ở `validate_curriculum`.
+          failed={Boolean(result?.startsWith("CHƯA LƯU ĐƯỢC") || result?.startsWith("CHƯA KIỂM ĐƯỢC"))}
+        />
+      ),
+    },
+    [],
+  );
+
   // Tool nào chưa có renderer riêng vẫn hiện được, thay vì biến mất khỏi hội thoại.
   useDefaultRenderTool();
   return null;

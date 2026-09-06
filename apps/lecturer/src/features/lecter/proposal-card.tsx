@@ -23,16 +23,22 @@ import { ContentCreatedCard } from "./content-created-card";
  * `null` chứ không được ném lỗi.
  */
 /**
- * Nội dung mà một đề xuất đụng tới. Bài code và khóa học nằm ở hai service, hai route studio,
- * nên mọi chỗ đọc trạng thái hay dựng link đều phải rẽ theo `kind`.
+ * Nội dung mà một đề xuất đụng tới. Bài code, khóa học và lộ trình nằm ở hai service và ba route
+ * studio, nên mọi chỗ đọc trạng thái hay dựng link đều phải rẽ theo `kind`.
  */
 export interface ContentTarget {
-  kind: "exercise" | "course";
+  kind: "exercise" | "course" | "roadmap";
   id: string;
 }
 
+const STUDIO_SEGMENT: Record<ContentTarget["kind"], string> = {
+  exercise: "exercises",
+  course: "courses",
+  roadmap: "roadmaps",
+};
+
 export function studioHref({ kind, id }: ContentTarget): string {
-  return kind === "course" ? `/courses/${id}/studio` : `/exercises/${id}/studio`;
+  return `/${STUDIO_SEGMENT[kind]}/${id}/studio`;
 }
 
 export interface ProposalOutcome {
@@ -144,10 +150,16 @@ export function SettledProposal({
   );
 }
 
-/** Đủ để cảnh báo; cả `Exercise` lẫn `Course` đều rót vừa hình dạng này. */
+/** Đủ để cảnh báo; `Exercise`, `Course` và `Roadmap` đều rót vừa hình dạng này. */
 interface CourseLikeInfo {
   status?: string;
 }
+
+const REMOVAL_LABELS: Record<string, string> = {
+  chapter: "Chương",
+  lesson: "Bài",
+  course: "Khóa học",
+};
 
 export interface ProposalCardProps {
   title: string;
@@ -199,7 +211,12 @@ export function ProposalCard({
   useEffect(() => {
     if (!kind || !id) return;
     let cancelled = false;
-    const read = kind === "course" ? api.courses.get(id) : api.exercises.get(id);
+    const read =
+      kind === "course"
+        ? api.courses.get(id)
+        : kind === "roadmap"
+          ? api.roadmaps.get(id)
+          : api.exercises.get(id);
     read
       .then((found) => !cancelled && setInfo(found as CourseLikeInfo))
       .catch(() => undefined);
@@ -236,11 +253,18 @@ export function ProposalCard({
   const removals = useMemo(
     () =>
       (checked?.removals ?? []).map(
-        (item) => `${item.kind === "chapter" ? "Chương" : "Bài"} "${item.title}"`,
+        (item) => `${REMOVAL_LABELS[item.kind] ?? "Mục"} "${item.title}"`,
       ),
     [checked],
   );
   const blocked = (checked?.errors?.length ?? 0) > 0;
+  // Hậu quả của việc gỡ KHÁC nhau giữa hai domain, và nói sai là làm người soạn sợ nhầm chỗ:
+  // `lesson_progress` treo ở bài học nên xóa một chương là mất tiến độ thật, còn gỡ một khóa khỏi
+  // lộ trình thì `course_enrollments` của khóa đó vẫn nguyên — thứ mất là cạnh điều kiện mở khóa.
+  const removalNotice =
+    target?.kind === "roadmap"
+      ? `Sẽ GỠ ${removals.length} khóa học khỏi lộ trình. Tiến độ từng khóa của học viên vẫn còn, nhưng điều kiện mở khóa trỏ vào chúng thì mất.`
+      : `Sẽ XÓA ${removals.length} mục. Tiến độ của học viên ở phần này mất theo và không khôi phục được.`;
 
   // Cùng một hình dạng với lúc nạp lại từ lịch sử. Trạng thái cục bộ này chỉ phủ khoảng khắc
   // giữa lúc bấm nút và lúc lời gọi tool chuyển sang `complete`.
@@ -300,8 +324,7 @@ export function ProposalCard({
         <div className="mt-2 rounded-md border border-destructive/50 bg-destructive/10 px-2.5 py-2 text-xs">
           <p className="flex items-start gap-2 font-medium text-destructive">
             <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-            Sẽ XÓA {removals.length} mục. Tiến độ của học viên ở phần này mất theo và không khôi
-            phục được.
+            {removalNotice}
           </p>
           <ul className="mt-1.5 space-y-0.5 pl-5">
             {removals.map((name) => (
