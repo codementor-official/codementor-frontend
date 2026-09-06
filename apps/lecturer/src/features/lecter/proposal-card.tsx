@@ -23,16 +23,22 @@ import { ContentCreatedCard } from "./content-created-card";
  * `null` chứ không được ném lỗi.
  */
 /**
- * Nội dung mà một đề xuất đụng tới. Bài code và khóa học nằm ở hai service, hai route studio,
- * nên mọi chỗ đọc trạng thái hay dựng link đều phải rẽ theo `kind`.
+ * Nội dung mà một đề xuất đụng tới. Bài code, khóa học và lộ trình nằm ở hai service và ba route
+ * studio, nên mọi chỗ đọc trạng thái hay dựng link đều phải rẽ theo `kind`.
  */
 export interface ContentTarget {
-  kind: "exercise" | "course";
+  kind: "exercise" | "course" | "roadmap";
   id: string;
 }
 
+const STUDIO_SEGMENT: Record<ContentTarget["kind"], string> = {
+  exercise: "exercises",
+  course: "courses",
+  roadmap: "roadmaps",
+};
+
 export function studioHref({ kind, id }: ContentTarget): string {
-  return kind === "course" ? `/courses/${id}/studio` : `/exercises/${id}/studio`;
+  return `/${STUDIO_SEGMENT[kind]}/${id}/studio`;
 }
 
 export interface ProposalOutcome {
@@ -73,6 +79,26 @@ export function readOutcome(result: string | undefined): ProposalOutcome | null 
   } catch {
     return null;
   }
+}
+
+/**
+ * Câu báo cho agent khi người soạn bấm lưu DÙ nội dung còn lỗi.
+ *
+ * Từ khi lỗi thôi khoá nút, đây là đường duy nhất để agent biết: lệnh ghi thành công nên nó
+ * không nhận `onFailure`, và nếu chỉ nhận "đã lưu" thì nó chuyển sang bước kế tiếp trong khi
+ * người soạn vừa đọc một khối cảnh báo hứa rằng nó sẽ sửa tiếp.
+ *
+ * `undefined` khi không còn lỗi, để nơi gọi rơi về câu báo thành công bình thường.
+ */
+export function savedWithErrors(check: WriteCheck | null, fix: string): string | undefined {
+  const errors = check?.errors ?? [];
+  if (errors.length === 0) return undefined;
+  return (
+    "Người dùng đã lưu DÙ CÒN LỖI, để không mất công soạn. Phần còn phải sửa: " +
+    errors.join("; ") +
+    ". " +
+    fix
+  );
 }
 
 /**
@@ -144,10 +170,16 @@ export function SettledProposal({
   );
 }
 
-/** Đủ để cảnh báo; cả `Exercise` lẫn `Course` đều rót vừa hình dạng này. */
+/** Đủ để cảnh báo; `Exercise`, `Course` và `Roadmap` đều rót vừa hình dạng này. */
 interface CourseLikeInfo {
   status?: string;
 }
+
+const REMOVAL_LABELS: Record<string, string> = {
+  chapter: "Chương",
+  lesson: "Bài",
+  course: "Khóa học",
+};
 
 export interface ProposalCardProps {
   title: string;
@@ -161,11 +193,22 @@ export interface ProposalCardProps {
    *
    * Đây là điểm khác của thiết kế: trước đây việc kiểm là một tool agent tùy ý gọi, với một
    * payload nó tự chọn — nên nó có thể validate một mảng rồi gửi đi lưu một mảng khác, và đã
-   * làm đúng như vậy. Ở đây kiểm nằm TRÊN đường ghi: `errors` khác rỗng thì nút bị khoá.
+   * làm đúng như vậy. Ở đây kiểm nằm TRÊN đường ghi, chạy trên chính payload sắp gửi.
+   *
+   * `errors` KHÔNG khoá nút: chặn lưu là bắt người soạn vứt cả bài vừa dựng vì một lời giải mẫu
+   * chạy sai, mà họ thì không sửa được payload của model. Chúng hiện thành cảnh báo và được báo
+   * ngược cho agent qua `savedWithErrors`. Chỉ việc xoá ngoài ý muốn mới còn khoá nút.
    */
   check?: () => Promise<WriteCheck>;
   confirmLabel?: string;
-  onConfirm: () => Promise<string>;
+  /**
+   * Thi hành lệnh ghi. Nhận luôn kết quả kiểm để báo NGƯỢC cho agent những lỗi còn lại.
+   *
+   * Trước đây lỗi khoá nút nên agent chỉ nhận `rejected` kèm một câu chung chung. Giờ lưu được
+   * kể cả khi còn lỗi, nên nếu không đưa danh sách này sang thì agent tưởng mọi thứ đã xong và
+   * chuyển bước — còn người soạn thì vừa đọc một khối cảnh báo hứa rằng nó sẽ sửa tiếp.
+   */
+  onConfirm: (check: WriteCheck | null) => Promise<string>;
   onReject: () => void | Promise<void>;
   /**
    * Backend từ chối lệnh ghi. Bắt buộc phải báo NGƯỢC cho agent, không chỉ hiện toast: người
@@ -199,7 +242,12 @@ export function ProposalCard({
   useEffect(() => {
     if (!kind || !id) return;
     let cancelled = false;
-    const read = kind === "course" ? api.courses.get(id) : api.exercises.get(id);
+    const read =
+      kind === "course"
+        ? api.courses.get(id)
+        : kind === "roadmap"
+          ? api.roadmaps.get(id)
+          : api.exercises.get(id);
     read
       .then((found) => !cancelled && setInfo(found as CourseLikeInfo))
       .catch(() => undefined);
@@ -236,11 +284,32 @@ export function ProposalCard({
   const removals = useMemo(
     () =>
       (checked?.removals ?? []).map(
-        (item) => `${item.kind === "chapter" ? "Chương" : "Bài"} "${item.title}"`,
+        (item) => `${REMOVAL_LABELS[item.kind] ?? "Mục"} "${item.title}"`,
       ),
     [checked],
   );
-  const blocked = (checked?.errors?.length ?? 0) > 0;
+  const failing = checked?.errors ?? [];
+  /**
+   * Xoá NGOÀI Ý MUỐN — thứ duy nhất còn khoá được nút.
+   *
+   * Mọi lỗi khác giờ chỉ là cảnh báo: chặn lưu là bắt người soạn vứt cả bài vừa dựng vì một
+   * lời giải mẫu chạy sai, và họ không sửa được payload của model — chỉ còn nút "Bỏ qua".
+   * Lưu một nội dung còn lỗi thì tệ nhất là backend từ chối, và câu từ chối đi ngược về agent.
+   *
+   * Xoá thì khác hẳn: `save_curriculum` thay TOÀN BỘ cây, nên một payload quên echo id sẽ xoá
+   * chương/bài cùng `lesson_progress` của mọi học viên đang học, không khôi phục được. Và nó
+   * gần như luôn là model quên, không phải giảng viên muốn — muốn thật thì id đã nằm trong
+   * `removeIds` và `declared` là true.
+   */
+  const undeclared = (checked?.removals ?? []).filter((item) => !item.declared).length;
+  // Hậu quả của việc gỡ KHÁC nhau giữa hai domain, và nói sai là làm người soạn sợ nhầm chỗ:
+  // `lesson_progress` treo ở bài học nên xóa một chương là mất tiến độ thật và không lấy lại được.
+  // Gỡ một khóa khỏi lộ trình thì `course_enrollments` của khóa đó vẫn nguyên — chỉ phần trăm
+  // hoàn thành lộ trình được tính lại trên số khóa còn lại.
+  const removalNotice =
+    target?.kind === "roadmap"
+      ? `Sẽ GỠ ${removals.length} khóa học khỏi lộ trình. Tiến độ trong từng khóa vẫn còn, nhưng phần trăm hoàn thành lộ trình của học viên đang theo sẽ đổi.`
+      : `Sẽ XÓA ${removals.length} mục. Tiến độ của học viên ở phần này mất theo và không khôi phục được.`;
 
   // Cùng một hình dạng với lúc nạp lại từ lịch sử. Trạng thái cục bộ này chỉ phủ khoảng khắc
   // giữa lúc bấm nút và lúc lời gọi tool chuyển sang `complete`.
@@ -256,7 +325,7 @@ export function ProposalCard({
   const apply = async () => {
     setBusy(true);
     try {
-      const message = await onConfirm();
+      const message = await onConfirm(checked);
       setSettled("applied");
       toast.success(message);
     } catch (cause) {
@@ -273,22 +342,25 @@ export function ProposalCard({
     <section className="my-2 rounded-lg border border-border bg-card p-3.5">
       <h3 className="text-sm font-semibold">{title}</h3>
 
-      {blocked && (
-        <div className="mt-2 rounded-md border border-destructive/50 bg-destructive/10 px-2.5 py-2 text-xs">
-          <p className="flex items-start gap-2 font-medium text-destructive">
-            <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-            Chưa lưu được — nội dung này còn lỗi:
+      {failing.length > 0 && (
+        <div className="mt-2 rounded-md border border-warning/50 bg-warning/10 px-2.5 py-2 text-xs">
+          <p className="flex items-start gap-2 font-medium">
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-warning" />
+            Nội dung này còn lỗi:
           </p>
           <ul className="mt-1.5 space-y-0.5 pl-5">
-            {checked?.errors.map((line) => (
+            {failing.map((line) => (
               <li key={line}>· {line}</li>
             ))}
           </ul>
-          <p className="mt-1.5 text-muted-foreground">Lecter đã nhận danh sách này và sẽ sửa lại.</p>
+          <p className="mt-1.5 text-muted-foreground">
+            Bạn vẫn lưu được để khỏi mất công soạn — Lecter sẽ nhận danh sách này và sửa tiếp.
+            Backend có thể từ chối một số lỗi về hình dạng dữ liệu.
+          </p>
         </div>
       )}
 
-      {!blocked && (checked?.warnings?.length ?? 0) > 0 && (
+      {(checked?.warnings?.length ?? 0) > 0 && (
         <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
           {checked?.warnings.map((line) => (
             <li key={line}>· {line}</li>
@@ -300,14 +372,20 @@ export function ProposalCard({
         <div className="mt-2 rounded-md border border-destructive/50 bg-destructive/10 px-2.5 py-2 text-xs">
           <p className="flex items-start gap-2 font-medium text-destructive">
             <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-            Sẽ XÓA {removals.length} mục. Tiến độ của học viên ở phần này mất theo và không khôi
-            phục được.
+            {removalNotice}
           </p>
           <ul className="mt-1.5 space-y-0.5 pl-5">
             {removals.map((name) => (
               <li key={name}>· {name}</li>
             ))}
           </ul>
+          {undeclared > 0 && (
+            <p className="mt-1.5 text-muted-foreground">
+              Nút lưu bị khoá vì Lecter chưa khai là muốn xoá {undeclared} mục này — gần như luôn
+              là nó quên gửi lại id. Bảo nó đọc lại rồi đề xuất lần nữa; muốn xoá thật thì nói rõ
+              là xoá.
+            </p>
+          )}
         </div>
       )}
 
@@ -348,7 +426,7 @@ export function ProposalCard({
           Bỏ qua
         </Button>
         <Button
-          disabled={busy || frozen || checking || blocked}
+          disabled={busy || frozen || checking || undeclared > 0}
           onClick={() => void apply()}
           type="button"
           variant={removals.length > 0 ? "danger" : "default"}

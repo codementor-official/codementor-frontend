@@ -4,7 +4,7 @@ import { useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 import type { ExerciseContent } from "@codementor/solve";
 import { api } from "@/lib/api";
-import { ProposalCard, SettledProposal, readOutcome } from "./proposal-card";
+import { ProposalCard, SettledProposal, readOutcome, savedWithErrors } from "./proposal-card";
 
 /**
  * Ba tool GHI, và chỉ ba. Chúng được khai báo ở TRÌNH DUYỆT, không ở ai-service: agent phát ra
@@ -246,7 +246,7 @@ export function LecterHumanInTheLoop() {
             check={() => api.lecter.checkExerciseContent(content)}
             lines={[...lines, `Chấm: ${content.evaluation?.checker ?? "exact"}`]}
             confirmLabel="Lưu nội dung"
-            onConfirm={async () => {
+            onConfirm={async (check) => {
               const saved = await api.exercises.saveContent(args.id, content);
               await respond?.(
                 JSON.stringify({
@@ -254,7 +254,12 @@ export function LecterHumanInTheLoop() {
                   id: args.id,
                   slug: saved.slug,
                   title: saved.title,
-                  note: "Đã lưu nội dung bài. Người dùng tự gửi duyệt khi thấy ổn.",
+                  note:
+                    savedWithErrors(
+                      check,
+                      "Sửa rồi kiểm lại bằng `validate_exercise_content` và đề xuất lưu lại — " +
+                        "bài đã nằm trong hệ thống, lần lưu sau chỉ ghi đè.",
+                    ) ?? "Đã lưu nội dung bài. Người dùng tự gửi duyệt khi thấy ổn.",
                 }),
               );
               return "Đã lưu nội dung";

@@ -32,7 +32,9 @@ export const lessonType = z.enum([
  *    zod 4 ép đúng RFC (nibble phiên bản 1-8) còn `@IsUUID()` của Nest thì dễ tính hơn; hai
  *    validator bất đồng về "id là gì" chính là loại lỗi đang sửa.
  */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Xuất ra ngoài để `roadmap-payload.ts` dùng CHUNG: hai chỗ định nghĩa "id hợp lệ" khác
+ *  nhau chính là loại lỗi khối chú thích trên vừa mô tả. */
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const existingId = z.string().regex(UUID, "Phải là id có thật, hoặc null nếu là mục mới.");
 
 /**

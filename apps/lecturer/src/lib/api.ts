@@ -14,6 +14,7 @@ import type {
   Page,
 } from "@codementor/solve";
 import type { Roadmap, RoadmapListItem } from "@/features/roadmaps/types";
+import type { AiDocument, DocumentLimits } from "@/features/documents/types";
 import type {
   Course,
   CourseListItem,
@@ -81,8 +82,13 @@ export interface Tag {
 export interface WriteCheck {
   errors: string[];
   warnings: string[];
-  /** Chỉ cây chương trình: mục sẽ biến mất, tính từ cây THẬT chứ không từ lời agent khai. */
-  removals?: { kind: "chapter" | "lesson"; id: string; title: string; declared: boolean }[];
+  /** Mục sẽ biến mất, tính từ nội dung THẬT chứ không từ lời agent khai. */
+  removals?: {
+    kind: "chapter" | "lesson" | "course";
+    id: string;
+    title: string;
+    declared: boolean;
+  }[];
   status?: string;
 }
 
@@ -185,6 +191,41 @@ export const api = {
         method: "POST",
         body: { content } as Record<string, unknown>,
       }),
+    checkRoadmapCourses: (body: {
+      roadmapId: string;
+      courses: unknown[];
+      removeIds?: string[];
+    }) => unwrap<WriteCheck>("/ai/lecter/check/roadmap-courses", { method: "POST", body }),
+  },
+
+  /**
+   * Tài liệu của chính giảng viên, làm nguyên liệu cho Lecter.
+   *
+   * Ở ai-service chứ không phải Nest, và đặt ngoài `lecter` vì đây là hạ tầng dùng chung —
+   * Codey sau này gắn thêm một phạm vi chứ không dựng một bộ route thứ hai.
+   *
+   * Tệp KHÔNG đi qua đây: `presign` trả một URL đã ký, trình duyệt `PUT` thẳng lên kho rồi mới
+   * gọi `register`. Xem `features/documents/upload.ts`.
+   */
+  aiDocuments: {
+    limits: () => unwrap<DocumentLimits>("/ai/documents/status"),
+    presign: (body: { filename: string; sizeBytes: number }) =>
+      unwrap<{
+        uploadUrl: string;
+        headers: Record<string, string>;
+        objectKey: string;
+        expiresInSeconds: number;
+      }>("/ai/documents/presign", { method: "POST", body }),
+    register: (body: { objectKey: string; filename: string }) =>
+      unwrap<AiDocument>("/ai/documents", { method: "POST", body }),
+    list: async () =>
+      (await unwrap<{ items: AiDocument[] }>("/ai/documents", { cache: "no-store" })).items,
+    get: (id: string) => unwrap<AiDocument>(`/ai/documents/${id}`, { cache: "no-store" }),
+    downloadUrl: (id: string) =>
+      unwrap<{ url: string; expiresInSeconds: number }>(`/ai/documents/${id}/download`),
+    reindex: (id: string) =>
+      unwrap<AiDocument>(`/ai/documents/${id}/reindex`, { method: "POST" }),
+    remove: (id: string) => unwrap<void>(`/ai/documents/${id}`, { method: "DELETE" }),
   },
 
   aiStudio: {

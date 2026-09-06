@@ -1,7 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Check, ListChecks, Loader2, Play, Search, Sparkles, Tags, TriangleAlert } from "lucide-react";
+import {
+  Check,
+  FileText,
+  ListChecks,
+  Loader2,
+  Play,
+  Search,
+  Sparkles,
+  Tags,
+  TriangleAlert,
+} from "lucide-react";
 import { useDefaultRenderTool, useRenderTool } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 
@@ -217,6 +227,89 @@ export function ToolRenderers() {
           // Cùng chuỗi mở đầu với `validate_exercise_content`, và cả hai cùng dùng nó để báo
           // "sẽ xóa mất dữ liệu" — dấu hiệu quan trọng nhất, phải hiện đỏ chứ không lẫn vào.
           failed={Boolean(result?.startsWith("CHƯA LƯU ĐƯỢC") || result?.startsWith("CHƯA KIỂM ĐƯỢC"))}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "search_roadmaps",
+      parameters: z.object({ query: z.string() }),
+      render: ({ status, parameters, result }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label={`Tìm lộ trình: “${parameters?.query ?? ""}”`}
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "read_roadmap",
+      parameters: z.object({ roadmap_id: z.string() }),
+      render: ({ status }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label="Đọc lộ trình và danh sách khóa học"
+          status={status}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "validate_roadmap_courses",
+      parameters: z.object({}),
+      render: ({ status, result }) => (
+        <ToolRow
+          icon={<ListChecks aria-hidden="true" className="size-3.5" />}
+          label="Kiểm danh sách khóa học trước khi lưu"
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+          // Cùng hai chuỗi mở đầu với hai tool kiểm kia — xem chú thích ở `validate_curriculum`.
+          failed={Boolean(result?.startsWith("CHƯA LƯU ĐƯỢC") || result?.startsWith("CHƯA KIỂM ĐƯỢC"))}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "read_document",
+      parameters: z.object({ document_id: z.string() }),
+      render: ({ status, result }) => (
+        <ToolRow
+          icon={<FileText aria-hidden="true" className="size-3.5" />}
+          label="Đọc tài liệu đính kèm"
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+          failed={Boolean(
+            result?.startsWith("Không tìm thấy") || result?.includes("KHÔNG thành công"),
+          )}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "search_document",
+      parameters: z.object({ query: z.string() }),
+      render: ({ status, parameters }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label={`Tìm trong tài liệu: \u201c${parameters?.query ?? ""}\u201d`}
+          status={status}
         />
       ),
     },
