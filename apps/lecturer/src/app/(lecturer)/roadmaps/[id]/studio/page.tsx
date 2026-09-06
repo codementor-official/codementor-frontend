@@ -55,8 +55,6 @@ import {
   FIELD_LABELS,
   LEVELS,
   LEVEL_LABELS,
-  MODES,
-  MODE_LABELS,
   type Roadmap,
 } from "@/features/roadmaps/types";
 

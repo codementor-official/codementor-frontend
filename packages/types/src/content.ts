@@ -40,9 +40,25 @@ export const LEVEL_LABELS: Record<Level, string> = {
   experienced: "Nâng cao",
 };
 
+/**
+ * Tên enum KHÔNG còn khớp nghĩa, đọc kỹ trước khi dùng.
+ *
+ * Từ đợt "cho học trước" (migration 0021), `graph` là chế độ tuyến tính THẬT của hệ thống:
+ * `saveCurriculum` suy ra một chuỗi phụ thuộc thẳng rồi ép khóa về `graph`
+ * (`course.usecases.ts`), và `fn_lesson_available` đọc chuỗi đó. Nó mang tên `graph` chỉ vì
+ * dùng lại cơ chế cạnh phụ thuộc, không phải vì cho phép đồ thị tuỳ ý — thực tế mọi cạnh đều
+ * nằm trong một nhóm AND duy nhất.
+ *
+ * `linear` mới là thứ đang chết: nhánh `linear` của `fn_lesson_available` gác thuần bằng thứ tự
+ * chương/bài và bỏ qua hoàn toàn `lesson_prerequisites`, nên không có cách nào cho một bài lẻ
+ * vượt hàng. Studio không cho chọn nó nữa; khóa cũ còn ở `linear` sẽ tự lật khi lưu lần tới.
+ *
+ * Nhãn cũ ("Theo phụ thuộc — mở khi đủ điều kiện") mâu thuẫn với studio, chỗ gọi thẳng `graph`
+ * là "Tuần tự" — và đã làm chính agent Lecter nói sai với giảng viên.
+ */
 export const MODE_LABELS: Record<ProgressionMode, string> = {
-  linear: "Tuần tự — phải học đúng thứ tự",
-  graph: "Theo phụ thuộc — mở khi đủ điều kiện",
+  linear: "Tuần tự (kiểu cũ) — không cho học trước",
+  graph: "Tuần tự — mở dần theo thứ tự, trừ bài cho học trước",
   free: "Tự do — mở hết",
 };
 
