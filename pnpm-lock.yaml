@@ -193,6 +193,9 @@ importers:
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
+      highlight.js:
+        specifier: 11.11.2
+        version: 11.11.2
       jose:
         specifier: ^6.2.8
         version: 6.2.8
@@ -434,6 +437,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: 3.29.2
         version: 3.29.2
+      highlight.js:
+        specifier: 11.11.2
+        version: 11.11.2
       lowlight:
         specifier: ^3.3.0
         version: 3.3.0

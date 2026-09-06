@@ -19,6 +19,7 @@
     "@tiptap/pm": "3.29.2",
     "@tiptap/react": "^3.29.2",
     "@tiptap/starter-kit": "^3.29.2",
+    "highlight.js": "11.11.2",
     "lowlight": "^3.3.0",
     "lucide-react": "^1.28.0",
     "react-dropzone": "^19.1.1"

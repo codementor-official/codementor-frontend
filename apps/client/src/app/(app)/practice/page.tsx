@@ -157,7 +157,12 @@ export default function PracticePage() {
     void api.exercises
       .topics()
       .then((response) => {
-        if (active) setTopics(response);
+        if (active) {
+          setTopics(response);
+          const requested = new URLSearchParams(window.location.search).get('topic');
+          const topic = response.find((item) => item.slug === requested);
+          if (topic) setSelectedTopicIds([topic.id]);
+        }
       })
       .catch(() => {
         if (active) setTopicsError("Không tải được danh sách chủ đề. Bạn vẫn có thể tìm và lọc theo độ khó.");

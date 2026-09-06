@@ -11,6 +11,7 @@ import { apiBaseUrl } from "@/lib/env";
 import type { AiStatus, AiDocument, AiTurn, AiConversation, AiConversationSummary, AiPage } from "@/features/ai-tutor/types";
 import type { NotificationPage } from "@/types/notification";
 import type { RecommendationList } from "@/types/recommendation";
+import type { DashboardInsight, LearningDashboard, PendingAssignment } from '@/features/dashboard/types';
 import type {
   WorkspaceDetail,
   PublicWorkspaceDetail,
@@ -152,6 +153,14 @@ export const api = {
       unwrap<AiTurn>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}/messages`, { method: "POST", body: { question, requestId } }),
   },
   me: () => unwrap<AccountProfile>("/me"),
+  dashboard: {
+    insight: () => unwrap<DashboardInsight>('/ai/dashboard/insight'),
+    generateInsight: () => unwrap<DashboardInsight>('/ai/dashboard/insight', { method: 'POST' }),
+    applyInsight: () => unwrap<{ applied: boolean; appliedAt: string }>('/ai/dashboard/insight/apply', { method: 'POST' }),
+    setInsightHidden: (hidden: boolean) => unwrap<{ hidden: boolean }>('/ai/dashboard/insight/visibility', { method: 'PATCH', body: { hidden } }),
+    learning: () => unwrap<LearningDashboard>('/activity/me/dashboard'),
+    assignments: () => unwrap<PendingAssignment[]>('/workspaces/me/pending-assignments'),
+  },
   account: {
     emailVerification: () => unwrap<EmailVerificationStatus>("/me/email-verification", { cache: "no-store" }),
     sendVerificationEmail: () => unwrap<EmailVerificationStatus & { sent: boolean }>("/me/email-verification", { method: "POST" }),

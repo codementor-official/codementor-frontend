@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bell, BrainCircuit, CalendarDays, RotateCcw } from "lucide-react";
+import { Bell, BrainCircuit, CalendarDays, RotateCcw, Sparkles, Target } from "lucide-react";
 import { api } from "@/lib/api";
 import { onboardingSteps } from "@/data/onboarding-steps";
 import type { UserLearningPreferences } from "@/features/account/types";
@@ -93,15 +93,20 @@ export function PersonalizationPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border border-primary/25 bg-primary-tint px-4 py-3 text-sm leading-relaxed text-navy">
-        <strong>Cá nhân hóa nội dung và lịch học.</strong> Khi bật gợi ý, hệ thống xếp hạng nội dung theo lĩnh vực, công nghệ, trình độ, mục tiêu nghề nghiệp và tiến độ bài tập. Recommendation này không gọi AI và không tự tạo lộ trình. Lịch học được dùng để gửi nhắc tự động.
-      </div>
+      <Card className="overflow-hidden">
+        <div className="border-b border-border-soft p-5"><h2 className="flex items-center gap-2 text-base font-bold text-navy"><BrainCircuit className="h-5 w-5 text-primary" /> Trung tâm cá nhân hóa</h2><p className="mt-1 text-xs leading-relaxed text-text-muted">Các lựa chọn dưới đây quyết định nội dung được ưu tiên, lịch nhắc và dữ liệu AI Coach được phép phân tích.</p></div>
+        <div className="grid divide-y divide-border-soft sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="p-4"><Target className="mb-2 h-4 w-4 text-primary" /><p className="text-sm font-semibold text-navy">Đề xuất phù hợp hơn</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Xếp hạng khóa học, lộ trình và bài tập theo mục tiêu của bạn.</p></div>
+          <div className="p-4"><CalendarDays className="mb-2 h-4 w-4 text-primary" /><p className="text-sm font-semibold text-navy">Giữ lịch học đều</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Các ngày và khung giờ đã lưu được dùng cho nhắc học.</p></div>
+          <div className="p-4"><Sparkles className="mb-2 h-4 w-4 text-primary" /><p className="text-sm font-semibold text-navy">AI theo quyền của bạn</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Chỉ phân tích khi bạn bật cá nhân hóa và chủ động yêu cầu.</p></div>
+        </div>
+      </Card>
       {error && <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
 
       {onboardingSteps.map((step) => (
         <Card key={step.step} className="p-5 sm:p-6">
           <div className="mb-5 flex items-start gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-xs font-bold text-primary">{step.step}</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-ink">{step.step}</span>
             <div><h2 className="text-base font-bold text-navy">{step.title}</h2><p className="mt-1 text-xs text-text-faint">{step.subtitle}</p></div>
           </div>
           <div className="space-y-5">
@@ -117,7 +122,7 @@ export function PersonalizationPanel() {
                       const active = selected.includes(option.value);
                       const Icon = option.icon;
                       return (
-                        <button key={option.value} type="button" aria-pressed={active} onClick={() => choose(key, option.value)} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${active ? "border-primary bg-primary-tint text-primary" : "border-border bg-surface text-text-muted hover:bg-bg hover:text-navy"}`}>
+                        <button key={option.value} type="button" aria-pressed={active} onClick={() => choose(key, option.value)} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${active ? "border-primary bg-surface text-primary shadow-sm" : "border-border bg-surface text-text-muted hover:bg-bg hover:text-navy"}`}>
                           <Icon className="h-3.5 w-3.5" /> {option.label}
                         </button>
                       );
@@ -136,7 +141,7 @@ export function PersonalizationPanel() {
         <p className="mt-1 text-xs text-text-faint">Hệ thống kiểm tra mỗi phút, gửi bù tối đa 5 phút khi xử lý chậm và chỉ nhắc một lần mỗi ngày. Lịch đã quá 5 phút sẽ áp dụng từ tuần sau.</p>
         <div className="mt-4 grid gap-2 lg:grid-cols-2">
           {draft.schedule.map((slot, index) => (
-            <div key={slot.weekday} className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${slot.enabled ? "border-primary/30 bg-primary-tint" : "border-border"}`}>
+            <div key={slot.weekday} className={`flex flex-wrap items-center gap-3 rounded-lg border bg-surface p-3 ${slot.enabled ? "border-primary" : "border-border"}`}>
               <label className="flex min-w-24 flex-1 items-center gap-2 text-sm font-semibold text-navy">
                 <input type="checkbox" checked={slot.enabled} onChange={() => updateSchedule(index, { enabled: !slot.enabled })} className="h-4 w-4 accent-primary" />
                 {DAY_LABELS[slot.weekday]}
