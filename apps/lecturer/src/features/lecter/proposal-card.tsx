@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Check, Loader2, TriangleAlert, X } from "lucide-react";
 import { Button, useToast } from "@codementor/ui";
 import { ApiClientError } from "@codementor/api-client";
-import { api } from "@/lib/api";
+import { api, type WriteCheck } from "@/lib/api";
 import { ContentCreatedCard } from "./content-created-card";
 
 /**
@@ -147,7 +147,6 @@ export function SettledProposal({
 /** Đủ để cảnh báo; cả `Exercise` lẫn `Course` đều rót vừa hình dạng này. */
 interface CourseLikeInfo {
   status?: string;
-  chapters?: { id: string; title: string; lessons?: { id: string; title: string }[] }[];
 }
 
 export interface ProposalCardProps {
@@ -157,14 +156,14 @@ export interface ProposalCardProps {
   children?: ReactNode;
   /** Có thì hộp sẽ tự đọc trạng thái từ backend để cảnh báo và để dựng link studio. */
   target?: ContentTarget;
-/**
-   * Id những chương/bài sẽ bị XÓA nếu xác nhận. Chỉ `save_curriculum` truyền: lệnh lưu cây thay
-   * toàn bộ cây, nên đây là chỗ duy nhất Lecter phá được dữ liệu của học viên thật.
+  /**
+   * Hàm kiểm chạy trên ĐÚNG payload sắp ghi, gọi lúc thẻ hiện ra.
    *
-   * Truyền id chứ không truyền tên: tên được tra từ chính khóa học mà hộp này vừa đọc về, nên
-   * thứ người duyệt nhìn thấy luôn là dữ liệu thật, không phải nhãn do model tự đặt.
+   * Đây là điểm khác của thiết kế: trước đây việc kiểm là một tool agent tùy ý gọi, với một
+   * payload nó tự chọn — nên nó có thể validate một mảng rồi gửi đi lưu một mảng khác, và đã
+   * làm đúng như vậy. Ở đây kiểm nằm TRÊN đường ghi: `errors` khác rỗng thì nút bị khoá.
    */
-  removeIds?: string[];
+  check?: () => Promise<WriteCheck>;
   confirmLabel?: string;
   onConfirm: () => Promise<string>;
   onReject: () => void | Promise<void>;
@@ -181,7 +180,7 @@ export function ProposalCard({
   lines,
   children,
   target,
-  removeIds,
+  check,
   confirmLabel = "Xác nhận",
   onConfirm,
   onReject,
@@ -213,17 +212,35 @@ export function ProposalCard({
   // người soạn bấm rồi ăn lỗi — và agent thì không có gì để sửa cho đúng.
   const frozen = info?.status === "pending_review";
 
-  const removals = useMemo(() => {
-    if (!removeIds?.length) return [];
-    const names = new Map<string, string>();
-    for (const chapter of info?.chapters ?? []) {
-      names.set(chapter.id, `Chương "${chapter.title}"`);
-      for (const lesson of chapter.lessons ?? []) names.set(lesson.id, `Bài "${lesson.title}"`);
-    }
-    // Id không tra ra tên nghĩa là nó không có trong khóa học — vẫn hiện, để người duyệt thấy
-    // model đang khai một thứ lạ thay vì bị nuốt mất trong im lặng.
-    return removeIds.map((id) => names.get(id) ?? `Mục lạ ${id}`);
-  }, [removeIds, info]);
+  const [checked, setChecked] = useState<WriteCheck | null>(null);
+  const [checking, setChecking] = useState(Boolean(check));
+  // Qua ref và chạy đúng MỘT lần: `check` là prop hàm, caller dựng inline nên nó đổi danh tính
+  // mỗi render. Đưa thẳng vào deps là một vòng lặp vô hạn gọi bộ chấm. Thẻ này ứng với một đề
+  // xuất cố định, payload không đổi trong đời nó, nên chạy lại là thừa.
+  const checkRef = useRef(check);
+  useEffect(() => {
+    const run = checkRef.current;
+    if (!run) return;
+    let cancelled = false;
+    run()
+      .then((result) => !cancelled && setChecked(result))
+      // Không kiểm được thì KHÔNG khoá nút: mất mạng tới ai-service không phải lý do để chặn
+      // một lệnh ghi mà backend vẫn sẽ tự kiểm lại.
+      .catch(() => undefined)
+      .finally(() => !cancelled && setChecking(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const removals = useMemo(
+    () =>
+      (checked?.removals ?? []).map(
+        (item) => `${item.kind === "chapter" ? "Chương" : "Bài"} "${item.title}"`,
+      ),
+    [checked],
+  );
+  const blocked = (checked?.errors?.length ?? 0) > 0;
 
   // Cùng một hình dạng với lúc nạp lại từ lịch sử. Trạng thái cục bộ này chỉ phủ khoảng khắc
   // giữa lúc bấm nút và lúc lời gọi tool chuyển sang `complete`.
@@ -255,6 +272,29 @@ export function ProposalCard({
   return (
     <section className="my-2 rounded-lg border border-border bg-card p-3.5">
       <h3 className="text-sm font-semibold">{title}</h3>
+
+      {blocked && (
+        <div className="mt-2 rounded-md border border-destructive/50 bg-destructive/10 px-2.5 py-2 text-xs">
+          <p className="flex items-start gap-2 font-medium text-destructive">
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+            Chưa lưu được — nội dung này còn lỗi:
+          </p>
+          <ul className="mt-1.5 space-y-0.5 pl-5">
+            {checked?.errors.map((line) => (
+              <li key={line}>· {line}</li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-muted-foreground">Lecter đã nhận danh sách này và sẽ sửa lại.</p>
+        </div>
+      )}
+
+      {!blocked && (checked?.warnings?.length ?? 0) > 0 && (
+        <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+          {checked?.warnings.map((line) => (
+            <li key={line}>· {line}</li>
+          ))}
+        </ul>
+      )}
 
       {removals.length > 0 && (
         <div className="mt-2 rounded-md border border-destructive/50 bg-destructive/10 px-2.5 py-2 text-xs">
@@ -308,13 +348,15 @@ export function ProposalCard({
           Bỏ qua
         </Button>
         <Button
-          disabled={busy || frozen}
+          disabled={busy || frozen || checking || blocked}
           onClick={() => void apply()}
           type="button"
           variant={removals.length > 0 ? "danger" : "default"}
         >
-          {busy ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : null}
-          {busy ? "Đang áp dụng…" : confirmLabel}
+          {busy || checking ? (
+            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+          ) : null}
+          {checking ? "Đang kiểm…" : busy ? "Đang áp dụng…" : confirmLabel}
         </Button>
       </div>
     </section>
