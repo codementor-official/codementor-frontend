@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, Upload } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import {
   ExerciseBriefForm,
   ExerciseCodeForm,
@@ -15,12 +15,12 @@ import {
   useDraftAutosave,
   type ExerciseContent,
   type ExerciseDraft,
+  type StoredDraft,
   type TagOption,
 } from "@codementor/solve";
 import {
   Modal,
   ResizeHandle,
-  Select,
   StatusBadge,
   useResolvedTheme,
   useToast,
@@ -30,14 +30,7 @@ import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { api } from "@/lib/api";
-import {
-  messageOf,
-  parseInputOutputPairs,
-  parseProblemText,
-  slugifyExercise,
-  splitLines,
-  toLocalInput,
-} from "../exercise-authoring";
+import { messageOf, slugifyExercise, toLocalInput } from "../exercise-authoring";
 import type {
   WorkspaceContentPage,
   WorkspaceDetail,
@@ -71,10 +64,10 @@ type StudioTab = "content" | "assignment";
 /**
  * Studio bài tập của Workspace — một TRANG, không phải hộp thoại.
  *
- * Chỉ có MỘT form soạn bài: hai nguồn còn lại (dán đề từ nền tảng khác, sinh bản nháp từ
- * tài liệu đã duyệt) là hai nút mở hộp thoại rồi đổ kết quả vào chính form này. Trước đây
- * chúng là ba thẻ ngang hàng, nên "Tự nhập" trông như một lựa chọn phải chọn lại sau mỗi
- * lần nhập, còn nội dung đang soạn thì biến mất khỏi màn hình lúc xem tab khác.
+ * Chỉ có MỘT form soạn bài: nguồn còn lại (sinh bản nháp từ tài liệu đã duyệt) là một nút
+ * mở hộp thoại rồi đổ kết quả vào chính form này. Trước đây chúng là các thẻ ngang hàng, nên
+ * "Tự nhập" trông như một lựa chọn phải chọn lại sau mỗi lần nhập, còn nội dung đang soạn thì
+ * biến mất khỏi màn hình lúc xem tab khác.
  */
 export function WorkspaceExerciseStudio({
   slug,
@@ -111,7 +104,6 @@ export function WorkspaceExerciseStudio({
   const [memberIds, setMemberIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const [importOpen, setImportOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
 
   const backHref = `/workspace/${encodeURIComponent(slug)}?tab=exercises`;
@@ -208,55 +200,56 @@ export function WorkspaceExerciseStudio({
     setStudioContent(next.content);
   };
 
-  const restoredKey = useRef<string | null>(null);
+  /**
+   * Bản nháp KHÔNG tự đổ vào form nữa — nó chờ người soạn trả lời.
+   *
+   * Đổ thẳng thì người mở bài không có đường từ chối: nội dung trên màn hình đã bị thay,
+   * và vì `dirty` bên dưới từng chỉ hỏi "có chữ hay không" nên form vừa bị thay đã được
+   * ghi ngược lại vào localStorage. Bản nháp sống mãi, lần mở nào cũng khôi phục.
+   */
+  const askedKey = useRef<string | null>(null);
   const [restored, setRestored] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<StoredDraft<ExerciseDraft> | null>(
+    null,
+  );
   useEffect(() => {
-    // Chờ bản đã lưu về trước: khôi phục sớm hơn thì effect nạp bài ghi đè mất bản nháp.
-    if (loading || restoredKey.current === storageKey) return;
-    restoredKey.current = storageKey;
+    // Chờ bản đã lưu về trước: hỏi sớm hơn thì effect nạp bài ghi đè mất thứ vừa khôi phục.
+    if (loading || askedKey.current === storageKey) return;
+    askedKey.current = storageKey;
     const stored = readDraft<ExerciseDraft>(storageKey);
-    setRestored(true);
-    if (!stored) return;
-    updateDraft(stored.value);
-    toast.success("Đã khôi phục bản nháp chưa lưu");
-    // `updateDraft` dựng lại mỗi lần render; chốt trên đã đảm bảo chỉ chạy một lần.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Còn câu hỏi treo thì CHƯA bật tự lưu: bật sớm là ghi đè đúng bản đang hỏi.
+    if (stored) setPendingDraft(stored);
+    else setRestored(true);
   }, [loading, storageKey]);
+
+  /**
+   * Mốc so sánh: bản draft dựng từ bài đã lưu (hoặc form rỗng, với bài mới). "Chưa lưu" =
+   * khác mốc này — không phải "có chữ trong ô tiêu đề", vì bài đang sửa thì ô nào cũng có
+   * chữ sẵn và nháp không bao giờ được dọn.
+   */
+  const serialized = JSON.stringify(draft);
+  const baseline = useRef<string | null>(null);
+  useEffect(() => {
+    if (loading || baseline.current !== null) return;
+    baseline.current = serialized;
+  }, [loading, serialized]);
+
+  const answer = (restore: boolean) => {
+    if (restore && pendingDraft) {
+      updateDraft(pendingDraft.value);
+      toast.success("Đã khôi phục bản nháp chưa lưu");
+    } else {
+      clearDraft(storageKey);
+    }
+    setPendingDraft(null);
+    setRestored(true);
+  };
 
   const blocker = exerciseBriefBlocker(draft, { slugLocked: Boolean(exerciseId) });
   useDraftAutosave(storageKey, draft, {
     ready: restored,
-    dirty: Boolean(title.trim() || statement.trim()),
+    dirty: baseline.current !== null && serialized !== baseline.current,
   });
-
-  const applyImport = (parsed: ReturnType<typeof parseProblemText>, source: string) => {
-    setGeneratedByAi(false);
-    const imported = [
-      parsed.statement,
-      parsed.inputFormat ? `## Đầu vào\n${parsed.inputFormat}` : "",
-      parsed.outputFormat ? `## Đầu ra\n${parsed.outputFormat}` : "",
-      source,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-    setTitle(parsed.title);
-    setSummary(parsed.summary);
-    setExerciseSlug(slugifyExercise(parsed.title));
-    setStatement(imported);
-    setStudioContent((current) => ({
-      ...current,
-      statement: imported,
-      constraints: splitLines(parsed.constraints),
-      examples: parseInputOutputPairs(parsed.examples).map((item) => ({
-        input: item.input,
-        output: item.output,
-      })),
-    }));
-    setImportOpen(false);
-    // Nhập xong mà đang đứng ở tab giao bài thì không thấy gì đã đổi — kéo về đúng chỗ.
-    setTab("content");
-    toast.success("Đã chuyển nội dung sang form; hãy rà soát trước khi lưu");
-  };
 
   const applyAiDraft = (generated: {
     title: string;
@@ -313,6 +306,10 @@ export function WorkspaceExerciseStudio({
           content,
         });
       }
+      // Tắt tự lưu TRƯỚC khi xoá: `router.push` không tháo component ngay, nên còn một lần
+      // render nữa — và với `ready` vẫn bật, lần đó ghi lại đúng bản nháp vừa xoá. Đó là lý
+      // do lưu xong rồi mà lần vào sau vẫn bị hỏi khôi phục.
+      setRestored(false);
       clearDraft(storageKey);
       toast.success(
         exercise ? "Đã cập nhật bài tập từ Studio" : "Đã tạo và phân công bài tập",
@@ -366,10 +363,6 @@ export function WorkspaceExerciseStudio({
         }}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <Upload className="h-3.5 w-3.5" />
-              Nhập từ đề có sẵn
-            </Button>
             <Button variant="outline" size="sm" onClick={() => setAiOpen(true)}>
               <Sparkles className="h-3.5 w-3.5" />
               AI từ tài liệu
@@ -387,9 +380,10 @@ export function WorkspaceExerciseStudio({
         }
       >
         {tab === "content" ? (
-          // Chiều cao cố định vì trang này nằm trong khung cuộn chung của ứng dụng: hai
-          // pane cần một chiều cao có thật để chia nhau, `h-full` ở đây sẽ là 0.
-          <div className="h-[min(74vh,860px)] min-h-[540px] overflow-hidden rounded-xl border border-border-soft bg-bg/30">
+          // `h-full` chạy được vì `AppContent` xếp trang này vào diện full-bleed: chuỗi
+          // chiều cao liền mạch từ <html> xuống, không còn `min(74vh,860px)` đoán mò để lại
+          // một dải trống dưới đáy.
+          <div className="h-full overflow-hidden bg-bg/30">
             <Group orientation="horizontal" className="h-full">
               <Panel id="workspace-brief" defaultSize="50%" minSize="30%">
                 <div className="h-full overflow-y-auto p-3">
@@ -437,11 +431,32 @@ export function WorkspaceExerciseStudio({
         )}
       </StudioShell>
 
-      <ImportProblemModal
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        onApply={applyImport}
-      />
+      <Modal
+        open={pendingDraft !== null}
+        onClose={() => answer(false)}
+        title="Khôi phục bản nháp chưa lưu?"
+        description={
+          pendingDraft
+            ? `Lần sửa gần nhất: ${new Date(pendingDraft.savedAt).toLocaleString("vi-VN")}. Bỏ qua thì bản nháp bị xoá.`
+            : undefined
+        }
+        width="sm"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => answer(false)}>
+              Bỏ bản nháp
+            </Button>
+            <Button onClick={() => answer(true)}>Khôi phục</Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-text-muted">
+          Lần trước bạn rời trang khi còn thay đổi chưa lưu.{" "}
+          <span className="font-medium text-navy">
+            {pendingDraft?.value.title?.trim() || "Bài chưa đặt tên"}
+          </span>
+        </p>
+      </Modal>
       <AiDraftModal
         open={aiOpen}
         slug={slug}
@@ -450,83 +465,6 @@ export function WorkspaceExerciseStudio({
         onApply={applyAiDraft}
       />
     </>
-  );
-}
-
-/** Dán đề từ LeetCode/Codeforces rồi đổ vào form. Không gọi mạng — chỉ tách chữ. */
-function ImportProblemModal({
-  open,
-  onClose,
-  onApply,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onApply: (parsed: ReturnType<typeof parseProblemText>, source: string) => void;
-}) {
-  const [platform, setPlatform] = useState("leetcode");
-  const [url, setUrl] = useState("");
-  const [raw, setRaw] = useState("");
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Nhập đề từ nền tảng khác"
-      description="Studio nhận diện các mục Description, Input, Output, Constraints và Example trước khi chuyển sang form chỉnh sửa."
-      width="lg"
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button
-            disabled={!raw.trim()}
-            onClick={() =>
-              onApply(
-                parseProblemText(raw),
-                url.trim() ? `Nguồn tham khảo (${platform}): ${url.trim()}` : "",
-              )
-            }
-          >
-            Chuyển sang form
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-3">
-        <div className="grid gap-3 md:grid-cols-[220px_1fr]">
-          <label className="min-w-0 text-xs font-medium text-text-muted">
-            Nền tảng
-            <Select
-              label="Nền tảng"
-              value={platform}
-              onChange={setPlatform}
-              className="mt-1 w-full"
-              options={[
-                { value: "leetcode", label: "LeetCode" },
-                { value: "codeforces", label: "Codeforces" },
-                { value: "other", label: "Nền tảng khác" },
-              ]}
-            />
-          </label>
-          <label className="min-w-0 text-xs font-medium text-text-muted">
-            URL bài tập (không bắt buộc)
-            <input
-              className={`${inputClass} mt-1 block w-full`}
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
-              placeholder="https://leetcode.com/problems/..."
-            />
-          </label>
-        </div>
-        <textarea
-          className={`${inputClass} min-h-48 w-full resize-y font-mono`}
-          value={raw}
-          onChange={(event) => setRaw(event.target.value)}
-          placeholder="Dán đề bài từ LeetCode, Codeforces hoặc nền tảng khác..."
-        />
-      </div>
-    </Modal>
   );
 }
 

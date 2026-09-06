@@ -187,8 +187,8 @@ export function ExerciseBriefForm({
     onChange({ ...value, content: { ...value.content, ...partial } });
 
   return (
-    <fieldset className="grid gap-4" disabled={readOnly}>
-      <Card className="p-5">
+    <fieldset className="grid gap-3" disabled={readOnly}>
+      <Card className="p-4">
         <CardHeading
           hint="Tên bài, slug và các giới hạn chấm. Đây là phần học viên thấy trước khi mở bài."
           icon={Info}
@@ -322,7 +322,7 @@ export function ExerciseBriefForm({
 
       </Card>
 
-      <Card className="p-5">
+      <Card className="p-4">
         <CardHeading
           action={
             <Button
@@ -364,9 +364,9 @@ export function ExerciseBriefForm({
         )}
 
         {/* Màn giải bài dựng khối "Ràng buộc" từ `content.constraints`, một dòng một gạch
-            đầu dòng. Trước đây KHÔNG studio nào ghi được trường đó: chỉ đường nhập đề từ
-            LeetCode và bản nháp AI lẳng lặng đổ dữ liệu vào, người soạn không xem cũng
-            không sửa được. Một ô nhiều dòng là đủ — mỗi dòng là một ràng buộc. */}
+            đầu dòng. Trước đây KHÔNG studio nào ghi được trường đó: chỉ bản nháp AI lẳng
+            lặng đổ dữ liệu vào, người soạn không xem cũng không sửa được. Một ô nhiều dòng
+            là đủ — mỗi dòng là một ràng buộc. */}
         <LinesField
           label="Ràng buộc — mỗi dòng một ý"
           onChange={(constraints) => patchContent({ constraints })}
@@ -516,7 +516,7 @@ function SignatureCard({
     });
 
   return (
-    <Card className="p-5">
+    <Card className="p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Braces aria-hidden="true" className="size-4 shrink-0 text-primary" />
@@ -1017,8 +1017,8 @@ export function ExerciseCodeForm({
   };
 
   return (
-    <fieldset className="grid gap-4" disabled={readOnly}>
-      <Card className="p-5">
+    <fieldset className="grid gap-3" disabled={readOnly}>
+      <Card className="p-4">
         <CardHeading
           hint={
             isFunction
@@ -1046,7 +1046,7 @@ export function ExerciseCodeForm({
         />
       )}
 
-      <Card className="p-5">
+      <Card className="p-4">
         <CardHeading
           hint={
             "Mỗi ngôn ngữ đã chọn phải có lời giải mẫu thì mới gửi duyệt được." +
@@ -1126,7 +1126,7 @@ export function ExerciseCodeForm({
         ))}
       </Card>
 
-      <Card className="p-5">
+      <Card className="p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold">
             <FlaskConical
@@ -1399,7 +1399,7 @@ export function ExerciseCodeForm({
         ))}
       </Card>
 
-      <Card className="p-5">
+      <Card className="p-4">
         <CardHeading
           className="mb-3"
           hint="Quy tắc so sánh kết quả của học viên với đáp án. Chọn sai bộ so khớp là bài đúng vẫn bị chấm sai."
@@ -1510,7 +1510,7 @@ function Field({
 const inputClassName =
   "h-9 w-full rounded-lg border bg-background px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring";
 const textareaClassName =
-  "min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring";
+  "w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring";
 
 function CardHeading({
   icon: Icon,

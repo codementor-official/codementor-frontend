@@ -11,11 +11,14 @@ import { usePathname } from "next/navigation";
  */
 export function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  // Only the lesson player is a tool surface: it uses every available pixel after the
-  // sidebar, like an IDE, so it skips both the padding and the ceiling. `/ai-tutor` used
-  // to be here too, but it is a normal page — header, cards, a right rail — and without
-  // the shell's padding it sat flush against the sidebar and ran off the right edge.
-  const isFullBleed = /^\/roadmaps\/[^/]+\/courses\/[^/]+\/learn\/[^/]+$/.test(pathname);
+  // Tool surfaces use every available pixel after the sidebar, like an IDE, so they skip
+  // both the padding and the ceiling: the lesson player, and Studio bài tập của Workspace
+  // — Studio tự chia hai pane theo chiều cao khung, nên mọi pixel `main` giữ lại thành một
+  // dải trống dưới đáy nó không với tới. `/ai-tutor` từng ở đây nhưng là trang thường —
+  // header, thẻ, một cột phải — bỏ padding thì nó dính sát sidebar và tràn mép phải.
+  const isFullBleed =
+    /^\/roadmaps\/[^/]+\/courses\/[^/]+\/learn\/[^/]+$/.test(pathname) ||
+    /^\/workspace\/[^/]+\/exercises\/(new|[^/]+\/studio)$/.test(pathname);
 
   return (
     // `scroll-smooth` has to sit here, not on <html>: this element is the scroll container,
