@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Clock3, Code2, FileCode2, Target } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, Code2, FileCode2, Target } from "lucide-react";
 import { FilterBar, Select, StatStrip } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { StreakCard } from "@/components/streak-card";
@@ -44,11 +44,11 @@ function exerciseKindLabel(kind: string) {
 function ExerciseRow({ item, number }: { item: ExerciseSummary; number: number }) {
   const difficulty = exerciseDifficulty(item.difficulty);
   return (
-    <li className="group flex items-center gap-3 border-t border-border-soft px-3 py-3 transition-colors duration-150 hover:bg-bg sm:px-4">
+    <li className={`group flex items-center gap-3 border-t border-l-2 border-border-soft px-3 py-3 transition-colors duration-150 hover:bg-bg sm:px-4 ${item.progressStatus === "solved" ? "border-l-success" : item.progressStatus === "attempted" ? "border-l-primary" : "border-l-transparent"}`}>
       <span className="hidden w-7 shrink-0 text-right text-xs tabular-nums text-text-faint md:block">{number}</span>
       <span className={`hidden h-8 w-8 shrink-0 items-center justify-center rounded-md sm:flex ${
         item.progressStatus === "solved"
-          ? "bg-success/10 text-success"
+          ? "bg-success text-on-ink"
           : item.progressStatus === "attempted"
             ? "bg-primary/10 text-primary"
             : "bg-muted text-muted-foreground"
@@ -56,7 +56,7 @@ function ExerciseRow({ item, number }: { item: ExerciseSummary; number: number }
         {item.progressStatus === "solved" ? <CheckCircle2 className="h-4 w-4" /> : item.progressStatus === "attempted" ? <Clock3 className="h-4 w-4" /> : <FileCode2 className="h-4 w-4" />}
       </span>
       <Link href={`/solve/${item.id}`} className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary">{item.title}</span>
+        <span className="flex items-center gap-2"><span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary">{item.title}</span>{item.progressStatus === "solved" && <span className="shrink-0 rounded-full bg-success/10 px-2 py-0.5 text-2xs font-bold text-success">Đã giải</span>}{item.progressStatus === "attempted" && <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-2xs font-bold text-primary">Đang làm</span>}</span>
         {item.summary && <span className="mt-0.5 block truncate text-xs text-text-muted">{item.summary}</span>}
         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-2xs text-text-faint">
           <span>{item.authorName ?? "CodeMentor"}</span>
@@ -97,6 +97,7 @@ export default function PracticePage() {
   const [stats, setStats] = useState<UserLearningStats | null>(null);
   const [progressSummary, setProgressSummary] = useState<ExerciseProgressSummary | null>(null);
   const [calendar, setCalendar] = useState<UserActivityCalendar | null>(null);
+  const [attemptedItems, setAttemptedItems] = useState<ExerciseSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const requestSequence = useRef(0);
@@ -145,10 +146,11 @@ export default function PracticePage() {
     return () => window.clearTimeout(timer);
   }, [load]);
   useEffect(() => {
-    void Promise.allSettled([api.account.stats(), api.account.activityCalendar(4), api.exercises.progressSummary()]).then(([statsResult, calendarResult, summaryResult]) => {
+    void Promise.allSettled([api.account.stats(), api.account.activityCalendar(4), api.exercises.progressSummary(), api.exercises.bank({ progress: "attempted", limit: 3 })]).then(([statsResult, calendarResult, summaryResult, attemptedResult]) => {
       if (statsResult.status === "fulfilled") setStats(statsResult.value);
       if (calendarResult.status === "fulfilled") setCalendar(calendarResult.value);
       if (summaryResult.status === "fulfilled") setProgressSummary(summaryResult.value);
+      if (attemptedResult.status === "fulfilled") setAttemptedItems(attemptedResult.value.items);
     });
   }, []);
 
@@ -198,6 +200,13 @@ export default function PracticePage() {
     setPage((current) => current + 1);
   };
 
+  const focusTopics = useMemo(() => topics.filter((topic) => topic.count > 0)
+    .sort((a, b) => {
+      const aActive = (a.attempted ?? 0) + (a.solved ?? 0) > 0 ? 0 : 1;
+      const bActive = (b.attempted ?? 0) + (b.solved ?? 0) > 0 ? 0 : 1;
+      return aActive - bActive || (b.attempted ?? 0) - (a.attempted ?? 0) || b.count - a.count;
+    }).slice(0, 3), [topics]);
+
   return (
     <div>
       <PageHeader icon={Code2} title="Bài luyện tập" subtitle="Tìm, mở, chạy và nộp bài trên ngân hàng bài tập công khai." />
@@ -211,7 +220,7 @@ export default function PracticePage() {
         ]}
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
         <main className="min-w-0">
           {!search.trim() &&
             difficulty === "all" &&
@@ -219,7 +228,7 @@ export default function PracticePage() {
             selectedTopicIds.length === 0 &&
             page === 1 && (
               <section className="mb-6" aria-label="Bài tập đề xuất">
-                <RecommendedExercises limit={3} title="Gợi ý tiếp theo" />
+                <RecommendedExercises limit={3} title="Gợi ý tiếp theo" layout="cards" />
               </section>
             )}
           <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
@@ -326,12 +335,12 @@ export default function PracticePage() {
                   <p className="mt-1 text-xs text-text-faint">Thử đổi chủ đề, độ khó, dạng bài hoặc từ khóa.</p>
                 </div>
               )}
-              {(page > 1 || nextCursor) && (
+              {!loading && items.length > 0 && (
                 <nav
                   aria-label="Phân trang bài tập"
                   className="flex items-center justify-between border-t border-border px-4 py-3"
                 >
-                  <span className="text-xs text-text-faint">Trang {page}</span>
+                  <span className="text-xs text-text-faint">Trang {page} · tối đa {PAGE_SIZE} bài/trang</span>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -387,10 +396,8 @@ export default function PracticePage() {
               </div>
             </dl>
           </Card>
-          <Card className="p-4 text-xs leading-5 text-text-muted">
-            Kết quả Run/Submit, số lần thử và lịch sử bài nộp được lưu theo tài khoản và vẫn còn sau khi đăng
-            nhập lại.
-          </Card>
+          {attemptedItems.length > 0 && <Card className="overflow-hidden"><div className="border-b border-border-soft p-4"><h2 className="flex items-center gap-2 text-sm font-bold text-foreground"><Clock3 className="h-4 w-4 text-primary" /> Tiếp tục bài đang làm</h2><p className="mt-1 text-xs text-text-muted">Các bài bạn đã nộp nhưng chưa đạt.</p></div><ul className="divide-y divide-border-soft">{attemptedItems.map((item) => <li key={item.id}><Link href={`/solve/${item.id}`} className="group flex items-center gap-2 px-4 py-3 hover:bg-bg"><span className="min-w-0 flex-1 truncate text-xs font-semibold text-navy group-hover:text-primary">{item.title}</span><ArrowRight className="h-3.5 w-3.5 text-text-faint" /></Link></li>)}</ul></Card>}
+          {focusTopics.length > 0 && <Card className="p-4"><h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-foreground"><Target className="h-4 w-4 text-primary" /> Chủ đề nên tiếp tục</h2><p className="mb-3 text-xs leading-relaxed text-text-muted">Ưu tiên từ lịch sử làm bài và ngân hàng hiện có.</p><div className="space-y-2">{focusTopics.map((topic) => <Link key={topic.id} href={`/practice?topic=${encodeURIComponent(topic.slug)}`} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 hover:border-primary"><span className="min-w-0 flex-1 truncate text-xs font-semibold text-navy">{topic.name}</span><span className="text-2xs text-text-muted">{topic.solved ?? 0}/{topic.count}</span><ArrowRight className="h-3.5 w-3.5 text-text-faint" /></Link>)}</div></Card>}
         </aside>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, Code2, Map as MapIcon, Newspaper } from "lucide-react";
+import { ArrowUpRight, BookOpen, Code2, Map as MapIcon, Newspaper } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { CourseCard } from "@/components/course-card";
 import { EntityCard } from "@/components/entity-card";
@@ -31,7 +31,7 @@ function tileFor(title: string): string {
   return (words[0]?.[0] ?? "?").concat(words[1]?.[0] ?? "").toUpperCase();
 }
 
-export function RecommendedExercises({ limit = 5, title }: { limit?: number; title?: string } = {}) {
+export function RecommendedExercises({ limit = 5, title, layout = "list" }: { limit?: number; title?: string; layout?: "list" | "cards" } = {}) {
   const load = useCallback(() => api.recommendations.exercises(limit), [limit]);
   const { data, isLoading, error, reload } = useRecommendations(load);
   if (isLoading) return <Card className="h-52 animate-pulse" />;
@@ -39,12 +39,20 @@ export function RecommendedExercises({ limit = 5, title }: { limit?: number; tit
   if (!data) return null;
   if (!data.items.length) return null;
   return <RecommendationFrame icon={Code2} title={title ?? (data.personalized ? "Bài luyện tập dành cho bạn" : "Bài luyện tập phổ biến")} personalized={data.personalized}>
-    <Card className="overflow-hidden">
+    {layout === "cards" ? <ul className="grid gap-3 md:grid-cols-3">{data.items.map((item) => {
+      const difficulty = exerciseDifficulty(item.difficulty ?? "easy");
+      return <li key={item.id}><Link href={`/solve/${item.id}`} className="group flex h-full min-h-36 flex-col rounded-xl border border-border bg-surface p-4 shadow-card transition hover:-translate-y-0.5 hover:border-primary/50">
+        <div className="flex items-start justify-between gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg text-xs font-bold text-primary">{tileFor(item.title)}</span><span className={`text-2xs font-semibold ${difficulty === "Cơ bản" ? "text-success" : difficulty === "Trung bình" ? "text-accent" : "text-danger"}`}>{difficulty}</span></div>
+        <h3 className="mt-3 line-clamp-2 text-sm font-bold text-navy group-hover:text-primary">{item.title}</h3>
+        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-muted">{item.reasons[0] ?? "Phù hợp với tiến độ hiện tại của bạn"}</p>
+        <span className="mt-auto flex items-center gap-1 pt-3 text-xs font-semibold text-primary">Mở bài tập <ArrowUpRight className="h-3.5 w-3.5" /></span>
+      </Link></li>;
+    })}</ul> : <Card className="overflow-hidden">
       {data.items.map((item, i) => <ProblemRow key={item.id} tile={tileFor(item.title)}
         tileVariant={i % 2 === 0 ? "primary" : "navy"} title={item.title}
         meta={item.reasons[0] ?? "Gợi ý cho bạn"} difficulty={exerciseDifficulty(item.difficulty ?? "easy")}
         href={`/solve/${item.id}`} />)}
-    </Card>
+    </Card>}
   </RecommendationFrame>;
 }
 
