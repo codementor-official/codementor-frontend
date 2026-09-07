@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldAlert } from "lucide-react";
+import { RefreshCw, ShieldAlert } from "lucide-react";
 import { hasAnyRole } from "@codementor/auth";
 import { Button } from "@codementor/ui";
 import { useAuth } from "@/providers/auth-provider";
@@ -13,7 +13,7 @@ import { useAuth } from "@/providers/auth-provider";
  * This only spares a lecturer from a console full of empty lists and 403s.
  */
 export function RequireLecturer({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { status, user, signOut } = useAuth();
+  const { status, user, error, signOut, refreshUser } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -21,6 +21,21 @@ export function RequireLecturer({ children }: Readonly<{ children: React.ReactNo
   }, [status, router]);
 
   if (status !== "authenticated") {
+    if (error && status === "loading") {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-background p-6">
+          <div className="w-full max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
+            <ShieldAlert aria-hidden="true" className="mx-auto size-6 text-destructive" />
+            <h1 className="mt-3 text-base font-semibold">Chưa tải được trang giảng viên</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">{error}</p>
+            <Button className="mt-5" onClick={() => void refreshUser()} type="button">
+              <RefreshCw aria-hidden="true" className="size-4" />
+              Thử lại
+            </Button>
+          </div>
+        </main>
+      );
+    }
     return (
       <main className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">Đang tải…</p>

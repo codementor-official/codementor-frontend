@@ -2,8 +2,10 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { accessTokenOf, currentUser, getUserManager } from "@codementor/auth";
 import type { OidcUser, UserManager } from "@codementor/auth";
+import { ApiClientError } from "@codementor/api-client";
 import type { User } from "@codementor/types";
 import { keycloakConfig } from "@/lib/env";
 import { api, setAccessTokenReader } from "@/lib/api";
@@ -38,6 +40,8 @@ export function useAuth(): AuthContextValue {
 }
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
+  const pathname = usePathname();
+  const isOidcCallback = pathname === "/auth/callback" || pathname === "/auth/silent-renew";
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +51,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   // would be pointless churn.
   const tokenRef = useRef<string | null>(null);
   const managerRef = useRef<UserManager | null>(null);
+  const profileRequestRef = useRef<Promise<User> | null>(null);
   // `sub` của danh tính đang áp dụng cho tab này. Dùng để nhận ra một lần
   // `userLoaded` từ gia hạn nền (automaticSilentRenew) trả về MỘT NGƯỜI KHÁC — tức
   // một tab khác vừa đăng nhập đổi tài khoản trên cookie SSO dùng chung của Keycloak
@@ -62,7 +67,21 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   };
 
   useEffect(() => {
+    // Hai trang này tự hoàn tất callback OIDC. Nếu provider cũng bootstrap phiên tại
+    // đây, iframe silent-renew sẽ gọi currentUser() -> signinSilent() -> tạo thêm một
+    // iframe silent-renew khác. Kết quả là vòng lặp điều hướng/loading trông như F5 liên
+    // tục ngay sau đăng nhập. Sau callback, router chuyển sang route thường và effect này
+    // mới khởi tạo phiên đúng một lần.
+    if (isOidcCallback) return;
+
     setAccessTokenReader(() => tokenRef.current);
+
+    const loadProfile = () => {
+      profileRequestRef.current ??= api.me().finally(() => {
+        profileRequestRef.current = null;
+      });
+      return profileRequestRef.current;
+    };
 
     const applyOidcUser = async (oidcUser: OidcUser | null) => {
       const token = accessTokenOf(oidcUser);
@@ -96,16 +115,27 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         // The profile comes from the backend, never from token claims. The token
         // carries the Keycloak `sub`; `users.id` and the resolved platform role
         // exist only in CodeMentor's own database.
-        setUser(await api.me());
+        setUser(await loadProfile());
+        setError(null);
         setStatus("authenticated");
       } catch (cause) {
-        // A valid token with a rejected profile means a suspended or deleted
-        // account. Staying "authenticated" would show an empty console instead.
-        tokenRef.current = null;
-        userIdRef.current = null;
-        setUser(null);
-        setStatus("anonymous");
-        setError(cause instanceof Error ? cause.message : "Không tải được hồ sơ");
+        const rejectedIdentity =
+          cause instanceof ApiClientError && (cause.status === 401 || cause.status === 403);
+        if (rejectedIdentity) {
+          // Chỉ phản hồi xác thực thật sự mới được phép kết luận phiên đã hết hạn. Một
+          // lần gateway/service trả 5xx hoặc mất mạng không được đá người dùng qua lại
+          // giữa /dashboard và /login.
+          tokenRef.current = null;
+          userIdRef.current = null;
+          setUser(null);
+          setStatus("anonymous");
+          void manager().removeUser();
+        }
+        setError(
+          rejectedIdentity
+            ? "Phiên đăng nhập không còn hợp lệ. Vui lòng đăng nhập lại."
+            : "Không tải được hồ sơ giảng viên. Vui lòng thử lại.",
+        );
       }
     };
 
@@ -116,16 +146,25 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
     const onLoaded = (oidcUser: OidcUser) => void applyOidcUser(oidcUser);
     const onUnloaded = () => void applyOidcUser(null);
+    const onSilentRenewError = () => {
+      // oidc-client có thể phát lỗi renew tạm thời trong khi access token hiện tại vẫn
+      // còn hạn. Giữ nguyên màn hình trong trường hợp đó; chỉ chuyển về anonymous khi
+      // kho OIDC thực sự không còn một token dùng được.
+      void userManager.getUser().then((stored) => {
+        if (stored && !stored.expired) return;
+        void applyOidcUser(null);
+      });
+    };
     userManager.events.addUserLoaded(onLoaded);
     userManager.events.addUserUnloaded(onUnloaded);
-    userManager.events.addSilentRenewError(onUnloaded);
+    userManager.events.addSilentRenewError(onSilentRenewError);
 
     return () => {
       userManager.events.removeUserLoaded(onLoaded);
       userManager.events.removeUserUnloaded(onUnloaded);
-      userManager.events.removeSilentRenewError(onUnloaded);
+      userManager.events.removeSilentRenewError(onSilentRenewError);
     };
-  }, []);
+  }, [isOidcCallback]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -159,7 +198,15 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       },
       realtimeToken: async () => tokenRef.current,
       refreshUser: async () => {
-        if (tokenRef.current) setUser(await api.me());
+        if (!tokenRef.current) return;
+        setError(null);
+        setStatus("loading");
+        try {
+          setUser(await api.me());
+          setStatus("authenticated");
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : "Không tải được hồ sơ");
+        }
       },
     }),
     [status, user, error],

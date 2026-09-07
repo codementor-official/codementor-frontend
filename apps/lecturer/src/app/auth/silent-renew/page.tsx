@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { getUserManager } from "@codementor/auth";
 import { keycloakConfig } from "@/lib/env";
 
@@ -9,8 +9,17 @@ import { keycloakConfig } from "@/lib/env";
  * It hands the result to the parent window's UserManager and renders nothing.
  */
 export default function SilentRenewPage() {
+  const started = useRef(false);
+
   useEffect(() => {
-    void getUserManager(keycloakConfig, window.location.origin).signinSilentCallback();
+    // React Strict Mode chạy effect hai lần trong development, trong khi authorization
+    // code/state của OIDC chỉ được tiêu thụ một lần. Lần gọi thứ hai từng phát lỗi renew
+    // và khiến provider ở cửa sổ cha quay về login.
+    if (started.current) return;
+    started.current = true;
+    void getUserManager(keycloakConfig, window.location.origin)
+      .signinSilentCallback()
+      .catch(() => undefined);
   }, []);
 
   return null;
