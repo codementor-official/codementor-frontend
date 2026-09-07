@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 608 344" role="img" aria-labelledby="title desc">
+  <title id="title">Ảnh bìa bài viết CodeMentor</title>
+  <desc id="desc">Minh họa mã nguồn và dấu ngoặc trên nền trung tính.</desc>
+  <rect width="608" height="344" rx="28" fill="#16181d"/>
+  <path d="M0 272 168 104l116 116L424 80l184 184v80H0Z" fill="#20232a"/>
+  <circle cx="72" cy="70" r="10" fill="#ff8a34"/>
+  <circle cx="104" cy="70" r="10" fill="#515761"/>
+  <circle cx="136" cy="70" r="10" fill="#515761"/>
+  <path d="m232 136-58 36 58 36M376 136l58 36-58 36M338 112l-64 120" fill="none" stroke="#ff8a34" stroke-linecap="round" stroke-linejoin="round" stroke-width="18"/>
+  <text x="304" y="294" fill="#eef0f3" font-family="Arial, sans-serif" font-size="25" font-weight="700" text-anchor="middle">CodeMentor</text>
+</svg>

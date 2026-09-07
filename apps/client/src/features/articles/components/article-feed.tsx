@@ -321,27 +321,28 @@ function ArticleRow({ article }: { article: ArticleSummary }) {
             </div>
           </div>
 
-          {article.coverImageUrl && (
-            <Link
-              aria-hidden="true"
-              className="hidden shrink-0 sm:block"
-              href={`/articles/${article.slug}`}
-              tabIndex={-1}
-            >
-              <Image
-                alt=""
-                className="h-[86px] w-[152px] rounded-lg object-cover"
-                height={172}
-                src={article.coverImageUrl}
-                unoptimized
-                width={304}
-              />
-            </Link>
-          )}
+          <ArticleCover article={article} />
         </div>
       </article>
     </li>
   );
+}
+
+function ArticleCover({ article }: { article: ArticleSummary }) {
+  const fallback = "/article-cover-fallback.svg";
+  const [source, setSource] = useState(article.coverImageUrl || fallback);
+  useEffect(() => setSource(article.coverImageUrl || fallback), [article.coverImageUrl]);
+  return <Link className="hidden shrink-0 sm:block" href={`/articles/${article.slug}`} aria-label={`Đọc bài ${article.title}`}>
+    <Image
+      alt={`Ảnh bìa bài viết ${article.title}`}
+      className="h-[86px] w-[152px] rounded-lg border border-border-soft object-cover"
+      height={172}
+      src={source}
+      onError={() => setSource(fallback)}
+      unoptimized
+      width={304}
+    />
+  </Link>;
 }
 
 function initialOf(name: string | null): string {
