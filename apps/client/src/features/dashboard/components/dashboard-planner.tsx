@@ -3,9 +3,10 @@ import { CalendarDays, Trophy, Clock3 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import type { DashboardData } from '../dashboard-service';
 import { DashboardUnavailable } from './dashboard-section';
+import type { DashboardViewMode } from './dashboard-section';
 
 const DAYS: Record<string, string> = { mon: 'T2', tue: 'T3', wed: 'T4', thu: 'T5', fri: 'T6', sat: 'T7', sun: 'CN' };
-export function DashboardPlanner({ data, onRetry }: { data: DashboardData; onRetry: () => void }) {
+export function DashboardPlanner({ data, onRetry, viewMode }: { data: DashboardData; onRetry: () => void; viewMode: DashboardViewMode }) {
   const preferences = data.preferences;
   const calendar = data.learning?.calendar;
   const today = calendar?.days.at(-1)?.date;
@@ -14,7 +15,7 @@ export function DashboardPlanner({ data, onRetry }: { data: DashboardData; onRet
   const active = week.filter((day) => day.count > 0).length;
   const schedule = preferences?.schedule.filter((slot) => slot.enabled) ?? [];
   const completed = data.learning?.courses?.filter((item) => item.status === 'completed').length;
-  return <Card className="overflow-hidden">
+  return <Card className={`overflow-hidden ${viewMode === 'table' ? 'rounded-lg' : ''}`}>
     <div className="border-b border-border-soft p-5"><h2 className="flex items-center gap-2 text-base font-bold text-navy"><CalendarDays className="h-4 w-4 text-primary" /> Kế hoạch cá nhân</h2><p className="mt-1 text-xs text-text-muted">Giữ nhịp học phù hợp với mục tiêu của bạn</p></div>
     {!preferences ? <div className="p-4"><DashboardUnavailable onRetry={onRetry} /></div> : <div className="space-y-5 p-5">
       <div><p className="text-2xs font-semibold uppercase tracking-wide text-text-faint">Mục tiêu hiện tại</p><p className="mt-1 text-sm font-semibold text-navy">{preferences.learningGoal || 'Chưa đặt mục tiêu học tập'}</p>{preferences.careerGoal && <p className="mt-1 text-xs text-text-muted">{preferences.careerGoal}</p>}<div className="mt-3 flex flex-wrap gap-1">{preferences.interestedTechnologies.slice(0, 5).map((topic) => <span key={topic} className="rounded border border-border bg-bg px-2 py-1 text-2xs font-medium text-text-muted">{topic}</span>)}</div></div>
