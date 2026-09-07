@@ -156,7 +156,8 @@ export const api = {
   dashboard: {
     insight: () => unwrap<DashboardInsight>('/ai/dashboard/insight'),
     generateInsight: () => unwrap<DashboardInsight>('/ai/dashboard/insight', { method: 'POST' }),
-    applyInsight: () => unwrap<{ applied: boolean; appliedAt: string }>('/ai/dashboard/insight/apply', { method: 'POST' }),
+    applyInsight: () => unwrap<DashboardInsight>('/ai/dashboard/insight/apply', { method: 'POST' }),
+    removeAppliedInsight: () => unwrap<DashboardInsight>('/ai/dashboard/insight/apply', { method: 'DELETE' }),
     setInsightHidden: (hidden: boolean) => unwrap<{ hidden: boolean }>('/ai/dashboard/insight/visibility', { method: 'PATCH', body: { hidden } }),
     learning: () => unwrap<LearningDashboard>('/activity/me/dashboard'),
     assignments: () => unwrap<PendingAssignment[]>('/workspaces/me/pending-assignments'),

@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CatalogueSkeleton } from '@/components/ui/catalogue-state';
+import { api } from '@/lib/api';
 import { useAuth } from '@/providers/auth-provider';
 import { useRecommendations } from '@/features/recommendations/use-recommendations';
 import { loadDashboard } from '../dashboard-service';
@@ -23,13 +24,15 @@ export function LearningDashboardScreen() {
   const [viewMode, setViewMode] = useState<DashboardViewMode>('table');
   const { user } = useAuth();
   const { data, isLoading, error, reload } = useRecommendations(loadDashboard);
+  const coach = useRecommendations(api.dashboard.insight);
   const stats = data?.stats;
   const learning = data?.learning;
+  const refreshAll = () => { reload(); coach.reload(); };
   return <div className="min-w-0">
     <PageHeader icon={LayoutDashboard} title={`Chào ${user?.displayName ?? 'bạn'}`} subtitle="Tiếp nối việc học, theo dõi mục tiêu và chọn bước tiếp theo của bạn." />
     <div className="mb-4 flex flex-wrap items-center gap-2">
       <Button href="/profile?tab=personalization" size="sm" variant="outline">Hồ sơ học tập</Button>
-      <Button size="sm" variant="ghost" disabled={isLoading} onClick={reload}><RefreshCw className="h-4 w-4" /> Cập nhật</Button>
+      <Button size="sm" variant="ghost" disabled={isLoading || coach.isLoading} onClick={refreshAll}><RefreshCw className="h-4 w-4" /> Cập nhật</Button>
       <div className="ml-auto inline-flex rounded-lg border border-border bg-surface p-1" role="group" aria-label="Kiểu hiển thị Dashboard">
         <button type="button" aria-pressed={viewMode === 'table'} onClick={() => setViewMode('table')} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${viewMode === 'table' ? 'bg-navy text-on-ink shadow-sm' : 'text-text-muted hover:text-navy'}`}><List className="h-3.5 w-3.5" /> Bảng</button>
         <button type="button" aria-pressed={viewMode === 'cards'} onClick={() => setViewMode('cards')} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${viewMode === 'cards' ? 'bg-navy text-on-ink shadow-sm' : 'text-text-muted hover:text-navy'}`}><LayoutGrid className="h-3.5 w-3.5" /> Thẻ</button>
@@ -45,8 +48,8 @@ export function LearningDashboardScreen() {
       {!stats && <div className="mb-4"><DashboardUnavailable onRetry={reload} /></div>}
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_350px]">
         <div className="min-w-0 space-y-6">
-          <DashboardNextAction data={data} viewMode={viewMode} />
-          <DashboardCoach viewMode={viewMode} />
+          <DashboardNextAction data={data} coach={coach.data} viewMode={viewMode} />
+          <DashboardCoach viewMode={viewMode} data={coach.data} isLoading={coach.isLoading} error={coach.error} reload={coach.reload} onDataChange={coach.replaceData} />
           <DashboardTrends data={learning ?? null} onRetry={reload} viewMode={viewMode} />
           <ContinueLearning data={learning ?? null} onRetry={reload} viewMode={viewMode} />
           <DashboardAssignments data={data} onRetry={reload} viewMode={viewMode} />

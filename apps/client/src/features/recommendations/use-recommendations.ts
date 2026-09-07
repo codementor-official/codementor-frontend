@@ -19,6 +19,9 @@ export function useRecommendations<T>(load: () => Promise<T>) {
     isLoading: boolean;
   }>({ scope: "", loader: load, data: null, error: null, isLoading: true });
   const reload = useCallback(() => setAttempt((value) => value + 1), []);
+  const replaceData = useCallback((data: T) => {
+    setState({ scope, loader: load, data, error: null, isLoading: false });
+  }, [load, scope]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -37,5 +40,6 @@ export function useRecommendations<T>(load: () => Promise<T>) {
     error: current ? state.error : null,
     isLoading: status === "loading" || (status === "authenticated" && (!current || state.isLoading)),
     reload,
+    replaceData,
   };
 }
