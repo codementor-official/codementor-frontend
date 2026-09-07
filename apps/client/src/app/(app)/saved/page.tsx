@@ -63,7 +63,7 @@ export default function SavedPage() {
   const toast = useToast();
   const [type, setType] = useState<ContentFilter>("all");
   const [sort, setSort] = useState<BookmarkSort>("newest");
-  const [view, setView] = useState<ViewMode>("cards");
+  const [view, setView] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
