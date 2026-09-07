@@ -7,6 +7,8 @@ import {
   useThemeStore,
   type ThemePreference,
 } from "@/lib/store/theme-store";
+import { api } from "@/lib/api";
+import { useToast } from "@codementor/ui";
 
 const OPTIONS: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Sáng", icon: Sun },
@@ -16,6 +18,7 @@ const OPTIONS: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
 
 /** Segmented light/dark/system control, sized to sit inside the user menu. */
 export function ThemePicker() {
+  const toast = useToast();
   const preference = useThemeStore((s) => s.preference);
   const setPreference = useThemeStore((s) => s.setPreference);
   const [mounted, setMounted] = useState(false);
@@ -32,6 +35,17 @@ export function ThemePicker() {
     media.addEventListener("change", onChange);
     return () => media.removeEventListener("change", onChange);
   }, [preference]);
+
+  const chooseTheme = (next: ThemePreference) => {
+    const previous = preference;
+    setPreference(next);
+    void api.account.updateSettings({ theme: next }).then((settings) => {
+      if (settings.theme !== next) setPreference(settings.theme);
+    }).catch(() => {
+      setPreference(previous);
+      toast.error("Không thể lưu giao diện cho tài khoản.");
+    });
+  };
 
   return (
     <div className="px-3 py-2">
@@ -52,7 +66,7 @@ export function ThemePicker() {
               role="radio"
               aria-checked={active}
               title={option.label}
-              onClick={() => setPreference(option.value)}
+              onClick={() => chooseTheme(option.value)}
               className={`flex h-7 flex-1 items-center justify-center gap-1 rounded-sm text-2xs font-semibold whitespace-nowrap transition-colors ${
                 active
                   ? "bg-navy text-on-ink"

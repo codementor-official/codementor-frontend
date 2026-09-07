@@ -60,9 +60,11 @@ export function SettingsPanel() {
     api.account.settings()
       .then((settings) => {
         if (!active) return;
-        setSaved(settings);
-        setDraft(settings);
-        setTheme(settings.theme);
+        const activeTheme = useThemeStore.getState().preference;
+        const synchronized = { ...settings, theme: activeTheme };
+        setSaved(synchronized);
+        setDraft(synchronized);
+        if (settings.theme !== activeTheme) void api.account.updateSettings({ theme: activeTheme });
       })
       .catch((cause: unknown) => active && setError(cause instanceof Error ? cause.message : "Không thể tải cài đặt."))
       .finally(() => active && setLoading(false));
@@ -158,7 +160,7 @@ export function SettingsPanel() {
           <p className="mt-1 text-xs text-text-faint">Lựa chọn được đồng bộ theo tài khoản và áp dụng ngay trên thiết bị này.</p>
           <div className="mt-4 grid grid-cols-3 gap-2">
             {(["light", "dark", "system"] as const).map((theme) => (
-              <button key={theme} type="button" onClick={() => selectTheme(theme)} className={`rounded-lg border px-3 py-3 text-xs font-semibold transition ${draft.theme === theme ? "border-primary bg-primary-tint text-primary" : "border-border text-text-muted hover:bg-bg"}`}>
+              <button key={theme} type="button" onClick={() => selectTheme(theme)} className={`rounded-lg border px-3 py-3 text-xs font-semibold transition ${draft.theme === theme ? "border-navy bg-navy text-on-ink" : "border-border text-text-muted hover:bg-bg"}`}>
                 {theme === "light" ? "Sáng" : theme === "dark" ? "Tối" : "Theo hệ thống"}
               </button>
             ))}
