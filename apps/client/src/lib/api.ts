@@ -348,6 +348,15 @@ export const api = {
       unwrap<{ count: number }>(
         `/workspaces/${encodeURIComponent(slug)}/messages/unread`,
       ),
+    messageResources: (slug: string) =>
+      unwrap<{ items: Array<{ url: string; title: string; kind: "file" | "link"; senderName: string; createdAt: string }>; total: number; scannedMessages: number }>(
+        `/workspaces/${encodeURIComponent(slug)}/messages/resources`,
+      ),
+    messageAttachmentUploadUrl: (slug: string, body: { filename: string; contentType: string; sizeBytes: number }) =>
+      unwrap<PresignedWorkspaceUpload & { maxBytes: number }>(
+        `/workspaces/${encodeURIComponent(slug)}/messages/attachments/upload-url`,
+        { method: "POST", body },
+      ),
     createMessage: (slug: string, content: string) =>
       unwrap<WorkspaceMessage>(
         `/workspaces/${encodeURIComponent(slug)}/messages`,
@@ -439,15 +448,16 @@ export const api = {
     updateDocument: (
       slug: string,
       id: string,
-      body: { title?: string; topic?: string | null; status?: string },
+      body: { title?: string; topic?: string | null; status?: string; reason?: string },
     ) =>
       unwrap<WorkspaceDocument>(
         `/workspaces/${encodeURIComponent(slug)}/documents/${id}`,
         { method: "PATCH", body },
       ),
-    deleteDocument: (slug: string, id: string) =>
+    deleteDocument: (slug: string, id: string, reason: string) =>
       unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/documents/${id}`, {
         method: "DELETE",
+        body: { reason },
       }),
     pendingDocumentCount: (slug: string) =>
       unwrap<{ count: number }>(
@@ -587,6 +597,7 @@ export const api = {
         summary?: string | null;
         difficulty?: "easy" | "medium" | "hard";
         publicationStatus?: "published" | "hidden";
+        reason?: string;
         content?: Record<string, unknown>;
         tagIds?: string[];
       },
@@ -595,9 +606,10 @@ export const api = {
         `/workspaces/${encodeURIComponent(slug)}/exercises/${id}`,
         { method: "PATCH", body },
       ),
-    deleteWorkspaceExercise: (slug: string, id: string) =>
+    deleteWorkspaceExercise: (slug: string, id: string, reason: string) =>
       unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/exercises/${id}`, {
         method: "DELETE",
+        body: { reason },
       }),
     restoreWorkspaceExercise: (slug: string, id: string) =>
       unwrap<{ restored: boolean }>(
@@ -797,10 +809,10 @@ export const api = {
           body: { role },
         },
       ),
-    removeMember: (slug: string, memberId: string) =>
+    removeMember: (slug: string, memberId: string, reason: string) =>
       unwrap<void>(
         `/workspaces/${encodeURIComponent(slug)}/members/${memberId}`,
-        { method: "DELETE" },
+        { method: "DELETE", body: { reason } },
       ),
     transferOwnership: (slug: string, memberId: string) =>
       unwrap<{ transferred: boolean }>(

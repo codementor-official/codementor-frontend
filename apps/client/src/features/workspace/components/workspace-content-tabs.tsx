@@ -62,6 +62,9 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [removing, setRemoving] = useState<WorkspaceDocument | null>(null);
+  const [removeReason, setRemoveReason] = useState("");
+  const [moderating, setModerating] = useState<{ document: WorkspaceDocument; status: string } | null>(null);
+  const [moderationReason, setModerationReason] = useState("");
   const [editing, setEditing] = useState<WorkspaceDocument | null>(null);
   const [previewing, setPreviewing] = useState<WorkspaceDocument | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -145,10 +148,15 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   };
   const remove = async () => {
     if (!removing) return;
+    if (!removeReason.trim()) {
+      toast.error("Vui lòng nhập lý do xóa tài liệu");
+      return;
+    }
     try {
-      await api.workspaces.deleteDocument(detail.slug, removing.id);
+      await api.workspaces.deleteDocument(detail.slug, removing.id, removeReason.trim());
       toast.success("Đã chuyển tài liệu vào mục đã xóa");
       setRemoving(null);
+      setRemoveReason("");
       await load();
     } catch (e) {
       toast.error(messageOf(e));
@@ -172,11 +180,19 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
       toast.error(messageOf(e));
     }
   };
-  const changeStatus = async (doc: WorkspaceDocument, next: string) => {
+  const changeStatus = async (doc: WorkspaceDocument, next: string, reason?: string) => {
+    if (["hidden", "rejected", "changes"].includes(next) && !reason?.trim()) {
+      setModerating({ document: doc, status: next });
+      setModerationReason("");
+      return;
+    }
     try {
       await api.workspaces.updateDocument(detail.slug, doc.id, {
         status: next,
+        reason: reason?.trim(),
       });
+      setModerating(null);
+      setModerationReason("");
       await load();
     } catch (e) {
       toast.error(messageOf(e));
@@ -250,7 +266,10 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
             options={[
               { value: "", label: "Tất cả" },
               { value: "published", label: "Đã duyệt" },
+              { value: "recent", label: "Vừa duyệt trong 24 giờ" },
               { value: "pending", label: "Chờ duyệt" },
+              { value: "changes", label: "Cần chỉnh sửa" },
+              { value: "rejected", label: "Đã từ chối" },
               { value: "hidden", label: "Đã ẩn" },
               { value: "removed", label: "Đã xóa" },
             ]}
@@ -335,15 +354,10 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
               {doc.canApprove && doc.status !== "removed" && (
                 <div onClick={(event) => event.stopPropagation()}>
                   <Select
-                    label="Duyệt"
-                    value={doc.status}
-                    onChange={(v) => void changeStatus(doc, v)}
-                    options={[
-                      { value: "published", label: "Đã duyệt" },
-                      { value: "pending", label: "Chờ duyệt" },
-                      { value: "hidden", label: "Ẩn" },
-                      { value: "rejected", label: "Từ chối" },
-                    ]}
+                    label="Thao tác với tài liệu"
+                    value=""
+                    onChange={(v) => { if (v) void changeStatus(doc, v); }}
+                    options={documentStatusOptions(doc.status)}
                   />
                 </div>
               )}
@@ -375,9 +389,14 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
               )}
               {canDeleteAny && doc.status === "removed" && (
                 <>
+                  <div className="w-full text-2xs text-text-muted sm:w-auto">
+                    {doc.deleteReason ? `Lý do: ${doc.deleteReason} · ` : ""}{retentionLabel(doc.deletedAt)}
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={!canPurge(doc.deletedAt)}
+                    title={canPurge(doc.deletedAt) ? "Xóa vĩnh viễn" : "Chỉ có thể xóa vĩnh viễn sau 30 ngày"}
                     onClick={(event) => {
                       event.stopPropagation();
                       void restore(doc);
@@ -431,12 +450,27 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
       )}
       <ConfirmDialog
         open={removing !== null}
-        onClose={() => setRemoving(null)}
+        onClose={() => { setRemoving(null); setRemoveReason(""); }}
         onConfirm={() => void remove()}
         title="Chuyển tài liệu vào mục đã xóa?"
         confirmLabel="Xóa"
         message={`Tài liệu “${removing?.title ?? ""}” sẽ được ẩn khỏi danh sách. Tệp trên storage chỉ bị xóa khi xóa vĩnh viễn.`}
-      />
+      >
+        <label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do xóa <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={removeReason} onChange={(event) => setRemoveReason(event.target.value)} placeholder="Nêu rõ lý do để chủ tài liệu nhận được thông báo…" className={`${inputClass} resize-none font-normal`} /></label>
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={moderating !== null}
+        onClose={() => { setModerating(null); setModerationReason(""); }}
+        onConfirm={() => {
+          if (!moderationReason.trim()) { toast.error("Vui lòng nhập lý do xử lý tài liệu"); return; }
+          if (moderating) void changeStatus(moderating.document, moderating.status, moderationReason);
+        }}
+        title="Xác nhận xử lý tài liệu"
+        confirmLabel="Xác nhận"
+        message={`Hành động “${moderating ? statusLabel(moderating.status) : ""}” sẽ được thông báo cho chủ tài liệu.`}
+      >
+        <label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={moderationReason} onChange={(event) => setModerationReason(event.target.value)} placeholder="Nêu rõ nội dung cần chỉnh sửa hoặc lý do không hiển thị…" className={`${inputClass} resize-none font-normal`} /></label>
+      </ConfirmDialog>
       {reporting && (
         <DocumentReportDialog
           document={reporting}
@@ -759,6 +793,7 @@ export function WorkspaceExercisesTab({
   const [reminders, setReminders] = useState<WorkspaceExercise[]>([]);
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState<WorkspaceExercise | null>(null);
+  const [removeReason, setRemoveReason] = useState("");
   const [detailId, setDetailId] = useState<string | null>(() =>
     initialExerciseId && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(initialExerciseId)
       ? initialExerciseId : null,
@@ -851,9 +886,15 @@ export function WorkspaceExercisesTab({
   };
   const remove = async () => {
     if (!removing) return;
+    if (!removeReason.trim()) {
+      toast.error("Vui lòng nhập lý do gỡ bài tập");
+      return;
+    }
     try {
-      await api.workspaces.deleteWorkspaceExercise(detail.slug, removing.id);
+      await api.workspaces.deleteWorkspaceExercise(detail.slug, removing.id, removeReason.trim());
       setRemoving(null);
+      setRemoveReason("");
+      toast.success("Đã chuyển bài tập vào mục đã xóa");
       await load();
     } catch (e) {
       toast.error(messageOf(e));
@@ -1132,6 +1173,7 @@ export function WorkspaceExercisesTab({
                       {assignmentLabel(ex.myAssignment.status)}
                     </span>
                   )}
+                  {(canEditAny || canDeleteAny) && <span className="rounded-full bg-border-soft px-2 py-0.5 text-2xs font-semibold text-text-muted">{ex.publicationStatus === "published" ? "Đang hiển thị" : "Đã ẩn"}</span>}
                 </div>
                 <p className="text-xs text-text-faint">
                   {difficultyLabel(ex.difficulty)} · {ex.completedCount}/
@@ -1160,8 +1202,9 @@ export function WorkspaceExercisesTab({
               {(ex.canEdit || ex.canDelete || ex.canRestore || canCreate) && (
                 <>
                   {ex.deletedAt ? (
-                    ex.canRestore && (
-                      <Button
+                    <>
+                      <div className="w-full text-2xs text-text-muted sm:w-auto">{ex.deleteReason ? `Lý do: ${ex.deleteReason} · ` : ""}{retentionLabel(ex.deletedAt)}</div>
+                      {ex.canRestore && <Button
                         size="sm"
                         variant="outline"
                         onClick={(event) => {
@@ -1174,8 +1217,9 @@ export function WorkspaceExercisesTab({
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         Khôi phục
-                      </Button>
-                    )
+                      </Button>}
+                      {canDeleteAny && <Button size="sm" variant="outline" disabled={!canPurge(ex.deletedAt)} title={canPurge(ex.deletedAt) ? "Xóa vĩnh viễn" : "Chỉ có thể xóa vĩnh viễn sau 30 ngày"} onClick={(event) => { event.stopPropagation(); void api.workspaces.purgeWorkspaceExercise(detail.slug, ex.id).then(() => load()).catch((error) => toast.error(messageOf(error))); }}><Trash2 className="h-3.5 w-3.5" />Xóa vĩnh viễn</Button>}
+                    </>
                   ) : (
                     <>
                       {canCreate && (
@@ -1241,12 +1285,12 @@ export function WorkspaceExercisesTab({
       )}
       <ConfirmDialog
         open={removing !== null}
-        onClose={() => setRemoving(null)}
+        onClose={() => { setRemoving(null); setRemoveReason(""); }}
         onConfirm={() => void remove()}
         title="Chuyển bài tập vào mục đã xóa?"
         confirmLabel="Gỡ"
         message={`Bài “${removing?.title ?? ""}” sẽ được ẩn khỏi thành viên và vẫn có thể khôi phục.`}
-      />
+      ><label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do gỡ bài <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={removeReason} onChange={(event) => setRemoveReason(event.target.value)} placeholder="Nêu rõ lý do để tác giả nhận được thông báo…" className={`${inputClass} resize-none font-normal`} /></label></ConfirmDialog>
     </div>
   );
 }
@@ -1335,6 +1379,7 @@ function ExerciseDetailDialog({
   const [publicationStatus, setPublicationStatus] = useState<
     "published" | "hidden"
   >("published");
+  const [publicationReason, setPublicationReason] = useState("");
   const [statement, setStatement] = useState("");
   const [assigned, setAssigned] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -1352,6 +1397,7 @@ function ExerciseDetailDialog({
       setSummary(next.summary ?? "");
       setDifficulty(next.difficulty);
       setPublicationStatus(next.publicationStatus);
+      setPublicationReason("");
       setStatement(String(next.content?.statement ?? ""));
       setAssigned(
         next.assignedMemberIds ??
@@ -1442,6 +1488,10 @@ function ExerciseDetailDialog({
   };
   const save = async () => {
     if (!data) return;
+    if (data.canPublish && publicationStatus === "hidden" && data.publicationStatus !== "hidden" && !publicationReason.trim()) {
+      toast.error("Vui lòng nhập lý do ẩn bài tập");
+      return;
+    }
     setBusy(true);
     try {
       await api.workspaces.updateWorkspaceExercise(slug, id, {
@@ -1462,7 +1512,7 @@ function ExerciseDetailDialog({
                 : { statement: statement.trim(), ioMode: "stdin_stdout" },
             }
           : {}),
-        ...(data.canPublish ? { publicationStatus } : {}),
+        ...(data.canPublish ? { publicationStatus, reason: publicationReason.trim() || undefined } : {}),
       });
       toast.success(
         data.canEdit && data.canAssign
@@ -1554,25 +1604,12 @@ function ExerciseDetailDialog({
                       )}
                       {data.canPublish && (
                         <div className="min-w-0 text-xs font-medium text-text-muted">
-                          <span>Hiển thị</span>
-                          <Select
-                            label="Hiển thị"
-                            className="w-full"
-                            containerClassName="mt-1"
-                            value={publicationStatus}
-                            onChange={(value) =>
-                              setPublicationStatus(
-                                value as typeof publicationStatus,
-                              )
-                            }
-                            options={[
-                              { value: "published", label: "Đang hiển thị" },
-                              { value: "hidden", label: "Đã ẩn" },
-                            ]}
-                          />
+                          <span>Trạng thái hiện tại</span>
+                          <div className="mt-1 flex h-9 items-center justify-between gap-2 rounded-md border border-border bg-surface px-3"><span className="text-xs font-semibold text-navy">{publicationStatus === "published" ? "Đang hiển thị" : "Đã ẩn"}</span><button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => { setPublicationStatus((value) => value === "published" ? "hidden" : "published"); setPublicationReason(""); }}>{publicationStatus === "published" ? "Ẩn bài tập" : "Hiển thị lại bài tập"}</button></div>
                         </div>
                       )}
                     </div>
+                    {data.canPublish && publicationStatus === "hidden" && data.publicationStatus !== "hidden" && <label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do ẩn bài <span className="font-normal text-danger">Bắt buộc</span><textarea rows={3} maxLength={500} value={publicationReason} onChange={(event) => setPublicationReason(event.target.value)} placeholder="Lý do này sẽ được gửi cho tác giả bài tập…" className={`${inputClass} resize-none font-normal`} /></label>}
                     {data.canEdit && (
                       <TextArea
                         label="Nội dung đề bài"
@@ -2181,6 +2218,25 @@ function statusLabel(value: string) {
       } as Record<string, string>
     )[value] ?? value
   );
+}
+function documentStatusOptions(current: WorkspaceDocument["status"]) {
+  const labels: Record<string, string> = { published: "Duyệt và hiển thị", pending: "Đưa về chờ duyệt", hidden: "Ẩn tài liệu", rejected: "Từ chối tài liệu", changes: "Yêu cầu chỉnh sửa" };
+  const transitions: Record<string, string[]> = {
+    pending: ["published", "changes", "rejected"],
+    published: ["hidden"],
+    hidden: ["published"],
+    rejected: ["pending", "published"],
+    changes: ["pending", "published", "rejected"],
+  };
+  return [{ value: "", label: "Chọn thao tác" }, ...(transitions[current] ?? []).map((value) => ({ value, label: current === "hidden" && value === "published" ? "Hiển thị lại tài liệu" : labels[value] ?? value }))];
+}
+function canPurge(deletedAt: string | null) {
+  return Boolean(deletedAt && Date.now() - new Date(deletedAt).getTime() >= 30 * 24 * 60 * 60 * 1000);
+}
+function retentionLabel(deletedAt: string | null) {
+  if (!deletedAt) return "";
+  const remaining = Math.max(0, 30 - Math.floor((Date.now() - new Date(deletedAt).getTime()) / (24 * 60 * 60 * 1000)));
+  return remaining ? `Còn ${remaining} ngày để khôi phục` : "Đã đủ 30 ngày, có thể xóa vĩnh viễn";
 }
 function difficultyLabel(value: string) {
   return (

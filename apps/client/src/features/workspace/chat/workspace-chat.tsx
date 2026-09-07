@@ -7,6 +7,8 @@ import {
   ExternalLink,
   LoaderCircle,
   MessageCircle,
+  Link2,
+  Paperclip,
   Minimize2,
   Pencil,
   Send,
@@ -15,11 +17,13 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
+import { Modal } from "@codementor/ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { WorkspaceDetail, WorkspaceMessage, WorkspaceRole } from "../types";
 import type { WorkspaceChatState } from "./use-workspace-chat";
+import { api } from "@/lib/api";
 
 export function WorkspaceChatTab({
   detail,
@@ -31,6 +35,12 @@ export function WorkspaceChatTab({
   const listRef = useRef<HTMLDivElement>(null);
   const previousHeight = useRef(0);
   const [draft, setDraft] = useState("");
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
+  const [resources, setResources] = useState<Array<{ url: string; title: string; kind: "file" | "link"; senderName: string; createdAt: string }>>([]);
+  const [resourcesError, setResourcesError] = useState<string | null>(null);
+  const [attaching, setAttaching] = useState(false);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
 
   useEffect(() => {
     const list = listRef.current;
@@ -55,8 +65,39 @@ export function WorkspaceChatTab({
     if (await chat.send(content)) setDraft("");
   };
 
+  const openResources = async () => {
+    setResourcesOpen(true);
+    setResourcesLoading(true);
+    setResourcesError(null);
+    try { setResources((await api.workspaces.messageResources(detail.slug)).items); }
+    catch { setResourcesError("Không tải được tài nguyên đã chia sẻ."); }
+    finally { setResourcesLoading(false); }
+  };
+
+  const attach = async (file: File) => {
+    setAttaching(true);
+    setAttachmentError(null);
+    try {
+      const signed = await api.workspaces.messageAttachmentUploadUrl(detail.slug, {
+        filename: file.name,
+        contentType: file.type || "application/octet-stream",
+        sizeBytes: file.size,
+      });
+      if (file.size > signed.maxBytes) throw new Error("Tệp vượt quá dung lượng cho phép");
+      const response = await fetch(signed.uploadUrl, { method: "PUT", headers: signed.headers, body: file });
+      if (!response.ok) throw new Error("Không thể tải tệp lên storage");
+      const marker = file.type.startsWith("image/") ? "🖼️" : "📎";
+      if (!(await chat.send(`${marker} ${file.name}\n${signed.publicUrl}`))) throw new Error("Không thể gửi tin nhắn đính kèm");
+      if (resourcesOpen) void openResources();
+    } catch (cause) {
+      setAttachmentError(cause instanceof Error ? cause.message : "Không thể gửi tài nguyên");
+    } finally {
+      setAttaching(false);
+    }
+  };
+
   return (
-    <Card className="flex h-[calc(100dvh-12rem)] min-h-[40rem] w-full flex-col overflow-hidden">
+    <Card className="flex h-[calc(100dvh-10.5rem)] min-h-[34rem] max-h-[calc(100dvh-7rem)] w-full min-w-0 flex-col overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
         <div>
           <div className="flex items-center gap-2">
@@ -68,12 +109,12 @@ export function WorkspaceChatTab({
             Trao đổi bài tập, tài liệu và kế hoạch học tập trong Workspace.
           </p>
         </div>
-        <ConnectionState connected={chat.connected} />
+        <div className="flex items-center gap-1"><button type="button" onClick={() => void openResources()} className="rounded-md border border-border p-2 text-text-muted hover:border-primary hover:text-primary" aria-label="Xem tài nguyên đã gửi" title="Tài nguyên đã gửi"><Paperclip className="h-4 w-4" /></button><ConnectionState connected={chat.connected} /></div>
       </div>
 
       <div
         ref={listRef}
-        className="min-h-0 flex-1 overflow-y-auto bg-surface-subtle px-3 py-4 sm:px-5 lg:px-6"
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-surface-subtle px-3 py-4 sm:px-5 lg:px-6"
         aria-live="polite"
       >
         {chat.hasMore && (
@@ -126,13 +167,20 @@ export function WorkspaceChatTab({
           {chat.error}
         </div>
       )}
+      {attachmentError && <div role="alert" className="border-t border-danger/20 bg-danger-tint px-4 py-2 text-xs text-danger">{attachmentError}</div>}
       <Composer
         value={draft}
         onChange={setDraft}
         onSubmit={() => void submit()}
         sending={chat.sending}
         placeholder="Nhắn cho nhóm… Dùng ``` để chia sẻ code"
+        onAttach={(file) => void attach(file)}
+        attaching={attaching}
       />
+      <Modal open={resourcesOpen} onClose={() => setResourcesOpen(false)} title="Tài nguyên đã chia sẻ trong chat" width="lg">
+        <p className="mb-4 text-xs text-text-muted">Tổng hợp file và liên kết từ tối đa 500 tin nhắn gần nhất của nhóm.</p>
+        {resourcesLoading ? <p className="flex items-center gap-2 py-8 text-sm text-text-muted"><LoaderCircle className="h-4 w-4 animate-spin" /> Đang tổng hợp tài nguyên…</p> : resourcesError ? <p role="alert" className="text-sm text-danger">{resourcesError}</p> : resources.length === 0 ? <div className="py-10 text-center"><Paperclip className="mx-auto h-6 w-6 text-text-faint" /><p className="mt-2 text-sm font-semibold text-navy">Chưa có file hoặc liên kết</p><p className="mt-1 text-xs text-text-muted">Các URL được chia sẻ trong chat sẽ xuất hiện tại đây.</p></div> : <ul className="max-h-[60dvh] divide-y divide-border-soft overflow-y-auto">{resources.map((resource) => <li key={resource.url}><a href={resource.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 py-3 hover:text-primary"><span className="rounded-lg bg-bg p-2 text-primary">{resource.kind === "file" ? <Paperclip className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-navy">{resource.title}</span><span className="text-2xs text-text-muted">{resource.senderName} · {new Date(resource.createdAt).toLocaleString("vi-VN")}</span></span><ExternalLink className="h-4 w-4 text-text-faint" /></a></li>)}</ul>}
+      </Modal>
     </Card>
   );
 }
@@ -189,7 +237,7 @@ export function WorkspaceMiniChat({
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-bold">{workspaceName}</p>
           <p className="text-2xs text-on-ink/60">
-            {chat.connected ? "Đang kết nối realtime" : "Đang kết nối lại"}
+            {chat.connected ? "Sẵn sàng trò chuyện" : "Đang kết nối lại"}
           </p>
         </div>
         <button
@@ -285,7 +333,7 @@ function MessageRow({
     >
       {!mine && <Avatar message={message} />}
       <div
-        className={`flex min-w-0 max-w-[min(46rem,calc(100%-3rem))] flex-col ${mine ? "items-end" : "items-start"}`}
+        className={`flex min-w-0 max-w-[min(38rem,calc(100%-2.5rem))] flex-col ${mine ? "items-end" : "items-start"}`}
       >
         <div className={`mb-1 flex items-baseline gap-2 ${mine ? "justify-end" : ""}`}>
           <span className="text-xs font-semibold text-navy">{message.sender.displayName}</span>
@@ -365,6 +413,8 @@ function Composer({
   sending,
   placeholder,
   compact = false,
+  onAttach,
+  attaching = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -372,9 +422,12 @@ function Composer({
   sending: boolean;
   placeholder: string;
   compact?: boolean;
+  onAttach?: (file: File) => void;
+  attaching?: boolean;
 }) {
   return (
-    <div className={`flex items-end gap-2 border-t border-border bg-surface ${compact ? "p-2.5" : "p-3 sm:p-4"}`}>
+    <div className={`${onAttach ? "grid grid-cols-[2.5rem_minmax(0,1fr)_auto]" : "flex"} min-w-0 items-end gap-2 border-t border-border bg-surface ${compact ? "p-2.5" : "p-3 sm:p-4"}`}>
+      {onAttach && <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border text-text-muted hover:border-primary hover:text-primary" aria-label="Đính kèm file hoặc hình ảnh" title="Đính kèm file hoặc hình ảnh">{attaching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}<input type="file" className="sr-only" disabled={attaching || sending} accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv,.zip" onChange={(event) => { const file = event.target.files?.[0]; if (file) onAttach(file); event.target.value = ""; }} /></label>}
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -387,7 +440,7 @@ function Composer({
         rows={compact ? 1 : 2}
         maxLength={4000}
         placeholder={placeholder}
-        className="min-h-10 flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-navy placeholder:text-text-faint focus:border-primary"
+        className="min-h-10 min-w-0 w-full flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-navy placeholder:text-text-faint focus:border-primary"
       />
       <Button
         size={compact ? "sm" : "md"}
@@ -429,7 +482,7 @@ function linkify(text: string) {
         rel={part.startsWith("http") ? "noreferrer" : undefined}
         className="font-medium text-primary underline-offset-2 hover:underline"
       >
-        {part}
+        {/https?:\/\/[^\s]+\.(png|jpe?g|gif|webp)(\?[^\s]*)?$/i.test(part) ? <img src={part} alt="Hình ảnh được chia sẻ trong chat" className="mt-2 block max-h-56 w-auto max-w-[min(100%,28rem)] rounded-lg border border-border object-contain" loading="lazy" /> : part}
       </a>
     ) : (
       part
@@ -449,9 +502,9 @@ function Avatar({ message }: { message: WorkspaceMessage }) {
 
 function ConnectionState({ connected }: { connected: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs ${connected ? "text-success" : "text-text-faint"}`}>
+    <span className={`inline-flex rounded-md p-2 ${connected ? "text-success" : "text-text-faint"}`} title={connected ? "Đã kết nối" : "Đang kết nối lại"}>
       {connected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
-      {connected ? "Realtime" : "Đang kết nối lại"}
+      <span className="sr-only">{connected ? "Đã kết nối" : "Đang kết nối lại"}</span>
     </span>
   );
 }

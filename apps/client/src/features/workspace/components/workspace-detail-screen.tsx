@@ -31,7 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Select, useToast } from "@codementor/ui";
+import { Modal, Select, useToast } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -184,8 +184,8 @@ const PERMISSION_LABELS: {
   },
   {
     key: "remove_member",
-    label: "Loại thành viên",
-    description: "Loại thành viên thường khỏi nhóm.",
+    label: "Xóa thành viên khỏi nhóm",
+    description: "Xóa thành viên thường khỏi Workspace.",
   },
 ];
 
@@ -207,6 +207,8 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const [leaving, setLeaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [removing, setRemoving] = useState<WorkspaceMember | null>(null);
+  const [removalReason, setRemovalReason] = useState("");
+  const [membershipRemoved, setMembershipRemoved] = useState(false);
   const [memberRevision, setMemberRevision] = useState(0);
   const [joinRequestCount, setJoinRequestCount] = useState(0);
   const chat = useWorkspaceChat(slug, detail !== null, tab === "chat");
@@ -242,6 +244,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
     setPublicDetail(null);
     try {
       const nextDetail = await api.workspaces.detail(slug);
+      window.sessionStorage.setItem(`codementor-workspace-member:${slug}`, "1");
       const [nextMembers, nextOverview] = await Promise.all([
         api.workspaces.members(slug, { limit: 100 }),
         api.workspaces.overview(slug),
@@ -258,6 +261,11 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       setMembers(nextMembers.items);
       setOverview(nextOverview);
     } catch (cause) {
+      const wasMember = window.sessionStorage.getItem(`codementor-workspace-member:${slug}`) === "1";
+      if (wasMember && cause instanceof ApiClientError && [403, 404].includes(cause.status)) {
+        setMembershipRemoved(true);
+        return;
+      }
       try {
         const publicWorkspace = await api.workspaces.publicDetail(slug);
         try {
@@ -282,6 +290,16 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (!detail || membershipRemoved) return;
+    const timer = window.setInterval(() => {
+      void api.workspaces.detail(slug).catch((cause) => {
+        if (cause instanceof ApiClientError && [403, 404].includes(cause.status)) setMembershipRemoved(true);
+      });
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [detail, membershipRemoved, slug]);
 
   useEffect(() => {
     if (detail?.currentMembership.role !== "owner") {
@@ -365,9 +383,10 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
 
   const remove = async () => {
     if (!removing) return;
+    if (!removalReason.trim()) { toast.error("Vui lòng nhập lý do xóa thành viên"); return; }
     setPending(true);
     try {
-      await api.workspaces.removeMember(slug, removing.id);
+      await api.workspaces.removeMember(slug, removing.id, removalReason.trim());
       setMembers((current) =>
         current.filter((member) => member.id !== removing.id),
       );
@@ -378,6 +397,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
     } finally {
       setPending(false);
       setRemoving(null);
+      setRemovalReason("");
     }
   };
 
@@ -388,6 +408,14 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         <Card className="h-64 animate-pulse bg-border-soft" aria-busy="true" />
       </div>
     );
+  }
+
+  if (membershipRemoved) {
+    return <div><PageHeader icon={Users} title="Nhóm học tập" subtitle="Quyền truy cập Workspace của bạn đã thay đổi." /><Card className="h-64 bg-bg" />
+      <Modal open onClose={() => router.replace("/workspace")} title="Bạn không còn là thành viên của nhóm" width="sm" footer={<><Button variant="outline" href="/dashboard">Về Tổng quan</Button><Button onClick={() => router.replace("/workspace")}>Quay lại danh sách nhóm</Button></>}>
+        <div className="flex gap-3"><span className="rounded-full bg-danger/10 p-2 text-danger"><Users className="h-5 w-5" /></span><div><p className="text-sm font-semibold text-navy">Quyền truy cập nhóm đã bị thu hồi</p><p className="mt-1 text-sm leading-relaxed text-text-muted">Bạn có thể đã được quản trị viên xóa khỏi nhóm. Thông báo trong tài khoản sẽ hiển thị lý do nếu quản trị viên cung cấp.</p></div></div>
+      </Modal>
+    </div>;
   }
 
   if (!detail) {
@@ -575,10 +603,10 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       />
       <ConfirmDialog
         open={removing !== null}
-        onClose={() => setRemoving(null)}
+        onClose={() => { setRemoving(null); setRemovalReason(""); }}
         onConfirm={() => void remove()}
-        title="Loại thành viên khỏi nhóm?"
-        confirmLabel="Loại thành viên"
+        title="Xóa thành viên khỏi nhóm?"
+        confirmLabel="Xóa khỏi nhóm"
         message={
           <>
             Người này sẽ mất quyền truy cập vào nhóm{" "}
@@ -586,7 +614,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
             chỉ có thể quay lại khi có mã mời mới.
           </>
         }
-      />
+      ><label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do xóa khỏi nhóm <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={removalReason} onChange={(event) => setRemovalReason(event.target.value)} placeholder="Lý do này sẽ được gửi cho thành viên…" className="resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm font-normal text-navy" /></label></ConfirmDialog>
       {activeTab !== "chat" && (
         <WorkspaceMiniChat
           workspaceName={detail.name}
@@ -746,7 +774,7 @@ function Overview({
   const ranked = [...(overview?.members ?? [])].sort((a, b) => b.xp - a.xp);
   const leaderboard = ranked.slice(0, showLeaderboard ? 10 : 5);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-5 overflow-x-clip pb-6">
       <Card className="overflow-hidden">
         <div
           className={`flex items-center justify-center bg-navy bg-no-repeat ${
@@ -858,9 +886,9 @@ function Overview({
           note={`${overview?.documents.published ?? 0} đã duyệt`}
         />
       </div>
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <div className="space-y-4">
-          <Card className="flex min-h-[354px] flex-col p-5 lg:h-[420px]">
+      <div className="grid min-w-0 items-stretch gap-4 lg:grid-cols-2">
+        <div className="grid min-w-0 content-start gap-4 lg:grid-rows-[420px_minmax(310px,auto)]">
+          <Card className="flex min-h-[354px] min-w-0 flex-col overflow-hidden p-5 lg:h-full">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-bold text-navy">
@@ -918,7 +946,7 @@ function Overview({
             )}
           </Card>
           {overview && (
-            <Card className="p-5">
+            <Card className="flex min-h-[310px] min-w-0 flex-col overflow-hidden p-5">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-bold text-navy">
@@ -934,8 +962,8 @@ function Overview({
             </Card>
           )}
         </div>
-        <div className="space-y-4">
-          <Card className="flex flex-col p-5 lg:h-[420px]">
+        <div className="grid min-w-0 content-start gap-4 lg:grid-rows-[420px_minmax(310px,auto)]">
+          <Card className="flex min-w-0 flex-col overflow-hidden p-5 lg:h-full">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <h2 className="mr-auto text-sm font-bold text-navy">
                 Hoạt động nhóm
@@ -1028,7 +1056,7 @@ function Overview({
             </div>
           </Card>
           {overview && (
-            <Card className="p-5">
+            <Card className="flex min-h-[310px] min-w-0 flex-col overflow-hidden p-5">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-bold text-navy">
@@ -1567,7 +1595,7 @@ function DualTrend({
 function MiniTrend({ points }: { points: WorkspaceOverview["activityTrend"] }) {
   const max = Math.max(1, ...points.map((point) => point.value));
   return (
-    <div className="mt-5 flex h-32 items-end gap-1 pb-6">
+    <div className="mt-5 flex h-32 min-w-0 items-end gap-1 overflow-hidden px-2 pb-6">
       {points.map((point, index) => (
         <div
           key={`${point.label}-${index}`}
@@ -2135,7 +2163,7 @@ function Members({
                                 onRemove(member);
                               }}
                             >
-                              Loại
+                              Xóa khỏi nhóm
                             </Button>
                           )}
                       </div>
