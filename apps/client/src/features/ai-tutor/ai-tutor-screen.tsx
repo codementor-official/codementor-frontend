@@ -380,8 +380,8 @@ function WorkspaceTutor({
   }
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_280px_320px]">
-      <Card className="order-1 flex h-[max(620px,calc(100dvh-205px))] max-h-[1000px] min-w-0 flex-col overflow-hidden lg:sticky lg:top-20 lg:row-span-2 2xl:row-span-1">
+    <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,0.72fr)]">
+      <Card className="order-1 flex h-[calc(100dvh-10rem)] min-h-[36rem] min-w-0 flex-col overflow-hidden lg:sticky lg:top-0 lg:h-[calc(100dvh-6.5rem)] lg:min-h-0">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
             <span className="flex size-8 items-center justify-center rounded-full bg-primary-tint">
@@ -618,7 +618,8 @@ function WorkspaceTutor({
         </div>
       </Card>
 
-      <aside className="order-3 min-w-0 space-y-4 lg:col-start-2 lg:row-start-2 2xl:row-start-1">
+      <div className="order-2 flex min-w-0 flex-col gap-4 lg:sticky lg:top-0 lg:max-h-[calc(100dvh-6.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
+      <aside className="order-2 min-w-0 space-y-4">
         <Card className="p-4">
           <h2 className="mb-1 text-sm font-bold text-navy">Học tiếp với AI</h2>
           <p className="mb-3 text-xs leading-relaxed text-text-muted">
@@ -660,7 +661,7 @@ function WorkspaceTutor({
           {history.loading && (
             <p className="py-3 text-xs text-text-muted">Đang tải lịch sử...</p>
           )}
-          <ul className="max-h-72 divide-y divide-border-soft overflow-y-auto overscroll-contain">
+          <ul className="min-h-40 max-h-[440px] divide-y divide-border-soft overflow-y-auto overscroll-contain">
             {history.data?.items.map((chat) => (
               <li
                 key={chat.id}
@@ -707,7 +708,7 @@ function WorkspaceTutor({
         </Card>
       </aside>
 
-      <aside className="order-2 min-w-0 space-y-4 lg:col-start-2 lg:row-start-1 2xl:col-start-3">
+      <aside className="order-1 min-w-0 space-y-4">
         <Card className="p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
             <FileText className="size-4 text-primary" />
@@ -881,6 +882,7 @@ function WorkspaceTutor({
           </div>
         </Card>
       </aside>
+      </div>
       <Modal
         open={Boolean(citation)}
         onClose={() => setCitation(null)}
