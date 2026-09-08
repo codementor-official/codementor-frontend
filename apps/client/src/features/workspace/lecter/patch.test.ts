@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 import type { ExerciseDraft } from "@codementor/solve";
-import { applyPatch, changedFields, overwrites, patchEntries } from "./patch";
+import { applyPatch, changedFields, draftSummary, overwrites, patchEntries } from "./patch";
 
 const draft: ExerciseDraft = {
   slug: "two-sum",
@@ -83,5 +83,24 @@ assert.match(byKey.languages.preview, /javascript \(JavaScript\)\nconsole\.log\(
 // Ô trống thì không phải "ghi đè" — không mang bản cũ theo.
 const filling = patchEntries({ ...draft, summary: "" } as ExerciseDraft, { summary: "Tóm tắt mới" });
 assert.equal(filling[0].current, undefined);
+
+// 7. Lecter phải đọc được biểu mẫu, nếu không nó bắt người soạn chép tay đề bài vào khung chat.
+const summary = draftSummary(draft);
+assert.match(summary, /## Tiêu đề \(title\)\nTwo Sum/);
+assert.match(summary, /## Đề bài \(statement\)\nĐề cũ/);
+assert.match(summary, /## Test case \(testCases\)\n1 case \(1 công khai\)/);
+assert.ok(!summary.includes("(hints)"), "ô trống thì bỏ hẳn, đừng dạy model rằng form nào cũng rỗng");
+
+const blank: ExerciseDraft = {
+  slug: "",
+  title: "",
+  summary: "",
+  difficulty: "",
+  estimatedMinutes: "",
+  timeLimitMs: "",
+  memoryLimitKb: "",
+  content: {} as ExerciseDraft["content"],
+};
+assert.match(draftSummary(blank), /TRỐNG/, "form trống phải nói thẳng là trống");
 
 console.log("patch.test.ts OK");

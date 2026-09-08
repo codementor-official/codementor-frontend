@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { History, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { History, Plus, Sparkles, Trash2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { SideDrawer, useToast } from "@codementor/ui";
@@ -19,6 +19,7 @@ import { messageOf } from "../exercise-authoring";
 import { LecterApplyTool } from "./apply-tool";
 import { LecterComposer } from "./composer";
 import { LecterProvider } from "./context";
+import { LecterReadDraftTool } from "./read-draft-tool";
 import { LecterToolRenderers } from "./tool-renderers";
 import type { LecterDraftPatch, LecterSessionSummary } from "./types";
 
@@ -327,6 +328,7 @@ export function LecterDrawer({
             <AuthHeaderSync />
             <LecterToolRenderers />
             <LecterApplyTool />
+            <LecterReadDraftTool />
             <ChatPanel threadId={threadId} onRunEnd={load} />
           </CopilotKitProvider>
         </LecterProvider>

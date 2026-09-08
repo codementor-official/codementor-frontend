@@ -187,3 +187,42 @@ export function overwrites(draft: ExerciseDraft, patch: LecterDraftPatch): strin
     .filter((entry) => entry.current !== undefined)
     .map((entry) => entry.label);
 }
+
+/** Trần cho một lần đọc form. Một bài có 50 test case đủ sức nuốt cả cửa sổ ngữ cảnh. */
+const SUMMARY_MAX = 8000;
+
+/**
+ * Biểu mẫu đang có gì, ở dạng Lecter đọc được.
+ *
+ * Bản nháp trong studio chưa hề tồn tại phía server khi người soạn đang tạo bài mới, nên không
+ * tool đọc nào bên backend thấy được nó. Không có hàm này thì Lecter phải hỏi "bạn gửi giúp mình
+ * đề bài hiện tại" — với một biểu mẫu đang mở ngay sau lưng drawer.
+ *
+ * Bỏ ô trống thay vì in `—`: danh sách mười dòng gạch ngang chỉ dạy model rằng form nào cũng rỗng.
+ */
+export function draftSummary(draft: ExerciseDraft): string {
+  const fields: Record<string, unknown> = {
+    title: draft.title,
+    summary: draft.summary,
+    difficulty: draft.difficulty,
+    estimatedMinutes: draft.estimatedMinutes,
+    timeLimitMs: draft.timeLimitMs,
+    memoryLimitKb: draft.memoryLimitKb,
+    tagIds: draft.tagIds,
+    ...(draft.content as Record<string, unknown>),
+  };
+  const lines = Object.entries(fields)
+    .filter(([, value]) =>
+      Array.isArray(value)
+        ? value.length > 0
+        : typeof value === "string"
+          ? value.trim() !== ""
+          : value !== undefined && value !== null,
+    )
+    .map(([key, value]) => `## ${label(key)} (${key})\n${previewOf(key, value)}`);
+  if (lines.length === 0) return "Biểu mẫu đang TRỐNG — người soạn chưa nhập gì.";
+  const text = lines.join("\n\n");
+  return text.length > SUMMARY_MAX
+    ? `${text.slice(0, SUMMARY_MAX)}\n\n… (cắt bớt vì quá dài)`
+    : text;
+}

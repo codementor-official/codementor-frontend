@@ -201,3 +201,5 @@ export function LecterToolRenderers() {
 
   return null;
 }
+
+export { ToolRow };
