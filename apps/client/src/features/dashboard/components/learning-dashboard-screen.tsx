@@ -51,19 +51,17 @@ export function LearningDashboardScreen() {
           { label: 'Thời gian bài học ghi nhận', value: learning?.totalStudySeconds != null ? `${(learning.totalStudySeconds / 3600).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} giờ` : '—' },
         ]} />
         {!stats && <div className="mb-4"><DashboardUnavailable onRetry={reload} /></div>}
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="min-w-0 space-y-5">
-            <DashboardNextAction data={data} coach={coach.data} />
+        <div className="space-y-5">
+          <DashboardNextAction data={data} coach={coach.data} />
+          <DashboardCoach data={coach.data} isLoading={coach.isLoading} error={coach.error} reload={coach.reload} onDataChange={coach.replaceData} />
+          <div className="grid min-w-0 items-stretch gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.75fr)]">
             <DashboardTodayPlan items={today} />
-          </div>
-          <aside className="min-w-0 space-y-5">
             <DashboardPlanner data={data} onRetry={reload} />
-            <DashboardCoach data={coach.data} isLoading={coach.isLoading} error={coach.error} reload={coach.reload} onDataChange={coach.replaceData} />
-          </aside>
+          </div>
         </div>
         <div className="mt-6 space-y-6">
           <DashboardTrends data={learning ?? null} onRetry={reload} />
-          <div className="grid items-start gap-6 xl:grid-cols-2">
+          <div className="grid items-stretch gap-6 xl:grid-cols-2">
             <ContinueLearning data={learning ?? null} onRetry={reload} excludeHref={primary.href} />
             <DashboardAssignments data={data} onRetry={reload} excludeId={primary.kind === 'assignment' ? primary.id : undefined} />
           </div>

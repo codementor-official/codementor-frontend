@@ -3,10 +3,10 @@ import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-export function DashboardSection({ title, description, href, action = 'Xem tất cả', children }: {
-  title: string; description?: string; href?: string; action?: string; children: ReactNode;
+export function DashboardSection({ title, description, href, action = 'Xem tất cả', className = '', children }: {
+  title: string; description?: string; href?: string; action?: string; className?: string; children: ReactNode;
 }) {
-  return <section className="min-w-0">
+  return <section className={`min-w-0 ${className}`}>
     <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
       <h2 className="text-base font-bold text-navy">{title}</h2>
       {href && <Link href={href} className="text-xs font-semibold text-primary hover:underline">{action} →</Link>}
@@ -16,13 +16,13 @@ export function DashboardSection({ title, description, href, action = 'Xem tất
   </section>;
 }
 
-export function DashboardEmpty({ text, href, action }: { text: string; href?: string; action?: string }) {
-  return <Card className="border-dashed p-6 text-center">
+export function DashboardEmpty({ text, href, action, className = '' }: { text: string; href?: string; action?: string; className?: string }) {
+  return <Card className={`border-dashed p-6 text-center ${className}`}>
     <p className="text-sm text-text-muted">{text}</p>
     {href && <Button href={href} size="sm" variant="outline" className="mt-3">{action ?? 'Khám phá'}</Button>}
   </Card>;
 }
 
-export function DashboardUnavailable({ onRetry }: { onRetry: () => void }) {
-  return <Card className="border-dashed p-5" role="status"><p className="text-sm text-text-muted">Phần này chưa tải được. Bạn vẫn có thể sử dụng các phần còn lại.</p><Button size="sm" variant="outline" className="mt-3" onClick={onRetry}>Thử lại</Button></Card>;
+export function DashboardUnavailable({ onRetry, className = '' }: { onRetry: () => void; className?: string }) {
+  return <Card className={`border-dashed p-5 ${className}`} role="status"><p className="text-sm text-text-muted">Phần này chưa tải được. Bạn vẫn có thể sử dụng các phần còn lại.</p><Button size="sm" variant="outline" className="mt-3" onClick={onRetry}>Thử lại</Button></Card>;
 }

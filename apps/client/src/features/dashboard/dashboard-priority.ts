@@ -126,16 +126,18 @@ export function selectTodayPlan(
   coach: DashboardInsight | null,
   primary: DashboardAction,
 ): DashboardAction[] {
-  const candidates: DashboardAction[] = [];
+  const urgentAssignments: DashboardAction[] = [];
+  const otherAssignments: DashboardAction[] = [];
   for (let index = 0; index < (data.assignments?.length ?? 0); index += 1) {
     const action = assignmentAction(data, index);
-    if (action) candidates.push(action);
+    const dueAt = data.assignments?.[index]?.dueAt;
+    const due = dueAt ? Date.parse(dueAt) : null;
+    if (action) (due !== null && due - data.fetchedAt <= DAY ? urgentAssignments : otherAssignments).push(action);
   }
-  const learning = newestLearningAction(data);
-  if (learning) candidates.push(learning);
+  const coachSteps: DashboardAction[] = [];
   if (coach?.appliedAt) {
     for (const [index, step] of (coach.insight?.steps ?? []).entries()) {
-      candidates.push({
+      coachSteps.push({
         id: `coach:${index}:${step.href}`,
         kind: 'coach',
         title: step.title,
@@ -147,6 +149,13 @@ export function selectTodayPlan(
       });
     }
   }
+  const learning = newestLearningAction(data);
+  const candidates = [
+    ...urgentAssignments,
+    ...coachSteps,
+    ...otherAssignments,
+    ...(learning ? [learning] : []),
+  ];
   const seen = new Set([primary.href]);
   return candidates.filter((item) => {
     if (seen.has(item.href)) return false;

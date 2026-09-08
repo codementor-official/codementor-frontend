@@ -6,9 +6,9 @@ import type { DashboardData } from '../dashboard-service';
 import { DashboardSection, DashboardUnavailable } from './dashboard-section';
 
 export function DashboardAssignments({ data, onRetry, excludeId }: { data: DashboardData; onRetry: () => void; excludeId?: string }) {
-  const assignments = data.assignments?.filter((item) => item.id !== excludeId).slice(0, 4);
-  return <DashboardSection title="Bài tập nhóm cần xử lý" href="/workspace" action="Mở nhóm học tập" description="Các bài đang được giao cho bạn trong Workspace, ưu tiên bài sắp đến hạn hoặc đã quá hạn.">
-    {data.assignments === null ? <DashboardUnavailable onRetry={onRetry} /> : <Card className="overflow-hidden">
+  const assignments = data.assignments?.filter((item) => item.id !== excludeId).slice(0, 3);
+  return <DashboardSection className="flex h-full flex-col" title="Bài tập nhóm cần xử lý" href="/workspace" action="Mở nhóm học tập" description="Các bài đang được giao cho bạn trong Workspace, ưu tiên bài sắp đến hạn hoặc đã quá hạn.">
+    {data.assignments === null ? <DashboardUnavailable className="flex-1" onRetry={onRetry} /> : <Card className="flex-1 overflow-hidden">
       {!assignments?.length ? <div className="flex items-center gap-3 p-5"><CheckCircle2 className="h-6 w-6 shrink-0 text-success" /><div><p className="text-sm font-semibold text-navy">Bạn đã xử lý hết bài được giao</p><p className="mt-1 text-xs text-text-muted">Không còn bài nhóm nào ngoài ưu tiên chính đang chờ xử lý.</p></div></div> : <>
         <div className="hidden grid-cols-[minmax(0,1fr)_110px_90px] gap-3 border-b border-border-soft bg-bg px-4 py-3 text-2xs font-semibold text-text-muted sm:grid"><span>Bài tập / Nhóm</span><span>Hạn nộp</span><span>Trạng thái</span></div>
         <ul className="divide-y divide-border-soft">{assignments.map((item) => {
