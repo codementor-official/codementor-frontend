@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { useAuth } from '@/providers/auth-provider';
 import type { DashboardInsight } from '../types';
+import { DashboardCoachVisual } from './dashboard-coach-visual';
 
 interface DashboardCoachProps {
   data: DashboardInsight | null;
@@ -70,13 +71,26 @@ export function DashboardCoach({ data, isLoading, error, reload, onDataChange }:
   </div></Card>;
 
   return <>
-    <Card className={applied ? 'border-success/40 p-4' : 'p-4'}><div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <span className={`rounded-lg border p-2 ${applied ? 'border-success/30 bg-success/5 text-success' : 'border-border bg-bg text-primary'}`}>{applied ? <Pin className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}</span>
-      <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="text-sm font-bold text-navy">AI Coach</h2>{applied && <span className="rounded-full border border-success/25 bg-success/5 px-2 py-0.5 text-2xs font-bold text-success">Đã thêm vào kế hoạch</span>}</div>
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-muted">{applied && firstStep ? `Đang ưu tiên “${firstStep.title}”.` : insight?.summary ?? 'Phân tích dữ liệu học tập khi bạn yêu cầu, không tự chạy mỗi lần mở trang.'}</p>
+    <Card className={`overflow-hidden ${applied ? 'border-success/40' : 'border-primary/25'}`}>
+      <div className="grid min-w-0 md:grid-cols-[minmax(0,1fr)_240px]">
+        <div className="flex min-w-0 flex-col justify-center p-5 sm:p-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded-lg border p-2 ${applied ? 'border-success/30 bg-success/5 text-success' : 'border-border bg-bg text-primary'}`}>{applied ? <Pin className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}</span>
+            <p className="text-2xs font-bold uppercase tracking-[0.18em] text-primary">AI Coach cá nhân</p>
+            {applied && <span className="rounded-full border border-success/25 bg-success/5 px-2 py-0.5 text-2xs font-bold text-success">Đang áp dụng</span>}
+          </div>
+          <h2 className="mt-3 text-lg font-bold text-navy">Biến dữ liệu học tập thành một kế hoạch dễ hành động</h2>
+          <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-relaxed text-text-muted">{applied && firstStep ? `Ưu tiên hiện tại: “${firstStep.title}”. Các bước đã được đưa vào Kế hoạch hôm nay.` : insight?.summary ?? 'Phân tích mục tiêu, tiến độ và hoạt động gần đây khi bạn yêu cầu; không tự tạo số liệu hay tự hoàn thành nội dung.'}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button size="sm" variant={insight ? 'outline' : 'primary'} onClick={() => setDrawerOpen(true)}>{insight ? 'Xem kế hoạch AI' : 'Tạo kế hoạch với AI'} <ArrowUpRight className="h-4 w-4" /></Button>
+            <span className="text-2xs text-text-faint">Riêng tư · Chỉ chạy khi bạn yêu cầu</span>
+          </div>
+        </div>
+        <div className="hidden min-h-40 border-l border-border-soft bg-bg md:block">
+          <DashboardCoachVisual />
+        </div>
       </div>
-      <Button size="sm" variant={insight ? 'outline' : 'primary'} onClick={() => setDrawerOpen(true)}>{insight ? 'Xem phân tích' : 'Mở AI Coach'} <ArrowUpRight className="h-4 w-4" /></Button>
-    </div></Card>
+    </Card>
 
     <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="AI Coach của bạn" description="Xem đề xuất trước khi quyết định thêm vào kế hoạch hôm nay." footer={insight ? <>
       {applied ? <Button size="sm" variant="outline" disabled={action !== null} onClick={() => void runInsightAction('unapply', api.dashboard.removeAppliedInsight, 'Đã bỏ đề xuất khỏi kế hoạch hôm nay.')}>
