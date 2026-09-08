@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 import type { ExerciseDraft } from "@codementor/solve";
-import { applyPatch, changedFields, overwrites } from "./patch";
+import { applyPatch, changedFields, overwrites, patchEntries } from "./patch";
 
 const draft: ExerciseDraft = {
   slug: "two-sum",
@@ -61,5 +61,27 @@ assert.deepEqual(
   [],
   "ô rỗng thì điền vào chứ không phải ghi đè",
 );
+
+// 6. Thẻ xác nhận phải đọc được NỘI DUNG, không chỉ tên trường.
+const entries = patchEntries(draft, {
+  content: {
+    statement: "Đề mới",
+    testCases: [
+      { order: 1, input: "1", expected: "1", visibility: "public" },
+      { order: 2, input: "2", expected: "2", visibility: "hidden" },
+    ],
+    languages: [{ id: "javascript", label: "JavaScript", referenceSolution: "console.log(1)" }],
+  },
+});
+const byKey = Object.fromEntries(entries.map((entry) => [entry.key, entry]));
+assert.equal(byKey.statement.preview, "Đề mới");
+assert.equal(byKey.statement.current, "Đề cũ", "phần bị ghi đè phải mang theo bản đang có");
+assert.match(byKey.testCases.preview, /^2 case \(1 công khai\)/);
+assert.match(byKey.testCases.preview, /#2 \[hidden\] 2 → 2/);
+assert.match(byKey.languages.preview, /javascript \(JavaScript\)\nconsole\.log\(1\)/);
+
+// Ô trống thì không phải "ghi đè" — không mang bản cũ theo.
+const filling = patchEntries({ ...draft, summary: "" } as ExerciseDraft, { summary: "Tóm tắt mới" });
+assert.equal(filling[0].current, undefined);
 
 console.log("patch.test.ts OK");

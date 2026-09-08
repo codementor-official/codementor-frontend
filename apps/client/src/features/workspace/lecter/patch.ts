@@ -58,7 +58,113 @@ function label(key: string): string {
   return LABELS[key] ?? key;
 }
 
-/** Tên tiếng Việt của những phần patch này đụng tới, để thẻ xác nhận nói được nó sắp làm gì. */
+/** Một phần bị đổi, kèm thứ để đọc: nhãn, nội dung đề xuất, và bản đang có nếu bị ghi đè. */
+export interface PatchEntry {
+  key: string;
+  label: string;
+  preview: string;
+  /** Chỉ có khi ô này ĐANG có nội dung khác — tức là sắp bị ghi đè. */
+  current?: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+/** Số case công khai phải đọc được ngay, không phải đếm bằng mắt. */
+function previewTestCases(cases: unknown[]): string {
+  const items = cases.filter(isRecord);
+  const open = items.filter((item) => item.visibility === "public").length;
+  const lines = items.map((item) => {
+    const input = item.args !== undefined ? JSON.stringify(item.args) : String(item.input ?? "");
+    const expected =
+      item.expected === undefined
+        ? "—"
+        : typeof item.expected === "string"
+          ? item.expected
+          : JSON.stringify(item.expected);
+    return `#${item.order ?? "?"} [${item.visibility ?? "?"}] ${input} → ${expected}`;
+  });
+  return [`${items.length} case (${open} công khai)`, ...lines].join("\n");
+}
+
+/** Lời giải mẫu là thứ đáng đọc nhất trong cả patch: bài chấm đúng hay sai nằm ở đây. */
+function previewLanguages(languages: unknown[]): string {
+  return languages
+    .filter(isRecord)
+    .map((item) => {
+      const solution = String(item.referenceSolution ?? "").trim();
+      const head = `${item.id ?? "?"} (${item.label ?? "?"})`;
+      return `${head}\n${solution || "— chưa có lời giải mẫu —"}`;
+    })
+    .join("\n\n");
+}
+
+/**
+ * Nội dung của một phần, ở dạng đọc được bằng mắt.
+ *
+ * Không `JSON.stringify` tất cả: người soạn cần đọc đề bài và lời giải, không cần đọc dấu
+ * ngoặc. Chỉ những thứ không có hình dạng cố định mới rơi về JSON.
+ */
+export function previewOf(key: string, value: unknown): string {
+  if (value === undefined || value === null) return "—";
+  if (key === "testCases" && Array.isArray(value)) return previewTestCases(value);
+  if (key === "languages" && Array.isArray(value)) return previewLanguages(value);
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "— trống —";
+    return value
+      .map((item) => (typeof item === "string" ? `• ${item}` : `• ${JSON.stringify(item)}`))
+      .join("\n");
+  }
+  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  return String(value);
+}
+
+/**
+ * Từng phần patch này đụng tới, kèm nội dung để người soạn đọc TRƯỚC khi bấm.
+ *
+ * Một danh sách tên trường ("Đề bài, Test case, Ngôn ngữ") nói cái gì sắp đổi mà không nói đổi
+ * thành gì. Người soạn còn hai lựa chọn: bấm liều, hoặc bấm rồi mở form ra dò từng ô.
+ */
+export function patchEntries(draft: ExerciseDraft, patch: LecterDraftPatch): PatchEntry[] {
+  const current: Record<string, unknown> = {
+    title: draft.title,
+    summary: draft.summary,
+    difficulty: draft.difficulty,
+    estimatedMinutes: draft.estimatedMinutes,
+    timeLimitMs: draft.timeLimitMs,
+    memoryLimitKb: draft.memoryLimitKb,
+    tagIds: draft.tagIds,
+    ...(draft.content as Record<string, unknown>),
+  };
+  const proposed: Record<string, unknown> = {
+    ...Object.fromEntries(Object.entries(patch).filter(([key]) => key !== "content")),
+    ...(patch.content ?? {}),
+  };
+  return Object.entries(proposed)
+    .filter(([, value]) => value !== undefined)
+    .map(([key, value]) => {
+      const existing = current[key];
+      // "Ghi đè" chỉ tính khi ô ĐANG có nội dung và nội dung đó KHÁC. Điền vào ô trống thì không
+      // có gì để mất, và cảnh báo ở đó chỉ tập cho người ta thói quen bấm qua cảnh báo.
+      const filled = Array.isArray(existing)
+        ? existing.length > 0
+        : typeof existing === "string"
+          ? existing.trim() !== ""
+          : existing !== undefined && existing !== null;
+      // So sánh giá trị thô, không so bản xem trước: hai giá trị khác nhau có thể rút gọn ra
+      // cùng một dòng tóm tắt.
+      const changed = JSON.stringify(existing) !== JSON.stringify(value);
+      return {
+        key,
+        label: label(key),
+        preview: previewOf(key, value),
+        ...(filled && changed ? { current: previewOf(key, existing) } : {}),
+      };
+    });
+}
+
+/** Nhãn của những phần patch đụng tới — dòng tóm tắt trên thẻ xác nhận. */
 export function changedFields(patch: LecterDraftPatch): string[] {
   const top = Object.keys(patch).filter(
     (key) => key !== "content" && patch[key as keyof LecterDraftPatch] !== undefined,
@@ -77,23 +183,7 @@ export function changedFields(patch: LecterDraftPatch): string[] {
  * "bạn sắp mất đúng những thứ này".
  */
 export function overwrites(draft: ExerciseDraft, patch: LecterDraftPatch): string[] {
-  const filled = (value: unknown) =>
-    Array.isArray(value) ? value.length > 0 : typeof value === "string" ? value.trim() !== "" : value !== undefined && value !== null;
-  const current: Record<string, unknown> = {
-    title: draft.title,
-    summary: draft.summary,
-    tagIds: draft.tagIds,
-    ...(draft.content as Record<string, unknown>),
-  };
-  const proposed: Record<string, unknown> = {
-    ...Object.fromEntries(Object.entries(patch).filter(([key]) => key !== "content")),
-    ...(patch.content ?? {}),
-  };
-  return Object.entries(proposed)
-    .filter(([key, value]) => {
-      if (value === undefined || !(key in current)) return false;
-      if (!filled(current[key])) return false;
-      return JSON.stringify(current[key]) !== JSON.stringify(value);
-    })
-    .map(([key]) => label(key));
+  return patchEntries(draft, patch)
+    .filter((entry) => entry.current !== undefined)
+    .map((entry) => entry.label);
 }

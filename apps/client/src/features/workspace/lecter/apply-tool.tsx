@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Check, Loader2, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, Loader2, X } from "lucide-react";
 import { useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { messageOf } from "../exercise-authoring";
 import { useLecterContext } from "./context";
-import { changedFields, overwrites } from "./patch";
+import { changedFields, patchEntries, type PatchEntry } from "./patch";
 import type { LecterContentCheck, LecterDraftPatch } from "./types";
 
 /**
@@ -110,6 +110,43 @@ function useContentCheck(content: Record<string, unknown> | undefined, enabled: 
   }, [content, enabled]);
 
   return { check, error, running };
+}
+
+/**
+ * Nội dung đề xuất, gập lại.
+ *
+ * Mở sẵn thì một bài đầy đủ (đề bài + 5 test case + hai lời giải mẫu) đẩy hai cái nút xuống
+ * dưới màn hình, và người soạn phải cuộn qua thứ họ chưa muốn đọc để tìm chỗ bấm. Gập lại thì
+ * mặc định là "tin và bấm", mở ra là "đọc rồi bấm" — cả hai đều nhanh.
+ */
+function EntryDisclosure({ entry }: { entry: PatchEntry }) {
+  return (
+    <details className="group border-t border-border-soft py-1.5 first:border-t-0">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs text-navy marker:hidden">
+        <ChevronRight
+          aria-hidden="true"
+          className="size-3.5 shrink-0 text-text-muted transition-transform group-open:rotate-90"
+        />
+        <span className="font-medium">{entry.label}</span>
+        {entry.current !== undefined && (
+          <span className="text-2xs text-danger">ghi đè</span>
+        )}
+      </summary>
+      <pre className="mt-1.5 max-h-56 overflow-auto rounded-md bg-bg px-2.5 py-2 text-2xs leading-5 whitespace-pre-wrap break-words text-navy">
+        {entry.preview}
+      </pre>
+      {entry.current !== undefined && (
+        <details className="mt-1">
+          <summary className="cursor-pointer text-2xs text-text-muted">
+            Nội dung bạn đang có
+          </summary>
+          <pre className="mt-1 max-h-40 overflow-auto rounded-md bg-bg px-2.5 py-2 text-2xs leading-5 whitespace-pre-wrap break-words text-text-muted">
+            {entry.current}
+          </pre>
+        </details>
+      )}
+    </details>
+  );
 }
 
 function CheckLine({
@@ -240,7 +277,8 @@ function ApplyCard({
   // Đọc context TRONG thẻ, không đóng gói vào closure lúc đăng ký tool: thẻ này có thể sống qua
   // nhiều lần người soạn sửa form, và một `draft` cũ sẽ báo sai chỗ nào sắp bị ghi đè.
   const { draft, applyPatch, editingSaved } = useLecterContext();
-  const clashes = overwrites(draft, patch);
+  const entries = patchEntries(draft, patch);
+  const clashes = entries.filter((entry) => entry.current !== undefined).map((entry) => entry.label);
   const { check, error, running } = useContentCheck(
     patch.content as Record<string, unknown> | undefined,
     true,
@@ -250,12 +288,20 @@ function ApplyCard({
     <div className="my-2 rounded-lg border border-border bg-surface p-3">
       <p className="text-sm font-semibold text-navy">Đưa vào biểu mẫu soạn bài</p>
       <p className="mt-1 text-xs text-text-muted">
-        Thay đổi: {fields.join(", ") || "không có gì"}
+        Thay đổi {entries.length} phần: {fields.join(", ") || "không có gì"}
       </p>
       {editingSaved && (
         <p className="mt-1 text-xs text-text-muted">
           Bài này đã đăng trong nhóm — thay đổi chỉ có hiệu lực sau khi bạn bấm Lưu.
         </p>
+      )}
+
+      {entries.length > 0 && (
+        <div className="mt-2 rounded-md border border-border-soft px-2.5 py-1">
+          {entries.map((entry) => (
+            <EntryDisclosure entry={entry} key={entry.key} />
+          ))}
+        </div>
       )}
 
       <div className="mt-2 border-t border-border-soft pt-2">
