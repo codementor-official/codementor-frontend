@@ -15,11 +15,12 @@ async function section<T>(load: () => Promise<T>): Promise<T | null> {
 }
 
 export async function loadDashboard() {
-  const [learning, assignments, stats, preferences, topics] = await Promise.all([
+  const [profile, learning, assignments, stats, preferences, topics] = await Promise.all([
+    section(api.me),
     section(api.dashboard.learning), section(api.dashboard.assignments),
     section(api.account.stats), section(api.account.preferences), section(api.exercises.topics),
   ]);
-  return { learning, assignments, stats, preferences, topics, fetchedAt: Date.now() };
+  return { profile, learning, assignments, stats, preferences, topics, fetchedAt: Date.now() };
 }
 
 export type DashboardData = Awaited<ReturnType<typeof loadDashboard>>;

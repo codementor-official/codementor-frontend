@@ -3,8 +3,6 @@ import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-export type DashboardViewMode = 'table' | 'cards';
-
 export function DashboardSection({ title, description, href, action = 'Xem tất cả', children }: {
   title: string; description?: string; href?: string; action?: string; children: ReactNode;
 }) {
