@@ -31,6 +31,7 @@ export function SideDrawer({
   children,
   footer,
   width = "default",
+  showHeader = true,
 }: {
   open: boolean;
   onClose: () => void;
@@ -39,6 +40,12 @@ export function SideDrawer({
   children: ReactNode;
   footer?: ReactNode;
   width?: "default" | "wide";
+  /**
+   * Tắt thanh tiêu đề dựng sẵn. Dành cho drawer đã có thanh công cụ riêng (chat Lecter):
+   * hai hàng đầu trang chồng lên nhau thì chỉ tốn chiều cao. `title` vẫn bắt buộc — nó là
+   * nhãn cho trình đọc màn hình, và người tắt header phải tự đặt một nút đóng.
+   */
+  showHeader?: boolean;
 }) {
   // `width` giờ chỉ là bề rộng KHỞI ĐIỂM; người dùng kéo được và lựa chọn đó được nhớ lại.
   // Nhớ theo biến thể chứ không nhớ chung một số: drawer soạn bài và drawer xem chi tiết
@@ -128,6 +135,7 @@ export function SideDrawer({
           />
         </div>
 
+        {showHeader && (
         <header className="sticky top-0 z-10 flex shrink-0 items-start gap-4 border-b border-border bg-card px-4 py-3 sm:px-5">
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-foreground">{title}</h2>
@@ -146,6 +154,7 @@ export function SideDrawer({
             <X className="h-4 w-4" />
           </button>
         </header>
+        )}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
           {children}
         </div>

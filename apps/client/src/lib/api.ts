@@ -9,6 +9,10 @@ import type {
 } from "@codementor/solve";
 import { apiBaseUrl } from "@/lib/env";
 import type { AiStatus, AiDocument, AiTurn, AiConversation, AiConversationSummary, AiPage } from "@/features/ai-tutor/types";
+import type {
+  LecterContentCheck,
+  LecterSessionSummary,
+} from "@/features/workspace/lecter/types";
 import type { NotificationPage } from "@/types/notification";
 import type { RecommendationList } from "@/types/recommendation";
 import type { DashboardInsight, LearningDashboard, PendingAssignment } from '@/features/dashboard/types';
@@ -84,6 +88,15 @@ let readAccessToken: () => string | null = () => null;
 /** Called once by the auth provider; keeps the client free of React imports. */
 export function setAccessTokenReader(reader: () => string | null): void {
   readAccessToken = reader;
+}
+
+/**
+ * Token của phiên popup, hoặc `null` với phiên đăng nhập bằng mật khẩu (token nằm trong cookie
+ * HttpOnly). Chỉ những nơi KHÔNG đi qua `request()` mới cần nó — hiện chỉ có SSE của Lecter,
+ * và ở đó `null` là hợp lệ: tầng Node `/api/copilotkit` gắn token hộ từ cookie.
+ */
+export function currentAccessToken(): string | null {
+  return readAccessToken();
 }
 
 /** Phiên Google/Facebook: token nằm trong tab, gọi thẳng gateway như trước. */
@@ -835,6 +848,37 @@ export const api = {
           body: { permissions },
         },
       ),
+  },
+
+  /**
+   * Lecter trong nhóm học — ai-service, KHÔNG qua Nest.
+   *
+   * Lượt chat KHÔNG đi qua đây: nó là SSE và đi qua `/api/copilotkit/w/<slug>` để tầng Node
+   * gắn token hộ phiên đăng nhập bằng mật khẩu. Ba lời gọi dưới đây là REST thường nên dùng
+   * chung đường `request()` như mọi thứ khác — nhánh `direct`/`viaBff` tự lo hai loại phiên.
+   */
+  lecter: {
+    sessions: (slug: string) =>
+      unwrap<{ items: LecterSessionSummary[] }>(
+        `/ai/lecter/workspace/${encodeURIComponent(slug)}/sessions`,
+        { cache: "no-store" },
+      ),
+    removeSession: (slug: string, threadId: string) =>
+      unwrap<void>(
+        `/ai/lecter/workspace/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(threadId)}`,
+        { method: "DELETE" },
+      ),
+    /**
+     * Chạy CHÍNH lời giải nằm trong `content` qua bộ chấm, ngay trước khi người soạn bấm áp
+     * vào form. `validate_exercise_content` của agent chỉ thấy `referenceSolution` là một
+     * chuỗi không rỗng, còn `run_solution` thì chạy đoạn code agent tự chọn — hai thứ đó đã
+     * từng khác nhau.
+     */
+    checkExerciseContent: (content: Record<string, unknown>) =>
+      unwrap<LecterContentCheck>("/ai/lecter/check/exercise-content", {
+        method: "POST",
+        body: { content },
+      }),
   },
 
   /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Sparkles } from "lucide-react";
 import {
@@ -28,28 +28,20 @@ import {
 import { Group, Panel } from "react-resizable-panels";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Pagination } from "@/components/ui/pagination";
 import { api } from "@/lib/api";
 import { messageOf, slugifyExercise, toLocalInput } from "../exercise-authoring";
 import type {
-  WorkspaceContentPage,
   WorkspaceDetail,
-  WorkspaceDocument,
   WorkspaceExerciseDetail,
   WorkspaceMember,
 } from "../types";
+import { LecterDrawer } from "../lecter/lecter-drawer";
+import { applyPatch } from "../lecter/patch";
+import type { LecterDraftPatch } from "../lecter/types";
 import { WorkspaceMemberSelector } from "./workspace-member-selector";
 
 const inputClass =
   "rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy";
-
-const EMPTY_DOCUMENTS: WorkspaceContentPage<WorkspaceDocument> = {
-  items: [],
-  page: 1,
-  limit: 8,
-  total: 0,
-  totalPages: 0,
-};
 
 const EMPTY_CONTENT: ExerciseContent = {
   statement: "",
@@ -251,21 +243,22 @@ export function WorkspaceExerciseStudio({
     dirty: baseline.current !== null && serialized !== baseline.current,
   });
 
-  const applyAiDraft = (generated: {
-    title: string;
-    summary: string;
-    difficulty: "easy" | "medium" | "hard";
-    content: Record<string, unknown>;
-  }) => {
-    setTitle(generated.title);
-    setSummary(generated.summary);
-    setDifficulty(generated.difficulty);
-    setStatement(String(generated.content.statement ?? ""));
-    setExerciseSlug(slugifyExercise(generated.title));
-    setStudioContent(generated.content as ExerciseContent);
+  /**
+   * Áp một đề nghị của Lecter vào form — TỪNG PHẦN, không thay trọn gói.
+   *
+   * Không lưu gì cả: người soạn vẫn bấm "Lưu bài tập" như mọi lần. Đó là chủ ý — bài tập nhóm
+   * không có trạng thái nháp (`createExercise` đặt luôn `status = published` rồi bắn thông báo
+   * cho thành viên được giao), nên biểu mẫu này chính là vùng nháp duy nhất đang có.
+   *
+   * Drawer KHÔNG tự đóng: người soạn thường muốn nói tiếp ("thêm một case biên nữa"), và đóng
+   * lại sau mỗi lần áp buộc họ mở lại rồi tìm lại hội thoại.
+   */
+  const applyLecterPatch = (patch: LecterDraftPatch) => {
+    const next = applyPatch(draft, patch);
+    updateDraft(patch.title ? { ...next, slug: slugifyExercise(patch.title) } : next);
     setGeneratedByAi(true);
-    setAiOpen(false);
     setTab("content");
+    toast.success("Đã đưa vào biểu mẫu. Bấm Lưu khi bạn thấy ổn.");
   };
 
   const save = async () => {
@@ -365,7 +358,7 @@ export function WorkspaceExerciseStudio({
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setAiOpen(true)}>
               <Sparkles className="h-3.5 w-3.5" />
-              AI từ tài liệu
+              Lecter
             </Button>
             <Button
               size="sm"
@@ -457,184 +450,14 @@ export function WorkspaceExerciseStudio({
           </span>
         </p>
       </Modal>
-      <AiDraftModal
+      <LecterDrawer
         open={aiOpen}
         slug={slug}
-        difficulty={difficulty}
+        draft={draft}
+        editingSaved={Boolean(exerciseId)}
         onClose={() => setAiOpen(false)}
-        onApply={applyAiDraft}
+        onApply={applyLecterPatch}
       />
     </>
-  );
-}
-
-/** Sinh bản nháp từ tài liệu ĐÃ DUYỆT của workspace. Kết quả vẫn phải rà soát trong form. */
-function AiDraftModal({
-  open,
-  slug,
-  difficulty,
-  onClose,
-  onApply,
-}: {
-  open: boolean;
-  slug: string;
-  difficulty: "easy" | "medium" | "hard";
-  onClose: () => void;
-  onApply: (draft: {
-    title: string;
-    summary: string;
-    difficulty: "easy" | "medium" | "hard";
-    content: Record<string, unknown>;
-  }) => void;
-}) {
-  const toast = useToast();
-  const [prompt, setPrompt] = useState("");
-  const [page, setPage] = useState(1);
-  const [query, setQuery] = useState("");
-  const [documents, setDocuments] = useState(EMPTY_DOCUMENTS);
-  const [documentsLoading, setDocumentsLoading] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-
-  const load = useCallback(async () => {
-    setDocumentsLoading(true);
-    try {
-      setDocuments(
-        await api.workspaces.documents(slug, {
-          page,
-          limit: 8,
-          q: query.trim() || undefined,
-          status: "published",
-        }),
-      );
-    } catch (error) {
-      toast.error(messageOf(error, "Không thể tải tài liệu đã duyệt."));
-    } finally {
-      setDocumentsLoading(false);
-    }
-  }, [page, query, slug, toast]);
-
-  useEffect(() => {
-    if (!open) return;
-    const timer = window.setTimeout(() => void load(), 200);
-    return () => window.clearTimeout(timer);
-  }, [open, load]);
-
-  const generate = async () => {
-    setBusy(true);
-    try {
-      const generated = await api.workspaces.generateWorkspaceExerciseDraft(slug, {
-        prompt: prompt.trim(),
-        difficulty,
-        documentIds: selectedIds,
-      });
-      onApply(generated);
-      toast.success(
-        `Đã tạo bản nháp từ ${generated.sourceDocuments.length} tài liệu đã duyệt`,
-      );
-    } catch (error) {
-      toast.error(messageOf(error));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Tạo bản nháp từ tài liệu"
-      description="Hệ thống chỉ đọc tài liệu đã duyệt của Workspace và trả về bản nháp để bạn rà soát."
-      width="lg"
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose} disabled={busy}>
-            Hủy
-          </Button>
-          <Button
-            onClick={() => void generate()}
-            disabled={busy || !prompt.trim() || selectedIds.length === 0}
-          >
-            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Tạo bản nháp
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-3">
-        <div className="rounded-lg border border-border-soft bg-bg/40 p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="relative min-w-52 flex-1">
-              <span className="sr-only">Tìm tài liệu đã duyệt</span>
-              <input
-                className={`${inputClass} h-9 w-full py-1.5 text-xs`}
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Tìm tài liệu đã duyệt..."
-              />
-            </label>
-            <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-              {selectedIds.length} tài liệu đã chọn
-            </span>
-          </div>
-          <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-            {documentsLoading ? (
-              <p className="col-span-full py-4 text-center text-xs text-text-faint">
-                Đang tải tài liệu...
-              </p>
-            ) : documents.items.length === 0 ? (
-              <p className="col-span-full py-4 text-center text-xs text-text-faint">
-                Không tìm thấy tài liệu đã duyệt.
-              </p>
-            ) : (
-              documents.items.map((document) => {
-                const checked = selectedIds.includes(document.id);
-                return (
-                  <label
-                    key={document.id}
-                    className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-xs ${checked ? "border-primary bg-primary/5" : "border-border-soft"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() =>
-                        setSelectedIds((current) =>
-                          current.includes(document.id)
-                            ? current.filter((id) => id !== document.id)
-                            : [...current, document.id],
-                        )
-                      }
-                    />
-                    <span className="min-w-0 flex-1 truncate font-medium text-navy">
-                      {document.title}
-                    </span>
-                    <span className="shrink-0 text-text-faint">{document.docType}</span>
-                  </label>
-                );
-              })
-            )}
-          </div>
-          {documents.totalPages > 1 && (
-            <div className="mt-2">
-              <Pagination
-                page={page}
-                pageCount={documents.totalPages}
-                onChange={setPage}
-                label="Phân trang tài liệu đã duyệt"
-              />
-            </div>
-          )}
-        </div>
-        <textarea
-          className={`${inputClass} min-h-28 w-full resize-y`}
-          value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
-          placeholder="Ví dụ: Tạo bài tập BFS tìm đường đi ngắn nhất..."
-        />
-      </div>
-    </Modal>
   );
 }
