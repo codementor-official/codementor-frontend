@@ -28,6 +28,7 @@ export interface UserSettings {
   systemAnnouncements: boolean;
   learningInactivityDays: number;
   workspaceNotifications: boolean;
+  miniChatEnabled: boolean;
   learningReminders: boolean;
   weeklyDigest: boolean;
   publicProfile: boolean;

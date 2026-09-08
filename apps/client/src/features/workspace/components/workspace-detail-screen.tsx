@@ -57,7 +57,7 @@ import {
   WorkspaceExercisesTab,
 } from "./workspace-content-tabs";
 import { useWorkspaceChat } from "../chat/use-workspace-chat";
-import { WorkspaceChatTab, WorkspaceMiniChat } from "../chat/workspace-chat";
+import { WorkspaceChatTab } from "../chat/workspace-chat";
 import { ReportButton } from "@/features/reports/report-button";
 
 type Tab =
@@ -615,13 +615,6 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           </>
         }
       ><label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do xóa khỏi nhóm <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={removalReason} onChange={(event) => setRemovalReason(event.target.value)} placeholder="Lý do này sẽ được gửi cho thành viên…" className="resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm font-normal text-navy" /></label></ConfirmDialog>
-      {activeTab !== "chat" && (
-        <WorkspaceMiniChat
-          workspaceName={detail.name}
-          chat={chat}
-          onOpenFull={() => selectTab("chat")}
-        />
-      )}
     </div>
   );
 }

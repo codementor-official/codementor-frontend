@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { Modal } from "@codementor/ui";
+import { BrandLogo } from "@/components/brand-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -98,7 +99,7 @@ export function WorkspaceChatTab({
 
   return (
     <Card className="flex h-[calc(100dvh-10.5rem)] min-h-[34rem] max-h-[calc(100dvh-7rem)] w-full min-w-0 flex-col overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
         <div>
           <div className="flex items-center gap-2">
             <MessageCircle className="h-4 w-4 text-primary" />
@@ -163,11 +164,11 @@ export function WorkspaceChatTab({
       </div>
 
       {chat.error && (
-        <div className="border-t border-danger/20 bg-danger-tint px-4 py-2 text-xs text-danger">
+        <div className="shrink-0 border-t border-danger/20 bg-danger-tint px-4 py-2 text-xs text-danger">
           {chat.error}
         </div>
       )}
-      {attachmentError && <div role="alert" className="border-t border-danger/20 bg-danger-tint px-4 py-2 text-xs text-danger">{attachmentError}</div>}
+      {attachmentError && <div role="alert" className="shrink-0 border-t border-danger/20 bg-danger-tint px-4 py-2 text-xs text-danger">{attachmentError}</div>}
       <Composer
         value={draft}
         onChange={setDraft}
@@ -189,12 +190,20 @@ export function WorkspaceMiniChat({
   workspaceName,
   chat,
   onOpenFull,
+  workspaces,
+  selectedSlug,
+  onSelectWorkspace,
+  onClose,
 }: {
   workspaceName: string;
   chat: WorkspaceChatState;
   onOpenFull: () => void;
+  workspaces: Array<{ slug: string; name: string }>;
+  selectedSlug: string;
+  onSelectWorkspace: (slug: string) => void;
+  onClose: () => void;
 }) {
-  const [state, setState] = useState<"collapsed" | "open" | "closed">("collapsed");
+  const [state, setState] = useState<"collapsed" | "open">("collapsed");
   const [draft, setDraft] = useState("");
   const recent = useMemo(() => chat.messages.slice(-6), [chat.messages]);
   const setMiniVisible = chat.setMiniVisible;
@@ -204,23 +213,15 @@ export function WorkspaceMiniChat({
     return () => setMiniVisible(false);
   }, [setMiniVisible, state]);
 
-  if (state === "closed") return null;
   if (state === "collapsed") {
     return (
-      <button
-        type="button"
-        onClick={() => setState("open")}
-        className="fixed bottom-5 right-5 z-30 flex h-12 items-center gap-2 rounded-full border border-primary/40 bg-navy px-4 text-sm font-semibold text-on-ink shadow-lg transition-colors hover:bg-ink"
-        aria-label="Mở chat nhóm"
-      >
-        <MessageCircle className="h-5 w-5 text-primary" />
-        Chat nhóm
-        {chat.unreadCount > 0 && (
-          <span className="notification-badge flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">
-            {Math.min(chat.unreadCount, 99)}
-          </span>
-        )}
-      </button>
+      <div className="fixed bottom-5 right-5 z-30 flex items-center gap-1.5">
+        <button type="button" onClick={() => setState("open")} className="relative flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface shadow-lg transition-colors hover:border-primary" aria-label={`Mở chat nhóm ${workspaceName}`} title={`Chat · ${workspaceName}`}>
+          <BrandLogo compact size="sm" />
+          {chat.unreadCount > 0 && <span className="notification-badge absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-2xs font-bold">{Math.min(chat.unreadCount, 99)}</span>}
+        </button>
+        <button type="button" onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-surface text-text-faint shadow hover:border-danger/40 hover:text-danger" aria-label="Tắt chat nhóm thu nhỏ" title="Tắt chat nhóm thu nhỏ"><X className="h-3.5 w-3.5" /></button>
+      </div>
     );
   }
 
@@ -232,18 +233,20 @@ export function WorkspaceMiniChat({
 
   return (
     <Card className="fixed bottom-5 right-5 z-30 flex h-[500px] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden shadow-xl transition-[height,width,opacity] duration-300">
-      <div className="flex items-center gap-2 border-b border-border bg-navy px-3 py-2.5 text-on-ink">
-        <MessageCircle className="h-4 w-4 text-primary" />
+      <div className="flex items-center gap-2 border-b border-border bg-surface px-3 py-2.5 text-navy">
+        <BrandLogo compact size="sm" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-bold">{workspaceName}</p>
-          <p className="text-2xs text-on-ink/60">
+          <select value={selectedSlug} onChange={(event) => onSelectWorkspace(event.target.value)} aria-label="Chọn nhóm để trò chuyện" className="block w-full truncate border-0 bg-transparent p-0 text-xs font-bold text-navy">
+            {workspaces.map((workspace) => <option key={workspace.slug} value={workspace.slug}>{workspace.name}</option>)}
+          </select>
+          <p className="text-2xs text-text-faint">
             {chat.connected ? "Sẵn sàng trò chuyện" : "Đang kết nối lại"}
           </p>
         </div>
         <button
           type="button"
           onClick={onOpenFull}
-          className="rounded p-1 text-on-ink/70 hover:bg-on-ink/10 hover:text-on-ink"
+          className="rounded p-1 text-text-muted hover:bg-bg hover:text-primary"
           aria-label="Mở chat đầy đủ"
         >
           <ExternalLink className="h-3.5 w-3.5" />
@@ -251,16 +254,16 @@ export function WorkspaceMiniChat({
         <button
           type="button"
           onClick={() => setState("collapsed")}
-          className="rounded p-1 text-on-ink/70 hover:bg-on-ink/10 hover:text-on-ink"
+          className="rounded p-1 text-text-muted hover:bg-bg hover:text-primary"
           aria-label="Thu nhỏ chat"
         >
           <Minimize2 className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
-          onClick={() => setState("closed")}
-          className="rounded p-1 text-on-ink/70 hover:bg-on-ink/10 hover:text-on-ink"
-          aria-label="Đóng chat"
+          onClick={onClose}
+          className="rounded p-1 text-text-muted hover:bg-danger-tint hover:text-danger"
+          aria-label="Tắt chat nhóm thu nhỏ"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -285,8 +288,9 @@ export function WorkspaceMiniChat({
                     </span>
                   </div>
                   <p className="mt-0.5 line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-text-muted">
-                    {message.deletedAt ? "Tin nhắn đã bị xóa" : message.content}
+                    {message.deletedAt ? "Tin nhắn đã bị xóa" : messagePreview(message.content ?? "")}
                   </p>
+                  {message.updatedAt !== message.createdAt && !message.deletedAt && <span className="text-2xs text-text-faint">Đã sửa</span>}
                 </div>
               </div>
             ))}
@@ -322,6 +326,7 @@ function MessageRow({
   const [draft, setDraft] = useState(message.content ?? "");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const canDelete = !message.deletedAt && (mine || moderator);
+  const canEdit = mine && !message.deletedAt && !isAttachmentMessage(message.content ?? "");
 
   const save = async () => {
     if (await onUpdate(message.id, draft)) setEditing(false);
@@ -373,7 +378,7 @@ function MessageRow({
         </div>
         {!editing && !message.deletedAt && (mine || canDelete) && (
           <div className={`mt-1 flex gap-1 ${mine ? "justify-end" : ""}`}>
-            {mine && (
+            {canEdit && (
               <button
                 type="button"
                 onClick={() => setEditing(true)}
@@ -426,7 +431,7 @@ function Composer({
   attaching?: boolean;
 }) {
   return (
-    <div className={`${onAttach ? "grid grid-cols-[2.5rem_minmax(0,1fr)_auto]" : "flex"} min-w-0 items-end gap-2 border-t border-border bg-surface ${compact ? "p-2.5" : "p-3 sm:p-4"}`}>
+    <div className={`${onAttach ? "grid grid-cols-[2.5rem_minmax(0,1fr)_auto]" : "flex"} relative z-10 min-w-0 shrink-0 items-end gap-2 border-t border-border bg-surface ${compact ? "p-2.5" : "px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pt-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"}`}>
       {onAttach && <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border text-text-muted hover:border-primary hover:text-primary" aria-label="Đính kèm file hoặc hình ảnh" title="Đính kèm file hoặc hình ảnh">{attaching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}<input type="file" className="sr-only" disabled={attaching || sending} accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv,.zip" onChange={(event) => { const file = event.target.files?.[0]; if (file) onAttach(file); event.target.value = ""; }} /></label>}
       <textarea
         value={value}
@@ -444,6 +449,7 @@ function Composer({
       />
       <Button
         size={compact ? "sm" : "md"}
+        className="shrink-0"
         onClick={onSubmit}
         disabled={sending || !value.trim()}
         aria-label="Gửi tin nhắn"
@@ -545,4 +551,13 @@ function formatTime(value: string) {
 
 function initials(value: string) {
   return value.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase();
+}
+
+export function isAttachmentMessage(content: string) {
+  return /^(?:🖼️|📎)\s+[^\r\n]+\r?\nhttps?:\/\/\S+$/u.test(content.trim());
+}
+
+function messagePreview(content: string) {
+  if (isAttachmentMessage(content)) return content.split(/\r?\n/, 1)[0];
+  return content;
 }

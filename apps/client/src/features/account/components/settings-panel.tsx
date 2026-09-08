@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Eye, MonitorSmartphone, RotateCcw, ShieldCheck } from "lucide-react";
+import { Bell, Eye, MessageCircle, MonitorSmartphone, RotateCcw, ShieldCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { useThemeStore } from "@/lib/store/theme-store";
 import type { UserSettings } from "@/features/account/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@codementor/ui";
+import { announceMiniChatSetting } from "@/features/workspace/chat/mini-chat-preference";
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
@@ -88,6 +89,7 @@ export function SettingsPanel() {
       setSaved(updated);
       setDraft(updated);
       setTheme(updated.theme);
+      announceMiniChatSetting(updated.miniChatEnabled);
       toast.success("Đã lưu cài đặt tài khoản.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể lưu cài đặt.");
@@ -104,6 +106,7 @@ export function SettingsPanel() {
       setSaved(defaults);
       setDraft(defaults);
       setTheme(defaults.theme);
+      announceMiniChatSetting(defaults.miniChatEnabled);
       toast.success("Đã đặt lại cài đặt mặc định.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể đặt lại cài đặt.");
@@ -165,6 +168,10 @@ export function SettingsPanel() {
               </button>
             ))}
           </div>
+          <div className="mt-4 border-t border-border-soft">
+            <SettingRow title="Chat nhóm thu nhỏ" description="Hiển thị nút chat ở góc màn hình để trò chuyện với các Workspace đã tham gia từ mọi trang." checked={draft.miniChatEnabled} onChange={() => patch("miniChatEnabled", !draft.miniChatEnabled)} />
+          </div>
+          <p className="flex items-center gap-1.5 text-2xs text-text-faint"><MessageCircle className="h-3.5 w-3.5" /> Nếu đóng nút chat ở góc màn hình, bạn có thể bật lại tại đây.</p>
         </Card>
         <Card className="p-5 sm:p-6">
           <h2 className="flex items-center gap-2 text-base font-bold text-navy"><ShieldCheck className="h-4 w-4 text-primary" /> Tài khoản & bảo mật</h2>

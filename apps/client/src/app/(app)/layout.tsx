@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 import { AppContent } from "@/components/app-content";
 import { RequireAuth } from "@/components/require-auth";
 import { EmailVerificationBanner } from "@/features/account/components/email-verification";
+import { WorkspaceChatLauncher } from "@/features/workspace/chat/workspace-chat-launcher";
 
 /**
  * Mọi trang trong nhóm này đều cần phiên đăng nhập, nên cổng đặt ở layout chứ không rải
@@ -30,6 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </AppContent>
       </div>
       <OnboardingModal />
+      <Suspense fallback={null}><WorkspaceChatLauncher /></Suspense>
     </div>
   );
 }
