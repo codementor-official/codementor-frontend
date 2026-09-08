@@ -149,8 +149,6 @@ function CheckLine({
 }
 
 export function LecterApplyTool() {
-  const { draft, applyPatch, editingSaved } = useLecterContext();
-
   useHumanInTheLoop(
     {
       name: "apply_exercise_draft",
@@ -175,7 +173,6 @@ export function LecterApplyTool() {
 
         const patch = args as LecterDraftPatch;
         const fields = changedFields(patch);
-        const clashes = overwrites(draft, patch);
 
         // Đã xử lý xong, nạp lại từ lịch sử: KHÔNG vẽ lại nút, nếu không thì mở lại hội thoại cũ
         // là một hàng nút "Đưa vào form" cho những đề xuất đã áp từ hôm trước.
@@ -203,16 +200,11 @@ export function LecterApplyTool() {
 
         return (
           <ApplyCard
-            clashes={clashes}
-            editingSaved={editingSaved}
             fields={fields}
             patch={patch}
-            onApply={() => {
-              applyPatch(patch);
-              void respond?.(
-                JSON.stringify({ outcome: "applied", fields, note: APPLIED_NOTE }),
-              );
-            }}
+            onApplied={() =>
+              void respond?.(JSON.stringify({ outcome: "applied", fields, note: APPLIED_NOTE }))
+            }
             onReject={() =>
               void respond?.(
                 JSON.stringify({
@@ -225,27 +217,30 @@ export function LecterApplyTool() {
         );
       },
     },
-    [draft, applyPatch, editingSaved],
+    // Deps RỖNG có chủ đích. `useFrontendTool` gỡ rồi đăng ký lại tool mỗi lần mảng này đổi, và
+    // bản nháp studio đổi theo TỪNG PHÍM GÕ — đăng ký lại giữa lúc một lượt đang chờ người dùng
+    // bấm nút sẽ huỷ chính lời hứa đang giữ lượt đó. Giá trị mới lấy qua context bên trong thẻ.
+    [],
   );
 
   return null;
 }
 
 function ApplyCard({
-  clashes,
-  editingSaved,
   fields,
   patch,
-  onApply,
+  onApplied,
   onReject,
 }: {
-  clashes: string[];
-  editingSaved: boolean;
   fields: string[];
   patch: LecterDraftPatch;
-  onApply: () => void;
+  onApplied: () => void;
   onReject: () => void;
 }) {
+  // Đọc context TRONG thẻ, không đóng gói vào closure lúc đăng ký tool: thẻ này có thể sống qua
+  // nhiều lần người soạn sửa form, và một `draft` cũ sẽ báo sai chỗ nào sắp bị ghi đè.
+  const { draft, applyPatch, editingSaved } = useLecterContext();
+  const clashes = overwrites(draft, patch);
   const { check, error, running } = useContentCheck(
     patch.content as Record<string, unknown> | undefined,
     true,
@@ -275,7 +270,14 @@ function ApplyCard({
       )}
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" onClick={onApply} disabled={running}>
+        <Button
+          size="sm"
+          disabled={running}
+          onClick={() => {
+            applyPatch(patch);
+            onApplied();
+          }}
+        >
           Đưa vào form
         </Button>
         <Button size="sm" variant="outline" onClick={onReject}>

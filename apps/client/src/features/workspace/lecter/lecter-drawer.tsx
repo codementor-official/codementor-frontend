@@ -19,6 +19,7 @@ import { messageOf } from "../exercise-authoring";
 import { LecterApplyTool } from "./apply-tool";
 import { LecterComposer } from "./composer";
 import { LecterProvider } from "./context";
+import { LecterToolRenderers } from "./tool-renderers";
 import type { LecterDraftPatch, LecterSessionSummary } from "./types";
 
 /** Cùng tên với `Capability.agent_id` ở ai-service và với `AGENT_ID` của route runtime. */
@@ -218,7 +219,11 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
         }}
         welcomeScreen={false}
       />
-      {empty && !running && <Welcome />}
+      {/* Chỉ xét số tin nhắn, KHÔNG xét `isRunning`: lúc mount, CopilotChat gọi `connect` và cờ
+          đó bật lên vài trăm mili giây — đủ để màn hình rỗng nuốt mất phần giới thiệu và thay
+          bằng một cái spinner không giải thích gì. Lượt thật thì tin nhắn của người soạn vào
+          `messages` ngay, nên `empty` tự tắt đúng lúc. */}
+      {empty && <Welcome />}
     </div>
   );
 }
@@ -320,6 +325,7 @@ export function LecterDrawer({
             {/* Trước <ChatPanel>: effect của con chạy theo thứ tự khai báo, header phải có
                 trước lần connect đầu tiên. */}
             <AuthHeaderSync />
+            <LecterToolRenderers />
             <LecterApplyTool />
             <ChatPanel threadId={threadId} onRunEnd={load} />
           </CopilotKitProvider>
