@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 /** Trần chiều cao: quá mức này thì textarea tự cuộn, không đẩy khung chat ra khỏi màn hình. */
 const MAX_HEIGHT = 160;
@@ -39,10 +40,11 @@ export function CodeyComposer({
   };
 
   return (
-    <div className="shrink-0 border-t border-border-soft p-2.5">
-      {/* Vòng tiêu điểm nằm trên chính textarea (luật nền ở globals.css), không giả lập bằng
-          `focus-within` trên khung ngoài — khung ngoài không phải thứ nhận bàn phím. */}
-      <div className="flex items-end gap-2 rounded-lg border border-border bg-bg px-2.5 py-2">
+    /* Khuôn của composer chat trong repo (`workspace-chat.tsx`): chính textarea là ô có viền,
+       nút gửi đứng cạnh. Trước đây tôi bọc cả hai trong một khung có viền nữa — thành ra vòng
+       tiêu điểm của textarea vẽ một hộp cam LỒNG trong hộp xám, trông như báo lỗi. */
+    <div className="shrink-0 border-t border-border-soft bg-surface p-2.5">
+      <div className="flex items-end gap-2">
         <textarea
           ref={ref}
           rows={1}
@@ -57,19 +59,27 @@ export function CodeyComposer({
             event.preventDefault();
             submit();
           }}
-          placeholder="Hỏi Codey… (Shift+Enter để xuống dòng)"
-          className="max-h-40 min-w-0 flex-1 resize-none rounded-sm bg-transparent text-xs leading-5 text-navy placeholder:text-text-faint disabled:opacity-60"
+          placeholder="Hỏi Codey…"
+          className="max-h-40 min-h-9 min-w-0 flex-1 resize-none rounded-lg border border-border bg-bg px-3 py-2 text-xs leading-5 text-navy placeholder:text-text-faint focus:border-primary disabled:opacity-60"
         />
-        <button
-          type="button"
+        <Button
+          size="sm"
           aria-label="Gửi câu hỏi cho Codey"
           onClick={submit}
           disabled={disabled || !value.trim()}
-          className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-on-ink transition-opacity hover:bg-primary-hover disabled:opacity-30"
+          className="size-9 shrink-0 !px-0"
         >
-          <ArrowUp aria-hidden="true" className="size-3.5" />
-        </button>
+          <ArrowUp aria-hidden="true" className="size-4" />
+        </Button>
       </div>
+      {/* Hai câu này ra khỏi placeholder: placeholder dài bị cắt ngay khi ô hẹp lại, và câu thứ
+          hai là thứ người học cần đọc TRƯỚC khi gõ, không phải thứ biến mất lúc bắt đầu gõ. */}
+      <p className="mt-1.5 px-0.5 text-2xs leading-4 text-text-faint">
+        <kbd className="rounded border border-border px-1 font-sans">Shift</kbd>
+        <span aria-hidden="true"> + </span>
+        <kbd className="rounded border border-border px-1 font-sans">Enter</kbd> để xuống dòng ·
+        Codey gợi ý hướng, không đưa lời giải hoàn chỉnh.
+      </p>
     </div>
   );
 }

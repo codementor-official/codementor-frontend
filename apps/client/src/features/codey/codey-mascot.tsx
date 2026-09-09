@@ -71,7 +71,6 @@ export function CodeyMascot() {
 
   const [position, setPosition] = useState<Point | null>(null);
   const [peek, setPeek] = useState<string | null>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
   const dragged = useRef(false);
   const seen = useRef<string | null>(null);
 
@@ -113,9 +112,18 @@ export function CodeyMascot() {
     else openTab("ai", "ai");
   }, [openTab, paneOpen, setActive]);
 
-  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    const el = wrapRef.current;
-    if (!el || !position) return;
+  /**
+   * Kéo bắt đầu từ CHÍNH con Codey, không phải từ khung bọc ngoài.
+   *
+   * `setPointerCapture` chuyển mọi sự kiện con trỏ sau đó về đúng phần tử đã gọi nó — kể cả
+   * `pointerup`. Đặt trên khung bọc thì nút "Ẩn mascot" và nút "Mở Codey để đọc tiếp" nằm bên
+   * trong không bao giờ nhận được `pointerup` của chính mình, nên trình duyệt không sinh ra
+   * `click`: bấm vào chúng không có gì xảy ra. Gắn vào tay cầm kéo thì hai nút kia trở lại là
+   * nút bình thường.
+   */
+  const onPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const el = event.currentTarget;
+    if (!position) return;
     const start = { x: event.clientX, y: event.clientY };
     const origin = position;
     dragged.current = false;
@@ -130,6 +138,13 @@ export function CodeyMascot() {
     const onUp = () => {
       el.removeEventListener("pointermove", onMove);
       el.releasePointerCapture(event.pointerId);
+      // Hạ cờ ở lượt tác vụ SAU: `click` do trình duyệt sinh ra ngay sau `pointerup` phải còn
+      // đọc được cờ để bỏ qua cú bấm giả của lần kéo này. Không hạ thì cờ kẹt ở `true` mãi —
+      // và lần sau ai đó Tab tới bong bóng rồi bấm Enter sẽ không có gì xảy ra, vì bàn phím
+      // sinh `click` mà không sinh `pointerdown` để đặt lại cờ.
+      setTimeout(() => {
+        dragged.current = false;
+      }, 0);
       if (!dragged.current) return;
       setPosition((current) => {
         if (current) {
@@ -174,12 +189,7 @@ export function CodeyMascot() {
   const alignRight = position.x > window.innerWidth / 2;
 
   return (
-    <div
-      ref={wrapRef}
-      onPointerDown={onPointerDown}
-      style={{ left: position.x, top: position.y }}
-      className="group fixed z-40 touch-none select-none"
-    >
+    <div style={{ left: position.x, top: position.y }} className="group fixed z-40">
       {(peek || invite) && (
         <div
           className={`absolute w-[min(20rem,calc(100vw-3rem))] rounded-xl border border-border bg-surface p-3 shadow-modal ${
@@ -227,10 +237,11 @@ export function CodeyMascot() {
 
       <button
         type="button"
+        onPointerDown={onPointerDown}
         onClick={onClick}
         title={invite ?? stateCopy[mascotState]}
-        aria-label={invite ? `Codey: ${invite}` : "Mở Codey"}
-        className="relative flex size-14 cursor-grab items-center justify-center rounded-full border border-border bg-surface shadow-dropdown transition-colors hover:border-primary active:cursor-grabbing"
+        aria-label={invite ? `Codey: ${invite}` : "Hỏi Codey"}
+        className="relative flex size-14 cursor-grab touch-none items-center justify-center rounded-full border border-border bg-surface shadow-dropdown transition-colors select-none hover:border-primary active:cursor-grabbing"
       >
         <span
           className={`mascot-sprite size-12 ${mascotState === "idle" ? "mascot-sprite-idle" : ""}`}
