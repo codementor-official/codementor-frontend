@@ -5,7 +5,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
-import { ArrowLeft, Bot, Braces, Loader2, PartyPopper, Play, RotateCcw, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Bot, Braces, Loader2, PartyPopper, Play, RotateCcw } from "lucide-react";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
 import { UserMenu } from "@/components/user-menu";
 import { TAB_META, type PaneId, type PanesState, type TabKind } from "@/components/workspace/types";
@@ -18,7 +18,10 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
 import { VERDICT_LABELS, type JudgeRunResult } from "@/types/judge";
 import { DiscussionPanel } from "@/components/workspace/discussion-panel";
-import { MascotAssistant, type MascotState } from "@/components/workspace/mascot-assistant";
+import { CodeyMascot } from "@/features/codey/codey-mascot";
+import { CodeyPanel } from "@/features/codey/codey-panel";
+import { CodeyProvider, useCodey } from "@/features/codey/session-store";
+import type { CodeyRun, MascotState } from "@/features/codey/types";
 import { ReportButton } from "@/features/reports/report-button";
 import { SaveButton } from "@/features/saved/components/save-button";
 import "highlight.js/styles/github-dark.css";
@@ -89,21 +92,20 @@ export function SolveWorkspace({
   const [mascotState, setMascotState] = useState<MascotState>("idle");
   const [celebrating, setCelebrating] = useState(false);
   const [historyVersion, setHistoryVersion] = useState(0);
-  const [codeyVisible, setCodeyVisible] = useState(true);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [aiInput, setAiInput] = useState("");
-  const [aiMessages, setAiMessages] = useState<{ from: "user" | "ai"; text: string }[]>([
-    {
-      from: "ai",
-      text: "Chào bạn! Mình sẽ gợi ý theo hướng dẫn từng bước, không đưa đáp án hoàn chỉnh. Bạn đang vướng ở đâu?",
-    },
-  ]);
+  /** Lần chạy gần nhất, dạng Codey đọc được. `seq` đến từ một bộ đếm chứ không từ nội dung
+   *  kết quả: hai lần chạy hỏng giống hệt nhau vẫn phải là hai sự kiện. */
+  const [lastRun, setLastRun] = useState<CodeyRun | null>(null);
+  const runSeq = useRef(0);
+  /** Đếm số lần sửa code — Codey dùng nó để rút lại lời mời khi học viên đã tự sửa. */
+  const [codeRevision, setCodeRevision] = useState(0);
 
   const resetCode = () => setCode((c) => ({ ...c, [language]: problem.starter[language] ?? "" }));
   const formatCode = () => editorRef.current?.getAction("editor.action.formatDocument")?.run();
 
   const handleCodeChange = (value: string) => {
     setCode((current) => ({ ...current, [language]: value }));
+    setCodeRevision((revision) => revision + 1);
     setMascotState("typing");
     if (typingTimer.current) clearTimeout(typingTimer.current);
     typingTimer.current = setTimeout(() => setMascotState("idle"), 900);
@@ -163,28 +165,24 @@ export function SolveWorkspace({
                 throw new Error("Không xác định được bài tập để nộp.");
               })();
       setJudgeResult(result);
+      runSeq.current += 1;
+      setLastRun({
+        seq: runSeq.current,
+        failed: result.verdict === "accepted" ? 0 : result.totalTests - result.passedTests,
+        codeRevision,
+      });
       if (mode === "submit") setHistoryVersion((version) => version + 1);
       setMascotState(result.verdict === "accepted" ? "success" : "error");
       if (mode === "submit" && result.verdict === "accepted") setCelebrating(true);
     } catch (cause) {
       setJudgeError(cause instanceof Error ? cause.message : "Không chấm được");
+      // Hạ tầng chấm hỏng KHÔNG phải lỗi của học viên, nên Codey không mời xem giúp: nó không
+      // có gì để đọc, và lời mời sẽ dẫn tới một câu trả lời vô nghĩa.
+      setLastRun(null);
       setMascotState("error");
     } finally {
       setRunning(false);
     }
-  };
-
-  const sendAiMessage = () => {
-    const text = aiInput.trim();
-    if (!text) return;
-    setAiMessages((m) => [...m, { from: "user", text }]);
-    setAiInput("");
-    setTimeout(() => {
-      setAiMessages((m) => [
-        ...m,
-        { from: "ai", text: "Thử xét lại điều kiện dừng của bài toán này — bạn đã xử lý hết các trường hợp biên chưa?" },
-      ]);
-    }, 600);
   };
 
   function renderTabContent(kind: TabKind) {
@@ -378,56 +376,33 @@ export function SolveWorkspace({
           <div className="p-4 text-xs text-text-faint">Bài tập này chưa hỗ trợ lịch sử nộp.</div>
         );
       case "ai":
-        return (
-          <div className="flex h-full flex-col">
-            <div className="border-b border-border-soft bg-ai-tint/60 p-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-ai"><Sparkles className="h-3.5 w-3.5" /> Trợ lý AI chuyên sâu</div>
-              <p className="mt-1 text-2xs leading-4 text-text-muted">Phân tích toàn bộ hướng giải, độ phức tạp và code hiện tại. Hoạt động độc lập với chat nhanh Codey.</p>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3">
-              {aiMessages.map((m, i) => (
-                <div key={i} className={`mb-2.5 flex ${m.from === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[85%] rounded-md px-3 py-2 text-xs leading-relaxed ${
-                      m.from === "user" ? "bg-navy text-on-ink" : "bg-ai-tint text-navy"
-                    }`}
-                  >
-                    {m.text}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex shrink-0 gap-2 border-t border-border-soft p-2.5">
-              <input
-                value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendAiMessage()}
-                placeholder="Hỏi trợ lý AI..."
-                className="flex-1 rounded-md border border-border px-2.5 py-1.5 text-xs"
-              />
-              <button onClick={sendAiMessage} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-ai text-on-ink">
-                <Send className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        );
+        return <CodeyPanel />;
     }
   }
 
   return (
-    <WorkspaceProvider initialPanes={initialPanes} tabMeta={TAB_META}>
-      <WorkspaceBody problem={problem} backHref={backHref} execute={execute} running={running} mascotState={mascotState} codeyVisible={codeyVisible} onToggleCodey={() => setCodeyVisible((v) => !v)} renderTabContent={renderTabContent} />
-      {celebrating && judgeResult && (
-        <SolvedDialog
-          result={judgeResult}
-          xp={xpReward}
-          exerciseId={exerciseId}
-          backHref={backHref}
-          tracked={Boolean(context || assignmentId)}
-          onClose={() => setCelebrating(false)}
-        />
-      )}
-    </WorkspaceProvider>
+    // Provider bọc NGOÀI `WorkspaceProvider`: tab Codey đóng được, và nếu trạng thái hội thoại
+    // sống trong tab thì đóng tab là mất sạch. Bong bóng mascot cũng đọc cùng context này.
+    <CodeyProvider
+      exerciseTitle={problem.title}
+      editorState={mascotState}
+      lastRun={lastRun}
+      codeRevision={codeRevision}
+    >
+      <WorkspaceProvider initialPanes={initialPanes} tabMeta={TAB_META}>
+        <WorkspaceBody problem={problem} backHref={backHref} execute={execute} running={running} renderTabContent={renderTabContent} />
+        {celebrating && judgeResult && (
+          <SolvedDialog
+            result={judgeResult}
+            xp={xpReward}
+            exerciseId={exerciseId}
+            backHref={backHref}
+            tracked={Boolean(context || assignmentId)}
+            onClose={() => setCelebrating(false)}
+          />
+        )}
+      </WorkspaceProvider>
+    </CodeyProvider>
   );
 }
 
@@ -496,21 +471,16 @@ function WorkspaceBody({
   backHref,
   execute,
   running,
-  mascotState,
-  codeyVisible,
-  onToggleCodey,
   renderTabContent,
 }: {
   problem: Problem;
   backHref: string;
   execute: (mode: "run" | "submit") => void;
   running: boolean;
-  mascotState: MascotState;
-  codeyVisible: boolean;
-  onToggleCodey: () => void;
   renderTabContent: (kind: TabKind) => ReactNode;
 }) {
   const { panes, setActive, openTab, closeTab, maximized } = useWorkspace();
+  const { mascotVisible } = useCodey();
   const aiVisible = panes.ai.tabs.length > 0;
   const toggleAi = () => (aiVisible ? closeTab("ai", "ai") : openTab("ai", "ai"));
 
@@ -583,25 +553,18 @@ function WorkspaceBody({
           >
             Nộp bài · +{problem.xpReward ?? xpByDifficulty[problem.difficulty]} XP
           </button>
+          {/* MỘT nút cho Codey. Công tắc bong bóng mascot nằm trong header của chính sidebar —
+              nó là tuỳ chọn con của Codey, không phải một chức năng ngang hàng với Chạy/Nộp. */}
           <button
-            onClick={onToggleCodey}
-            title={codeyVisible ? "Ẩn Codey" : "Hiện Codey"}
-            aria-label={codeyVisible ? "Ẩn Codey" : "Hiện Codey"}
-            aria-pressed={codeyVisible}
+            onClick={toggleAi}
+            title={aiVisible ? "Đóng Codey" : "Mở Codey"}
+            aria-label={aiVisible ? "Đóng Codey" : "Mở Codey"}
+            aria-pressed={aiVisible}
             className={`flex h-8 w-8 items-center justify-center rounded-md ${
-              codeyVisible ? "bg-primary-tint text-primary" : "text-text-muted hover:bg-bg hover:text-navy"
+              aiVisible ? "bg-primary-tint text-primary" : "text-text-muted hover:bg-bg hover:text-navy"
             }`}
           >
             <Bot className="h-4.5 w-4.5" />
-          </button>
-          <button
-            onClick={toggleAi}
-            title="Trợ lý AI"
-            className={`flex h-8 w-8 items-center justify-center rounded-md ${
-              aiVisible ? "bg-ai-tint text-ai" : "text-text-muted hover:bg-bg hover:text-navy"
-            }`}
-          >
-            <Sparkles className="h-4.5 w-4.5" />
           </button>
         </div>
 
@@ -644,7 +607,7 @@ function WorkspaceBody({
           </Group>
         )}
       </div>
-      {codeyVisible && <MascotAssistant state={mascotState} />}
+      {mascotVisible && <CodeyMascot />}
     </div>
   );
 }
