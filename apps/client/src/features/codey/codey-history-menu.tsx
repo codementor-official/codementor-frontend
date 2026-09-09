@@ -12,7 +12,8 @@ import { useCodey } from "./session-store";
  * mình hỏi về two-pointer" chứ không nhớ nó thuộc bài nào. Nên mỗi dòng phải nói rõ bài của nó.
  */
 export function CodeyHistoryMenu() {
-  const { sessions, threadId, openSession, removeSession } = useCodey();
+  const { sessions, loadingSessions, loadSessions, threadId, openSession, removeSession } =
+    useCodey();
   const [open, setOpen] = useState(false);
   /** Mốc thời gian để tính "3 giờ trước". Chốt lúc MỞ droplist, không đọc `Date.now()` trong
    *  thân render: render phải thuần, và một giá trị đổi theo từng lượt vẽ làm React không so
@@ -43,7 +44,10 @@ export function CodeyHistoryMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => {
-          if (!open) setOpenedAt(Date.now());
+          if (!open) {
+            setOpenedAt(Date.now());
+            loadSessions();
+          }
           setOpen(!open);
         }}
         className={`flex size-7 items-center justify-center rounded-md transition-colors ${
@@ -58,7 +62,9 @@ export function CodeyHistoryMenu() {
           role="menu"
           className="animate-menu-in absolute top-full right-0 z-30 mt-1 max-h-80 w-72 overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-dropdown"
         >
-          {sessions.length === 0 ? (
+          {loadingSessions && sessions.length === 0 ? (
+            <p className="px-2 py-3 text-xs text-text-faint">Đang tải…</p>
+          ) : sessions.length === 0 ? (
             <p className="px-2 py-3 text-xs text-text-faint">Chưa có hội thoại nào.</p>
           ) : (
             sessions.map((session) => (

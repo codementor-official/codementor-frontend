@@ -64,7 +64,7 @@ function clampToViewport({ x, y }: Point): Point {
  * cho ta cả ba thứ đó trong ~20 dòng, và chuột lẫn ngón tay đi chung một đường code.
  */
 export function CodeyMascot() {
-  const { mascotState, messages, invite, dismissInvite, askAboutRun, hideMascot } = useCodey();
+  const { mascotState, items, invite, dismissInvite, askAboutRun, hideMascot } = useCodey();
 
   const { panes, openTab, setActive } = useWorkspace();
   const paneOpen = panes.ai.tabs.length > 0;
@@ -99,9 +99,9 @@ export function CodeyMascot() {
 
   // Câu trả lời mới trong lúc sidebar đang đóng thì hiện ngay tại bong bóng — nếu không, học
   // viên bấm Codey rồi không thấy gì xảy ra. Sidebar đang mở thì họ đã đọc ở đó rồi.
-  const last = messages[messages.length - 1];
+  const last = items[items.length - 1];
   useEffect(() => {
-    if (!last || last.from !== "codey" || last.id === seen.current) return;
+    if (!last || last.kind !== "codey" || last.id === seen.current) return;
     seen.current = last.id;
     if (!paneOpen) setPeek(last.text);
   }, [last, paneOpen]);

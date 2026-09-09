@@ -1,11 +1,11 @@
 /** Trạng thái hoạt ảnh của mascot. Mỗi giá trị là một ô trên `mascot-sprite.png`. */
 export type MascotState = "idle" | "thinking" | "typing" | "loading" | "success" | "error";
 
-export interface CodeyMessage {
-  id: string;
-  from: "user" | "codey";
-  text: string;
-}
+/** Một dòng trong khung chat. Lời gọi tool là một dòng trạng thái, không phải bong bóng. */
+export type CodeyItem =
+  | { kind: "user"; id: string; text: string }
+  | { kind: "codey"; id: string; text: string }
+  | { kind: "tool"; id: string; name: string; done: boolean };
 
 /** Một hội thoại trong droplist lịch sử. `exerciseTitle` để phân biệt phiên của bài khác. */
 export interface CodeySessionSummary {

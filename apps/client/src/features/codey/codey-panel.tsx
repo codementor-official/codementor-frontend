@@ -3,9 +3,10 @@
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import { Bot, Plus } from "lucide-react";
+import { Bot, Check, Loader2, Plus } from "lucide-react";
 import { CodeyComposer } from "./codey-composer";
 import { CodeyHistoryMenu } from "./codey-history-menu";
+import { TOOL_LABELS } from "./codey-wiring";
 import { useCodey } from "./session-store";
 
 /** Gợi ý mở đầu. Câu về test chỉ hiện khi thật sự có test hỏng — nếu không nó là một lời mời
@@ -19,7 +20,7 @@ const CHIPS = [
 ];
 
 export function CodeyPanel() {
-  const { messages, sending, send, newSession, mascotVisible, toggleMascot, hasFailingRun } =
+  const { items, sending, send, newSession, mascotVisible, toggleMascot, hasFailingRun } =
     useCodey();
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -27,7 +28,7 @@ export function CodeyPanel() {
   // bên dưới mép khung và người dùng tưởng chưa có gì.
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages.length, sending]);
+  }, [items.length, sending]);
 
   return (
     <div className="flex h-full flex-col">
@@ -59,26 +60,30 @@ export function CodeyPanel() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        {messages.length === 0 ? (
+        {items.length === 0 ? (
           <EmptyState onPick={send} hasFailingRun={hasFailingRun} />
         ) : (
           <div className="space-y-3">
-            {messages.map((message) =>
-              message.from === "user" ? (
-                <div key={message.id} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-lg rounded-br-sm bg-navy px-3 py-2 text-xs leading-5 text-on-ink">
-                    {message.text}
+            {items.map((item) => {
+              if (item.kind === "user") {
+                return (
+                  <div key={item.id} className="flex justify-end">
+                    <div className="max-w-[85%] rounded-lg rounded-br-sm bg-navy px-3 py-2 text-xs leading-5 text-on-ink">
+                      {item.text}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div key={message.id} className="flex gap-2">
+                );
+              }
+              if (item.kind === "tool") return <ToolRow key={item.id} name={item.name} done={item.done} />;
+              return (
+                <div key={item.id} className="flex gap-2">
                   <span className="mascot-sprite mt-0.5 size-6 shrink-0" />
                   <div className="rich-text min-w-0 flex-1 text-xs leading-6 [&_pre]:overflow-x-auto">
-                    <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{message.text}</ReactMarkdown>
+                    <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{item.text}</ReactMarkdown>
                   </div>
                 </div>
-              ),
-            )}
+              );
+            })}
             {sending && (
               <div className="flex items-center gap-2 text-2xs text-text-faint">
                 <span className="mascot-sprite size-6" style={{ backgroundPosition: "100% 0%" }} />
@@ -91,6 +96,28 @@ export function CodeyPanel() {
       </div>
 
       <CodeyComposer onSend={send} disabled={sending} />
+    </div>
+  );
+}
+
+/**
+ * Một dòng cho mỗi lời gọi tool.
+ *
+ * Học viên thấy Codey vừa đọc code hay kết quả chạy của mình, thay vì một ngữ cảnh ẩn — và khi
+ * câu trả lời sai chỗ, dòng này là thứ nói cho họ biết Codey đã nhìn vào cái gì.
+ */
+function ToolRow({ name, done }: { name: string; done: boolean }) {
+  const meta = TOOL_LABELS[name];
+  const Icon = meta?.icon;
+  return (
+    <div className="flex items-center gap-1.5 text-2xs text-text-faint">
+      {done ? (
+        <Check aria-hidden="true" className="size-3 text-success" />
+      ) : (
+        <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+      )}
+      {Icon && <Icon aria-hidden="true" className="size-3" />}
+      {meta?.label ?? name}
     </div>
   );
 }

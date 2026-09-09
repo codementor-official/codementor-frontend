@@ -18,8 +18,14 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
 import { VERDICT_LABELS, type JudgeRunResult } from "@/types/judge";
 import { DiscussionPanel } from "@/components/workspace/discussion-panel";
+import { CopilotKitProvider } from "@copilotkit/react-core/v2";
 import { CodeyMascot } from "@/features/codey/codey-mascot";
 import { CodeyPanel } from "@/features/codey/codey-panel";
+import {
+  CodeyHeaderSync,
+  CodeyProblemContext,
+  CodeyTools,
+} from "@/features/codey/codey-wiring";
 import { CodeyProvider, useCodey } from "@/features/codey/session-store";
 import type { CodeyRun, MascotState } from "@/features/codey/types";
 import { ReportButton } from "@/features/reports/report-button";
@@ -381,15 +387,32 @@ export function SolveWorkspace({
   }
 
   return (
-    // Provider bọc NGOÀI `WorkspaceProvider`: tab Codey đóng được, và nếu trạng thái hội thoại
-    // sống trong tab thì đóng tab là mất sạch. Bong bóng mascot cũng đọc cùng context này.
-    <CodeyProvider
-      exerciseTitle={problem.title}
-      editorState={mascotState}
-      lastRun={lastRun}
-      codeRevision={codeRevision}
+    <CopilotKitProvider
+      // Inspector bật mặc định ở dev và chèn cả banner quảng cáo của CopilotKit vào giữa trang.
+      // `showDevConsole` KHÔNG còn điều khiển nó; `enableInspector` mới là cờ đúng.
+      enableInspector={false}
+      // Tầng Node cùng origin, KHÔNG phải Kong: `apps/client` có hai loại phiên, và phiên đăng
+      // nhập bằng mật khẩu không có token nào trong trình duyệt để mà gắn `Authorization`.
+      // Tầng đó đọc cookie, gia hạn nếu cần, rồi gắn hộ.
+      //
+      // Bài mở ngoài ngân hàng (không có `exerciseId`) vẫn dùng được Codey: `practice` chỉ là
+      // nhãn gom nhóm trong danh sách lịch sử, không phải khoá phân quyền.
+      runtimeUrl={`/api/copilotkit/codey/${encodeURIComponent(exerciseId ?? "practice")}`}
     >
-      <WorkspaceProvider initialPanes={initialPanes} tabMeta={TAB_META}>
+      {/* Trước mọi thứ khác: effect của con chạy theo thứ tự khai báo, và header phải có sẵn
+          trước lượt chạy đầu tiên. */}
+      <CodeyHeaderSync exerciseTitle={problem.title} />
+      <CodeyProblemContext problem={problem} language={language} />
+      <CodeyTools
+        code={code[language] ?? ""}
+        language={languageIdOf[language] ?? language.toLowerCase()}
+        judgeResult={judgeResult}
+        judgeError={judgeError}
+      />
+      {/* Provider bọc NGOÀI `WorkspaceProvider`: tab Codey đóng được, và nếu trạng thái hội
+          thoại sống trong tab thì đóng tab là mất sạch. Bong bóng mascot cũng đọc context này. */}
+      <CodeyProvider editorState={mascotState} lastRun={lastRun} codeRevision={codeRevision}>
+        <WorkspaceProvider initialPanes={initialPanes} tabMeta={TAB_META}>
         <WorkspaceBody problem={problem} backHref={backHref} execute={execute} running={running} renderTabContent={renderTabContent} />
         {celebrating && judgeResult && (
           <SolvedDialog
@@ -401,8 +424,9 @@ export function SolveWorkspace({
             onClose={() => setCelebrating(false)}
           />
         )}
-      </WorkspaceProvider>
-    </CodeyProvider>
+        </WorkspaceProvider>
+      </CodeyProvider>
+    </CopilotKitProvider>
   );
 }
 
