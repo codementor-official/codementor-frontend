@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowUpRight, CalendarDays, Clock3, Target } from 'lucide-react';
+import { ArrowUpRight, CalendarDays, Clock3, Flame, Target } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import type { DashboardData } from '../dashboard-service';
 import { DashboardUnavailable } from './dashboard-section';
@@ -40,14 +40,14 @@ export function DashboardPlanner({ data, onRetry }: { data: DashboardData; onRet
       </div>
 
       <div className="mt-3 border-t border-border-soft pt-3">
-        <div className="flex items-baseline justify-between gap-2"><p className="text-xs font-semibold text-navy">Nhịp tuần này</p><span className="text-xs font-bold text-primary">{calendar ? `${activeDays} ngày` : '—'}</span></div>
+        <div className="flex items-baseline justify-between gap-2"><p className="text-xs font-semibold text-navy">Nhịp tuần này</p><span className="text-xs font-bold text-primary">{calendar ? `${activeDays}/${enabledSchedule.length || '—'} ngày` : '—'}</span></div>
         <div className="mt-2 grid grid-cols-7 gap-1">{DAYS.map((day, index) => <div key={day.id} className="text-center"><div className={`mx-auto flex h-6 w-6 items-center justify-center rounded-md text-2xs font-semibold ${week[index]?.count ? 'bg-primary text-on-ink' : 'bg-border-soft text-text-faint'}`}>{week[index]?.count ? '✓' : '·'}</div><span className="mt-1 block text-2xs text-text-muted">{day.label}</span></div>)}</div>
         <p className="mt-2 truncate text-2xs text-text-muted">{preferences.weeklyStudyHours ? `Mục tiêu ${preferences.weeklyStudyHours} giờ/tuần` : 'Chưa đặt số giờ mục tiêu'} · thời gian dự kiến</p>
       </div>
 
-      <div className="mt-auto flex min-w-0 items-center gap-3 border-t border-border-soft pt-3">
-        <Clock3 className="h-4 w-4 shrink-0 text-primary" />
-        <div className="min-w-0"><p className="text-xs font-semibold text-navy">Buổi học tiếp theo</p>{nextSlot?.slot ? <p className="mt-0.5 truncate text-xs text-text-muted">{nextSlot.offset === 0 ? 'Hôm nay' : nextSlot.offset === 1 ? 'Ngày mai' : nextSlot.day.label}, {nextSlot.slot.startTime} · {nextSlot.slot.durationMinutes} phút</p> : <p className="mt-0.5 truncate text-xs text-text-muted">Chưa có lịch học trong tuần</p>}</div>
+      <div className="mt-auto grid gap-3 border-t border-border-soft pt-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        <div className="flex min-w-0 items-center gap-3"><Clock3 className="h-4 w-4 shrink-0 text-primary" /><div className="min-w-0"><p className="text-xs font-semibold text-navy">Buổi tiếp theo</p>{nextSlot?.slot ? <p className="mt-0.5 truncate text-xs text-text-muted">{nextSlot.offset === 0 ? 'Hôm nay' : nextSlot.offset === 1 ? 'Ngày mai' : nextSlot.day.label}, {nextSlot.slot.startTime} · {nextSlot.slot.durationMinutes} phút</p> : <p className="mt-0.5 truncate text-xs text-text-muted">Chưa có lịch trong tuần</p>}</div></div>
+        <div className="flex min-w-0 items-center gap-3"><Flame className="h-4 w-4 shrink-0 text-primary" /><div className="min-w-0"><p className="text-xs font-semibold text-navy">Chuỗi giải bài</p><p className="mt-0.5 truncate text-xs text-text-muted">{data.stats ? `${data.stats.currentStreakDays} ngày · kỷ lục ${data.stats.longestStreakDays}` : 'Chưa tải được dữ liệu'}</p></div></div>
       </div>
     </div>}
     </Card>
