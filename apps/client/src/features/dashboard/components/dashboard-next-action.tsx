@@ -1,17 +1,18 @@
-import { ArrowRight, CheckCircle2, Clock3, Play } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import type { DashboardData } from '../dashboard-service';
 import type { DashboardInsight } from '../types';
 import { selectPrimaryAction } from '../dashboard-priority';
+import { DashboardNextStepVisual } from './dashboard-learning-visuals';
 
 export function DashboardNextAction({ data, coach }: { data: DashboardData; coach: DashboardInsight | null }) {
   const action = selectPrimaryAction(data, coach);
   const fromCoach = action.kind === 'coach';
   return <Card className="overflow-hidden border-l-4 border-l-primary">
     <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-surface text-primary"><Play className="h-5 w-5" /></span>
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-surface text-primary"><DashboardNextStepVisual /></span>
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <p className="text-2xs font-bold uppercase tracking-wide text-primary">{action.label}</p>
