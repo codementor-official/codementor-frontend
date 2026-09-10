@@ -6,10 +6,12 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { useAuth } from '@/providers/auth-provider';
+import type { DashboardData } from '../dashboard-service';
 import type { DashboardInsight } from '../types';
 import { DashboardCoachVisual } from './dashboard-coach-visual';
 
 interface DashboardCoachProps {
+  dashboard: DashboardData;
   data: DashboardInsight | null;
   isLoading: boolean;
   error: string | null;
@@ -17,7 +19,7 @@ interface DashboardCoachProps {
   onDataChange: (data: DashboardInsight) => void;
 }
 
-export function DashboardCoach({ data, isLoading, error, reload, onDataChange }: DashboardCoachProps) {
+export function DashboardCoach({ dashboard, data, isLoading, error, reload, onDataChange }: DashboardCoachProps) {
   const { user } = useAuth();
   const toast = useToast();
   const identity = useRef(user?.id);
@@ -63,6 +65,12 @@ export function DashboardCoach({ data, isLoading, error, reload, onDataChange }:
   const insight = data?.insight;
   const applied = Boolean(insight && data?.appliedAt);
   const firstStep = insight?.steps[0];
+  const calendar = dashboard.learning?.calendar;
+  const latestDate = calendar?.days.at(-1)?.date;
+  const weekday = latestDate ? (new Date(`${latestDate}T00:00:00Z`).getUTCDay() + 6) % 7 : 0;
+  const activeThisWeek = calendar?.days.slice(-(weekday + 1)).filter((day) => day.count > 0).length ?? 0;
+  const scheduledDays = dashboard.preferences?.schedule.filter((slot) => slot.enabled).length ?? 0;
+  const schedulePercent = scheduledDays ? Math.min(100, Math.round((activeThisWeek / scheduledDays) * 100)) : null;
 
   if (!isLoading && data?.status === 'hidden') return <Card className="p-4"><div className="flex flex-wrap items-center gap-3">
     <span className="rounded-lg border border-border bg-bg p-2 text-primary"><Sparkles className="h-4 w-4" /></span>
@@ -72,22 +80,38 @@ export function DashboardCoach({ data, isLoading, error, reload, onDataChange }:
 
   return <>
     <Card className={`overflow-hidden ${applied ? 'border-success/40' : 'border-primary/25'}`}>
-      <div className="grid min-w-0 md:grid-cols-[minmax(0,1fr)_240px]">
-        <div className="flex min-w-0 flex-col justify-center p-5 sm:p-6">
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3 border-b border-border-soft px-5 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
             <span className={`rounded-lg border p-2 ${applied ? 'border-success/30 bg-success/5 text-success' : 'border-border bg-bg text-primary'}`}>{applied ? <Pin className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}</span>
-            <p className="text-2xs font-bold uppercase tracking-[0.18em] text-primary">AI Coach cá nhân</p>
+            <div className="min-w-0"><h2 className="text-sm font-bold text-navy">AI Coach cá nhân</h2><p className="truncate text-2xs text-text-muted">Phân tích dựa trên mục tiêu và tiến độ thật của bạn</p></div>
             {applied && <span className="rounded-full border border-success/25 bg-success/5 px-2 py-0.5 text-2xs font-bold text-success">Đang áp dụng</span>}
-          </div>
-          <h2 className="mt-3 text-lg font-bold text-navy">Biến dữ liệu học tập thành một kế hoạch dễ hành động</h2>
-          <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-relaxed text-text-muted">{applied && firstStep ? `Ưu tiên hiện tại: “${firstStep.title}”. Các bước đã được đưa vào Kế hoạch hôm nay.` : insight?.summary ?? 'Phân tích mục tiêu, tiến độ và hoạt động gần đây khi bạn yêu cầu; không tự tạo số liệu hay tự hoàn thành nội dung.'}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button size="sm" variant={insight ? 'outline' : 'primary'} onClick={() => setDrawerOpen(true)}>{insight ? 'Xem kế hoạch AI' : 'Tạo kế hoạch với AI'} <ArrowUpRight className="h-4 w-4" /></Button>
-            <span className="text-2xs text-text-faint">Riêng tư · Chỉ chạy khi bạn yêu cầu</span>
-          </div>
         </div>
-        <div className="hidden min-h-40 border-l border-border-soft bg-bg md:block">
-          <DashboardCoachVisual />
+        <Button size="sm" variant={insight ? 'outline' : 'primary'} onClick={() => setDrawerOpen(true)}>{insight ? 'Mở kế hoạch học tập' : 'Tạo phân tích'} <ArrowUpRight className="h-4 w-4" /></Button>
+      </div>
+      <div className="grid min-w-0 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)_220px]">
+        <div className="grid min-w-0 items-center gap-3 p-5 sm:grid-cols-[minmax(0,1fr)_180px]">
+          <div className="min-w-0">
+            <p className="text-2xs font-bold uppercase tracking-wide text-primary">Nhận định hiện tại</p>
+            <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-text">{applied && firstStep ? `Bạn đang ưu tiên “${firstStep.title}”. ${insight?.summary ?? ''}` : insight?.summary ?? 'AI Coach sẽ phân tích mục tiêu, nội dung đang học và hoạt động gần đây khi bạn yêu cầu. Hệ thống không tự tạo số liệu hoặc tự đánh dấu hoàn thành.'}</p>
+            {insight?.focus && <p className="mt-3 line-clamp-2 text-xs text-text-muted"><strong className="text-navy">Trọng tâm:</strong> {insight.focus}</p>}
+          </div>
+          <div className="hidden h-32 min-w-0 sm:block"><DashboardCoachVisual /></div>
+        </div>
+
+        <div className="border-t border-border-soft p-5 xl:border-l xl:border-t-0">
+          <p className="text-xs font-bold text-navy">Hành động được đề xuất</p>
+          {insight?.steps.length ? <ol className="mt-3 space-y-3">{insight.steps.slice(0, 3).map((step, index) => <li key={`${step.href}-${index}`} className="flex min-w-0 gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-2xs font-bold text-on-ink">{index + 1}</span><div className="min-w-0"><p className="truncate text-xs font-semibold text-navy">{step.title}</p><p className="mt-0.5 line-clamp-1 text-2xs text-text-muted">{step.reason}</p></div></li>)}</ol> : <p className="mt-3 text-xs leading-relaxed text-text-muted">Mở AI Coach để tạo một kế hoạch ngắn có thể xem trước trước khi áp dụng.</p>}
+          <p className="mt-4 text-2xs text-text-faint">Riêng tư · Chỉ chạy khi bạn yêu cầu</p>
+        </div>
+
+        <div className="flex flex-col items-center justify-center border-t border-border-soft bg-bg p-5 text-center xl:border-l xl:border-t-0">
+          <div className="relative h-24 w-24" role="img" aria-label={schedulePercent === null ? 'Chưa đặt lịch học tuần' : `Đã đạt ${schedulePercent}% nhịp học tuần`}>
+            <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true"><circle cx="50" cy="50" r="38" pathLength="100" fill="none" stroke="var(--color-border-soft)" strokeWidth="9" /><circle cx="50" cy="50" r="38" pathLength="100" fill="none" stroke="var(--color-primary)" strokeWidth="9" strokeLinecap="round" strokeDasharray={`${schedulePercent ?? 0} 100`} /></svg>
+            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold tabular-nums text-navy">{schedulePercent === null ? '—' : `${schedulePercent}%`}</span>
+          </div>
+          <p className="mt-2 text-xs font-bold text-navy">Nhịp mục tiêu tuần</p>
+          <p className="mt-1 text-2xs leading-relaxed text-text-muted">{scheduledDays ? `${activeThisWeek}/${scheduledDays} ngày hoạt động so với lịch đã đặt` : 'Đặt lịch học để theo dõi mức độ bám kế hoạch'}</p>
+          <Link href="/profile?tab=personalization" className="mt-3 text-xs font-semibold text-primary hover:underline">Điều chỉnh lịch →</Link>
         </div>
       </div>
     </Card>
