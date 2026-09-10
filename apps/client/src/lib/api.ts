@@ -13,6 +13,8 @@ import type {
   LecterContentCheck,
   LecterSessionSummary,
 } from "@/features/workspace/lecter/types";
+import type { Message } from "@ag-ui/client";
+import type { CodeySessionSummary } from "@/features/codey/types";
 import type { NotificationPage } from "@/types/notification";
 import type { RecommendationList } from "@/types/recommendation";
 import type { DashboardInsight, LearningDashboard, PendingAssignment } from '@/features/dashboard/types';
@@ -857,6 +859,19 @@ export const api = {
    * gắn token hộ phiên đăng nhập bằng mật khẩu. Ba lời gọi dưới đây là REST thường nên dùng
    * chung đường `request()` như mọi thứ khác — nhánh `direct`/`viaBff` tự lo hai loại phiên.
    */
+  codey: {
+    /** Mọi hội thoại Codey của người dùng, mọi bài — mỗi dòng mang tên bài của nó. */
+    sessions: () =>
+      unwrap<{ items: CodeySessionSummary[] }>("/ai/codey/sessions", { cache: "no-store" }),
+    session: (threadId: string) =>
+      unwrap<{ messages: Message[] }>(
+        `/ai/codey/sessions/${encodeURIComponent(threadId)}`,
+        { cache: "no-store" },
+      ),
+    removeSession: (threadId: string) =>
+      unwrap<void>(`/ai/codey/sessions/${encodeURIComponent(threadId)}`, { method: "DELETE" }),
+  },
+
   lecter: {
     sessions: (slug: string) =>
       unwrap<{ items: LecterSessionSummary[] }>(

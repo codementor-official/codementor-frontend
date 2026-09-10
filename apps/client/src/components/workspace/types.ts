@@ -1,10 +1,10 @@
 import {
+  Bot,
   Code2,
   FileText,
   History,
   ListChecks,
   MessageSquare,
-  Sparkles,
   SquareTerminal,
 } from "lucide-react";
 import type { PaneState, PanesState, TabMetaMap } from "@codementor/ui";
@@ -21,7 +21,7 @@ export const TAB_META: TabMetaMap = {
   testcase: { label: "Testcase", icon: ListChecks, iconClassName: "text-foreground" },
   result: { label: "Kết quả", icon: SquareTerminal, iconClassName: "text-foreground" },
   history: { label: "Lịch sử nộp", icon: History, iconClassName: "text-foreground" },
-  ai: { label: "Trợ lý AI", icon: Sparkles, iconClassName: "text-primary", closable: true },
+  ai: { label: "Codey", icon: Bot, iconClassName: "text-primary", closable: true },
 };
 
 export type { PaneState, PanesState };
