@@ -126,7 +126,7 @@ a change** — the whole point is that the convention runs rather than being rem
 
 ## Next.js
 
-This repository uses Next.js 16. APIs and conventions may differ from training data. Before changing framework behavior, read the relevant guide from the installed Next.js documentation under the app's resolved `node_modules/next/dist/docs/` and heed deprecation notices.
+This repository uses Next.js 16.2.12 (all three apps pin the same version). APIs and conventions may differ from training data. Before changing framework behavior, read the relevant guide from the installed Next.js documentation under the app's resolved `node_modules/next/dist/docs/` and heed deprecation notices.
 
 ## Validation
 
@@ -138,7 +138,12 @@ pnpm typecheck  # turbo, per package
 pnpm build      # turbo, per app
 ```
 
-Single app: `pnpm dev:web`, `pnpm dev:lecturer`, `pnpm dev:admin`, or
+Single app: `pnpm dev:client`, `pnpm dev:lecturer`, `pnpm dev:admin`, or
 `pnpm --filter @codementor/<name> <script>`.
+
+`pnpm build` is the real gate and it is not redundant with `typecheck`: Next.js prerenders routes
+at build time, so a page that only fails during static generation passes typecheck and fails here.
+Check the exit code directly — `pnpm build | tail` reports the **pipe's** status, not the build's,
+so a red build reads as green.
 
 There are no tests in this repository yet. Run relevant tests once tests exist.
