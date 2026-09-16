@@ -11,7 +11,6 @@
   "dependencies": {
     "@codementor/api-client": "workspace:*",
     "@codementor/auth": "workspace:*",
-    "@codementor/editor": "workspace:*",
     "@codementor/solve": "workspace:*",
     "@codementor/types": "workspace:*",
     "@codementor/ui": "workspace:*",

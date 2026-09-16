@@ -78,9 +78,6 @@ importers:
       '@codementor/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@codementor/editor':
-        specifier: workspace:*
-        version: link:../../packages/editor
       '@codementor/solve':
         specifier: workspace:*
         version: link:../../packages/solve
@@ -169,39 +166,6 @@ importers:
       '@copilotkit/runtime':
         specifier: 1.70.1
         version: 1.70.1(@cfworker/json-schema@4.1.1)(@langchain/core@1.2.9(@opentelemetry/api@1.9.1)(ws@8.21.3))(@langchain/langgraph-sdk@1.10.0(@langchain/core@1.2.9(@opentelemetry/api@1.9.1)(ws@8.21.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@opentelemetry/api@1.9.1)(debug@4.4.3(supports-color@7.2.0))(langchain@1.5.10(@langchain/core@1.2.9(@opentelemetry/api@1.9.1)(ws@8.21.3))(@opentelemetry/api@1.9.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(ws@8.21.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(supports-color@7.2.0)
-      '@hookform/resolvers':
-        specifier: ^5.5.7
-        version: 5.5.7(@standard-schema/spec@1.1.0)(ajv@8.20.0)(class-transformer@0.5.1)(class-validator@0.14.4)(react-hook-form@7.83.0(react@19.2.4))(zod@4.4.3)
-      '@tanstack/react-table':
-        specifier: ^8.21.3
-        version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@tiptap/core':
-        specifier: 3.29.2
-        version: 3.29.2(@tiptap/pm@3.29.2)
-      '@tiptap/extension-code-block-lowlight':
-        specifier: 3.29.2
-        version: 3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))(@tiptap/extension-code-block@3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))(@tiptap/pm@3.29.2))(@tiptap/pm@3.29.2)(highlight.js@11.11.2)(lowlight@3.3.0)
-      '@tiptap/extension-image':
-        specifier: 3.29.2
-        version: 3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))
-      '@tiptap/extension-text-align':
-        specifier: 3.29.2
-        version: 3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))
-      '@tiptap/extension-youtube':
-        specifier: 3.29.2
-        version: 3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))
-      '@tiptap/extensions':
-        specifier: 3.29.2
-        version: 3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))(@tiptap/pm@3.29.2)
-      '@tiptap/pm':
-        specifier: 3.29.2
-        version: 3.29.2
-      '@tiptap/react':
-        specifier: 3.29.2
-        version: 3.29.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))(@tiptap/pm@3.29.2)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@tiptap/starter-kit':
-        specifier: 3.29.2
-        version: 3.29.2
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
@@ -211,9 +175,6 @@ importers:
       jose:
         specifier: ^6.2.8
         version: 6.2.8
-      lowlight:
-        specifier: ^3.3.0
-        version: 3.3.0
       lucide-react:
         specifier: ^1.28.0
         version: 1.28.0(react@19.2.4)
@@ -226,12 +187,6 @@ importers:
       react-dom:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
-      react-dropzone:
-        specifier: ^19.1.1
-        version: 19.1.1(@types/react@19.2.18)(react@19.2.4)
-      react-hook-form:
-        specifier: ^7.83.0
-        version: 7.83.0(react@19.2.4)
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.18)(react@19.2.4)(supports-color@7.2.0)
