@@ -220,11 +220,11 @@ export function WorkspaceExerciseStudio({
    * chữ sẵn và nháp không bao giờ được dọn.
    */
   const serialized = JSON.stringify(draft);
-  const baseline = useRef<string | null>(null);
-  useEffect(() => {
-    if (loading || baseline.current !== null) return;
-    baseline.current = serialized;
-  }, [loading, serialized]);
+  // State, không phải ref: `dirty` bên dưới đọc mốc này ngay trong render, mà đổi ref không
+  // kích hoạt render lại. Chốt mốc ngay trong render (không qua effect) — cùng giá trị
+  // `serialized` của lần render đầu tiên có `loading = false`, như bản dùng effect trước đây.
+  const [baseline, setBaseline] = useState<string | null>(null);
+  if (!loading && baseline === null) setBaseline(serialized);
 
   const answer = (restore: boolean) => {
     if (restore && pendingDraft) {
@@ -240,7 +240,7 @@ export function WorkspaceExerciseStudio({
   const blocker = exerciseBriefBlocker(draft, { slugLocked: Boolean(exerciseId) });
   useDraftAutosave(storageKey, draft, {
     ready: restored,
-    dirty: baseline.current !== null && serialized !== baseline.current,
+    dirty: baseline !== null && serialized !== baseline,
   });
 
   /**

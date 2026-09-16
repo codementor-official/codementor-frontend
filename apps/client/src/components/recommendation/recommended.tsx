@@ -41,7 +41,7 @@ export function RecommendedExercises({ limit = 5, title, layout = "list" }: { li
   return <RecommendationFrame icon={Code2} title={title ?? (data.personalized ? "Bài luyện tập dành cho bạn" : "Bài luyện tập phổ biến")} personalized={data.personalized}>
     {layout === "cards" ? <ul className="grid gap-3 md:grid-cols-3">{data.items.map((item) => {
       const difficulty = exerciseDifficulty(item.difficulty ?? "easy");
-      return <li key={item.id}><Link href={`/solve/${item.id}`} className="group flex h-full min-h-36 flex-col rounded-xl border border-border bg-surface p-4 shadow-card transition hover:-translate-y-0.5 hover:border-primary/50">
+      return <li key={item.id}><Link href={`/solve/${item.id}`} className="group flex h-full min-h-36 flex-col rounded-xl border border-border bg-surface p-4 shadow-card transition-colors duration-150 hover:border-primary/50">
         <div className="flex items-start justify-between gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg text-xs font-bold text-primary">{tileFor(item.title)}</span><span className={`text-2xs font-semibold ${difficulty === "Cơ bản" ? "text-success" : difficulty === "Trung bình" ? "text-accent" : "text-danger"}`}>{difficulty}</span></div>
         <h3 className="mt-3 line-clamp-2 text-sm font-bold text-navy group-hover:text-primary">{item.title}</h3>
         <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-muted">{item.reasons[0] ?? "Phù hợp với tiến độ hiện tại của bạn"}</p>

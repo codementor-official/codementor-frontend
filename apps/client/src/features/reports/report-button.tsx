@@ -80,7 +80,7 @@ export function ReportButton({
               type="button"
               disabled={submitting}
               onClick={() => void submit()}
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-on-ink hover:bg-primary-hover disabled:opacity-50"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Gửi báo cáo
@@ -94,7 +94,7 @@ export function ReportButton({
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value as ReportCategory)}
-              className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
+              className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-medium focus:border-primary"
             >
               {categories.map((item) => (
                 <option key={item.value} value={item.value}>
@@ -111,7 +111,7 @@ export function ReportButton({
               rows={4}
               onChange={(event) => setNote(event.target.value)}
               placeholder="Nêu ngắn gọn vấn đề để việc kiểm duyệt chính xác hơn…"
-              className="w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm font-normal outline-none focus:border-primary"
+              className="w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm font-normal focus:border-primary"
             />
             <span className="block text-right text-xs font-normal text-text-faint">{note.length}/1000</span>
           </label>

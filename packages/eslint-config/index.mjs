@@ -58,6 +58,14 @@ const config = defineConfig([
         rootDir: ["apps/client/", "apps/lecturer/", "apps/admin/"],
       },
     },
+  },
+  {
+    // `files` is required here, not decoration. `react-hooks` is registered by
+    // eslint-config-next only on the object matching this glob; a config object with no
+    // `files` is a base object whose rules must resolve against every linted file, and for
+    // the ones outside that glob the plugin does not exist — ESLint then refuses the whole
+    // run with "could not find plugin react-hooks" rather than skipping the rule.
+    files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
     rules: {
       // These state-reset effects predate the migration. Keep them visible without
       // changing working modal and theme behavior as part of an architecture task.
@@ -102,6 +110,13 @@ const config = defineConfig([
           ],
         },
       ],
+    },
+  },
+  {
+    // `.cjs` is CommonJS by definition: `require()` is the only import syntax it has.
+    files: ["**/*.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
   globalIgnores([
