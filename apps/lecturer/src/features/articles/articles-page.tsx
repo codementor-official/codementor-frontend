@@ -238,7 +238,7 @@ function ArticlesPageContent() {
           Tiêu đề
         </label>
         <input
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+          className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
           id="new-title"
           onChange={(event) => setNewTitle(event.target.value)}
           placeholder="5 kỹ thuật giúp bạn học Spring Boot hiệu quả hơn"

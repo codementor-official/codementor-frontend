@@ -7,8 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
   BookOpen,
-  Eye,
-  EyeOff,
   FileText,
   ListTree,
   Pencil,
@@ -23,7 +21,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {
   Button,
-  ConfirmButton,
   DetailMeta,
   DetailRow,
   DetailSection,

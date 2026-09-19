@@ -12,7 +12,7 @@ export function AdminSectionPage({ section }: { section: AdminSectionDefinition 
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        <p className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
           {section.eyebrow}
         </p>
         <h1 className="mt-1 text-xl font-semibold tracking-tight">{section.title}</h1>

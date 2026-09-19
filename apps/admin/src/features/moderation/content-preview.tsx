@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { resolveVideo } from "@codementor/utils";
-import { Button, StatusBadge, useToast } from "@codementor/ui";
+import { StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi } from "@/lib/api";
 import {
@@ -483,7 +483,7 @@ function LessonRow({
                 <p className="py-2 text-destructive">Bài học chưa có video.</p>
               ) : video.kind === "file" ? (
                 <video
-                  className="w-full rounded-md border border-border bg-black"
+                  className="w-full rounded-md border border-border bg-ink-fixed"
                   controls
                   preload="metadata"
                   src={video.src}

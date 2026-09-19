@@ -16,7 +16,7 @@ The backend and Keycloak deployment are maintained independently. Keycloak is re
 
 ## Requirements
 
-- Node.js 22 or newer (the backend pins 22+, and CI runs 24)
+- Node.js 22 or newer (the backend pins 22+)
 - pnpm 11.19.0 (pinned by `packageManager` in `package.json`; run through Corepack)
 
 ## Install
@@ -60,7 +60,19 @@ pnpm build       # turbo run build
 ```
 
 `pnpm build` is the gate that catches what `typecheck` does not — Next.js prerendering runs at
-build time and fails on server-only code reached during static generation.
+build time and fails on server-only code reached during static generation. Read its **exit code**;
+`pnpm build | tail` reports the pipe's status, so a red build reads as green.
+
+Turbo builds the three apps in parallel by default. On a machine without much headroom that is
+three Next.js compilers at once and the run dies with exit 137 (the OOM killer, not a code error);
+`pnpm build --concurrency=1` trades about a minute for surviving it.
+
+Lint is clean at **zero errors**. It still reports warnings, all of them accepted and explained in
+`AGENTS.md` → Validation — mostly `react-hooks/set-state-in-effect`, a React Compiler performance
+hint on effects that have to stay effects.
+
+There is no test runner. The `*.test.ts` files present are self-checks that need `tsx`, which is
+not installed — see `AGENTS.md` before citing them.
 
 ## Project structure
 

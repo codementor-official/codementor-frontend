@@ -39,7 +39,6 @@ export function UsersPage() {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
-  const [cursor, setCursor] = useState<string | null>(null);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +59,6 @@ export function UsersPage() {
         });
         // Cursor có nghĩa là "xem thêm", nên nối vào; không có thì đây là lần lọc mới.
         setRows((current) => (nextCursor ? [...current, ...page.items] : page.items));
-        setCursor(page.nextCursor);
       } catch (cause) {
         setError(describe(cause));
       } finally {

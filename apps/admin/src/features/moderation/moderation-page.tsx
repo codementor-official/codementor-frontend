@@ -32,7 +32,7 @@ const STALE_DAYS = 3;
 
 export function ModerationPage() {
   const request = useAdminApi();
-  const { pendingByKind, pendingTotal, refreshPending } = useModerationQueue();
+  const { pendingTotal, refreshPending } = useModerationQueue();
 
   const [tray, setTray] = useState<ModerationTray>("pending");
   const [kind, setKind] = useState<ContentKind | "">("");

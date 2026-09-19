@@ -58,7 +58,7 @@ export function MetricStrip({
             <p className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl xl:mt-2 xl:text-[28px]">
               {metric.value.toLocaleString("vi-VN")}
             </p>
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground sm:text-xs">
+            <p className="mt-0.5 truncate text-2xs text-muted-foreground sm:text-xs">
               {metric.caption}
             </p>
           </div>

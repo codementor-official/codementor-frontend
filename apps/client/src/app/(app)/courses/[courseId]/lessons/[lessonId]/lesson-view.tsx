@@ -146,7 +146,7 @@ export function LessonView({ courseId, lessonId }: { courseId: string; lessonId:
         setSaving(false);
       }
     },
-    [courseId, lessonId, loadProgress],
+    [courseId, lessonId, loadProgress, toast],
   );
 
   if (error && !course) {

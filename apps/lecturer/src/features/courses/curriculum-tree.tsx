@@ -624,7 +624,7 @@ function SortableLesson({
         * phải liệt kê từng điều kiện như trước. */}
       {lesson.isPreview && (
         <span
-          className="flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-2xs font-semibold text-muted-foreground"
           title="Cho học trước — mở cho mọi người kể cả chưa ghi danh, không cần hoàn thành bài/chương liền trước"
         >
           <Unlock aria-hidden="true" className="size-3" />

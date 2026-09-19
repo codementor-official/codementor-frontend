@@ -473,6 +473,8 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       <BreadcrumbTitle slug={slug} title={detail.name} />
       <div className="mb-5 flex flex-wrap items-center gap-3">
         {detail.coverUrl ? (
+          // Ảnh bìa do người dùng tải lên, host tuỳ ý. Ghi chú đầy đủ ở workspace-chat.tsx.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={detail.coverUrl}
             alt=""

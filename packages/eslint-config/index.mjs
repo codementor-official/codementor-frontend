@@ -67,8 +67,13 @@ const config = defineConfig([
     // run with "could not find plugin react-hooks" rather than skipping the rule.
     files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
     rules: {
-      // These state-reset effects predate the migration. Keep them visible without
-      // changing working modal and theme behavior as part of an architecture task.
+      // Warn, not error, and the remaining hits are accepted rather than outstanding: each
+      // one was read and is a pattern that HAS to be an effect — reading localStorage after
+      // hydration (a value that differs between server and client render is a hydrate error),
+      // the mounted guard, the loading flag a fetch raises, the reset when auth drops. The
+      // rule is a React Compiler performance hint about cascading renders, not a correctness
+      // check, and the alternative is a data-fetching layer this repo does not have. Kept on
+      // so a genuinely avoidable one still surfaces.
       "react-hooks/set-state-in-effect": "warn",
     },
   },
@@ -76,18 +81,19 @@ const config = defineConfig([
     // Design-system enforcement. Every rule below encodes a finding from
     // docs/UI_AUDIT_AND_PLAN.md — without them, the same drift comes back, because a
     // convention that only lives in a document is a convention nobody runs.
-    files: ["apps/client/src/**/*.{ts,tsx}"],
+    //
+    // lecturer, admin and packages/ui ran these as warnings while their pre-existing drift
+    // was outstanding. That drift is now zero, so they join client at "error" — the promotion
+    // AGENTS.md asks for in the same change that cleans an app up. Leaving them on "warn"
+    // after the cleanup only buys room for the drift to come back.
+    files: [
+      "apps/client/src/**/*.{ts,tsx}",
+      "apps/lecturer/src/**/*.{ts,tsx}",
+      "apps/admin/src/**/*.{ts,tsx}",
+      "packages/ui/src/**/*.tsx",
+    ],
     rules: {
       "no-restricted-syntax": ["error", ...DESIGN_TOKEN_RESTRICTIONS],
-    },
-  },
-  {
-    // lecturer and admin have not had their design audit yet, so the same checks run as
-    // warnings there: the debt stays visible without turning their build red for drift
-    // that predates this work. Promote to "error" as each app is cleaned up.
-    files: ["apps/lecturer/src/**/*.{ts,tsx}", "apps/admin/src/**/*.{ts,tsx}", "packages/ui/src/**/*.tsx"],
-    rules: {
-      "no-restricted-syntax": ["warn", ...DESIGN_TOKEN_RESTRICTIONS],
     },
   },
   {

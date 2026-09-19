@@ -6,7 +6,7 @@ import { problemDiscussions, type ProblemDiscussion } from "@/data/problem-discu
 
 type DiscussionSort = "popular" | "newest" | "unanswered";
 
-export function DiscussionPanel({ problemTitle }: { problemTitle: string }) {
+export function DiscussionPanel() {
   const [items, setItems] = useState(problemDiscussions);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<DiscussionSort>("popular");

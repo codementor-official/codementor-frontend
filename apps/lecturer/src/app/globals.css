@@ -47,6 +47,12 @@
   --radius-lg: 10px; /* card, table, panel, popover */
   --radius-xl: 10px; /* modal, drawer — same tier as a card, not a wider one */
   --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  /* Mirrors apps/client. The eslint rule that bans `text-[11px]` and `bg-black` points at
+   * these two, so they have to exist here as well as in client — otherwise the only way to
+   * write an 11px label or a scrim in this app is the hardcoded value the rule rejects.
+   * `ink-fixed` never flips: a modal scrim is dark in both themes on purpose. */
+  --text-2xs: 0.6875rem;
+  --color-ink-fixed: #18181b;
 }
 
 /* PHẢI nằm trong `@layer base`. Ở Tailwind v4, CSS không thuộc layer nào sẽ THẮNG mọi

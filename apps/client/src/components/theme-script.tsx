@@ -1,4 +1,3 @@
-import Script from "next/script";
 import { THEME_STORAGE_KEY } from "@/lib/store/theme-store";
 
 /**
@@ -7,6 +6,11 @@ import { THEME_STORAGE_KEY } from "@/lib/store/theme-store";
  *
  * Reads zustand/persist's envelope (`{ state: { preference } }`) directly, since the
  * store itself isn't available this early.
+ *
+ * A plain `<script>` in the App Router's `<head>`, not `next/script`: `beforeInteractive`
+ * is a Pages Router contract (it belongs in `_document`), and under the App Router the
+ * runtime may still hand it to the client bundle — which is one paint too late for the
+ * flash this exists to prevent. Inline and synchronous is the only ordering that works.
  */
 export function ThemeScript() {
   const script = `(function(){try{
@@ -15,9 +19,5 @@ var d=p==="dark"||(p==="system"&&matchMedia("(prefers-color-scheme: dark)").matc
 if(d)document.documentElement.classList.add("dark");
 }catch(e){}})();`;
 
-  return (
-    <Script id="theme-script" strategy="beforeInteractive">
-      {script}
-    </Script>
-  );
+  return <script dangerouslySetInnerHTML={{ __html: script }} id="theme-script" />;
 }

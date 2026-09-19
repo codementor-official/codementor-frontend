@@ -866,7 +866,7 @@ function VideoPlayer({
   if (video.kind === "file") {
     return (
       <video
-        className="w-full rounded-lg border bg-black"
+        className="w-full rounded-lg border bg-ink-fixed"
         controls
         preload="metadata"
         ref={fileRef}

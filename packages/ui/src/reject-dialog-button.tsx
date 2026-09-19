@@ -89,7 +89,7 @@ export function RejectDialogButton({
         />
         <textarea
           autoFocus
-          className="min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring"
+          className="min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
           onChange={(event) => setReason(event.target.value)}
           placeholder={placeholder}
           value={reason}

@@ -38,7 +38,7 @@ export function Field({ label, htmlFor, hint, error, wide, children }: FieldProp
 }
 
 export const inputClassName =
-  "h-9 w-full rounded-lg border bg-background px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring";
+  "h-9 w-full rounded-lg border bg-background px-3 text-sm transition-colors placeholder:text-muted-foreground focus-visible:border-ring";
 
 export const textareaClassName =
-  "min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring";
+  "min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm transition-colors placeholder:text-muted-foreground focus-visible:border-ring";

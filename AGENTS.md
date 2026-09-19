@@ -89,10 +89,22 @@ Token/component detail: `DESIGN-SYSTEM.md`.
    `:focus-visible`, so do not add one per component — and never write `outline-none`, which
    suppresses it everywhere including keyboard focus.
 
-Rules 6–8 are enforced by eslint (`packages/eslint-config`), as errors in `apps/client` and as
-warnings in `apps/lecturer`, `apps/admin`, and `packages/ui` until those get their own audit.
-Promote an app to `error` in the same change that cleans it up. **Do not silence a rule to land
-a change** — the whole point is that the convention runs rather than being remembered.
+Rules 6–8 are enforced by eslint (`packages/eslint-config`) as **errors in all three apps and in
+`packages/ui`**. `apps/lecturer`, `apps/admin` and `packages/ui` ran them as warnings while their
+pre-existing drift was outstanding; that drift is now zero and they were promoted in the change
+that cleared it. **Do not silence a rule to land a change** — the whole point is that the
+convention runs rather than being remembered.
+
+Two carve-outs, both deliberate and both commented at the call site:
+
+- `react-hooks/set-state-in-effect` stays a **warning**. Every current hit was read and is a
+  pattern that has to be an effect: reading `localStorage` after hydration, the mounted guard,
+  the loading flag a fetch raises, the reset when auth drops. It is a React Compiler performance
+  hint about cascading renders, not a correctness check. Kept on so an avoidable one still shows.
+- `@next/next/no-img-element` is disabled per line on the four `<img>` tags whose `src` is a
+  **user-supplied URL** (chat attachments, avatars, cover images, document previews). `next/image`
+  needs a `remotePatterns` allowlist, and the only pattern that covers arbitrary hosts is `**`,
+  which turns the image optimizer into an open proxy. A plain `<img>` is the correct tag there.
 9. **Ship it or delete it.** No nav-reachable route may render a placeholder. Mock data is
    allowed only where the shape and interaction are the real ones and a backend is planned; a
    mock that exists to fill a grid gets deleted, along with its data file and components.
@@ -146,4 +158,8 @@ at build time, so a page that only fails during static generation passes typeche
 Check the exit code directly — `pnpm build | tail` reports the **pipe's** status, not the build's,
 so a red build reads as green.
 
-There are no tests in this repository yet. Run relevant tests once tests exist.
+There is no test runner. Eleven `*.test.ts` files exist — plain `node:assert` self-checks, each
+with its own run command in its header comment — but they need `tsx` to resolve the extensionless
+imports, and `tsx` is not a dependency of this repo. **They do not currently run.** Either add
+`tsx` and a `test` script, or treat them as documentation of the invariant until someone does;
+what you must not do is cite them as passing.

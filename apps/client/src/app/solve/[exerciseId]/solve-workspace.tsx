@@ -235,7 +235,7 @@ export function SolveWorkspace({
           </div>
         );
       case "discussion":
-        return <DiscussionPanel problemTitle={problem.title} />;
+        return <DiscussionPanel />;
       case "code":
         return (
           <div className="flex h-full flex-col">

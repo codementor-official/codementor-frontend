@@ -172,6 +172,15 @@ consequence of the theme:
   dark surface here, matching the Monaco panes.
 - **Decorative brand tiles** (the practice collection cards) — their gradients would
   otherwise run light-to-orange beneath white text.
+- **Modal scrims and media letterboxes** (`bg-ink-fixed/50` behind a drawer, the dark mat behind
+  a video or a preview image) — a scrim that inverts is a white sheet over a dark page.
+
+`apps/lecturer` and `apps/admin` build on the shadcn-shaped token set in `packages/ui/src/theme.css`
+rather than client's, and used to define neither of these. Both now declare `--color-ink-fixed` and
+`--text-2xs` in their own `@theme inline` block, with client's values. That is not decoration: the
+eslint rules that reject `bg-black` and `text-[11px]` name these as the replacement, so before they
+existed the only way to write a scrim or an 11px label in those apps was the literal the rule bans.
+A token the linter demands has to exist everywhere the linter runs.
 
 ### Preference and application
 

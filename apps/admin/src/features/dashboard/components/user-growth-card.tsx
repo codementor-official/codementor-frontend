@@ -51,7 +51,7 @@ export function UserGrowthCard({
           </span>
           <h2 className="text-base font-semibold">Tăng trưởng người dùng</h2>
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground sm:gap-4 sm:text-xs">
+        <div className="flex items-center gap-3 text-2xs text-muted-foreground sm:gap-4 sm:text-xs">
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-chart-1" />
             Tổng cộng dồn
@@ -66,7 +66,7 @@ export function UserGrowthCard({
         <p className="text-2xl font-semibold tracking-tight sm:text-[28px]">
           {(latest?.total ?? 0).toLocaleString("vi-VN")}
         </p>
-        <p className="mt-1 text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+        <p className="mt-1 text-2xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
           Tổng tài khoản tới {latest ? monthLabel(latest.month) : "—"}
         </p>
         <div className="mt-5 h-[290px] w-full sm:h-[312px]">

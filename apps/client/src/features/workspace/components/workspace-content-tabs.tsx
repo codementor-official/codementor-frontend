@@ -631,6 +631,8 @@ function DocumentPreviewDialog({
           ) : !url ? (
             <Empty icon={FileText} title="Không có đường dẫn xem trước" />
           ) : kind === "image" ? (
+            // Tài liệu do người dùng tải lên, host tuỳ ý. Ghi chú đầy đủ ở workspace-chat.tsx.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={url}
               alt={document.title}

@@ -488,7 +488,18 @@ function linkify(text: string) {
         rel={part.startsWith("http") ? "noreferrer" : undefined}
         className="font-medium text-primary underline-offset-2 hover:underline"
       >
-        {/https?:\/\/[^\s]+\.(png|jpe?g|gif|webp)(\?[^\s]*)?$/i.test(part) ? <img src={part} alt="Hình ảnh được chia sẻ trong chat" className="mt-2 block max-h-56 w-auto max-w-[min(100%,28rem)] rounded-lg border border-border object-contain" loading="lazy" /> : part}
+        {/https?:\/\/[^\s]+\.(png|jpe?g|gif|webp)(\?[^\s]*)?$/i.test(part) ? (
+          // URL do người dùng dán vào chat, host tuỳ ý. Xem ghi chú ở <Avatar> bên dưới.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={part}
+            alt="Hình ảnh được chia sẻ trong chat"
+            className="mt-2 block max-h-56 w-auto max-w-[min(100%,28rem)] rounded-lg border border-border object-contain"
+            loading="lazy"
+          />
+        ) : (
+          part
+        )}
       </a>
     ) : (
       part
@@ -498,6 +509,10 @@ function linkify(text: string) {
 
 function Avatar({ message }: { message: WorkspaceMessage }) {
   return message.sender.avatarUrl ? (
+    // Nguồn ảnh là URL người dùng nhập/tải lên, host tuỳ ý. `next/image` bắt khai báo
+    // remotePatterns; mở `**` biến bộ tối ưu ảnh thành proxy công khai cho mọi URL.
+    // Thẻ <img> là lựa chọn đúng ở đây.
+    // eslint-disable-next-line @next/next/no-img-element
     <img src={message.sender.avatarUrl} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
   ) : (
     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-bold text-on-ink">

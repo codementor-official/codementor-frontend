@@ -26,7 +26,7 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
         <div className="fixed inset-0 z-40 md:hidden">
           <button
             aria-label="Đóng lớp phủ thanh bên"
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-ink-fixed/50"
             onClick={() => setMobileOpen(false)}
             type="button"
           />

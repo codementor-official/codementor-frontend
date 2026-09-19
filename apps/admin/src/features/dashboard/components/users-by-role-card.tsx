@@ -35,7 +35,7 @@ export function UsersByRoleCard({
       </CardHeader>
       <CardContent>
         <p className="text-2xl font-semibold tracking-tight">{total.toLocaleString("vi-VN")}</p>
-        <p className="mt-1 text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+        <p className="mt-1 text-2xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
           Tổng tài khoản
         </p>
         <div className="mt-5 h-[238px] w-full sm:h-[260px] xl:h-[290px]">
@@ -80,7 +80,7 @@ export function UsersByRoleCard({
           {data.map((item) => (
             <div key={item.name}>
               <p className="text-sm font-semibold">{item.value.toLocaleString("vi-VN")}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">{item.name}</p>
+              <p className="mt-0.5 text-2xs text-muted-foreground">{item.name}</p>
             </div>
           ))}
         </div>

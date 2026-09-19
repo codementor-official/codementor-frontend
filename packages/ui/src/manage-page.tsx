@@ -312,7 +312,7 @@ function CardGrid<TData>({
       {rows.map((row) =>
         onCardClick ? (
           <button
-            className="rounded-lg text-left transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+            className="rounded-lg text-left [&>*]:transition-colors hover:[&>*]:border-ring focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
             key={getRowId(row)}
             onClick={() => onCardClick(row)}
             type="button"
