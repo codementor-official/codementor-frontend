@@ -36,6 +36,7 @@ interface AuthContextValue {
    * chosen IdP via `kc_idp_hint`. Rejects on cancel/error.
    */
   signInWithPopup: (provider: SocialProvider) => Promise<void>;
+  cancelPopupSignIn: () => void;
   /**
    * Tạo tài khoản rồi đăng nhập luôn, cũng qua BFF. Keycloak vẫn là nơi tài khoản được
    * tạo ra — CodeMentor không có bảng người dùng riêng nào ở đây.
@@ -87,6 +88,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   // động đổi danh tính (bấm nút đăng nhập popup lần nữa) không đi qua guard ở trên —
   // khác với gia hạn nền, đây là hành động người dùng vừa chọn.
   const explicitPopupSignInRef = useRef(false);
+  const popupAbortRef = useRef<AbortController | null>(null);
+  const popupWindowRef = useRef<Window | null>(null);
 
   const manager = () => {
     // Resolved lazily because UserManager touches window.sessionStorage, which does
@@ -246,6 +249,15 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       },
       signInWithPopup: async (provider) => {
         setError(null);
+        const popupName = "codementor-social-login";
+        const popupWindow = window.open("", popupName, "width=480,height=640");
+        if (!popupWindow) {
+          setError("Trình duyệt đã chặn cửa sổ đăng nhập. Vui lòng cho phép popup rồi thử lại.");
+          return;
+        }
+        const controller = new AbortController();
+        popupAbortRef.current = controller;
+        popupWindowRef.current = popupWindow;
         try {
           // signinPopup resolves once the popup's callback (this same /auth/callback,
           // run inside the popup) posts the result back — see CallbackPage. Its
@@ -254,17 +266,32 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           explicitPopupSignInRef.current = true;
           await manager().signinPopup({
             extraQueryParams: { kc_idp_hint: provider },
-            popupWindowFeatures: { width: 480, height: 640, popup: true },
+            popupWindowTarget: popupName,
+            popupAbortOnClose: true,
+            popupSignal: controller.signal,
+            popupWindowFeatures: {
+              width: 480,
+              height: 640,
+              popup: true,
+              closePopupWindowAfterInSeconds: 120,
+            },
           });
         } catch (cause) {
           explicitPopupSignInRef.current = false;
-          // The user closing the popup themselves surfaces as a plain rejection —
-          // not worth alarming them with an "error".
           const message = cause instanceof Error ? cause.message : String(cause);
-          if (!/popup closed/i.test(message)) {
+          if (!/popup (closed|canceled|aborted)/i.test(message)) {
             setError("Không thể đăng nhập. Vui lòng thử lại.");
           }
+        } finally {
+          if (popupAbortRef.current === controller) popupAbortRef.current = null;
+          if (popupWindowRef.current === popupWindow) popupWindowRef.current = null;
+          if (!popupWindow.closed) popupWindow.close();
         }
+      },
+      cancelPopupSignIn: () => {
+        popupAbortRef.current?.abort("Popup canceled");
+        popupWindowRef.current?.close();
+        explicitPopupSignInRef.current = false;
       },
       /**
        * Đăng xuất phải thu hồi token của RIÊNG app này, nếu không lần bấm "Đăng nhập"

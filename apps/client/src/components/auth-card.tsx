@@ -28,7 +28,7 @@ import { useAuth } from "@/providers/auth-provider";
 type Pending = "credentials" | "google" | "facebook" | null;
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
-  const { status, error, signInWithPassword, signUpWithPassword, signInWithPopup } = useAuth();
+  const { status, error, signInWithPassword, signUpWithPassword, signInWithPopup, cancelPopupSignIn } = useAuth();
   const router = useRouter();
   const isSignup = mode === "signup";
 
@@ -150,7 +150,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               id="username"
               name="username"
               onChange={(event) => setUsername(event.target.value)}
-              placeholder="ban@student.iuh.edu.vn"
+              placeholder="codementor@gmail.com"
               required
               type={isSignup ? "email" : "text"}
               value={username}
@@ -252,6 +252,18 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
             onClick={() => void onSocial("facebook")}
           />
         </div>
+        {(pending === "google" || pending === "facebook") && (
+          <div className="mt-3 text-center">
+            <p className="text-xs text-text-muted">Đang chờ cửa sổ đăng nhập. Bạn có thể hủy để dùng mật khẩu.</p>
+            <button
+              className="mt-1 text-xs font-semibold text-primary hover:underline"
+              onClick={cancelPopupSignIn}
+              type="button"
+            >
+              Hủy đăng nhập qua {pending === "google" ? "Google" : "Facebook"}
+            </button>
+          </div>
+        )}
 
         <p className="mt-5 text-center text-xs text-text-muted">
           {isSignup ? "Đã có tài khoản? " : "Chưa có tài khoản? "}
