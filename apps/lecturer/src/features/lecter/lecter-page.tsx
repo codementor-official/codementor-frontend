@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BookOpen, Code2, FileText, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -10,10 +10,8 @@ import {
   CopilotChat,
   CopilotKitProvider,
   useAgent,
-  useCopilotKit,
 } from "@copilotkit/react-core/v2";
 import "@copilotkit/react-core/v2/styles.css";
-import { readAccessToken } from "@/lib/api";
 import { HistoryRail } from "./history-rail";
 import { LecterHumanInTheLoop } from "./hitl";
 import { LecterCourseHumanInTheLoop } from "./hitl-course";
@@ -23,47 +21,6 @@ import { ToolRenderers } from "./tool-renderers";
 
 /** Cùng tên với `LangGraphAgent(name="lecter")` ở ai-service và khoá agent trong route runtime. */
 const LECTER_AGENT_ID = "lecter";
-
-/** Trễ tối đa giữa lúc token được gia hạn và lúc CopilotKit biết. */
-const TOKEN_SYNC_MS = 30_000;
-
-function bearer(): string {
-  return `Bearer ${readAccessToken() ?? ""}`;
-}
-
-/**
- * Giữ cho header `Authorization` của CopilotKit luôn là token hiện hành.
- *
- * `AuthProvider` giữ token trong `useRef` và CỐ TÌNH không re-render khi `automaticSilentRenew`
- * đổi token (~5 phút một lần, token Keycloak sống 300s), còn CopilotKit trải phẳng prop
- * `headers` MỘT LẦN bằng `Object.entries` rồi giữ bản sao. Nên getter hay hàm đặt trong prop đó
- * đều vô dụng, và không có cầu nối này thì sau ~5 phút mọi lượt trả 401.
- *
- * So sánh với `copilotkit.headers` chứ không với một ref cục bộ: `CopilotKitProvider` cũng gọi
- * `setHeaders(mergedHeaders)` trong effect CỦA CHÍNH NÓ, mà effect của cha chạy SAU effect của
- * con — mọi giá trị đặt ở đây lúc mount đều bị nó ghi đè. Đọc lại trạng thái thật của core
- * khiến vòng này tự chữa: lần chạy kế tiếp thấy header sai thì đặt lại. Giá trị đúng ngay từ
- * request đầu tiên đến từ prop `headers` của trang, không phải từ đây.
- *
- * ponytail: hỏi thăm theo chu kỳ thay vì nghe sự kiện `userLoaded` của oidc-client-ts — ngắn
- * hơn, và bắt được cả trường hợp header bị ghi đè chứ không chỉ lúc token đổi.
- */
-function AuthHeaderSync() {
-  const { copilotkit } = useCopilotKit();
-
-  useEffect(() => {
-    const apply = () => {
-      const value = bearer();
-      if (copilotkit.headers?.Authorization === value) return;
-      copilotkit.setHeaders({ Authorization: value });
-    };
-    apply();
-    const timer = setInterval(apply, TOKEN_SYNC_MS);
-    return () => clearInterval(timer);
-  }, [copilotkit]);
-
-  return null;
-}
 
 /** Markdown của repo, không phải của CopilotKit: cùng `.rich-text` mà AI Tutor và studio dùng. */
 function Markdown({ content }: { content: string }) {
@@ -169,11 +126,6 @@ export function LecterPage() {
   const [freshId] = useState(() => crypto.randomUUID());
   const threadId = routeId ?? freshId;
 
-  // Token lúc mở trang. Đây là đường duy nhất đặt được header TRƯỚC lần gọi đầu tiên: provider
-  // đẩy `mergedHeaders` vào core trong effect của nó, sau mọi effect con. Định danh phải ổn định
-  // — object mới mỗi lần render sẽ khiến provider chạy lại effect đó (kèm `connect()`) liên tục.
-  // Gia hạn về sau do <AuthHeaderSync> lo.
-  const initialAuthHeaders = useMemo(() => ({ Authorization: bearer() }), []);
   const [reloadKey, setReloadKey] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState(false);
 
@@ -207,13 +159,9 @@ export function LecterPage() {
           // vào giữa trang giảng viên. `showDevConsole` KHÔNG còn điều khiển nó (đã deprecated);
           // `enableInspector` mới là cờ đúng.
           enableInspector={false}
-          headers={initialAuthHeaders}
           // Tầng Node cùng origin, không phải Kong: xem `app/api/copilotkit/[[...path]]/route.ts`.
           runtimeUrl="/api/copilotkit"
         >
-          {/* Trước <ChatPanel>: effect của con chạy theo thứ tự khai báo, header phải có
-              trước lần connect đầu tiên. */}
-          <AuthHeaderSync />
           <ToolRenderers />
           <LecterHumanInTheLoop />
           <LecterCourseHumanInTheLoop />

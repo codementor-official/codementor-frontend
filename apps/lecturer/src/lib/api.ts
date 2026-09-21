@@ -1,6 +1,5 @@
 import { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
-import { apiBaseUrl } from "@/lib/env";
 import type { UpdateProfileInput, UserProfile } from "@/features/profile/types";
 import type {
   Exercise,
@@ -26,30 +25,12 @@ import type { Article, ArticleCoverUpload, ArticleCoverUploadConfig, ArticleList
 import type { UiNotification } from "@codementor/ui";
 
 /**
- * The single place that knows a backend URL. Everything below calls the gateway, so
- * moving a resource between services, or putting a different gateway in front, is a
- * change to kong.yml and to nothing in this application.
+ * Trình duyệt chỉ gọi BFF cùng origin. BFF đọc phiên HttpOnly, gắn access token rồi mới
+ * chuyển tiếp tới gateway; token và địa chỉ backend không xuất hiện trong JavaScript.
  */
-let accessTokenReader: () => string | null = () => null;
-
-/**
- * Token hiện hành, đọc lại ở mỗi lời gọi.
- *
- * Lecter cần nó ngoài `createApiClient`: CopilotKit chốt header một lần, mà một phiên chat dài
- * thì token sẽ hết hạn giữa chừng — xem `AuthHeaderSync` trong `features/lecter/lecter-page.tsx`.
- */
-export function readAccessToken(): string | null {
-  return accessTokenReader();
-}
-
-/** Called once by the auth provider; keeps the client free of React imports. */
-export function setAccessTokenReader(reader: () => string | null): void {
-  accessTokenReader = reader;
-}
-
 const request = createApiClient({
-  baseUrl: apiBaseUrl,
-  getAccessToken: () => readAccessToken(),
+  baseUrl: "/api/backend",
+  getAccessToken: () => null,
 });
 
 /** Every backend response is wrapped by the response interceptor in libs/platform. */

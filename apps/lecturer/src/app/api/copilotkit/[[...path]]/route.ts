@@ -6,10 +6,9 @@
  * mount. Route này là đường OSS: `CopilotRuntime` ở chế độ SSE, không license, không
  * Intelligence Platform.
  *
- * Uỷ quyền không đổi. Trình duyệt gửi `Authorization` của chính người dùng tới đây; runtime
- * chuyển tiếp header đó sang agent (`forwardHeaders` mặc định cho qua `authorization` và `x-*`),
- * và ai-service vẫn tự verify JWT Keycloak trên `/api/v1/ai/*`. Tầng này không giữ credential
- * nào của riêng nó — nó không thể gọi thay mặt ai cả.
+ * Trình duyệt không còn giữ access token. Route đọc phiên HttpOnly, gia hạn khi cần rồi gắn
+ * `Authorization` vào request nội bộ; ai-service vẫn tự verify JWT Keycloak trên
+ * `/api/v1/ai/*`. Refresh token không bao giờ rời khỏi cookie đã mã hóa.
  */
 
 import { EventType, HttpAgent, type BaseEvent, type Message } from "@ag-ui/client";
@@ -24,6 +23,8 @@ import {
   type AgentRunnerStopRequest,
 } from "@copilotkit/runtime/v2";
 import { Observable, from, mergeMap } from "rxjs";
+import { NextRequest, NextResponse } from "next/server";
+import { clearSession, needsRefresh, readSession, refreshSession, setSession } from "@/features/auth/server/session";
 
 /**
  * Cùng tên với `LangGraphAgent(name="lecter")` ở ai-service và với `LECTER_AGENT_ID` trong
@@ -115,9 +116,38 @@ const runtime = new CopilotRuntime({
 
 const handler = createCopilotRuntimeHandler({ runtime, basePath: "/api/copilotkit" });
 
-export const GET = handler;
-export const POST = handler;
-export const DELETE = handler;
+async function proxy(request: NextRequest): Promise<Response> {
+  if (request.method !== "GET" && request.headers.get("origin") !== request.nextUrl.origin) {
+    return NextResponse.json({ message: "Invalid request origin" }, { status: 403 });
+  }
+  let session = await readSession(request);
+  if (!session) return NextResponse.json({ message: "Authentication required" }, { status: 401 });
+  let refreshed = false;
+  try {
+    refreshed = needsRefresh(session);
+    if (refreshed) session = await refreshSession(session);
+  } catch {
+    const response = NextResponse.json({ message: "Session expired" }, { status: 401 });
+    clearSession(response);
+    return response;
+  }
+  const headers = new Headers(request.headers);
+  headers.set("authorization", `Bearer ${session.accessToken}`);
+  const forwarded = new Request(request.url, {
+    body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
+    duplex: "half", headers, method: request.method, signal: request.signal,
+  } as RequestInit & { duplex: "half" });
+  const upstream = await handler(forwarded);
+  if (!refreshed) return upstream;
+  const response = new NextResponse(upstream.body, { headers: upstream.headers,
+    status: upstream.status, statusText: upstream.statusText });
+  await setSession(response, session);
+  return response;
+}
+
+export const GET = proxy;
+export const POST = proxy;
+export const DELETE = proxy;
 
 // SSE: không được để Next đệm hay cache lượt chạy.
 export const dynamic = "force-dynamic";
