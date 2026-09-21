@@ -6,6 +6,8 @@ export interface AdminAuthConfig {
   internalKeycloakUrl: string;
   realm: string;
   clientId: string;
+  bffClientId: string;
+  bffClientSecret: string;
   audience: string;
   sessionSecret: string;
   secureCookies: boolean;
@@ -29,6 +31,8 @@ export function getAdminAuthConfig(): AdminAuthConfig {
       process.env.KEYCLOAK_CLIENT_ID ??
       process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID ??
       DEFAULT_CLIENT_ID,
+    bffClientId: process.env.KEYCLOAK_BFF_CLIENT_ID ?? "codementor-web-bff",
+    bffClientSecret: process.env.KEYCLOAK_BFF_CLIENT_SECRET ?? "",
     audience: process.env.KEYCLOAK_API_AUDIENCE ?? DEFAULT_AUDIENCE,
     sessionSecret,
     secureCookies: process.env.AUTH_COOKIE_SECURE === "true",

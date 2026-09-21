@@ -2,14 +2,20 @@
 
 import { hasRole } from "@codementor/auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
+import { Button, Input } from "@codementor/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { useAdminAuth } from "./auth-provider";
 
 export function LoginPage() {
   const router = useRouter();
-  const { authenticated, initialized, login, user } = useAdminAuth();
-  const loginStarted = useRef(false);
+  const { authenticated, initialized, signInWithPassword, user } = useAdminAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!initialized) return;
@@ -19,13 +25,24 @@ export function LoginPage() {
       return;
     }
 
-    if (loginStarted.current) return;
-    loginStarted.current = true;
-    void login();
-  }, [authenticated, initialized, login, router, user]);
+  }, [authenticated, initialized, router, user]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setPending(true);
+    try {
+      await signInWithPassword(email, password);
+      router.replace("/dashboard");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Đăng nhập thất bại.");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-6">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-5 sm:p-8">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
@@ -35,16 +52,28 @@ export function LoginPage() {
         }}
       />
 
-      <div className="relative flex w-full max-w-sm flex-col items-center">
-        <BrandLogo size={56} />
-        <p className="mt-4 text-sm font-semibold">CodeMentor</p>
-        <p className="text-xs text-muted-foreground">Bảng điều khiển quản trị</p>
-
-        <div className="mt-6 w-full rounded-lg border bg-card p-8 text-center shadow-sm">
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <span className="size-1.5 animate-pulse rounded-full bg-primary" />
-            Đang chuyển đến CodeMentor ID…
+      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-3xl border bg-card shadow-xl lg:grid-cols-[1fr_1fr]">
+        <div className="hidden min-h-[570px] flex-col justify-between bg-primary/5 p-10 lg:flex">
+          <div className="flex items-center gap-3"><BrandLogo size={42} /><span className="text-lg font-bold">CodeMentor Admin</span></div>
+          <div>
+            <div className="mb-7 flex size-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary"><ShieldCheck className="size-8" aria-hidden="true" /></div>
+            <h2 className="max-w-sm text-3xl font-bold tracking-tight">Không gian quản trị an toàn và tập trung.</h2>
+            <p className="mt-4 max-w-sm text-sm leading-7 text-muted-foreground">Kiểm duyệt nội dung, theo dõi hệ thống và hỗ trợ cộng đồng học tập từ một nơi duy nhất.</p>
           </div>
+          <p className="text-xs text-muted-foreground">Chỉ dành cho tài khoản đã được cấp quyền quản trị.</p>
+        </div>
+        <div className="flex min-h-[570px] flex-col justify-center p-7 sm:p-12">
+          <div className="mb-9 lg:hidden"><BrandLogo size={42} /></div>
+          <span className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium text-primary"><LockKeyhole className="size-3.5" /> Cổng quản trị</span>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Chào mừng trở lại</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Đăng nhập bằng tài khoản CodeMentor được cấp quyền Admin.</p>
+          <form className="mt-8 space-y-5" onSubmit={(event) => void submit(event)}>
+            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="admin-email">Email hoặc tên đăng nhập</label><Input id="admin-email" autoComplete="username" autoFocus placeholder="codementor@gmail.com" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={pending} /></div>
+            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="admin-password">Mật khẩu</label><Input id="admin-password" autoComplete="current-password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} required disabled={pending} rightSlot={<button type="button" className="text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>} /></div>
+            {error && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+            <Button className="w-full" type="submit" disabled={!initialized || pending}>{pending ? "Đang đăng nhập…" : "Đăng nhập quản trị"}</Button>
+          </form>
+          <p className="mt-8 text-center text-xs leading-5 text-muted-foreground">Phiên đăng nhập được bảo vệ; mật khẩu không được lưu trên trình duyệt.</p>
         </div>
       </div>
     </main>

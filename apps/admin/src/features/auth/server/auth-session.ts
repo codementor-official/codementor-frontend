@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { User } from "@codementor/types";
-import { platformRoleOf } from "@codementor/auth";
+import { hasRole, platformRoleOf } from "@codementor/auth";
 import {
   createRemoteJWKSet,
   EncryptJWT,
@@ -24,6 +24,7 @@ export interface AuthFlow {
 }
 
 export interface AdminSession {
+  tokenClient?: "admin" | "bff";
   accessToken: string;
   refreshToken: string;
   idToken?: string;
@@ -134,20 +135,57 @@ export async function exchangeAuthorizationCode(input: {
   if (!tokens.id_token) throw new Error("Keycloak did not return an ID token");
   await verifyToken(tokens.id_token, config.clientId, input.nonce);
   const accessPayload = await verifyToken(tokens.access_token, config.audience);
-  return sessionFromTokens(tokens, accessPayload);
+  return sessionFromTokens(tokens, accessPayload, "admin");
+}
+
+export class LoginError extends Error {
+  constructor(public readonly status: number, message: string) {
+    super(message);
+  }
+}
+
+export async function signInWithPassword(username: string, password: string): Promise<AdminSession> {
+  const config = getAdminAuthConfig();
+  if (!config.bffClientSecret) throw new LoginError(503, "Đăng nhập chưa được cấu hình trên máy chủ.");
+  let tokens: TokenResponse;
+  try {
+    tokens = await requestTokens({
+      grant_type: "password",
+      client_id: config.bffClientId,
+      client_secret: config.bffClientSecret,
+      username,
+      password,
+      scope: "openid profile email",
+    });
+  } catch (error) {
+    if (error instanceof TokenRequestError && error.status === 400) {
+      throw new LoginError(401, "Email hoặc mật khẩu không đúng.");
+    }
+    throw new LoginError(502, "Không thể kết nối dịch vụ đăng nhập. Vui lòng thử lại.");
+  }
+  const payload = await verifyToken(tokens.access_token, config.audience);
+  const session = sessionFromTokens(tokens, payload, "bff");
+  if (!hasRole(session.user, "admin")) {
+    await endAdminKeycloakSession(session).catch(() => undefined);
+    throw new LoginError(403, "Tài khoản chưa có quyền quản trị.");
+  }
+  return session;
 }
 
 export async function refreshAdminSession(session: AdminSession): Promise<AdminSession> {
   const config = getAdminAuthConfig();
+  const isBff = session.tokenClient === "bff";
   const tokens = await requestTokens({
     grant_type: "refresh_token",
-    client_id: config.clientId,
+    client_id: isBff ? config.bffClientId : config.clientId,
+    ...(isBff ? { client_secret: config.bffClientSecret } : {}),
     refresh_token: session.refreshToken,
   });
   const accessPayload = await verifyToken(tokens.access_token, config.audience);
   return sessionFromTokens(
     { ...tokens, id_token: tokens.id_token ?? session.idToken },
     accessPayload,
+    session.tokenClient ?? "admin",
   );
 }
 
@@ -164,15 +202,17 @@ export function sessionNeedsRefresh(session: AdminSession): boolean {
  * TOÀN BỘ phiên người dùng, kể cả apps/lecturer và apps/client (khi đăng nhập popup)
  * đang mở ở tab khác. `prompt: "login"` ở route đăng nhập đã buộc luôn hiện form bất
  * kể cookie SSO còn sống hay không, nên không cần dựa vào việc xoá cookie đó để "an
- * toàn" — chỉ cần refresh token của app này chết là đủ. `codementor-admin` là public
- * client (không có client_secret) nên endpoint chấp nhận `client_id` + `refresh_token`
- * không kèm secret, giống hệt cách `requestTokens` gọi grant_type=refresh_token ở trên.
+ * toàn" — chỉ cần refresh token của app này chết là đủ. Phiên cũ dùng public client
+ * `codementor-admin`; form đăng nhập mới dùng confidential BFF client, vì vậy hàm tự chọn
+ * đúng client và chỉ gửi client secret cho phiên BFF.
  */
 export async function endAdminKeycloakSession(session: AdminSession): Promise<void> {
   const config = getAdminAuthConfig();
+  const isBff = session.tokenClient === "bff";
   await fetch(`${keycloakRealmUrl(config)}/protocol/openid-connect/logout`, {
     body: new URLSearchParams({
-      client_id: config.clientId,
+      client_id: isBff ? config.bffClientId : config.clientId,
+      ...(isBff ? { client_secret: config.bffClientSecret } : {}),
       refresh_token: session.refreshToken,
     }),
     cache: "no-store",
@@ -189,8 +229,14 @@ async function requestTokens(parameters: Record<string, string>): Promise<TokenR
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     method: "POST",
   });
-  if (!response.ok) throw new Error(`Keycloak token request failed with status ${response.status}`);
+  if (!response.ok) throw new TokenRequestError(response.status);
   return (await response.json()) as TokenResponse;
+}
+
+class TokenRequestError extends Error {
+  constructor(readonly status: number) {
+    super(`Keycloak token request failed with status ${status}`);
+  }
 }
 
 async function verifyToken(
@@ -206,9 +252,10 @@ async function verifyToken(
   return result.payload;
 }
 
-function sessionFromTokens(tokens: TokenResponse, payload: JWTPayload): AdminSession {
+function sessionFromTokens(tokens: TokenResponse, payload: JWTPayload, tokenClient: "admin" | "bff"): AdminSession {
   const now = Math.floor(Date.now() / 1000);
   return {
+    tokenClient,
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
     idToken: tokens.id_token,

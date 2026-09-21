@@ -15,7 +15,7 @@ interface AdminAuthContextValue {
   initialized: boolean;
   authenticated: boolean;
   user: User | null;
-  login: () => Promise<void>;
+  signInWithPassword: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -28,7 +28,7 @@ export function AdminAuthProvider({ children }: Readonly<{ children: ReactNode }
 
   useEffect(() => {
     let active = true;
-    void fetch("/api/auth/session", { cache: "no-store" })
+    void fetch("/api/auth/session", { cache: "no-store", signal: AbortSignal.timeout(8_000) })
       .then(async (response) => {
         const session = (await response.json()) as { authenticated: boolean; user: User | null };
         if (active) {
@@ -50,8 +50,18 @@ export function AdminAuthProvider({ children }: Readonly<{ children: ReactNode }
     };
   }, []);
 
-  const login = useCallback(async () => {
-    window.location.assign("/api/auth/login");
+  const signInWithPassword = useCallback(async (username: string, password: string) => {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const body = (await response.json()) as { message?: string; user?: User };
+    if (!response.ok || !body.user) throw new Error(body.message ?? "Đăng nhập thất bại.");
+    setUser(body.user);
+    setAuthenticated(true);
+    setInitialized(true);
   }, []);
 
   const logout = useCallback(async () => {
@@ -59,8 +69,8 @@ export function AdminAuthProvider({ children }: Readonly<{ children: ReactNode }
   }, []);
 
   const value = useMemo(
-    () => ({ initialized, authenticated, user, login, logout }),
-    [authenticated, initialized, login, logout, user],
+    () => ({ initialized, authenticated, user, signInWithPassword, logout }),
+    [authenticated, initialized, signInWithPassword, logout, user],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
