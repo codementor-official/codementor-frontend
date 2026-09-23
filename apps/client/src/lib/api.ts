@@ -8,7 +8,14 @@ import type {
   SuggestedTestCase,
 } from "@codementor/solve";
 import { apiBaseUrl } from "@/lib/env";
-import type { AiStatus, AiDocument, AiTurn, AiConversation, AiConversationSummary, AiPage } from "@/features/ai-tutor/types";
+import type {
+  AiStatus,
+  AiDocument,
+  AiTurn,
+  AiConversation,
+  AiConversationSummary,
+  AiPage,
+} from "@/features/ai-tutor/types";
 import type {
   LecterContentCheck,
   LecterSessionSummary,
@@ -16,8 +23,17 @@ import type {
 import type { Message } from "@ag-ui/client";
 import type { CodeySessionSummary } from "@/features/codey/types";
 import type { NotificationPage } from "@/types/notification";
+import type {
+  ExerciseSolutionComment,
+  ExerciseSolutionInput,
+  ExerciseSolutionsPage,
+} from "@/types/exercise-solutions";
 import type { RecommendationList } from "@/types/recommendation";
-import type { DashboardInsight, LearningDashboard, PendingAssignment } from '@/features/dashboard/types';
+import type {
+  DashboardInsight,
+  LearningDashboard,
+  PendingAssignment,
+} from "@/features/dashboard/types";
 import type {
   WorkspaceDetail,
   PublicWorkspaceDetail,
@@ -148,64 +164,162 @@ function query(
 export const api = {
   ai: {
     prepare: (slug: string, documentIds: string[]) =>
-      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">[]>(`/workspaces/${encodeURIComponent(slug)}/ai/documents/prepare`, { method: "POST", body: { documentIds } }),
+      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">[]>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/documents/prepare`,
+        { method: "POST", body: { documentIds } },
+      ),
     documentStates: (slug: string, documentIds: string[]) =>
-      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">[]>(`/workspaces/${encodeURIComponent(slug)}/ai/documents/status`, { method: "POST", body: { documentIds } }),
-    status: (slug: string) => unwrap<AiStatus>(`/workspaces/${encodeURIComponent(slug)}/ai/status`, { cache: "no-store" }),
-    documents: (slug: string, params: { page?: number; limit?: number; q?: string } = {}) =>
-      unwrap<AiPage<AiDocument>>(`/workspaces/${encodeURIComponent(slug)}/ai/documents${query(params)}`, { cache: "no-store" }),
+      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">[]>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/documents/status`,
+        { method: "POST", body: { documentIds } },
+      ),
+    status: (slug: string) =>
+      unwrap<AiStatus>(`/workspaces/${encodeURIComponent(slug)}/ai/status`, {
+        cache: "no-store",
+      }),
+    documents: (
+      slug: string,
+      params: { page?: number; limit?: number; q?: string } = {},
+    ) =>
+      unwrap<AiPage<AiDocument>>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/documents${query(params)}`,
+        { cache: "no-store" },
+      ),
     index: (slug: string, id: string) =>
-      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">>(`/workspaces/${encodeURIComponent(slug)}/ai/documents/${id}/index`, { method: "POST" }),
+      unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/documents/${id}/index`,
+        { method: "POST" },
+      ),
     conversations: (slug: string, page = 1) =>
-      unwrap<AiPage<AiConversationSummary>>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations${query({ page, limit: 10 })}`, { cache: "no-store" }),
+      unwrap<AiPage<AiConversationSummary>>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/conversations${query({ page, limit: 10 })}`,
+        { cache: "no-store" },
+      ),
     create: (slug: string, documentIds: string[]) =>
-      unwrap<AiConversation>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations`, { method: "POST", body: { documentIds } }),
+      unwrap<AiConversation>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/conversations`,
+        { method: "POST", body: { documentIds } },
+      ),
     read: (slug: string, id: string) =>
-      unwrap<AiConversation>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}`, { cache: "no-store" }),
+      unwrap<AiConversation>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}`,
+        { cache: "no-store" },
+      ),
     remove: (slug: string, id: string) =>
-      unwrap<{ deleted: boolean }>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}`, { method: "DELETE" }),
+      unwrap<{ deleted: boolean }>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}`,
+        { method: "DELETE" },
+      ),
     ask: (slug: string, id: string, question: string, requestId: string) =>
-      unwrap<AiTurn>(`/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}/messages`, { method: "POST", body: { question, requestId } }),
+      unwrap<AiTurn>(
+        `/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}/messages`,
+        { method: "POST", body: { question, requestId } },
+      ),
   },
   me: () => unwrap<AccountProfile>("/me"),
   dashboard: {
-    insight: () => unwrap<DashboardInsight>('/ai/dashboard/insight'),
-    generateInsight: () => unwrap<DashboardInsight>('/ai/dashboard/insight', { method: 'POST' }),
-    applyInsight: () => unwrap<DashboardInsight>('/ai/dashboard/insight/apply', { method: 'POST' }),
-    removeAppliedInsight: () => unwrap<DashboardInsight>('/ai/dashboard/insight/apply', { method: 'DELETE' }),
-    setInsightHidden: (hidden: boolean) => unwrap<{ hidden: boolean }>('/ai/dashboard/insight/visibility', { method: 'PATCH', body: { hidden } }),
-    learning: () => unwrap<LearningDashboard>('/activity/me/dashboard'),
-    assignments: () => unwrap<PendingAssignment[]>('/workspaces/me/pending-assignments'),
+    insight: () => unwrap<DashboardInsight>("/ai/dashboard/insight"),
+    generateInsight: () =>
+      unwrap<DashboardInsight>("/ai/dashboard/insight", { method: "POST" }),
+    applyInsight: () =>
+      unwrap<DashboardInsight>("/ai/dashboard/insight/apply", {
+        method: "POST",
+      }),
+    removeAppliedInsight: () =>
+      unwrap<DashboardInsight>("/ai/dashboard/insight/apply", {
+        method: "DELETE",
+      }),
+    setInsightHidden: (hidden: boolean) =>
+      unwrap<{ hidden: boolean }>("/ai/dashboard/insight/visibility", {
+        method: "PATCH",
+        body: { hidden },
+      }),
+    learning: () => unwrap<LearningDashboard>("/activity/me/dashboard"),
+    assignments: () =>
+      unwrap<PendingAssignment[]>("/workspaces/me/pending-assignments"),
   },
   account: {
-    emailVerification: () => unwrap<EmailVerificationStatus>("/me/email-verification", { cache: "no-store" }),
-    sendVerificationEmail: () => unwrap<EmailVerificationStatus & { sent: boolean }>("/me/email-verification", { method: "POST" }),
-    updateProfile: (body: Partial<Pick<AccountProfile, "displayName" | "handle" | "bio" | "avatarUrl" | "websiteUrl" | "githubHandle" | "locale" | "timezone">>) =>
-      unwrap<AccountProfile>("/me", { method: "PATCH", body }),
-    avatarUploadUrl: (body: { filename: string; contentType: string; sizeBytes: number }) =>
-      unwrap<PresignedAvatarUpload>("/me/avatar/upload-url", { method: "POST", body }),
+    emailVerification: () =>
+      unwrap<EmailVerificationStatus>("/me/email-verification", {
+        cache: "no-store",
+      }),
+    sendVerificationEmail: () =>
+      unwrap<EmailVerificationStatus & { sent: boolean }>(
+        "/me/email-verification",
+        { method: "POST" },
+      ),
+    updateProfile: (
+      body: Partial<
+        Pick<
+          AccountProfile,
+          | "displayName"
+          | "handle"
+          | "bio"
+          | "avatarUrl"
+          | "websiteUrl"
+          | "githubHandle"
+          | "locale"
+          | "timezone"
+        >
+      >,
+    ) => unwrap<AccountProfile>("/me", { method: "PATCH", body }),
+    avatarUploadUrl: (body: {
+      filename: string;
+      contentType: string;
+      sizeBytes: number;
+    }) =>
+      unwrap<PresignedAvatarUpload>("/me/avatar/upload-url", {
+        method: "POST",
+        body,
+      }),
     settings: () => unwrap<UserSettings>("/me/settings"),
     updateSettings: (body: Partial<UserSettings>) =>
       unwrap<UserSettings>("/me/settings", { method: "PATCH", body }),
-    resetSettings: () => unwrap<UserSettings>("/me/settings", { method: "DELETE" }),
+    resetSettings: () =>
+      unwrap<UserSettings>("/me/settings", { method: "DELETE" }),
     preferences: () => unwrap<UserLearningPreferences>("/me/preferences"),
-    updatePreferences: (body: Partial<Omit<UserLearningPreferences, "completedAt">> & { completedAt?: never }) =>
-      unwrap<UserLearningPreferences>("/me/preferences", { method: "PATCH", body }),
+    updatePreferences: (
+      body: Partial<Omit<UserLearningPreferences, "completedAt">> & {
+        completedAt?: never;
+      },
+    ) =>
+      unwrap<UserLearningPreferences>("/me/preferences", {
+        method: "PATCH",
+        body,
+      }),
     stats: () => unwrap<UserLearningStats>("/me/stats"),
     leaderboard: (limit = 5) =>
-      unwrap<LearningLeaderboardEntry[]>(`/users/leaderboard${query({ limit })}`),
+      unwrap<LearningLeaderboardEntry[]>(
+        `/users/leaderboard${query({ limit })}`,
+      ),
     activityCalendar: (weeks = 13) =>
       unwrap<UserActivityCalendar>(`/activity/me/calendar${query({ weeks })}`),
     recentActivity: (limit = 10) =>
       unwrap<UserActivityEntry[]>(`/activity/me${query({ limit })}`),
-    bookmarks: (params: { type?: BookmarkTarget; q?: string; sort?: BookmarkSort; page?: number; limit?: number } = {}) =>
-      unwrap<BookmarkPage>(`/me/bookmarks${query(params)}`),
+    bookmarks: (
+      params: {
+        type?: BookmarkTarget;
+        q?: string;
+        sort?: BookmarkSort;
+        page?: number;
+        limit?: number;
+      } = {},
+    ) => unwrap<BookmarkPage>(`/me/bookmarks${query(params)}`),
     bookmarkStatus: (targetType: BookmarkTarget, targetId: string) =>
       unwrap<{ saved: boolean }>(`/me/bookmarks/${targetType}/${targetId}`),
-    saveBookmark: (body: { targetType: BookmarkTarget; targetId: string; targetRef?: string }) =>
-      unwrap<BookmarkPage["items"][number]>("/me/bookmarks", { method: "POST", body }),
+    saveBookmark: (body: {
+      targetType: BookmarkTarget;
+      targetId: string;
+      targetRef?: string;
+    }) =>
+      unwrap<BookmarkPage["items"][number]>("/me/bookmarks", {
+        method: "POST",
+        body,
+      }),
     removeBookmark: (targetType: BookmarkTarget, targetId: string) =>
-      unwrap<{ removed: true }>(`/me/bookmarks/${targetType}/${targetId}`, { method: "DELETE" }),
+      unwrap<{ removed: true }>(`/me/bookmarks/${targetType}/${targetId}`, {
+        method: "DELETE",
+      }),
     submitReport: (body: {
       targetType: ReportTarget;
       targetId: string;
@@ -232,7 +346,8 @@ export const api = {
       unwrap<RoadmapEnrollment>(`/roadmaps/${id}/enroll`, { method: "POST" }),
     unenroll: (id: string) =>
       unwrap<void>(`/roadmaps/${id}/enroll`, { method: "DELETE" }),
-    progress: (id: string) => unwrap<RoadmapProgress>(`/roadmaps/${id}/progress`),
+    progress: (id: string) =>
+      unwrap<RoadmapProgress>(`/roadmaps/${id}/progress`),
   },
   courses: {
     catalogue: (params: CatalogueParams & { ids?: string } = {}) =>
@@ -284,9 +399,66 @@ export const api = {
     bank: (params: CatalogueParams = {}) =>
       unwrap<Page<ExerciseSummary>>(`/exercises${query(params)}`),
     topics: () => unwrap<ExerciseTopicSummary[]>("/exercises/topics"),
-    progressSummary: () => unwrap<ExerciseProgressSummary>("/exercises/progress-summary"),
+    progressSummary: () =>
+      unwrap<ExerciseProgressSummary>("/exercises/progress-summary"),
     /** Takes the UUID, not the slug — the service has no slug lookup. */
     detail: (id: string) => unwrap<ExerciseDetail>(`/exercises/${id}`),
+    solutions: {
+      list: (
+        exerciseId: string,
+        params: {
+          page?: number;
+          sort?: "newest" | "popular";
+          q?: string;
+          language?: string;
+        } = {},
+      ) =>
+        unwrap<ExerciseSolutionsPage>(
+          `/exercises/${encodeURIComponent(exerciseId)}/solutions${query(params)}`,
+        ),
+      create: (exerciseId: string, body: ExerciseSolutionInput) =>
+        unwrap<{ id: string }>(
+          `/exercises/${encodeURIComponent(exerciseId)}/solutions`,
+          { method: "POST", body: { ...body } },
+        ),
+      update: (
+        exerciseId: string,
+        solutionId: string,
+        body: ExerciseSolutionInput,
+      ) =>
+        unwrap<{ id: string }>(
+          `/exercises/${encodeURIComponent(exerciseId)}/solutions/${solutionId}`,
+          { method: "PATCH", body: { ...body } },
+        ),
+      remove: (exerciseId: string, solutionId: string) =>
+        unwrap<{ deleted: boolean }>(
+          `/exercises/${encodeURIComponent(exerciseId)}/solutions/${solutionId}`,
+          { method: "DELETE" },
+        ),
+      vote: (exerciseId: string, solutionId: string, voted: boolean) =>
+        unwrap<{ voted: boolean }>(
+          `/exercises/${encodeURIComponent(exerciseId)}/solutions/${solutionId}/vote`,
+          { method: voted ? "DELETE" : "POST" },
+        ),
+      comments: (exerciseId: string, solutionId: string) =>
+        unwrap<ExerciseSolutionComment[]>(
+          `/exercises/${encodeURIComponent(exerciseId)}/solutions/${solutionId}/comments`,
+        ),
+      comment: (exerciseId: string, solutionId: string, body: string) =>
+        unwrap<{ id: string }>(
+          `/exercises/${encodeURIComponent(exerciseId)}/solutions/${solutionId}/comments`,
+          { method: "POST", body: { body } },
+        ),
+      removeComment: (
+        exerciseId: string,
+        solutionId: string,
+        commentId: string,
+      ) =>
+        unwrap<{ deleted: boolean }>(
+          `/exercises/${encodeURIComponent(exerciseId)}/solutions/${solutionId}/comments/${commentId}`,
+          { method: "DELETE" },
+        ),
+    },
   },
 
   /**
@@ -296,25 +468,35 @@ export const api = {
    */
   recommendations: {
     roadmaps: (limit = 6) =>
-      unwrap<RecommendationList>(`/recommendations/roadmaps${query({ limit })}`),
+      unwrap<RecommendationList>(
+        `/recommendations/roadmaps${query({ limit })}`,
+      ),
     courses: (limit = 6) =>
       unwrap<RecommendationList>(`/recommendations/courses${query({ limit })}`),
     exercises: (limit = 6) =>
-      unwrap<RecommendationList>(`/recommendations/exercises${query({ limit })}`),
+      unwrap<RecommendationList>(
+        `/recommendations/exercises${query({ limit })}`,
+      ),
     articles: (limit = 6) =>
-      unwrap<RecommendationList>(`/recommendations/articles${query({ limit })}`),
+      unwrap<RecommendationList>(
+        `/recommendations/articles${query({ limit })}`,
+      ),
     /**
      * Bài viết liên quan bài đang đọc. Service bỏ chính bài đó khỏi kết quả và ưu tiên
      * bài cùng chủ đề — vẫn xếp theo hồ sơ học tập, không phải danh sách cùng tag thuần.
      */
     relatedArticles: (articleId: string, limit = 4) =>
-      unwrap<RecommendationList>(`/recommendations/articles/related${query({ articleId, limit })}`),
+      unwrap<RecommendationList>(
+        `/recommendations/articles/related${query({ articleId, limit })}`,
+      ),
     /** Chỉ nhóm CÔNG KHAI và đang hoạt động; nhóm đã tham gia bị service loại sẵn. */
     groups: (limit = 6) =>
       unwrap<RecommendationList>(`/recommendations/groups${query({ limit })}`),
     /** Một bài kế tiếp sau khi vừa nộp đạt — trả về cùng dạng danh sách, nhiều nhất 1 mục. */
     nextExercise: (exerciseId: string) =>
-      unwrap<RecommendationList>(`/recommendations/exercises/next${query({ exerciseId })}`),
+      unwrap<RecommendationList>(
+        `/recommendations/exercises/next${query({ exerciseId })}`,
+      ),
   },
 
   /**
@@ -365,10 +547,21 @@ export const api = {
         `/workspaces/${encodeURIComponent(slug)}/messages/unread`,
       ),
     messageResources: (slug: string) =>
-      unwrap<{ items: Array<{ url: string; title: string; kind: "file" | "link"; senderName: string; createdAt: string }>; total: number; scannedMessages: number }>(
-        `/workspaces/${encodeURIComponent(slug)}/messages/resources`,
-      ),
-    messageAttachmentUploadUrl: (slug: string, body: { filename: string; contentType: string; sizeBytes: number }) =>
+      unwrap<{
+        items: Array<{
+          url: string;
+          title: string;
+          kind: "file" | "link";
+          senderName: string;
+          createdAt: string;
+        }>;
+        total: number;
+        scannedMessages: number;
+      }>(`/workspaces/${encodeURIComponent(slug)}/messages/resources`),
+    messageAttachmentUploadUrl: (
+      slug: string,
+      body: { filename: string; contentType: string; sizeBytes: number },
+    ) =>
       unwrap<PresignedWorkspaceUpload & { maxBytes: number }>(
         `/workspaces/${encodeURIComponent(slug)}/messages/attachments/upload-url`,
         { method: "POST", body },
@@ -407,7 +600,9 @@ export const api = {
     detail: (slug: string) =>
       unwrap<WorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}`),
     publicDetail: (slug: string) =>
-      unwrap<PublicWorkspaceDetail>(`/workspaces/${encodeURIComponent(slug)}/public`),
+      unwrap<PublicWorkspaceDetail>(
+        `/workspaces/${encodeURIComponent(slug)}/public`,
+      ),
     overview: (
       slug: string,
       params: {
@@ -464,7 +659,12 @@ export const api = {
     updateDocument: (
       slug: string,
       id: string,
-      body: { title?: string; topic?: string | null; status?: string; reason?: string },
+      body: {
+        title?: string;
+        topic?: string | null;
+        status?: string;
+        reason?: string;
+      },
     ) =>
       unwrap<WorkspaceDocument>(
         `/workspaces/${encodeURIComponent(slug)}/documents/${id}`,
@@ -862,14 +1062,18 @@ export const api = {
   codey: {
     /** Mọi hội thoại Codey của người dùng, mọi bài — mỗi dòng mang tên bài của nó. */
     sessions: () =>
-      unwrap<{ items: CodeySessionSummary[] }>("/ai/codey/sessions", { cache: "no-store" }),
+      unwrap<{ items: CodeySessionSummary[] }>("/ai/codey/sessions", {
+        cache: "no-store",
+      }),
     session: (threadId: string) =>
       unwrap<{ messages: Message[] }>(
         `/ai/codey/sessions/${encodeURIComponent(threadId)}`,
         { cache: "no-store" },
       ),
     removeSession: (threadId: string) =>
-      unwrap<void>(`/ai/codey/sessions/${encodeURIComponent(threadId)}`, { method: "DELETE" }),
+      unwrap<void>(`/ai/codey/sessions/${encodeURIComponent(threadId)}`, {
+        method: "DELETE",
+      }),
   },
 
   lecter: {
@@ -951,14 +1155,18 @@ export const api = {
       courseId?: string;
       lessonId?: string;
     }) =>
-      unwrap<JudgeRunResult & {
-        id: string;
-        exerciseId: string;
-        assignmentId: string | null;
-        attemptNumber: number;
-        submittedAt: string;
-      }>("/submissions", { method: "POST", body }),
-    mine: (params: { exerciseId?: string; page?: number; limit?: number } = {}) => {
+      unwrap<
+        JudgeRunResult & {
+          id: string;
+          exerciseId: string;
+          assignmentId: string | null;
+          attemptNumber: number;
+          submittedAt: string;
+        }
+      >("/submissions", { method: "POST", body }),
+    mine: (
+      params: { exerciseId?: string; page?: number; limit?: number } = {},
+    ) => {
       const search = new URLSearchParams();
       if (params.exerciseId) search.set("exerciseId", params.exerciseId);
       if (params.page) search.set("page", String(params.page));

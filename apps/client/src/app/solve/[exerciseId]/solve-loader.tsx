@@ -30,32 +30,55 @@ export function SolveLoader({
   groupExerciseId?: string;
 }) {
   const [problem, setProblem] = useState<Problem | null>(null);
+  const [showCommunity, setShowCommunity] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const request =
       workspaceSlug && groupExerciseId
-        ? api.workspaces.workspaceExerciseForSolve(workspaceSlug, groupExerciseId)
+        ? api.workspaces.workspaceExerciseForSolve(
+            workspaceSlug,
+            groupExerciseId,
+          )
         : api.exercises.detail(exerciseId);
     request
       .then((exercise) => {
-        if (!cancelled) setProblem(problemFromExercise(exercise));
+        if (!cancelled) {
+          setProblem(problemFromExercise(exercise));
+          setShowCommunity(
+            !workspaceSlug &&
+              !groupExerciseId &&
+              !assignmentId &&
+              "visibility" in exercise &&
+              exercise.kind === "code" &&
+              exercise.visibility === "public" &&
+              exercise.status === "published",
+          );
+        }
       })
       .catch((cause: unknown) => {
-        if (!cancelled) setError(cause instanceof Error ? cause.message : "Không tải được bài tập");
+        if (!cancelled)
+          setError(
+            cause instanceof Error ? cause.message : "Không tải được bài tập",
+          );
       });
     return () => {
       cancelled = true;
     };
-  }, [exerciseId, groupExerciseId, workspaceSlug]);
+  }, [assignmentId, exerciseId, groupExerciseId, workspaceSlug]);
 
   if (error) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-10 text-center">
-        <p className="text-sm font-semibold text-navy">Không mở được bài tập này</p>
+        <p className="text-sm font-semibold text-navy">
+          Không mở được bài tập này
+        </p>
         <p className="max-w-md text-xs text-text-muted">{error}</p>
-        <Link href={backHref} className="text-xs font-semibold text-primary hover:underline">
+        <Link
+          href={backHref}
+          className="text-xs font-semibold text-primary hover:underline"
+        >
           Quay lại danh sách
         </Link>
       </div>
@@ -77,6 +100,8 @@ export function SolveLoader({
       backHref={backHref}
       context={context}
       assignmentId={assignmentId}
+      isWorkspaceExercise={Boolean(workspaceSlug || groupExerciseId || assignmentId)}
+      showCommunity={showCommunity}
     />
   );
 }
