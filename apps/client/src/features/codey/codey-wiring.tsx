@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { z } from "zod";
 import { Code2, ListChecks } from "lucide-react";
 import { useAgentContext, useCopilotKit, useFrontendTool } from "@copilotkit/react-core/v2";
@@ -24,6 +24,27 @@ const FIELD_CHARS = 500;
 function bearer(): string | null {
   const token = currentAccessToken();
   return token ? `Bearer ${token}` : null;
+}
+
+/**
+ * Header ban đầu cho `<CopilotKitProvider headers>`.
+ *
+ * Bắt buộc, dù `CodeyHeaderSync` đã tồn tại: effect của provider chạy SAU effect của con, gọi
+ * `setHeaders(prop headers)` rồi `connect()` ngay trong đó. Không truyền prop này thì lượt
+ * `/info` đầu tiên đi ra với header rỗng — phiên popup (token trong tab, không có cookie) nhận
+ * 401, và mọi lượt chạy trong 30 giây đầu cũng vậy, tới khi vòng sync kịp gắn lại.
+ *
+ * Memo theo CHUỖI token: đổi object mỗi lần render là provider chạy lại effect và reconnect.
+ */
+export function useCodeyHeaders(exerciseTitle: string): Record<string, string> {
+  const token = bearer();
+  return useMemo(
+    () => ({
+      ...(token ? { Authorization: token } : {}),
+      "x-agent-scope-label": encodeURIComponent(exerciseTitle),
+    }),
+    [token, exerciseTitle],
+  );
 }
 
 /**

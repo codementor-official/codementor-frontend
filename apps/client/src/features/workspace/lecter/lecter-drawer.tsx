@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { History, Plus, Sparkles, Trash2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -251,6 +251,13 @@ export function LecterDrawer({
   onApply: (patch: LecterDraftPatch) => void;
 }) {
   const toast = useToast();
+  // Header ban đầu của provider — xem `useCodeyHeaders`: không có nó thì `/info` lúc mount đi ra
+  // không token và phiên popup nhận 401. Memo theo chuỗi token để provider không reconnect.
+  const token = bearer();
+  const headers = useMemo<Record<string, string>>(
+    () => (token ? { Authorization: token } : ({} as Record<string, string>)),
+    [token],
+  );
   const [threadId, setThreadId] = useState(() => crypto.randomUUID());
   const [sessions, setSessions] = useState<LecterSessionSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -319,6 +326,7 @@ export function LecterDrawer({
             // Inspector bật mặc định ở dev và chèn cả banner quảng cáo của CopilotKit vào giữa
             // trang. `showDevConsole` KHÔNG còn điều khiển nó; `enableInspector` mới là cờ đúng.
             enableInspector={false}
+            headers={headers}
             // Tầng Node cùng origin, không phải Kong: nó gắn token hộ phiên đăng nhập bằng mật
             // khẩu, thứ không có token nào trong trình duyệt để mà forward.
             runtimeUrl={`/api/copilotkit/w/${encodeURIComponent(slug)}`}
