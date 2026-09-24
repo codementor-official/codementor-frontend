@@ -13,11 +13,6 @@ export interface AdminSectionDefinition {
  * định dựa trên nó thì sai mà không ai biết. Bỏ hẳn, tới khi nối được API thật.
  */
 export const adminSections: Record<string, AdminSectionDefinition> = {
-  workspaces: {
-    description: "Quản trị nhóm học tập, lớp và thành viên.",
-    eyebrow: "Quản lý",
-    title: "Nhóm học tập",
-  },
   documents: {
     description: "Theo dõi tài liệu người dùng tải lên và kết quả xử lý.",
     eyebrow: "Nội dung",
@@ -37,16 +32,6 @@ export const adminSections: Record<string, AdminSectionDefinition> = {
     description: "Xem sự kiện vận hành và hoạt động xuyên suốt các dịch vụ.",
     eyebrow: "Nền tảng",
     title: "Hoạt động hệ thống",
-  },
-  reports: {
-    description: "Phân loại báo cáo về nội dung, hành vi và các vi phạm cần xử lý.",
-    eyebrow: "Giám sát",
-    title: "Báo cáo vi phạm",
-  },
-  "audit-logs": {
-    description: "Tra cứu các thay đổi quản trị và thao tác nhạy cảm về bảo mật.",
-    eyebrow: "Giám sát",
-    title: "Nhật ký kiểm toán",
   },
   settings: {
     description: "Cấu hình mặc định nền tảng, tích hợp và chính sách quản trị.",
