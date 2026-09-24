@@ -40,6 +40,10 @@ import { useResolvedTheme } from "@/lib/store/use-resolved-theme";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
 import { VERDICT_LABELS, type JudgeRunResult } from "@/types/judge";
+import {
+  judgeFailureFeedback,
+  technicalJudgeOutput,
+} from "@/lib/judge-feedback";
 import { DiscussionPanel } from "@/components/workspace/discussion-panel";
 import { CopilotKitProvider } from "@copilotkit/react-core/v2";
 import { CodeyMascot } from "@/features/codey/codey-mascot";
@@ -75,6 +79,55 @@ const xpByDifficulty = {
   "Trung bình": 50,
   "Nâng cao": 80,
 } as const;
+
+function TechnicalJudgeDetails({ output }: { output?: string | null }) {
+  const detail = technicalJudgeOutput(output);
+  if (!detail) return null;
+  return (
+    <details className="mt-2 text-xs text-text-muted">
+      <summary className="cursor-pointer font-sans font-semibold text-text hover:text-navy">
+        Chi tiết kỹ thuật
+      </summary>
+      <pre className="mt-2 max-h-48 overflow-auto rounded-md bg-border-soft p-2 font-mono text-xs whitespace-pre-wrap break-words text-text">
+        {detail}
+      </pre>
+    </details>
+  );
+}
+
+function JudgeFailureMessage({
+  verdict,
+  output,
+  language,
+  sourceCode,
+  availableLanguages,
+}: {
+  verdict: JudgeRunResult["verdict"];
+  output?: string | null;
+  language: string;
+  sourceCode: string;
+  availableLanguages: string[];
+}) {
+  const feedback = judgeFailureFeedback({
+    verdict,
+    stderr: output,
+    language,
+    sourceCode,
+    availableLanguages,
+  });
+  if (!feedback && !output) return null;
+  return (
+    <div className="mt-1 font-sans">
+      {feedback && (
+        <>
+          <p className="font-semibold text-danger">{feedback.title}</p>
+          <p className="mt-1 text-text-muted">{feedback.guidance}</p>
+        </>
+      )}
+      <TechnicalJudgeDetails output={output} />
+    </div>
+  );
+}
 
 const initialPanes: PanesState = {
   left: { tabs: ["description", "discussion"], active: "description" },
@@ -128,6 +181,10 @@ export function SolveWorkspace({
   const [running, setRunning] = useState(false);
   const [judgeResult, setJudgeResult] = useState<JudgeRunResult | null>(null);
   const [judgeError, setJudgeError] = useState<string | null>(null);
+  const [judgedInput, setJudgedInput] = useState<{
+    language: string;
+    sourceCode: string;
+  } | null>(null);
   const [mascotState, setMascotState] = useState<MascotState>("idle");
   const [celebrating, setCelebrating] = useState(false);
   const [historyVersion, setHistoryVersion] = useState(0);
@@ -175,6 +232,7 @@ export function SolveWorkspace({
     try {
       const languageId = languageIdOf[language] ?? language.toLowerCase();
       const sourceCode = code[language] ?? "";
+      setJudgedInput({ language, sourceCode });
       const result =
         mode === "run"
           ? await api.judge.run({
@@ -427,9 +485,15 @@ export function SolveWorkspace({
                 </div>
 
                 {judgeResult.compileOutput && (
-                  <pre className="overflow-x-auto rounded-md bg-danger-tint p-2.5 font-mono text-xs whitespace-pre-wrap text-danger">
-                    {judgeResult.compileOutput}
-                  </pre>
+                  <div className="rounded-md bg-danger-tint p-2.5 text-xs">
+                    <JudgeFailureMessage
+                      verdict={judgeResult.verdict}
+                      output={judgeResult.compileOutput}
+                      language={judgedInput?.language ?? language}
+                      sourceCode={judgedInput?.sourceCode ?? ""}
+                      availableLanguages={available}
+                    />
+                  </div>
                 )}
 
                 {judgeResult.cases.map((caseResult) => {
@@ -450,20 +514,24 @@ export function SolveWorkspace({
                           {caseResult.runtimeMs} ms
                         </span>
                       </div>
-                      {!passed && (
+                      {!passed && caseResult.verdict === "wrong_answer" && (
                         <>
                           <div className="text-text-faint">
-                            expected: {caseResult.expected}
+                            Kết quả mong đợi: {caseResult.expected}
                           </div>
                           <div className="text-text-faint">
-                            actual: {caseResult.actual || "(rỗng)"}
+                            Kết quả của bạn: {caseResult.actual || "(rỗng)"}
                           </div>
-                          {caseResult.stderr && (
-                            <div className="mt-1 break-words text-danger">
-                              {caseResult.stderr}
-                            </div>
-                          )}
                         </>
+                      )}
+                      {!passed && (
+                        <JudgeFailureMessage
+                          verdict={caseResult.verdict}
+                          output={caseResult.stderr}
+                          language={judgedInput?.language ?? language}
+                          sourceCode={judgedInput?.sourceCode ?? ""}
+                          availableLanguages={available}
+                        />
                       )}
                     </div>
                   );
