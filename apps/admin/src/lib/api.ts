@@ -619,3 +619,78 @@ export const notificationsApi = {
       { method: "PATCH" },
     ),
 };
+
+export interface AdminWorkspaceUser {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  email?: string;
+  handle?: string;
+}
+
+export interface AdminWorkspace {
+  id: string;
+  slug: string;
+  name: string;
+  topic: string | null;
+  status: "active" | "archived";
+  privacy: "public" | "private";
+  joinPolicy: "open" | "approval" | "invite_only";
+  memberCount: number;
+  avatarUrl: string | null;
+  owner: AdminWorkspaceUser;
+  createdAt: string;
+  updatedAt: string;
+  lastActivityAt: string | null;
+}
+
+export interface AdminWorkspaceMember {
+  id: string;
+  user: AdminWorkspaceUser;
+  role: "owner" | "deputy" | "member";
+  joinedAt: string;
+}
+
+export interface AdminWorkspaceDetail extends AdminWorkspace {
+  description: string | null;
+  inviteCode: string;
+  members: { items: AdminWorkspaceMember[]; total: number };
+}
+
+export interface AdminWorkspaceSummary {
+  total: number;
+  active: number;
+  archived: number;
+  public: number;
+  private: number;
+}
+
+/** Đường quản trị của workspace-service — xem `AdminWorkspaceController`. */
+export const workspacesApi = {
+  list: (
+    request: Request,
+    query: { q?: string; status?: string; privacy?: string; page?: number; limit?: number } = {},
+  ) =>
+    unwrap<{ items: AdminWorkspace[]; total: number }>(
+      request,
+      `/workspaces/manage${search(query)}`,
+    ),
+  summary: (request: Request) =>
+    unwrap<AdminWorkspaceSummary>(request, "/workspaces/manage/summary"),
+  detail: (request: Request, id: string) =>
+    unwrap<AdminWorkspaceDetail>(request, `/workspaces/manage/${id}${search({ limit: 100 })}`),
+  archive: (request: Request, id: string, reason: string) =>
+    unwrap<unknown>(request, `/workspaces/manage/${id}/archive`, { method: "POST", body: { reason } }),
+  restore: (request: Request, id: string) =>
+    unwrap<unknown>(request, `/workspaces/manage/${id}/restore`, { method: "POST" }),
+  removeMember: (request: Request, id: string, memberId: string, reason: string) =>
+    unwrap<void>(request, `/workspaces/manage/${id}/members/${memberId}`, {
+      method: "DELETE",
+      body: { reason },
+    }),
+};
+
+export const auditLogsApi = {
+  list: (request: Request, query: { targetType?: string; targetId?: string; action?: string; limit?: number } = {}) =>
+    unwrap<AuditLogEntry[]>(request, `/audit-logs${search(query)}`),
+};
