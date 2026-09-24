@@ -52,6 +52,7 @@ import {
   CodeyHeaderSync,
   CodeyProblemContext,
   CodeyTools,
+  useCodeyHeaders,
 } from "@/features/codey/codey-wiring";
 import { CodeyProvider, useCodey } from "@/features/codey/session-store";
 import type { CodeyRun, MascotState } from "@/features/codey/types";
@@ -560,8 +561,11 @@ export function SolveWorkspace({
     }
   }
 
+  const codeyHeaders = useCodeyHeaders(problem.title);
+
   return (
     <CopilotKitProvider
+      headers={codeyHeaders}
       // Inspector bật mặc định ở dev và chèn cả banner quảng cáo của CopilotKit vào giữa trang.
       // `showDevConsole` KHÔNG còn điều khiển nó; `enableInspector` mới là cờ đúng.
       enableInspector={false}
