@@ -32,7 +32,7 @@ export function SettingsPage() {
         icon={Settings}
         title="Cài đặt"
       />
-      <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid min-w-0 gap-3 lg:grid-cols-2">
         {platform.data ? (
           <PlatformCards settings={platform.data} />
         ) : (
@@ -58,12 +58,6 @@ const yes = (value: boolean) => (value ? "Đã cấu hình" : "Chưa cấu hình
 function PlatformCards({ settings }: { settings: PlatformSettings }) {
   return (
     <>
-      <SettingsCard title="Xác thực (Keycloak)">
-        <Row label="Môi trường" value={settings.environment} mono />
-        <Row label="Realm" value={settings.auth.realm} mono />
-        <Row label="Issuer" value={settings.auth.keycloakIssuer} mono />
-        <Row label="Client quản trị" value={yes(settings.auth.adminClientConfigured)} />
-      </SettingsCard>
       <SettingsCard title="Lưu trữ (S3)">
         <Row label="Region" value={settings.storage.region} mono />
         <Row label="Bucket" value={settings.storage.bucket} mono />
@@ -78,16 +72,6 @@ function PlatformCards({ settings }: { settings: PlatformSettings }) {
         <Row label="Người gửi" value={settings.email.fromEmail ? `${settings.email.fromName ?? ""} <${settings.email.fromEmail}>` : null} />
         <Row label="Chu kỳ quét nhắc" value={`${settings.email.reminderPollSeconds} giây`} />
         <Row label="Nhắc khi bỏ học" value={`sau ${settings.email.learningInactivityDays} ngày`} />
-      </SettingsCard>
-      <SettingsCard title="Nền tảng">
-        <Row label="Ứng dụng học viên" value={settings.platform.clientAppUrl} mono />
-        <Row label="Kafka" value={yes(settings.platform.kafkaConfigured)} />
-        <Row label="Token nội bộ" value={yes(settings.platform.internalTokenConfigured)} />
-        <Row
-          label="CORS"
-          value={settings.platform.corsOrigins?.split(",").map((origin) => origin.trim()).join("\n") ?? null}
-          mono
-        />
       </SettingsCard>
     </>
   );

@@ -850,8 +850,6 @@ export interface SystemActivity {
 
 /** `GET /system/settings` — cấu hình core-service đọc được, không kèm secret. */
 export interface PlatformSettings {
-  environment: string;
-  auth: { keycloakIssuer: string | null; realm: string | null; adminClientConfigured: boolean };
   storage: {
     region: string | null;
     bucket: string | null;
@@ -864,12 +862,6 @@ export interface PlatformSettings {
     fromName: string | null;
     reminderPollSeconds: number;
     learningInactivityDays: number;
-  };
-  platform: {
-    clientAppUrl: string | null;
-    corsOrigins: string | null;
-    kafkaConfigured: boolean;
-    internalTokenConfigured: boolean;
   };
 }
 
