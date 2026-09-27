@@ -41,6 +41,7 @@ import type {
   WorkspaceSubmission,
 } from "../types";
 import { WorkspaceMemberSelector } from "./workspace-member-selector";
+import { REPORT_CATEGORIES } from "@/features/reports/report-button";
 
 const EMPTY_PAGE = <T,>(): WorkspaceContentPage<T> => ({
   items: [],
@@ -688,7 +689,7 @@ function DocumentReportDialog({
   onClose: () => void;
 }) {
   const toast = useToast();
-  const [category, setCategory] = useState("irrelevant");
+  const [category, setCategory] = useState("OTHER");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const submit = async () => {
@@ -733,14 +734,7 @@ function DocumentReportDialog({
             label="Lý do"
             value={category}
             onChange={setCategory}
-            options={[
-              { value: "spam", label: "Spam" },
-              { value: "inappropriate", label: "Nội dung không phù hợp" },
-              { value: "copyright", label: "Vi phạm bản quyền" },
-              { value: "harmful", label: "Nội dung có hại" },
-              { value: "irrelevant", label: "Không liên quan Workspace" },
-              { value: "other", label: "Lý do khác" },
-            ]}
+            options={REPORT_CATEGORIES}
           />
           <label className="block text-xs font-medium text-text-muted">
             Ghi chú (không bắt buộc)
@@ -753,8 +747,8 @@ function DocumentReportDialog({
             />
           </label>
           <p className="text-xs text-text-faint">
-            Vui lòng chỉ báo cáo nội dung thực sự vi phạm. Báo cáo trùng lặp sẽ
-            bị từ chối.
+            Vui lòng chỉ báo cáo nội dung thực sự vi phạm. Gửi lại cho cùng tài
+            liệu sẽ cập nhật báo cáo trước đó của bạn.
           </p>
         </div>
         <footer className="flex shrink-0 justify-end gap-2 border-t border-border-soft bg-surface p-4">

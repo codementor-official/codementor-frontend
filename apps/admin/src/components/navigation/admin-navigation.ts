@@ -3,7 +3,6 @@ import {
   BookOpen,
   Bot,
   Braces,
-  FileText,
   Flag,
   LayoutDashboard,
   Network,
@@ -54,7 +53,6 @@ export const adminNavigation: AdminNavGroup[] = [
     items: [
       { href: "/posts", icon: Newspaper, label: "Bài viết" },
       { href: "/exercises", icon: Braces, label: "Bài tập" },
-      { href: "/documents", icon: FileText, label: "Tài liệu" },
     ],
   },
   {

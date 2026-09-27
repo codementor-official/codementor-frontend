@@ -6,7 +6,8 @@ import { Modal, useToast } from "@codementor/ui";
 import { api } from "@/lib/api";
 import type { ReportCategory, ReportTarget } from "@/features/account/types";
 
-const categories: Array<{ value: ReportCategory; label: string }> = [
+/** Dùng chung cho mọi loại báo cáo, kể cả tài liệu nhóm — cùng đổ vào `content_reports`. */
+export const REPORT_CATEGORIES: Array<{ value: ReportCategory; label: string }> = [
   { value: "SPAM", label: "Spam hoặc quảng cáo" },
   { value: "MISLEADING", label: "Thông tin sai lệch" },
   { value: "INAPPROPRIATE", label: "Nội dung không phù hợp" },
@@ -96,7 +97,7 @@ export function ReportButton({
               onChange={(event) => setCategory(event.target.value as ReportCategory)}
               className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-medium focus:border-primary"
             >
-              {categories.map((item) => (
+              {REPORT_CATEGORIES.map((item) => (
                 <option key={item.value} value={item.value}>
                   {item.label}
                 </option>
