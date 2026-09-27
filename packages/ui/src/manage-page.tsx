@@ -269,7 +269,8 @@ export function ManagePage<TData>({
  * rồi hiện lại. Đó là điểm khác biệt cả tính năng này tồn tại vì nó — F5 cả trang thì
  * bộ lọc, ô tìm kiếm, trang hiện tại và ngăn chi tiết đang mở đều mất sạch.
  */
-function RefreshButton({ onRefresh }: { onRefresh: () => void | Promise<unknown> }) {
+/** Nút làm mới dùng chung — `ManagePage` và các màn số liệu không có bảng. */
+export function RefreshButton({ onRefresh }: { onRefresh: () => void | Promise<unknown> }) {
   const [busy, setBusy] = useState(false);
 
   const run = async () => {

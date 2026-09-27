@@ -738,3 +738,37 @@ export const auditLogsApi = {
   list: (request: Request, query: { targetType?: string; targetId?: string; action?: string; limit?: number } = {}) =>
     unwrap<AuditLogEntry[]>(request, `/audit-logs${search(query)}`),
 };
+
+/* ----------------------------------------------------------------------- Code judge */
+
+/** `GET /submissions/admin/stats` — chỉ bài NỘP; lượt "Chạy thử" không được lưu. */
+export interface SubmissionStats {
+  days: number;
+  total: number;
+  /** Đã chấm xong (khác `pending`) — mẫu số của tỉ lệ AC. */
+  completed: number;
+  accepted: number;
+  byVerdict: Record<string, number>;
+  byLanguage: { language: string; total: number; accepted: number; avgRuntimeMs: number | null }[];
+  runtimeMs: { p50: number | null; p95: number | null };
+  memoryKb: { p50: number | null; p95: number | null };
+  /** `pending` quá 5 phút trên toàn bảng: judge đã lỗi, lượt đó không bao giờ tự xong. */
+  stuckPending: number;
+  daily: { date: string; total: number; accepted: number }[];
+}
+
+/** `GET /judge/admin/config` — cấu hình judge-service đang chạy, chỉ đọc. */
+export interface JudgeConfig {
+  engine: string;
+  dockerExecutionConcurrency: number;
+  maxSourceBytes: number;
+  maxTestCases: number;
+  maxTestCaseBytes: number;
+  languages: { id: string; image: string; functionMode: boolean }[];
+}
+
+export const judgeApi = {
+  stats: (request: Request, days: 7 | 30) =>
+    unwrap<SubmissionStats>(request, `/submissions/admin/stats${search({ days })}`),
+  config: (request: Request) => unwrap<JudgeConfig>(request, "/judge/admin/config"),
+};

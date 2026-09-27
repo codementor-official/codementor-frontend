@@ -23,7 +23,7 @@ export { exportTableToCsv } from "./export-csv";
 export type { ExportableColumnMeta } from "./export-csv";
 export { FilterBar } from "./filter-bar";
 export { Input } from "./input";
-export { ManagePage } from "./manage-page";
+export { ManagePage, RefreshButton } from "./manage-page";
 export { Modal } from "./modal";
 export { NotificationBell, useNotifications } from "./notification-bell";
 export type { NotificationSource, UiNotification } from "./notification-bell";

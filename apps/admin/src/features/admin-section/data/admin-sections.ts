@@ -16,10 +16,6 @@ export const adminSections: Record<string, AdminSectionDefinition> = {
     eyebrow: "Nền tảng",
     title: "Vận hành AI",
   },
-  "code-judge": {
-    eyebrow: "Nền tảng",
-    title: "Chấm bài",
-  },
   "system-activity": {
     eyebrow: "Nền tảng",
     title: "Hoạt động hệ thống",
