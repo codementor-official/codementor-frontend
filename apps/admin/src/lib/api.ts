@@ -817,4 +817,63 @@ export interface AiStats {
 export const aiApi = {
   stats: (request: Request, days: 7 | 30) =>
     unwrap<AiStats>(request, `/ai/admin/stats${search({ days })}`),
+  config: (request: Request) => unwrap<AiStats["config"]>(request, "/ai/admin/config"),
+};
+
+/* -------------------------------------------------------------------------- System */
+
+export type ServiceState = "up" | "degraded" | "down";
+
+/** `GET /system/activity` (core-service). */
+export interface SystemActivity {
+  services: {
+    name: string;
+    state: ServiceState;
+    latencyMs: number;
+    dependencies: Record<string, boolean>;
+    error?: string;
+  }[];
+  /** Chỉ sự kiện CHƯA đẩy lên Kafka. */
+  outbox: {
+    pending: number;
+    oldestPendingAt: string | null;
+    byTopic: { topic: string; pending: number; oldestAt: string }[];
+  };
+  /** Consumer có xử lý sự kiện trong 7 ngày gần nhất. */
+  consumers: { consumer: string; last24h: number; lastAt: string }[];
+  email: {
+    byStatus: { status: string; last24h: number; last7d: number }[];
+    recentFailures: { template: string; error: string | null; at: string; attempts: number }[];
+  };
+  checkedAt: string;
+}
+
+/** `GET /system/settings` — cấu hình core-service đọc được, không kèm secret. */
+export interface PlatformSettings {
+  environment: string;
+  auth: { keycloakIssuer: string | null; realm: string | null; adminClientConfigured: boolean };
+  storage: {
+    region: string | null;
+    bucket: string | null;
+    credentialsConfigured: boolean;
+    maxUploadMb: { video: number; document: number; image: number };
+  };
+  email: {
+    enabled: boolean;
+    fromEmail: string | null;
+    fromName: string | null;
+    reminderPollSeconds: number;
+    learningInactivityDays: number;
+  };
+  platform: {
+    clientAppUrl: string | null;
+    corsOrigins: string | null;
+    kafkaConfigured: boolean;
+    internalTokenConfigured: boolean;
+  };
+}
+
+export const systemApi = {
+  activity: (request: Request) => unwrap<SystemActivity>(request, "/system/activity"),
+  settings: (request: Request) => unwrap<PlatformSettings>(request, "/system/settings"),
 };

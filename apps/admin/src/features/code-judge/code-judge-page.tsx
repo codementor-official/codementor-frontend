@@ -105,7 +105,7 @@ export function CodeJudgePage() {
           />
           <VerdictCard stats={data} />
           <LanguageCard stats={data} />
-          <ConfigCard config={config.data} loading={config.loading} />
+          <JudgeConfigCard config={config.data} loading={config.loading} />
         </div>
       )}
     </div>
@@ -181,7 +181,7 @@ function LanguageCard({ stats }: { stats: SubmissionStats }) {
   );
 }
 
-function ConfigCard({ config, loading }: { config: JudgeConfig | null; loading: boolean }) {
+export function JudgeConfigCard({ config, loading }: { config: JudgeConfig | null; loading: boolean }) {
   return (
     <Card className="min-w-0">
       <CardHeader className="justify-between">

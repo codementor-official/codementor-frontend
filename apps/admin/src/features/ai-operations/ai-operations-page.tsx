@@ -98,7 +98,7 @@ export function AiOperationsPage() {
             title="Token theo ngày"
             value="tokens"
           />
-          <ConfigCard config={data.config} />
+          <AiConfigCard config={data.config} />
           <div className="xl:col-span-2">
             <AgentsCard agents={agents} />
           </div>
@@ -191,7 +191,7 @@ function ErrorsCard({ errors }: { errors: AiStats["recentErrors"] }) {
   );
 }
 
-function ConfigCard({ config }: { config: AiStats["config"] }) {
+export function AiConfigCard({ config }: { config: AiStats["config"] }) {
   const limits = Object.entries(config.dailyLimits) as [AiAgent, number][];
   return (
     <Card className="min-w-0">
