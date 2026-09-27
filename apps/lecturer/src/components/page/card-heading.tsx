@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { InfoHint } from "@/components/form/info-hint";
+import { InfoHint } from "@codementor/ui";
 
 /**
  * Hàng tiêu đề của một thẻ trong studio: icon, tên thẻ, dấu hỏi giải thích, và chỗ cho

@@ -25,10 +25,9 @@ import {
   url,
   type ResolvedVideo,
 } from "@codementor/utils";
-import { Button, Select, StatusBadge, useToast } from "@codementor/ui";
+import { Button, InfoHint, Select, StatusBadge, useToast } from "@codementor/ui";
 import { ListPager, ListSearch, usePagedList } from "@/components/page/paged-list";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
-import { InfoHint } from "@/components/form/info-hint";
 import {
   LESSON_TYPE_LABELS,
   SELECTABLE_LESSON_TYPES,

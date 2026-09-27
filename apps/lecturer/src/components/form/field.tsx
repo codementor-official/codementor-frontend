@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { InfoHint } from "@/components/form/info-hint";
+import { InfoHint } from "@codementor/ui";
 
 interface FieldProps {
   label: string;

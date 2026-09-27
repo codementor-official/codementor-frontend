@@ -12,7 +12,15 @@ import {
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { LANGUAGES, VERDICT_LABELS } from "@codementor/solve";
-import { Card, CardContent, CardHeader, PageHeader, RefreshButton, SegmentedTabs } from "@codementor/ui";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  InfoHint,
+  PageHeader,
+  RefreshButton,
+  SegmentedTabs,
+} from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, useSummary } from "@/features/shared/kpi-strip";
 import { judgeApi, type JudgeConfig, type SubmissionStats } from "@/lib/api";
@@ -240,6 +248,7 @@ function ConfigCard({ config, loading }: { config: JudgeConfig | null; loading: 
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Cpu aria-hidden="true" className="size-4" />
           Cấu hình judge-service
+          <InfoHint text="Đổi bằng biến môi trường của judge-service (EXECUTION_ENGINE, DOCKER_EXECUTION_CONCURRENCY, MAX_*) rồi restart." />
         </h2>
       </CardHeader>
       <CardContent className="pb-4 text-sm">
@@ -263,10 +272,6 @@ function ConfigCard({ config, loading }: { config: JudgeConfig | null; loading: 
             </dl>
             <p className="mt-3 text-xs text-muted-foreground">
               Ngôn ngữ: {config.languages.map((language) => LANGUAGE_LABELS[language.id] ?? language.id).join(", ")}
-            </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Đổi bằng biến môi trường của judge-service (<code>EXECUTION_ENGINE</code>,{" "}
-              <code>DOCKER_EXECUTION_CONCURRENCY</code>, <code>MAX_*</code>) rồi restart.
             </p>
           </>
         )}

@@ -55,3 +55,4 @@ export { ResizeHandle } from "./workspace/resize-handle";
 export { TabBar } from "./workspace/tab-bar";
 export { useWorkspace, WorkspaceProvider } from "./workspace/workspace-context";
 export type { PaneId, PanesState, PaneState, TabKind, TabMeta, TabMetaMap } from "./workspace/types";
+export { InfoHint } from "./info-hint";
