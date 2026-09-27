@@ -12,10 +12,6 @@ export interface AdminSectionDefinition {
  * định dựa trên nó thì sai mà không ai biết. Bỏ hẳn, tới khi nối được API thật.
  */
 export const adminSections: Record<string, AdminSectionDefinition> = {
-  "ai-operations": {
-    eyebrow: "Nền tảng",
-    title: "Vận hành AI",
-  },
   "system-activity": {
     eyebrow: "Nền tảng",
     title: "Hoạt động hệ thống",

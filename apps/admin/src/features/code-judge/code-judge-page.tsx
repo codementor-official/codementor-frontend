@@ -10,7 +10,6 @@ import {
   Send,
   Timer,
 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { LANGUAGES, VERDICT_LABELS } from "@codementor/solve";
 import {
   Card,
@@ -22,6 +21,7 @@ import {
   SegmentedTabs,
 } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
+import { DailyBarCard } from "@/features/shared/daily-bar-card";
 import { KpiStrip, useSummary } from "@/features/shared/kpi-strip";
 import { judgeApi, type JudgeConfig, type SubmissionStats } from "@/lib/api";
 
@@ -97,77 +97,17 @@ export function CodeJudgePage() {
 
       {data && (
         <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <DailyCard daily={data.daily} />
+          <DailyBarCard
+            data={data.daily}
+            describe={(point) => `${point.total} lượt nộp · ${point.accepted} đạt`}
+            title="Lượt nộp theo ngày"
+            value="total"
+          />
           <VerdictCard stats={data} />
           <LanguageCard stats={data} />
           <ConfigCard config={config.data} loading={config.loading} />
         </div>
       )}
-    </div>
-  );
-}
-
-/** "2026-09-27" → "27/9". */
-const dayLabel = (date: string) => {
-  const [, month, day] = date.split("-");
-  return `${Number(day)}/${Number(month)}`;
-};
-
-function DailyCard({ daily }: { daily: SubmissionStats["daily"] }) {
-  const data = daily.map((point) => ({ ...point, label: dayLabel(point.date) }));
-  return (
-    <Card className="min-w-0">
-      <CardHeader>
-        <h2 className="text-sm font-semibold">Lượt nộp theo ngày</h2>
-      </CardHeader>
-      <CardContent className="pb-4">
-        {/* Một chuỗi duy nhất: số đạt nằm trong tooltip và ô "Tỉ lệ đạt", không vẽ chồng
-            thành hai màu — xám cho phần còn lại không đủ tương phản trên nền sáng. */}
-        <div className="h-60 w-full">
-          <ResponsiveContainer height="100%" width="100%">
-            <BarChart data={data} margin={{ bottom: 0, left: -18, right: 4, top: 4 }}>
-              <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis
-                axisLine={false}
-                dataKey="label"
-                fontSize={11}
-                interval="preserveStartEnd"
-                minTickGap={12}
-                stroke="var(--muted-foreground)"
-                tickLine={false}
-              />
-              <YAxis
-                allowDecimals={false}
-                axisLine={false}
-                fontSize={11}
-                stroke="var(--muted-foreground)"
-                tickLine={false}
-              />
-              <Tooltip content={<DailyTooltip />} cursor={{ fill: "var(--muted)" }} />
-              <Bar dataKey="total" fill="var(--chart-3)" maxBarSize={28} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DailyTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { payload: SubmissionStats["daily"][number] }[];
-}) {
-  const point = active ? payload?.[0]?.payload : undefined;
-  if (!point) return null;
-  return (
-    <div className="rounded-lg border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-sm">
-      <p className="font-medium">{point.date.split("-").reverse().join("/")}</p>
-      <p className="mt-1 text-muted-foreground">
-        {point.total} lượt nộp · {point.accepted} đạt
-      </p>
     </div>
   );
 }

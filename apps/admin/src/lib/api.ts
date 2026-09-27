@@ -772,3 +772,49 @@ export const judgeApi = {
     unwrap<SubmissionStats>(request, `/submissions/admin/stats${search({ days })}`),
   config: (request: Request) => unwrap<JudgeConfig>(request, "/judge/admin/config"),
 };
+
+/* ---------------------------------------------------------------------- AI operations */
+
+export type AiAgent =
+  | "codey"
+  | "lecter"
+  | "lecter_workspace"
+  | "rag"
+  | "rag_index"
+  | "suggest"
+  | "dashboard";
+
+/** `GET /ai/admin/stats` — đọc `ai_call_events` của ai-service (giữ 90 ngày). */
+export interface AiStats {
+  days: number;
+  agents: {
+    agent: AiAgent;
+    /** Lời gọi model. Lần chặn hạn mức và run hỏng không tính ở đây. */
+    calls: number;
+    /** Lỗi của nhà cung cấp + run agent hỏng; KHÔNG gồm chặn hạn mức. */
+    errors: number;
+    limitHits: number;
+    inputTokens: number;
+    outputTokens: number;
+    users: number;
+    p50LatencyMs: number | null;
+    p95LatencyMs: number | null;
+    /** `null` với bề mặt không có hội thoại (index, gợi ý testcase, dashboard). */
+    conversations: number | null;
+  }[];
+  daily: { date: string; tokens: number; calls: number; errors: number }[];
+  recentErrors: { at: string; agent: AiAgent; model?: string | null; errorType?: string; errorMessage?: string }[];
+  config: {
+    configured: boolean;
+    chatModel: string;
+    smartModel: string;
+    embeddingModel: string;
+    codeyReasoningEffort: string;
+    dailyLimits: Partial<Record<AiAgent, number>>;
+  };
+}
+
+export const aiApi = {
+  stats: (request: Request, days: 7 | 30) =>
+    unwrap<AiStats>(request, `/ai/admin/stats${search({ days })}`),
+};
