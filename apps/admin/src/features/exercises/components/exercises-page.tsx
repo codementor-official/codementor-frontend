@@ -1,13 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, Braces, CheckCheck, RotateCcw, Trash2, XCircle } from "lucide-react";
+import {
+  Archive,
+  Braces,
+  CheckCheck,
+  Clock,
+  Flame,
+  Gauge,
+  PencilLine,
+  RotateCcw,
+  Signal,
+  Trash2,
+  Undo2,
+  XCircle,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { DIFFICULTIES, DIFFICULTY_LABELS, STATUS_LABELS, STATUS_TONES } from "@codementor/solve";
 import { Button, ConfirmButton, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
+import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
 import { exercisesApi, moderationApi, type AdminExerciseListItem } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
@@ -32,6 +46,7 @@ export function ExercisesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const summary = useSummary(useCallback(() => exercisesApi.summary(request), [request]));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,7 +78,7 @@ export function ExercisesPage() {
     setBusy(true);
     try {
       await action();
-      await load();
+      await Promise.all([load(), summary.reload()]);
     } catch (cause) {
       toast.error(describe(cause));
     } finally {
@@ -220,6 +235,19 @@ export function ExercisesPage() {
       }
       getRowId={(row) => row.id}
       icon={Braces}
+      summary={
+        <KpiStrip
+          loading={summary.loading}
+          metrics={[
+            { icon: Clock, label: "Chờ duyệt", value: countOf(summary.data?.byStatus, "pending_review") },
+            { icon: PencilLine, label: "Yêu cầu sửa", value: countOf(summary.data?.byStatus, "changes_requested") },
+            { icon: Undo2, label: "Xin gỡ", value: summary.data?.removalRequested ?? null },
+            { icon: Signal, label: "Công khai · Dễ", value: countOf(summary.data?.byDifficulty, "easy") },
+            { icon: Gauge, label: "Công khai · Trung bình", value: countOf(summary.data?.byDifficulty, "medium") },
+            { icon: Flame, label: "Công khai · Khó", value: countOf(summary.data?.byDifficulty, "hard") },
+          ]}
+        />
+      }
       loading={loading}
       onClearFilters={() => {
         setStatus("");
@@ -228,7 +256,7 @@ export function ExercisesPage() {
         setUpdatedFrom("");
         setUpdatedTo("");
       }}
-      onRefresh={load}
+      onRefresh={() => Promise.all([load(), summary.reload()])}
       onSearchChange={setSearch}
       rows={rows}
       search={search}

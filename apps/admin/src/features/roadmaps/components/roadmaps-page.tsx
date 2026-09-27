@@ -1,7 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, CheckCheck, RotateCcw, Route, Trash2, XCircle } from "lucide-react";
+import {
+  Archive,
+  CheckCheck,
+  Clock,
+  Globe,
+  PencilLine,
+  RotateCcw,
+  Route,
+  Trash2,
+  Undo2,
+  UserCheck,
+  XCircle,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {
@@ -15,6 +27,7 @@ import {
 import { Button, ConfirmButton, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
+import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
 import { moderationApi, roadmapsApi, type AdminRoadmapListItem } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
@@ -40,6 +53,7 @@ export function RoadmapsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const summary = useSummary(useCallback(() => roadmapsApi.summary(request), [request]));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,7 +86,7 @@ export function RoadmapsPage() {
     setBusy(true);
     try {
       await action();
-      await load();
+      await Promise.all([load(), summary.reload()]);
     } catch (cause) {
       toast.error(describe(cause));
     } finally {
@@ -232,6 +246,18 @@ export function RoadmapsPage() {
       }
       getRowId={(row) => row.id}
       icon={Route}
+      summary={
+        <KpiStrip
+          loading={summary.loading}
+          metrics={[
+            { icon: Globe, label: "Công khai", value: countOf(summary.data?.byStatus, "published") },
+            { icon: Clock, label: "Chờ duyệt", value: countOf(summary.data?.byStatus, "pending_review") },
+            { icon: PencilLine, label: "Yêu cầu sửa", value: countOf(summary.data?.byStatus, "changes_requested") },
+            { icon: Undo2, label: "Xin gỡ", value: summary.data?.removalRequested ?? null },
+            { icon: UserCheck, label: "Lượt ghi danh", value: summary.data?.enrollments ?? null },
+          ]}
+        />
+      }
       loading={loading}
       onClearFilters={() => {
         setStatus("");
@@ -241,7 +267,7 @@ export function RoadmapsPage() {
         setUpdatedFrom("");
         setUpdatedTo("");
       }}
-      onRefresh={load}
+      onRefresh={() => Promise.all([load(), summary.reload()])}
       onSearchChange={setSearch}
       rows={rows}
       search={search}

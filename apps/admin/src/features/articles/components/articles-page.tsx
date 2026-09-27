@@ -1,12 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, CheckCheck, ExternalLink, Newspaper, Plus, RotateCcw, XCircle } from "lucide-react";
+import {
+  Archive,
+  Ban,
+  CheckCheck,
+  Clock,
+  ExternalLink,
+  Globe,
+  Newspaper,
+  PencilLine,
+  Plus,
+  RotateCcw,
+  XCircle,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { Button, ManagePage, Modal, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
+import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
 import { articlesApi, type AdminArticle } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 
@@ -51,6 +64,7 @@ export function ArticlesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const summary = useSummary(useCallback(() => articlesApi.summary(request), [request]));
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
@@ -80,7 +94,7 @@ export function ArticlesPage() {
     setBusy(true);
     try {
       await action();
-      await load();
+      await Promise.all([load(), summary.reload()]);
     } catch (cause) {
       // Kết quả một thao tác đi bằng toast. Dải lỗi dưới tiêu đề chỉ còn cho lỗi tải danh
       // sách — thứ vẫn đang đúng lúc người dùng ngước lên đọc.
@@ -236,12 +250,24 @@ export function ArticlesPage() {
         getRowId={(row) => row.id}
         loading={loading}
         onClearFilters={() => setStatus("")}
-        onRefresh={load}
+        onRefresh={() => Promise.all([load(), summary.reload()])}
         onSearchChange={setSearch}
         rows={rows}
         search={search}
         searchPlaceholder="Tìm theo tiêu đề hoặc slug…"
         icon={Newspaper}
+        summary={
+          <KpiStrip
+            loading={summary.loading}
+            metrics={[
+              { icon: Globe, label: "Đã đăng", value: countOf(summary.data, "published") },
+              { icon: Clock, label: "Chờ duyệt", value: countOf(summary.data, "pending_review") },
+              { icon: PencilLine, label: "Yêu cầu sửa", value: countOf(summary.data, "changes_requested") },
+              { icon: Ban, label: "Từ chối", value: countOf(summary.data, "rejected") },
+              { icon: Archive, label: "Lưu trữ", value: countOf(summary.data, "archived") },
+            ]}
+          />
+        }
         title="Bài viết"
       />
 

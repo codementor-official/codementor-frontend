@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Archive, Network, RotateCcw, UserMinus, Users } from "lucide-react";
+import { Archive, FileClock, Globe, Lock, Network, RotateCcw, UserMinus, Users } from "lucide-react";
 import {
   Button,
   DetailMeta,
@@ -17,6 +17,7 @@ import {
   useToast,
 } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
+import { KpiStrip } from "@/features/shared/kpi-strip";
 import { workspacesApi, type AdminWorkspace, type AdminWorkspaceDetail, type AdminWorkspaceSummary } from "@/lib/api";
 
 const STATUS = { active: "Đang hoạt động", archived: "Đã lưu trữ" } as const;
@@ -192,6 +193,19 @@ export function WorkspacesPage() {
       }
       getRowId={(row) => row.id}
       icon={Network}
+      // Số nhóm theo trạng thái đã nằm trên các tab bên dưới; dải này chỉ thêm số chưa có ở đó.
+      // Summary nạp chung trong `load`, nên Làm mới và mọi thao tác đã tự nạp lại nó.
+      summary={
+        <KpiStrip
+          loading={summary === null && loading}
+          metrics={[
+            { icon: Globe, label: "Công khai", value: summary?.public ?? null },
+            { icon: Lock, label: "Riêng tư", value: summary?.private ?? null },
+            { icon: Users, label: "Thành viên", value: summary?.members ?? null },
+            { icon: FileClock, label: "Tài liệu chờ duyệt", value: summary?.pendingDocuments ?? null },
+          ]}
+        />
+      }
       loading={loading}
       onClearFilters={() => setPrivacy("")}
       onRefresh={load}

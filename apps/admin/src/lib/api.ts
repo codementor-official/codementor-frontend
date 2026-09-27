@@ -435,7 +435,16 @@ export interface AdminRoadmapListItem {
   updatedAt: string;
 }
 
+/** `GET /roadmaps/admin/summary` — xem `RoadmapAdminSummary` ở learning-service. */
+export interface AdminRoadmapSummary {
+  byStatus: Record<string, number>;
+  removalRequested: number;
+  enrollments: number;
+}
+
 export const roadmapsApi = {
+  summary: (request: Request) =>
+    unwrap<AdminRoadmapSummary>(request, "/roadmaps/admin/summary"),
   list: (
     request: Request,
     query: AdminContentQuery & { field?: string; level?: string } = {},
@@ -474,7 +483,16 @@ export interface AdminExerciseListItem {
   updatedAt: string;
 }
 
+/** `GET /exercises/admin/summary`. `byDifficulty` chỉ đếm bài đang công khai. */
+export interface AdminExerciseSummary {
+  byStatus: Record<string, number>;
+  byDifficulty: Record<string, number>;
+  removalRequested: number;
+}
+
 export const exercisesApi = {
+  summary: (request: Request) =>
+    unwrap<AdminExerciseSummary>(request, "/exercises/admin/summary"),
   list: (
     request: Request,
     query: AdminContentQuery & { kind?: string; difficulty?: string } = {},
@@ -675,6 +693,9 @@ export interface AdminWorkspaceSummary {
   total: number;
   active: number;
   archived: number;
+  /** Người dùng khác nhau đang ở ít nhất một nhóm còn hoạt động. */
+  members: number;
+  pendingDocuments: number;
   public: number;
   private: number;
 }
@@ -704,7 +725,16 @@ export const workspacesApi = {
     }),
 };
 
+export interface AuditLogSummary {
+  total: number;
+  last24h: number;
+  last7d: number;
+  /** Số admin khác nhau đã thao tác trong 7 ngày. */
+  actors7d: number;
+}
+
 export const auditLogsApi = {
+  summary: (request: Request) => unwrap<AuditLogSummary>(request, "/audit-logs/summary"),
   list: (request: Request, query: { targetType?: string; targetId?: string; action?: string; limit?: number } = {}) =>
     unwrap<AuditLogEntry[]>(request, `/audit-logs${search(query)}`),
 };

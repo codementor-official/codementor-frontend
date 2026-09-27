@@ -3,9 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { ScrollText } from "lucide-react";
+import {
+  CalendarDays,
+  Clock,
+  ScrollText,
+  ShieldCheck,
+} from "lucide-react";
 import { DetailMeta, DetailRow, DetailSection, ManagePage, Select, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
+import { KpiStrip, useSummary } from "@/features/shared/kpi-strip";
 import { auditLogsApi, type AuditLogEntry } from "@/lib/api";
 
 const TARGET = { user: "Người dùng", course: "Khoá học", roadmap: "Lộ trình", exercise: "Bài tập", article: "Bài viết" } as const;
@@ -34,6 +40,7 @@ export function AuditLogsPage() {
   const [targetId, setTargetId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const summary = useSummary(useCallback(() => auditLogsApi.summary(request), [request]));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -143,12 +150,23 @@ export function AuditLogsPage() {
       }
       getRowId={(row) => row.id}
       icon={ScrollText}
+      summary={
+        <KpiStrip
+          loading={summary.loading}
+          metrics={[
+            { icon: ScrollText, label: "Tổng nhật ký", value: summary.data?.total ?? null },
+            { icon: Clock, label: "24 giờ qua", value: summary.data?.last24h ?? null },
+            { icon: CalendarDays, label: "7 ngày qua", value: summary.data?.last7d ?? null },
+            { icon: ShieldCheck, label: "Admin thao tác (7 ngày)", value: summary.data?.actors7d ?? null },
+          ]}
+        />
+      }
       loading={loading}
       onClearFilters={() => {
         setTargetType("");
         setTargetId("");
       }}
-      onRefresh={load}
+      onRefresh={() => Promise.all([load(), summary.reload()])}
       onSearchChange={setSearch}
       rows={visible}
       search={search}

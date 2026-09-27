@@ -77,6 +77,6 @@ export function useSummary<T>(load: () => Promise<T>) {
 }
 
 /** Nhóm vắng mặt trong kết quả nghĩa là 0; cả khối vắng mặt nghĩa là chưa có số. */
-export function countOf(group: Record<string, number> | undefined, key: string): number | null {
+export function countOf(group: Record<string, number> | null | undefined, key: string): number | null {
   return group ? (group[key] ?? 0) : null;
 }
