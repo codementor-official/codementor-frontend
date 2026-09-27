@@ -1,7 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, BookOpen, CheckCheck, RotateCcw, Trash2, XCircle } from "lucide-react";
+import {
+  Archive,
+  BookOpen,
+  CheckCheck,
+  Clock,
+  Globe,
+  PencilLine,
+  RotateCcw,
+  Star,
+  Trash2,
+  Undo2,
+  UserCheck,
+  XCircle,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@codementor/types";
@@ -11,6 +24,7 @@ import { useAdminApi } from "@/features/auth/admin-api";
 import { coursesApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
+import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
 
 const STATUS_OPTIONS = ["pending_review", "changes_requested", "rejected", "published", "archived"] as const;
 
@@ -32,6 +46,7 @@ export function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const summary = useSummary(useCallback(() => coursesApi.summary(request), [request]));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,7 +78,7 @@ export function CoursesPage() {
     setBusy(true);
     try {
       await action();
-      await load();
+      await Promise.all([load(), summary.reload()]);
     } catch (cause) {
       toast.error(describe(cause));
     } finally {
@@ -220,6 +235,19 @@ export function CoursesPage() {
       }
       getRowId={(row) => row.id}
       icon={BookOpen}
+      summary={
+        <KpiStrip
+          loading={summary.loading}
+          metrics={[
+            { icon: Globe, label: "Công khai", value: countOf(summary.data?.byStatus, "published") },
+            { icon: Clock, label: "Chờ duyệt", value: countOf(summary.data?.byStatus, "pending_review") },
+            { icon: PencilLine, label: "Yêu cầu sửa", value: countOf(summary.data?.byStatus, "changes_requested") },
+            { icon: Undo2, label: "Xin gỡ", value: summary.data?.removalRequested ?? null },
+            { icon: UserCheck, label: "Lượt ghi danh", value: summary.data?.enrollments ?? null },
+            { icon: Star, label: "Đánh giá TB", value: summary.data?.avgRating ?? null },
+          ]}
+        />
+      }
       loading={loading}
       onClearFilters={() => {
         setStatus("");
@@ -228,7 +256,7 @@ export function CoursesPage() {
         setUpdatedFrom("");
         setUpdatedTo("");
       }}
-      onRefresh={load}
+      onRefresh={() => Promise.all([load(), summary.reload()])}
       onSearchChange={setSearch}
       rows={rows}
       search={search}

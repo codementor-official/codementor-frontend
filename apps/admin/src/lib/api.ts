@@ -391,7 +391,17 @@ export interface AdminCourseListItem {
   updatedAt: string;
 }
 
+/** `GET /courses/admin/summary` — xem `CourseAdminSummary` ở learning-service. */
+export interface AdminCourseSummary {
+  byStatus: Record<string, number>;
+  removalRequested: number;
+  enrollments: number;
+  avgRating: number | null;
+}
+
 export const coursesApi = {
+  summary: (request: Request) =>
+    unwrap<AdminCourseSummary>(request, "/courses/admin/summary"),
   list: (
     request: Request,
     query: AdminContentQuery & { level?: string } = {},

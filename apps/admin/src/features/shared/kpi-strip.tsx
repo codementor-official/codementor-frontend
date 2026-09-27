@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Card } from "@codementor/ui";
 
@@ -48,4 +49,34 @@ export function KpiStrip({ metrics, loading = false }: { metrics: Kpi[]; loading
       ))}
     </Card>
   );
+}
+
+/**
+ * Số liệu cho `KpiStrip`, tách khỏi danh sách: danh sách đổi theo bộ lọc, dải số thì không.
+ * Lỗi chỉ làm `data` về `null` (các ô hiện "—"), không bao giờ chặn bảng.
+ *
+ * `load` phải ổn định (bọc `useCallback`), nếu không effect sẽ gọi lại mỗi lần render.
+ */
+export function useSummary<T>(load: () => Promise<T>) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const reload = useCallback(
+    () =>
+      load()
+        .then(setData, () => setData(null))
+        .finally(() => setLoading(false)),
+    [load],
+  );
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  return { data, loading, reload };
+}
+
+/** Nhóm vắng mặt trong kết quả nghĩa là 0; cả khối vắng mặt nghĩa là chưa có số. */
+export function countOf(group: Record<string, number> | undefined, key: string): number | null {
+  return group ? (group[key] ?? 0) : null;
 }
