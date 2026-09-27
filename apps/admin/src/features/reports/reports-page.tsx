@@ -71,7 +71,6 @@ export function ReportsPage() {
 
   return <ManagePage
     title="Báo cáo vi phạm"
-    description="Phân loại, kiểm tra và kết luận các báo cáo do người dùng gửi."
     icon={Flag}
     rows={rows}
     columns={columns}

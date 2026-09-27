@@ -100,7 +100,6 @@ export function AuditLogsPage() {
     <ManagePage
       activeFilterCount={[targetType, targetId].filter(Boolean).length}
       columns={columns}
-      description="Mọi thao tác quản trị đã ghi lại, mới nhất trước. Chỉ ghi thêm — không sửa, không xoá."
       drawer={{
         title: (row) => row.summary,
         description: (row) => `${row.action} · ${dateTime.format(new Date(row.createdAt))}`,

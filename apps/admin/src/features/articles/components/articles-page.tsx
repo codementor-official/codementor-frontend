@@ -153,7 +153,6 @@ export function ArticlesPage() {
         }
         activeFilterCount={status ? 1 : 0}
         columns={columns}
-        description="Bài viết chờ duyệt và đã đăng. Duyệt lần đầu sẽ gửi thông báo tới toàn bộ người học; duyệt lại bài đã đăng thì không."
         drawer={{
           title: (row) => row.title,
           description: (row) => `${STATUS_LABELS[row.status] ?? row.status} · ${row.authorName ?? "không rõ"}`,

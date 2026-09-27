@@ -16,7 +16,6 @@ export function AdminSectionPage({ section }: { section: AdminSectionDefinition 
           {section.eyebrow}
         </p>
         <h1 className="mt-1 text-xl font-semibold tracking-tight">{section.title}</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{section.description}</p>
       </div>
 
       <Card className="flex min-h-64 flex-col items-center justify-center px-6 py-16 text-center">

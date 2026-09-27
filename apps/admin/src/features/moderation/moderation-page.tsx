@@ -246,7 +246,6 @@ export function ModerationPage() {
     <ManagePage
       activeFilterCount={(onlyStale ? 1 : 0) + (kind === "" ? 0 : 1)}
       columns={columns}
-      description={DESCRIPTIONS[tray](filtered.length)}
       drawer={{
         title: (row) => row.title,
         description: (row) =>
@@ -403,21 +402,6 @@ export function ModerationPage() {
     />
   );
 }
-
-const DESCRIPTIONS: Record<ModerationTray, (count: number) => string> = {
-  pending: (count) =>
-    count === 0
-      ? "Không còn gì chờ bạn xem."
-      : `${count} mục đang chờ, cũ trước. Mở một mục ra để xem trước nội dung rồi quyết.`,
-  removal: (count) =>
-    count === 0
-      ? "Không có yêu cầu gỡ nào đang chờ."
-      : `${count} nội dung đang công khai được tác giả xin gỡ. Đọc lý do rồi quyết định gỡ hay giữ.`,
-  approved: () =>
-    "Những gì bạn đã duyệt, mới nhất trước. Bấm vào một mục để xem lịch sử, hoặc hoàn tác nếu lỡ duyệt nhầm.",
-  rejected: () =>
-    "Những gì bạn đã từ chối hoặc yêu cầu sửa, mới nhất trước. Hoàn tác để đưa lại về hàng chờ.",
-};
 
 const EMPTY_MESSAGES: Record<ModerationTray, string> = {
   pending: "Không có nội dung nào đang chờ duyệt.",

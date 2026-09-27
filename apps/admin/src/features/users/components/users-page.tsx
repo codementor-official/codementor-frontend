@@ -39,7 +39,6 @@ export function UsersPage() {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
-  const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -73,13 +72,6 @@ export function UsersPage() {
     const timer = setTimeout(() => void load(), 300);
     return () => clearTimeout(timer);
   }, [load]);
-
-  useEffect(() => {
-    void usersApi
-      .summary(request)
-      .then((data) => setTotal(data.total))
-      .catch(() => setTotal(null));
-  }, [request]);
 
   const columns = useMemo<ColumnDef<AdminUser, unknown>[]>(
     () => [
@@ -176,11 +168,6 @@ export function UsersPage() {
       activeFilterCount={activeFilterCount}
       columnVisibility={{ email: false }}
       columns={columns}
-      description={
-        total === null
-          ? "Tài khoản đã đồng bộ từ Keycloak sang CodeMentor."
-          : `${total} tài khoản. Danh tính và mật khẩu do Keycloak giữ; đây là hồ sơ tương ứng trong CodeMentor.`
-      }
       drawer={{
         title: (row) => row.displayName,
         description: (row) => row.email,

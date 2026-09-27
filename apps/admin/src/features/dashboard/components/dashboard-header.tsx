@@ -10,9 +10,6 @@ export function DashboardHeader() {
   return (
     <div>
       <h1 className="text-xl font-semibold tracking-tight">Bảng điều khiển</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Số liệu toàn bộ nền tảng, đọc trực tiếp từ cơ sở dữ liệu.
-      </p>
     </div>
   );
 }

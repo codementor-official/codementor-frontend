@@ -119,7 +119,6 @@ export function ExercisesPage() {
     <ManagePage
       activeFilterCount={activeFilterCount}
       columns={columns}
-      description="Bài code đã gửi duyệt trở lên — bản nháp chưa gửi của giảng viên không hiện ở đây."
       drawer={{
         title: (row) => row.title,
         description: (row) =>

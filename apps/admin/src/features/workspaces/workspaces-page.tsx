@@ -133,7 +133,6 @@ export function WorkspacesPage() {
     <ManagePage
       activeFilterCount={privacy ? 1 : 0}
       columns={columns}
-      description="Mọi nhóm học tập trên nền tảng. Lưu trữ thay vì xoá: nhóm giữ nguyên tài liệu, bài tập và lịch sử để khôi phục được."
       drawer={{
         title: (row) => row.name,
         description: (row) => `${STATUS[row.status]} · ${PRIVACY[row.privacy]} · ${row.memberCount} thành viên`,
