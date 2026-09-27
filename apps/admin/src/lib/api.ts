@@ -286,14 +286,18 @@ export interface ManagedUser {
   roles: KeycloakRole[];
 }
 
+/** Đếm trên bảng `users`, không tính tài khoản đã xoá. */
+export interface AdminUserSummary {
+  total: number;
+  byRole: Record<string, number>;
+  byStatus: Record<string, number>;
+  newLast30Days: number;
+}
+
 export const usersApi = {
   list: (request: Request, query: UsersQuery = {}) =>
     unwrap<Page<AdminUser>>(request, `/users${search(query)}`),
-  summary: (request: Request) =>
-    unwrap<{ total: number; byRole: Record<string, number> }>(
-      request,
-      "/users/summary",
-    ),
+  summary: (request: Request) => unwrap<AdminUserSummary>(request, "/users/summary"),
   growth: (request: Request) =>
     unwrap<{ month: string; newUsers: number; total: number }[]>(
       request,

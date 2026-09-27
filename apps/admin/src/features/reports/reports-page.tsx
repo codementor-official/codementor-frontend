@@ -40,7 +40,9 @@ export function ReportsPage() {
         targetType: targetType || undefined,
         category: category || undefined,
         page: 1,
-        limit: 100,
+        // ponytail: trần 50 của `ListAdminReportsQueryDto`, chỉ đọc trang đầu. Thêm phân
+        // trang server khi hàng chờ thật sự vượt 50 báo cáo.
+        limit: 50,
       });
       setRows(page.items);
     } catch (cause) {

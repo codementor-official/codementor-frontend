@@ -3,12 +3,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Lock, Plus, Unlock, Users } from "lucide-react";
+import {
+  GraduationCap,
+  Lock,
+  Plus,
+  ShieldCheck,
+  UserPlus,
+  UserRound,
+  Unlock,
+  Users,
+  UserX,
+} from "lucide-react";
 import { Button, ManagePage, Select, StatusBadge, useToast } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { CreateUserModal } from "@/features/users/components/create-user-modal";
 import { UserDetailDrawer } from "@/features/users/components/user-detail-drawer";
-import { usersApi, KEYCLOAK_ROLE_OF, type AdminUser, type KeycloakRole } from "@/lib/api";
+import { KpiStrip } from "@/features/shared/kpi-strip";
+import {
+  usersApi,
+  KEYCLOAK_ROLE_OF,
+  type AdminUser,
+  type AdminUserSummary,
+  type KeycloakRole,
+} from "@/lib/api";
 
 const ROLE_LABELS: Record<string, string> = {
   learner: "Học viên",
@@ -43,6 +60,23 @@ export function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [summary, setSummary] = useState<AdminUserSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
+  // Tách khỏi `load`: danh sách đổi theo bộ lọc, dải số thì không. Lỗi ở đây chỉ làm các ô
+  // hiện "—", không chặn bảng.
+  const loadSummary = useCallback(
+    () =>
+      usersApi
+        .summary(request)
+        .then(setSummary, () => setSummary(null))
+        .finally(() => setSummaryLoading(false)),
+    [request],
+  );
+
+  useEffect(() => {
+    void loadSummary();
+  }, [loadSummary]);
 
   const load = useCallback(
     async (nextCursor?: string) => {
@@ -146,7 +180,7 @@ export function UsersPage() {
     setBusy(true);
     try {
       await action();
-      await load();
+      await Promise.all([load(), loadSummary()]);
     } catch (cause) {
       // Kết quả một thao tác đi bằng toast. Dải lỗi dưới tiêu đề chỉ còn cho lỗi tải danh
       // sách — thứ vẫn đang đúng lúc người dùng ngước lên đọc.
@@ -262,22 +296,40 @@ export function UsersPage() {
       }}
       /* Không truyền `cursor`: làm mới là đọc lại TRANG ĐẦU với đúng bộ lọc đang có,
          không phải tải thêm trang tiếp theo. */
-      onRefresh={() => load()}
+      onRefresh={() => Promise.all([load(), loadSummary()])}
       onSearchChange={setSearch}
       rows={rows}
       search={search}
       searchPlaceholder="Tìm theo tên, email hoặc handle…"
       icon={Users}
+      summary={
+        <KpiStrip
+          loading={summaryLoading}
+          metrics={[
+            { icon: Users, label: "Tổng tài khoản", value: summary?.total ?? null },
+            { icon: UserRound, label: "Học viên", value: count(summary?.byRole, "learner") },
+            { icon: GraduationCap, label: "Giảng viên", value: count(summary?.byRole, "lecturer") },
+            { icon: ShieldCheck, label: "Quản trị", value: count(summary?.byRole, "admin") },
+            { icon: UserX, label: "Tạm khoá", value: count(summary?.byStatus, "suspended") },
+            { icon: UserPlus, label: "Mới 30 ngày", value: summary?.newLast30Days ?? null },
+          ]}
+        />
+      }
       title="Người dùng"
     />
 
     <CreateUserModal
       onClose={() => setCreating(false)}
-      onCreated={() => void load()}
+      onCreated={() => void Promise.all([load(), loadSummary()])}
       open={creating}
     />
     </>
   );
+}
+
+/** Nhóm vắng mặt trong kết quả nghĩa là 0 tài khoản; cả khối vắng mặt nghĩa là chưa có số. */
+function count(group: Record<string, number> | undefined, key: string): number | null {
+  return group ? (group[key] ?? 0) : null;
 }
 
 function describe(cause: unknown): string {

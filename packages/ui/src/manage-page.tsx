@@ -20,6 +20,8 @@ export interface ManagePageProps<TData> {
   icon?: LucideIcon;
   /** The one primary action for this screen, rendered beside the title. */
   action?: ReactNode;
+  /** Dải số liệu tổng quan giữa tiêu đề và thanh lọc. Bảng tự co số dòng theo phần còn lại. */
+  summary?: ReactNode;
   /** Scope switch for the screen — "mine" versus the shared catalogue. Rendered inside the
    * header row rather than above it, so a screen with tabs is not three stacked blocks. */
   tabs?: {
@@ -118,6 +120,7 @@ export function ManagePage<TData>({
   description,
   icon,
   action,
+  summary,
   tabs,
   rows,
   columns,
@@ -190,6 +193,8 @@ export function ManagePage<TData>({
         icon={icon}
         title={title}
       />
+
+      {summary && <div className="mb-3">{summary}</div>}
 
       {filters !== undefined || search !== undefined || view ? (
         <div className="mb-3 flex items-start gap-2">
