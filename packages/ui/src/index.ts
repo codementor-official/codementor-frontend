@@ -9,6 +9,8 @@ export { BreadcrumbTitle, setBreadcrumbTitle, useBreadcrumbTitles } from "./brea
 export { Button, buttonClassName } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
 export { ConfirmButton } from "./confirm-button";
+export { CourseCover } from "./course-cover";
+export { CoursePrice, CoursePriceBadges, formatVndPrice } from "./course-price";
 export { DashboardShell } from "./dashboard-shell";
 export {
   DataTable,
@@ -32,6 +34,7 @@ export { ReasonButton } from "./reason-button";
 export { RejectDialogButton } from "./reject-dialog-button";
 export { SegmentedTabs } from "./segmented-tabs";
 export { Select } from "./select";
+export { ServerPagination } from "./server-pagination";
 export type { SelectOption } from "./select";
 export { SideDrawer } from "./side-drawer";
 export { StatStrip } from "./stat-strip";

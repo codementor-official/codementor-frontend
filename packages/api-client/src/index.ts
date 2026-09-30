@@ -11,6 +11,20 @@ export class ApiClientError extends Error {
   }
 }
 
+/** Safe server validation messages, without rendering internal 5xx payloads. */
+export function apiErrorMessage(error: unknown): string {
+  if (error instanceof ApiClientError) {
+    if (error.status >= 500) return 'Dịch vụ tạm thời chưa sẵn sàng. Vui lòng thử lại hoặc kiểm tra trạng thái trước khi tạo giao dịch mới.';
+    const body = error.body;
+    if (body && typeof body === 'object' && 'message' in body) {
+      const message = (body as { message: unknown }).message;
+      if (typeof message === 'string') return message;
+      if (Array.isArray(message) && message.every(item => typeof item === 'string')) return message.join('. ');
+    }
+  }
+  return error instanceof Error ? error.message : 'Không thực hiện được yêu cầu.';
+}
+
 export interface ApiClientOptions {
   baseUrl: string;
   getAccessToken?: () => Promise<string | null> | string | null;
