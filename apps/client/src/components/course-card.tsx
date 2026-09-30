@@ -3,6 +3,7 @@ import { EntityCard } from "@/components/entity-card";
 import { Badge } from "@/components/ui/badge";
 import { levelToDifficulty } from "@/lib/catalogue/level";
 import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { CoursePrice, CoursePriceBadges } from "@codementor/ui";
 
 /**
  * Mọi thứ một thẻ khóa học hiển thị. Mỗi nơi gọi tự ánh xạ DTO của mình về đây thay vì
@@ -10,6 +11,10 @@ import { placeholderCoverUrl } from "@/lib/placeholder-image";
  * khóa học với hai bộ thông tin khác nhau.
  */
 export interface CourseCardData {
+  priceVnd?: number;
+  listPriceVnd?: number;
+  discountPercent?: number;
+  promotion?: { label: string } | null;
   id: string;
   slug?: string | null;
   title: string;
@@ -77,6 +82,13 @@ export function CourseCard({
         course.coverImageUrl || placeholderCoverUrl(course.slug ?? course.title)
       }
       kind={{ icon: BookOpen, label: course.authorName ?? "CodeMentor" }}
+      coverBadges={course.priceVnd === undefined ? undefined : (
+        <CoursePriceBadges
+          priceVnd={course.priceVnd}
+          discountPercent={course.discountPercent}
+          promotionLabel={course.promotion?.label}
+        />
+      )}
       title={course.title}
       description={course.description ?? "Chưa có mô tả cho khóa học này."}
       difficulty={levelToDifficulty(course.level ?? "basic")}
@@ -106,6 +118,9 @@ export function CourseCard({
         ) : undefined
       }
       note={note}
+      footer={course.priceVnd === undefined ? undefined : (
+        <CoursePrice priceVnd={course.priceVnd} listPriceVnd={course.listPriceVnd} />
+      )}
       progress={progressPercent}
       href={href === null ? undefined : (href ?? `/courses/${course.id}`)}
     />

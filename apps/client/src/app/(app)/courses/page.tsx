@@ -35,6 +35,9 @@ export default function CoursesPage() {
   const [tab, setTab] = useState<"all" | "mine">("all");
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState("all");
+  const [priceRange, setPriceRange] = useState("all");
+  const [promotion, setPromotion] = useState("all");
+  const [sort, setSort] = useState("recommended");
   const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
   const [topics, setTopics] = useState<CatalogueTopicSummary[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
@@ -61,11 +64,31 @@ export default function CoursesPage() {
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return items
+    const filtered = items
       .filter((c) => level === "all" || c.level === level)
+      .filter((c) => {
+        const price = c.priceVnd ?? 0;
+        if (priceRange === "free") return price === 0;
+        if (priceRange === "under_100") return price > 0 && price < 100_000;
+        if (priceRange === "100_200") return price >= 100_000 && price <= 200_000;
+        if (priceRange === "over_200") return price > 200_000;
+        return true;
+      })
+      .filter((c) => {
+        if (promotion === "discounted") return (c.discountPercent ?? 0) > 0;
+        if (promotion === "regular") return (c.priceVnd ?? 0) > 0 && !(c.discountPercent ?? 0);
+        return true;
+      })
       .filter((c) => selectedTopicIds.length === 0 || (c.topics ?? []).some((topic) => selectedTopicIds.includes(topic.id)))
       .filter((c) => !query || `${c.title} ${c.slug} ${c.authorName ?? ""} ${(c.topics ?? []).map((topic) => topic.name).join(" ")}`.toLowerCase().includes(query));
-  }, [items, search, level, selectedTopicIds]);
+    return [...filtered].sort((a, b) => {
+      if (sort === "price_low") return (a.priceVnd ?? 0) - (b.priceVnd ?? 0);
+      if (sort === "price_high") return (b.priceVnd ?? 0) - (a.priceVnd ?? 0);
+      if (sort === "discount") return (b.discountPercent ?? 0) - (a.discountPercent ?? 0);
+      if (sort === "newest") return b.id.localeCompare(a.id);
+      return 0;
+    });
+  }, [items, search, level, priceRange, promotion, selectedTopicIds, sort]);
 
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -80,6 +103,7 @@ export default function CoursesPage() {
 
   const published = items.filter((c) => c.status === "published").length;
   const totalLessons = items.reduce((sum, c) => sum + (c.totalLessons ?? 0), 0);
+  const discounted = items.filter((c) => (c.discountPercent ?? 0) > 0).length;
 
   return (
     <div>
@@ -134,6 +158,7 @@ export default function CoursesPage() {
             stats={[
               { label: "Khóa học", value: items.length },
               { label: "Đã công khai", value: published },
+              { label: "Đang ưu đãi", value: discounted },
               { label: "Bài học", value: totalLessons },
             ]}
           />
@@ -146,14 +171,18 @@ export default function CoursesPage() {
               setPage(1);
             }}
             searchPlaceholder="Tìm khóa học theo tên, slug, tác giả..."
-            activeFilterCount={Number(level !== "all") + selectedTopicIds.length}
+            activeFilterCount={Number(level !== "all") + Number(priceRange !== "all") + Number(promotion !== "all") + Number(sort !== "recommended") + selectedTopicIds.length}
             onClearFilters={() => {
               setLevel("all");
+              setPriceRange("all");
+              setPromotion("all");
+              setSort("recommended");
               setSelectedTopicIds([]);
               setPage(1);
             }}
             sheetTitle="Lọc khóa học"
             controls={
+              <>
               <Select
                 label="Trình độ"
                 value={level}
@@ -163,6 +192,41 @@ export default function CoursesPage() {
                   setPage(1);
                 }}
               />
+              <Select
+                label="Khoảng giá"
+                value={priceRange}
+                options={[
+                  { value: "all", label: "Mọi mức giá" },
+                  { value: "free", label: "Miễn phí" },
+                  { value: "under_100", label: "Dưới 100.000 ₫" },
+                  { value: "100_200", label: "100.000 ₫ – 200.000 ₫" },
+                  { value: "over_200", label: "Trên 200.000 ₫" },
+                ]}
+                onChange={(value) => { setPriceRange(value); setPage(1); }}
+              />
+              <Select
+                label="Ưu đãi"
+                value={promotion}
+                options={[
+                  { value: "all", label: "Tất cả khóa học" },
+                  { value: "discounted", label: "Đang khuyến mãi" },
+                  { value: "regular", label: "Giá thông thường" },
+                ]}
+                onChange={(value) => { setPromotion(value); setPage(1); }}
+              />
+              <Select
+                label="Sắp xếp"
+                value={sort}
+                options={[
+                  { value: "recommended", label: "Đề xuất" },
+                  { value: "discount", label: "Giảm nhiều nhất" },
+                  { value: "price_low", label: "Giá thấp đến cao" },
+                  { value: "price_high", label: "Giá cao đến thấp" },
+                  { value: "newest", label: "Mới nhất" },
+                ]}
+                onChange={(value) => { setSort(value); setPage(1); }}
+              />
+              </>
             }
           />
 
@@ -179,7 +243,7 @@ export default function CoursesPage() {
             />
           </div>
 
-          {!search.trim() && level === "all" && selectedTopicIds.length === 0 && currentPage === 1 && <section className="mb-6" aria-label="Khóa học đề xuất">
+          {!search.trim() && level === "all" && priceRange === "all" && promotion === "all" && sort === "recommended" && selectedTopicIds.length === 0 && currentPage === 1 && <section className="mb-6" aria-label="Khóa học đề xuất">
             <RecommendedCourses />
           </section>}
 

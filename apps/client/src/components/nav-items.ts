@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Bookmark,
+  Receipt,
   Bot,
   Compass,
   Dumbbell,
@@ -38,5 +39,6 @@ export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/articles", label: "Bài viết", icon: Newspaper },
   { href: "/workspace", label: "Nhóm học tập", icon: Users },
   { href: "/saved", label: "Đã lưu", icon: Bookmark },
+  { href: "/purchases", label: "Khóa học đã mua", icon: Receipt },
   { href: "/ai-tutor", label: "Trợ lý AI", icon: Bot },
 ];

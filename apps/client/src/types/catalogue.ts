@@ -39,6 +39,12 @@ export interface RoadmapSummary {
 }
 
 export interface CourseSummary {
+  priceVnd?: number;
+  listPriceVnd?: number;
+  salePriceVnd?: number | null;
+  savingsVnd?: number;
+  discountPercent?: number;
+  promotion?: { label: string; startsAt: string | null; endsAt: string | null; isActive: boolean } | null;
   id: string;
   slug: string;
   title: string;

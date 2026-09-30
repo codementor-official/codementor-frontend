@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -33,6 +32,8 @@ export interface EntityCardProps {
   description: string;
   difficulty?: Difficulty;
   badge?: ReactNode;
+  /** Nhãn phủ trên ảnh, ví dụ Miễn phí hoặc ưu đãi -20%. */
+  coverBadges?: ReactNode;
   tags?: string[];
   /** Right-of-title or footer metadata, e.g. { label: "học viên", value: "1.2k" }. */
   stats?: EntityCardStat[];
@@ -63,6 +64,7 @@ export function EntityCard({
   description,
   difficulty,
   badge,
+  coverBadges,
   tags = [],
   stats = [],
   progress,
@@ -96,16 +98,13 @@ export function EntityCard({
       }`}
     >
       {coverImage && (
-        <Image
+        // Ảnh bìa đến từ S3/nguồn do giảng viên nhập nên hostname không thể biết ở build time.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src={coverImage}
           alt=""
-          fill
-          sizes={
-            horizontal
-              ? "(max-width: 640px) 192px, 288px"
-              : "(max-width: 640px) 100vw, 320px"
-          }
-          className={`${coverFit === "contain" ? "object-contain" : "object-cover"} ${
+          loading="lazy"
+          className={`absolute inset-0 h-full w-full ${coverFit === "contain" ? "object-contain" : "object-cover"} ${
             coverPosition === "top"
               ? "object-top"
               : coverPosition === "bottom"
@@ -118,6 +117,9 @@ export function EntityCard({
         <span className="absolute top-2 left-2 z-10 rounded-sm bg-surface/90 px-1.5 py-0.5 text-2xs font-bold tracking-wide text-navy uppercase">
           {eyebrow}
         </span>
+      )}
+      {coverBadges && (
+        <span className="absolute top-3 left-3 z-20 max-w-[calc(100%_-_1.5rem)]">{coverBadges}</span>
       )}
       {!horizontal &&
         (coverImage ? (

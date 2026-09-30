@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
@@ -23,12 +22,15 @@ import {
   Trophy,
   Unlock,
 } from "lucide-react";
-import { StatStrip } from "@codementor/ui";
+import { CourseCover, StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { RecommendedCourses } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
+import { commerceApi } from "@/features/commerce/api";
+import { PurchaseButton } from "@/features/commerce/purchase-button";
+import type { CourseOffer } from "@codementor/types";
 import { consumeCourseCelebration, markCourseCelebrated } from "@/lib/course-celebration";
 import { useAuth } from "@/providers/auth-provider";
 import { describeLock, explainLock, isLessonLocked } from "@/lib/lesson-unlock";
@@ -69,6 +71,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
   const router = useRouter();
   const userId = useAuth().user?.id;
   const [course, setCourse] = useState<CourseDetail | null>(null);
+  const [offer, setOffer] = useState<CourseOffer | null>(null);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
@@ -100,11 +103,12 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([api.courses.detail(courseId), api.courses.progress(courseId)])
-      .then(([courseData, progressData]) => {
+    Promise.all([api.courses.detail(courseId), api.courses.progress(courseId), commerceApi.offer(courseId)])
+      .then(([courseData, progressData, offerData]) => {
         if (cancelled) return;
         setCourse(courseData);
         setProgress(progressData);
+        setOffer(offerData);
       })
       .catch((cause: unknown) =>
         !cancelled && setError(cause instanceof Error ? cause.message : "Không tải được khóa học"),
@@ -155,7 +159,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
 
   const progressByLesson = new Map((progress?.lessons ?? []).map((l) => [l.lessonId, l]));
   const enrollment = progress?.enrollment ?? null;
-  const enrolled = enrollment !== null && enrollment.status !== "dropped";
+  const enrolled = enrollment !== null && enrollment.status !== "dropped" && (!offer?.priceVnd || offer.owned);
   const lessons = flatLessons(course);
   const firstOpen = lessons.find(
     (lesson) => progressByLesson.get(lesson.id)?.status !== "completed",
@@ -334,18 +338,18 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
           * thứ người học cần với tới ở bất kỳ đoạn nào của danh sách. */}
         <aside className="flex flex-col gap-3 lg:sticky lg:top-5">
           <div className="relative aspect-video overflow-hidden rounded-lg border border-border-soft bg-border-soft">
-            <Image
+            <CourseCover
               src={course.coverImageUrl || placeholderCoverUrl(course.slug)}
-              alt=""
-              fill
-              sizes="320px"
-              className="object-cover"
+              title={course.title}
+              className="h-full w-full rounded-none"
             />
           </div>
 
           <Card className="p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-sm font-bold text-navy">Bắt đầu học</h2>
+              <h2 className="text-sm font-bold text-navy">
+                {offer && offer.priceVnd > 0 && !offer.owned ? "Thông tin mua khóa học" : "Bắt đầu học"}
+              </h2>
               <div className="flex items-center gap-1">
                 <SaveButton compact targetType="COURSE" targetId={course.id} />
                 <ReportButton compact targetType="COURSE" targetId={course.id} />
@@ -383,6 +387,8 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                   <p className="text-xs text-text-faint">Khóa học chưa có bài nào để mở.</p>
                 )}
               </>
+            ) : offer && offer.priceVnd > 0 && !offer.owned ? (
+              <PurchaseButton courseId={courseId} price={offer.priceVnd} listPrice={offer.listPriceVnd} promotionLabel={offer.promotion?.label} />
             ) : (
               <button
                 type="button"

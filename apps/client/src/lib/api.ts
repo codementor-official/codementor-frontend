@@ -139,7 +139,7 @@ function request<T>(
 }
 
 /** Every backend response is wrapped by the response interceptor in libs/platform. */
-async function unwrap<T>(
+export async function unwrap<T>(
   path: string,
   options?: Parameters<typeof request>[1],
 ): Promise<T> {
