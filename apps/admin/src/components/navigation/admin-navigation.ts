@@ -1,5 +1,6 @@
 import {
   Activity,
+  BadgePercent,
   BookOpen,
   Bot,
   Braces,
@@ -12,6 +13,7 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -46,6 +48,8 @@ export const adminNavigation: AdminNavGroup[] = [
       { href: "/courses", icon: BookOpen, label: "Khoá học" },
       { href: "/learning-paths", icon: Route, label: "Lộ trình học" },
       { href: "/workspaces", icon: Network, label: "Nhóm học tập" },
+      { href: "/commerce", icon: Wallet, label: "Giao dịch" },
+      { href: "/promotions", icon: BadgePercent, label: "Khuyến mãi" },
     ],
   },
   {

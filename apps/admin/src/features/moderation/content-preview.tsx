@@ -329,6 +329,7 @@ function CourseBody({
       <Facts
         items={[
           ["Trình độ", course.level],
+          ["Giá khóa học", course.priceVnd ? new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(course.priceVnd) : 'Miễn phí'],
           [
             "Thời lượng",
             course.durationHours ? `${course.durationHours} giờ` : "—",

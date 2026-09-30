@@ -146,6 +146,7 @@ export interface ArticlePreview {
 }
 
 export interface CoursePreview {
+  priceVnd?: number;
   title: string;
   description: string | null;
   level: string;
