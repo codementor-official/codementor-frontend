@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  BadgePercent,
   Braces,
   FileText,
   LayoutDashboard,
@@ -7,6 +8,7 @@ import {
   Route,
   Sparkles,
   User,
+  Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -49,6 +51,10 @@ export const lecturerNavigation: LecturerNavGroup[] = [
   },
   {
     label: "Tài khoản",
-    items: [{ href: "/profile", icon: User, label: "Hồ sơ" }],
+    items: [
+      { href: "/profile", icon: User, label: "Hồ sơ" },
+      { href: "/earnings", icon: Wallet, label: "Doanh thu" },
+      { href: "/promotions", icon: BadgePercent, label: "Khuyến mãi" },
+    ],
   },
 ];

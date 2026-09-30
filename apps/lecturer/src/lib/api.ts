@@ -34,7 +34,7 @@ const request = createApiClient({
 });
 
 /** Every backend response is wrapped by the response interceptor in libs/platform. */
-async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]): Promise<T> {
+export async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]): Promise<T> {
   const response = await request<ApiResponse<T> | undefined>(path, options);
   // 204 No Content — mọi lệnh DELETE trả về thế này. Không có thân thì không có `data` để
   // bóc, và đọc `.data` của `undefined` là chỗ "can't access property data" nổ ra ngay khi
@@ -356,7 +356,8 @@ export const api = {
  * chứ không phải lựa chọn: notification-service vẫn gửi cả hai cho đúng tác giả, chỉ là
  * bộ lọc này chặn lại trước khi tới chuông. Hệ quả là hai kết cục quan trọng nhất của một
  * yêu cầu xin gỡ — được duyệt, hoặc bị từ chối — không bao giờ hiện ra, và tác giả chỉ
- * biết nội dung mình đã biến mất bằng cách tự mở trang ra xem.
+ * biết nội dung mình đã biến mất bằng cách tự mở trang ra xem. `COMMERCE_UPDATED` phải
+ * đi cùng phạm vi này để giảng viên nhận được thông báo có học viên vừa mua khóa học.
  */
 const NOTIFICATION_SCOPE =
-  "types=CONTENT_APPROVED,CONTENT_CHANGES_REQUESTED,CONTENT_REJECTED,CONTENT_ARCHIVED,REMOVAL_REQUEST_DENIED,ADMIN_ANNOUNCEMENT";
+  "types=CONTENT_APPROVED,CONTENT_CHANGES_REQUESTED,CONTENT_REJECTED,CONTENT_ARCHIVED,REMOVAL_REQUEST_DENIED,ADMIN_ANNOUNCEMENT,COMMERCE_UPDATED";

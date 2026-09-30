@@ -36,7 +36,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         const body = (await response.json()) as { authenticated: boolean; user: User | null };
         if (!active) return;
         if (response.ok && body.authenticated) {
-          setUser(body.user);
+          // The encrypted BFF session contains Keycloak's `sub`, while ownership fields
+          // in Learning/Core use the platform user id. Resolve `/me` once so edit actions
+          // do not disappear for content that really belongs to this lecturer.
+          const profile = await api.me().catch(() => body.user);
+          if (!active) return;
+          setUser(profile);
           setStatus("authenticated");
         } else {
           setUser(null);
@@ -57,7 +62,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     });
     const body = (await response.json()) as { message?: string; user?: User };
     if (!response.ok || !body.user) throw new Error(body.message ?? "Đăng nhập thất bại.");
-    setUser(body.user);
+    setUser(await api.me().catch(() => body.user ?? null));
     setStatus("authenticated");
   }, []);
 

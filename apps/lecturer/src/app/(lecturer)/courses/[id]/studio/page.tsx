@@ -1,4 +1,6 @@
 "use client";
+import { PriceEditor } from "@/features/commerce/price-editor";
+import { CoursePurchases } from "@/features/commerce/course-purchases";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -131,7 +133,11 @@ export default function CourseStudioPage() {
   const router = useRouter();
 
   const toast = useToast();
-  const [tab, setTab] = useState<"curriculum" | "metadata">("curriculum");
+  const [tab, setTab] = useState<"curriculum" | "metadata" | "purchases">("curriculum");
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (requested === "purchases" || requested === "metadata") setTab(requested);
+  }, []);
   const [course, setCourse] = useState<Course | null>(null);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [chapters, setChapters] = useState<DraftChapter[]>([]);
@@ -439,7 +445,7 @@ export default function CourseStudioPage() {
       </p>
     </Modal>
     <StudioShell
-      actions={
+      actions={tab === "purchases" ? undefined : (
           <div className="flex flex-wrap items-center gap-2">
             {locked ? (
               <Button
@@ -499,7 +505,7 @@ export default function CourseStudioPage() {
               </p>
             )}
           </div>
-      }
+        )}
       backHref="/courses"
       backLabel="Khóa học"
       meta={`${course.totalChapters} chương · ${course.totalLessons} bài · ${
@@ -515,10 +521,11 @@ export default function CourseStudioPage() {
       tabs={{
         options: [
           { value: "curriculum", label: "Nội dung" },
-          { value: "metadata", label: "Thông tin khóa học" },
+          { value: "metadata", label: "Giá, khuyến mãi & thông tin" },
+          { value: "purchases", label: "Học viên đã mua" },
         ],
         value: tab,
-        onChange: (value) => setTab(value as "curriculum" | "metadata"),
+        onChange: (value) => setTab(value as "curriculum" | "metadata" | "purchases"),
       }}
       title={meta.title || "Khóa học chưa đặt tên"}
     >
@@ -559,9 +566,16 @@ export default function CourseStudioPage() {
             </div>
           </Panel>
         </Group>
+      ) : tab === "purchases" ? (
+        <StudioScroll>
+          <CoursePurchases courseId={course.id} />
+        </StudioScroll>
       ) : (
         <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
+          <div className="lg:col-span-3">
+            <PriceEditor id={course.id} status={course.status} />
+          </div>
           <Card className="p-5 lg:col-span-2">
             <CardHeading
               hint="Những gì học viên đọc thấy ở trang khóa học và ở danh mục. Mô tả là trường bắt buộc để gửi duyệt."

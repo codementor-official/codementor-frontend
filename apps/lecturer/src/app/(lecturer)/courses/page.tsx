@@ -10,6 +10,7 @@ import {
   FileText,
   ListTree,
   Pencil,
+  BadgePercent,
   Plus,
   RotateCcw,
   Send,
@@ -175,6 +176,37 @@ function CoursesPageContent() {
           </span>
         ),
       },
+      ...(tab === "mine"
+        ? [
+            {
+              id: "actions",
+              header: "Thao tác",
+              enableSorting: false,
+              cell: ({ row }) => (
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    aria-label={`Mở studio ${row.original.title}`}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
+                    href={`/courses/${row.original.id}/studio`}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <Pencil aria-hidden="true" className="size-3.5" />
+                    Mở studio
+                  </Link>
+                  <Link
+                    aria-label={`Thiết lập giá và khuyến mãi ${row.original.title}`}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
+                    href={`/courses/${row.original.id}/studio?tab=metadata`}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <BadgePercent aria-hidden="true" className="size-3.5" />
+                    Giá & ưu đãi
+                  </Link>
+                </div>
+              ),
+            } satisfies ColumnDef<CourseListItem, unknown>,
+          ]
+        : []),
     ],
     [tab, user?.id],
   );
@@ -203,7 +235,7 @@ function CoursesPageContent() {
             `${LEVEL_LABELS[row.level]} · ${CONTENT_STATUS_LABELS[row.status]}`,
           body: (row) => <CourseDrawerBody row={row} />,
           footer: (row) =>
-            row.createdBy === user?.id ? (
+            (tab === "mine" || row.createdBy === user?.id) ? (
               <>
                 {row.status === "pending_review" ? (
                   <Button
@@ -268,6 +300,12 @@ function CoursesPageContent() {
                   href={`/courses/${row.id}/studio`}
                 >
                   <Pencil aria-hidden="true" className="size-4" /> Mở studio
+                </Link>
+                <Link
+                  className={buttonClassName("outline")}
+                  href={`/courses/${row.id}/studio?tab=metadata`}
+                >
+                  <BadgePercent aria-hidden="true" className="size-4" /> Giá & khuyến mãi
                 </Link>
               </>
             ) : null,

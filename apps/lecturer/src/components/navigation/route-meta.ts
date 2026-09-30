@@ -19,6 +19,8 @@ const ROUTES: Record<string, RouteMeta> = {
   "/exercises": { label: "Bài code", parent: HOME },
   "/articles": { label: "Bài viết", parent: HOME },
   "/profile": { label: "Hồ sơ", parent: HOME },
+  "/earnings": { label: "Doanh thu", parent: HOME },
+  "/promotions": { label: "Khuyến mãi", parent: HOME },
 };
 
 /** Labels for the trailing segments the studio routes end in. */
