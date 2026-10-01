@@ -120,6 +120,9 @@ export interface QueueItem {
   status: string;
   updatedAt: string;
   authorName: string | null;
+  priceVnd?: number;
+  listPriceVnd?: number;
+  pendingPriceVnd?: number | null;
   /** `true` khi tác giả đang xin gỡ nội dung này (vẫn `published`) và chờ admin quyết. */
   removalRequested: boolean;
   /** Do màn này gắn sau khi gộp bốn hàng chờ; API không trả trường này. */

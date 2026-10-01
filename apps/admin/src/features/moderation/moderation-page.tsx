@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, CheckCheck, ShieldCheck, Undo2, XCircle } from "lucide-react";
+import { Archive, BadgePercent, CheckCheck, ShieldCheck, Undo2, XCircle } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ConfirmButton, ManagePage, RejectDialogButton, Select, StatusBadge } from "@codementor/ui";
-import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, type ContentStatus } from "@codementor/types";
+import { Button, ConfirmButton, formatVndPrice, ManagePage, RejectDialogButton, Select, StatusBadge } from "@codementor/ui";
+import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, type ContentStatus, type CoursePromotionProduct } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi } from "@/lib/api";
+import { commerceAdminApi } from "@/features/commerce/api";
 import { ContentPreview } from "./content-preview";
 import { ModerationHistory } from "./moderation-history";
 import { useModerationQueue } from "./queue-provider";
@@ -44,6 +46,7 @@ export function ModerationPage() {
   const [items, setItems] = useState<QueueItem[]>([]);
   /** Đếm riêng cho badge khay "Xin gỡ" — phải đúng cả khi đang đứng ở khay khác. */
   const [removalCount, setRemovalCount] = useState(0);
+  const [promotionCount, setPromotionCount] = useState(0);
   const [failed, setFailed] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -110,6 +113,19 @@ export function ModerationPage() {
   useEffect(() => {
     void countRemovals();
   }, [countRemovals]);
+
+  const countPromotions = useCallback(async () => {
+    try {
+      const products: CoursePromotionProduct[] = (await commerceAdminApi.promotions(request)) ?? [];
+      setPromotionCount(products.filter((item) => item.promotionRequest?.status === "pending").length);
+    } catch {
+      setPromotionCount(0);
+    }
+  }, [request]);
+
+  useEffect(() => {
+    void countPromotions();
+  }, [countPromotions]);
 
   // Hàng chờ sống ở provider gốc của cả ứng dụng nên nó không refetch khi điều hướng
   // client-side TỚI trang này lần nữa — bấm vào một thông báo "có bài mới cần duyệt" rồi
@@ -211,6 +227,25 @@ export function ModerationPage() {
         },
       },
       {
+        id: "priceChange",
+        header: "Giá thay đổi",
+        cell: ({ row }) => {
+          if (row.original.kind !== "courses") return "—";
+          const current = row.original.listPriceVnd ?? row.original.priceVnd ?? 0;
+          const pending = row.original.pendingPriceVnd;
+          if (pending === null || pending === undefined) {
+            return <span className="text-muted-foreground">{formatVndPrice(current)}</span>;
+          }
+          return (
+            <div className="whitespace-nowrap text-xs">
+              <span className="text-muted-foreground line-through">{formatVndPrice(current)}</span>
+              <span className="mx-1.5 text-muted-foreground">→</span>
+              <strong className="text-primary">{formatVndPrice(pending)}</strong>
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "authorName",
         header: "Tác giả",
         cell: ({ row }) => row.original.authorName ?? "—",
@@ -243,7 +278,22 @@ export function ModerationPage() {
   ).length;
 
   return (
-    <ManagePage
+    <div className="space-y-4">
+      {tray === "pending" && promotionCount > 0 && (
+        <section className="flex flex-wrap items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
+          <span className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <BadgePercent aria-hidden="true" className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">{promotionCount} đề xuất khuyến mãi đang chờ duyệt</p>
+            <p className="text-sm text-muted-foreground">Kiểm tra giá, thời gian và phạm vi khóa học trước khi áp dụng cho học viên.</p>
+          </div>
+          <Link className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90" href="/promotions">
+            Mở hàng chờ khuyến mãi
+          </Link>
+        </section>
+      )}
+      <ManagePage
       activeFilterCount={(onlyStale ? 1 : 0) + (kind === "" ? 0 : 1)}
       columns={columns}
       drawer={{
@@ -399,7 +449,8 @@ export function ModerationPage() {
         })),
       }}
       title="Hàng chờ duyệt"
-    />
+      />
+    </div>
   );
 }
 
