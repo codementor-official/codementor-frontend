@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/catalogue-state";
 import { useCatalogue } from "@/hooks/use-catalogue";
 import { api } from "@/lib/api";
-import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { roadmapCoverFallback } from "@/lib/cover-fallback";
 import {
   FIELD_LABEL,
   FIELD_OPTIONS,
@@ -205,7 +205,7 @@ export default function RoadmapsPage() {
                     layout="horizontal"
                     tile={tileFor(roadmap.title)}
                     tileVariant={TILE_TONE[index % TILE_TONE.length]}
-                    coverImage={roadmap.coverImageUrl || placeholderCoverUrl(roadmap.slug)}
+                    coverImage={roadmap.coverImageUrl || roadmapCoverFallback(roadmap.field)}
                     kind={{ icon: MapIcon, label: FIELD_LABEL[roadmap.field] ?? roadmap.field }}
                     title={roadmap.title}
                     description={

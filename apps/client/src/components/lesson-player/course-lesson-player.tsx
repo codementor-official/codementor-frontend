@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock3, FileText, Lock, Play, PlayCircle, Trophy } from "lucide-react";
 import { getLessonContent } from "@/data/lesson-content";
-import { contentIllustration } from "@/lib/content-illustrations";
 import { formatMinutes, getChapterDurationMinutes } from "@/lib/roadmap/roadmap-stats";
 import type { Chapter, Course, Lesson } from "@/types/roadmap";
 
@@ -68,7 +67,7 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
         <article className="min-w-0 border-b border-border lg:border-r lg:border-b-0">
           {isVideo ? (
             <div className="relative flex aspect-video min-h-70 items-center justify-center overflow-hidden bg-navy">
-              <Image src={contentIllustration(`${course.slug}-${lesson.id}`)} alt="" fill sizes="(min-width: 1024px) 70vw, 100vw" className="object-contain opacity-65" />
+              <Image src="/illustrations/video-lesson.svg" alt="" fill sizes="(min-width: 1024px) 70vw, 100vw" className="object-contain opacity-65" />
               <div className="absolute inset-0 bg-linear-to-br from-navy/65 via-navy/20 to-primary/35" />
               <div className="relative z-10 text-center text-on-ink">
                 <button type="button" aria-label="Phát video minh họa" className="mx-auto mb-4 flex h-15 w-15 items-center justify-center rounded-full bg-surface text-primary shadow-lg transition-colors hover:bg-bg">

@@ -34,7 +34,7 @@ import type { CourseOffer } from "@codementor/types";
 import { consumeCourseCelebration, markCourseCelebrated } from "@/lib/course-celebration";
 import { useAuth } from "@/providers/auth-provider";
 import { describeLock, explainLock, isLessonLocked } from "@/lib/lesson-unlock";
-import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { COURSE_COVER_FALLBACK } from "@/lib/cover-fallback";
 import { SaveButton } from "@/features/saved/components/save-button";
 import { ReportButton } from "@/features/reports/report-button";
 import type { CourseDetail, CourseProgress } from "@/types/catalogue";
@@ -339,7 +339,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
         <aside className="flex flex-col gap-3 lg:sticky lg:top-5">
           <div className="relative aspect-video overflow-hidden rounded-lg border border-border-soft bg-border-soft">
             <CourseCover
-              src={course.coverImageUrl || placeholderCoverUrl(course.slug)}
+              src={course.coverImageUrl || COURSE_COVER_FALLBACK}
               title={course.title}
               className="h-full w-full rounded-none"
             />

@@ -96,7 +96,7 @@ export default function LandingPage() {
           </div>
           <div className="relative mx-auto w-full max-w-lg">
             <div className="absolute inset-x-10 bottom-5 h-10 rounded-full bg-border-soft blur-xl" />
-            <Image src="/anh10.PNG" alt="Người học chinh phục hành trình lập trình" width={626} height={441} className="relative h-auto w-full object-contain" priority />
+            <Image src="/illustrations/hero.svg" alt="Người học theo dõi bài giảng trực tuyến" width={692} height={500} className="relative h-auto w-full object-contain" priority />
             <div className="absolute right-0 bottom-3 rounded-xl border border-border bg-surface/95 p-3 shadow-lg backdrop-blur sm:right-4"><div className="flex items-center gap-2"><Flame className="h-4 w-4 text-primary" /><div><b className="block text-xs">Chuỗi học 12 ngày</b><span className="text-2xs text-text-muted">Tiếp tục giữ nhịp nhé!</span></div></div></div>
           </div>
         </div>

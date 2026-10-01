@@ -2,7 +2,7 @@ import { BookOpen, CheckCircle2, Lock } from "lucide-react";
 import { EntityCard } from "@/components/entity-card";
 import { Badge } from "@/components/ui/badge";
 import { levelToDifficulty } from "@/lib/catalogue/level";
-import { placeholderCoverUrl } from "@/lib/placeholder-image";
+import { COURSE_COVER_FALLBACK } from "@/lib/cover-fallback";
 import { CoursePrice, CoursePriceBadges } from "@codementor/ui";
 
 /**
@@ -79,7 +79,7 @@ export function CourseCard({
       tileVariant={tileVariantMap[tileVariant]}
       tileHeight="lg"
       coverImage={
-        course.coverImageUrl || placeholderCoverUrl(course.slug ?? course.title)
+        course.coverImageUrl || COURSE_COVER_FALLBACK
       }
       kind={{ icon: BookOpen, label: course.authorName ?? "CodeMentor" }}
       coverBadges={course.priceVnd === undefined ? undefined : (
