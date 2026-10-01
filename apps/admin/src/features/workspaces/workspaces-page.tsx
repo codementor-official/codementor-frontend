@@ -17,7 +17,7 @@ import {
   useToast,
 } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { KpiStrip } from "@/features/shared/kpi-strip";
+import { KpiStrip } from "@codementor/ui";
 import { workspacesApi, type AdminWorkspace, type AdminWorkspaceDetail, type AdminWorkspaceSummary } from "@/lib/api";
 
 const STATUS = { active: "Đang hoạt động", archived: "Đã lưu trữ" } as const;

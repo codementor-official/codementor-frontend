@@ -73,6 +73,21 @@ export interface WriteCheck {
   status?: string;
 }
 
+/** `GET /courses/mine/insights`: chỉ tính trên khoá học và bài code của chính giảng viên. */
+export interface LecturerInsights {
+  days: number;
+  activeLearners: number;
+  completedLearners: number;
+  newEnrollments: number;
+  avgRating: number | null;
+  reviews: number;
+  submissions: number;
+  acceptedSubmissions: number;
+  revenue: number;
+  daily: { date: string; completions: number; enrollments: number }[];
+  topCourses: { id: string; title: string; learners: number; completed: number; avgProgress: number }[];
+}
+
 export interface ListExercisesParams {
   q?: string;
   difficulty?: string;
@@ -251,6 +266,7 @@ export const api = {
       unwrap<Page<CourseListItem>>(`/courses${query({ ...params })}`),
     mine: (params: ListExercisesParams = {}) =>
       unwrap<Page<CourseListItem>>(`/courses/mine${query({ ...params })}`),
+    insights: (days: 7 | 30) => unwrap<LecturerInsights>(`/courses/mine/insights?days=${days}`),
     get: (id: string) => unwrap<Course>(`/courses/${id}`),
     references: (id: string) => unwrap<{ roadmaps: { id: string; title: string; slug: string }[] }>(`/courses/${id}/references`),
     create: (body: { title: string; level: string }) =>

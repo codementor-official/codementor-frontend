@@ -18,7 +18,7 @@ import { Button, ManagePage, Select, StatusBadge, useToast } from "@codementor/u
 import { useAdminApi } from "@/features/auth/admin-api";
 import { CreateUserModal } from "@/features/users/components/create-user-modal";
 import { UserDetailDrawer } from "@/features/users/components/user-detail-drawer";
-import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
+import { KpiStrip, countOf, useSummary } from "@codementor/ui";
 import {
   usersApi,
   KEYCLOAK_ROLE_OF,

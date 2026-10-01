@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { DetailMeta, DetailRow, DetailSection, ManagePage, Select, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { KpiStrip, useSummary } from "@/features/shared/kpi-strip";
+import { KpiStrip, useSummary } from "@codementor/ui";
 import { auditLogsApi, type AuditLogEntry } from "@/lib/api";
 
 const TARGET = { user: "Người dùng", course: "Khoá học", roadmap: "Lộ trình", exercise: "Bài tập", article: "Bài viết" } as const;

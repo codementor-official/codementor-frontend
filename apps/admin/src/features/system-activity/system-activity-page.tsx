@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { Activity, CheckCircle2, Inbox, MailWarning, Radio, ServerCrash } from "lucide-react";
 import { Card, CardContent, CardHeader, PageHeader, RefreshButton, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { KpiStrip, useSummary } from "@/features/shared/kpi-strip";
+import { KpiStrip, useSummary } from "@codementor/ui";
 import { systemApi, type ServiceState, type SystemActivity } from "@/lib/api";
 
 const STATE: Record<ServiceState, { label: string; tone: "success" | "warning" | "danger" }> = {

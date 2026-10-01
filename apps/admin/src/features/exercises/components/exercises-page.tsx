@@ -21,7 +21,7 @@ import { DIFFICULTIES, DIFFICULTY_LABELS, STATUS_LABELS, STATUS_TONES } from "@c
 import { Button, ConfirmButton, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
+import { KpiStrip, countOf, useSummary } from "@codementor/ui";
 import { exercisesApi, moderationApi, type AdminExerciseListItem } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";

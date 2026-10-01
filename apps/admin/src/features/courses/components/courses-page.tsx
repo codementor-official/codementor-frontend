@@ -24,7 +24,7 @@ import { useAdminApi } from "@/features/auth/admin-api";
 import { coursesApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
-import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
+import { KpiStrip, countOf, useSummary } from "@codementor/ui";
 
 const STATUS_OPTIONS = ["pending_review", "changes_requested", "rejected", "published", "archived"] as const;
 

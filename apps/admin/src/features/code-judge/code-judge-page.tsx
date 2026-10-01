@@ -21,8 +21,8 @@ import {
   SegmentedTabs,
 } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { DailyBarCard } from "@/features/shared/daily-bar-card";
-import { KpiStrip, useSummary } from "@/features/shared/kpi-strip";
+import { DailyBarCard } from "@codementor/ui";
+import { KpiStrip, useSummary } from "@codementor/ui";
 import { judgeApi, type JudgeConfig, type SubmissionStats } from "@/lib/api";
 
 const RANGES = [

@@ -1,7 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Card, CardContent, CardHeader } from "@codementor/ui";
+import { Card, CardContent, CardHeader } from "./card";
 
 /** "2026-09-27" → "27/9". */
 const dayLabel = (date: string) => {

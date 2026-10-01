@@ -1,6 +1,8 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Card } from "@codementor/ui";
+import { Card } from "./card";
 
 export interface Kpi {
   icon: LucideIcon;

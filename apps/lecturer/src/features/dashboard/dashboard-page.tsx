@@ -21,6 +21,7 @@ import { PageBody } from "@/components/page/page-body";
 import { useAuth } from "@/providers/auth-provider";
 import { api } from "@/lib/api";
 import { CourseSizeChart, StatusByKindChart } from "@/features/dashboard/content-charts";
+import { LearnerInsights } from "@/features/dashboard/learner-insights";
 
 /** Bốn loại nội dung một giảng viên sở hữu, cùng đường dẫn tới màn quản lý của nó. */
 const KINDS = [
@@ -77,8 +78,8 @@ const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeSt
  * Bảng điều khiển của giảng viên.
  *
  * Thứ tự các khối là thứ tự câu hỏi một giảng viên hỏi khi mở máy lên: có gì bị trả về
- * không, có gì đang chờ người khác không, có gì tôi làm dở mà quên không, rồi mới tới tổng
- * quan và biểu đồ. Số liệu xếp cuối vì nó trả lời câu hỏi ít khẩn cấp nhất.
+ * không, có gì đang chờ người khác không, có ai đang học không, có gì tôi làm dở mà quên
+ * không, rồi mới tới tổng quan và biểu đồ. Số liệu xếp cuối vì nó trả lời câu hỏi ít khẩn cấp nhất.
  *
  * Đếm bằng cách tải 100 mục mỗi loại rồi gộp ở client. Trần đó là có thật: một giảng viên
  * vượt 100 mục trong một loại sẽ thấy số liệu thiếu mà không có cảnh báo nào. Đổi lại,
@@ -168,6 +169,7 @@ export function LecturerDashboardPage() {
         <div className="grid gap-6">
           <Returned items={mine} />
           <PendingReview items={mine} />
+          <LearnerInsights />
           <Suggestions items={mine} />
           <StatusOverview items={mine} unavailable={unavailable} />
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">

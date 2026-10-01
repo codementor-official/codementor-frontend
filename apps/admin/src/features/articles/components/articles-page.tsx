@@ -19,7 +19,7 @@ import { ApiClientError } from "@codementor/api-client";
 import { Button, ManagePage, Modal, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
+import { KpiStrip, countOf, useSummary } from "@codementor/ui";
 import { articlesApi, type AdminArticle } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 

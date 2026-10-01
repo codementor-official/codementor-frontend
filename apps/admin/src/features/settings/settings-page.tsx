@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, InfoHint, PageHeader, RefreshButton } fr
 import { AiConfigCard } from "@/features/ai-operations/ai-operations-page";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { JudgeConfigCard } from "@/features/code-judge/code-judge-page";
-import { useSummary } from "@/features/shared/kpi-strip";
+import { useSummary } from "@codementor/ui";
 import { aiApi, judgeApi, systemApi, type PlatformSettings } from "@/lib/api";
 
 const ENV_HINT =
