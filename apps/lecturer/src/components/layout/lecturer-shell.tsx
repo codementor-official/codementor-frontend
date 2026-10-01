@@ -14,7 +14,7 @@ export function LecturerShell({ children }: Readonly<{ children: ReactNode }>) {
   // and a page that grows with its content never gives it one. List screens get their
   // scrolling back below, in <PageBody>.
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-dvh min-h-0 overflow-hidden bg-background">
       {/* A static rail in the row, not a fixed overlay the content has to pad around —
         * the same arrangement all three applications use now. */}
       <LecturerSidebar
@@ -37,11 +37,11 @@ export function LecturerShell({ children }: Readonly<{ children: ReactNode }>) {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <LecturerTopbar onMobileMenu={() => setMobileOpen(true)} />
         {/* No padding here: a split-pane screen needs to reach the edges. Pages that want
             breathing room wrap themselves in <PageBody>. */}
-        <main className="min-h-0 flex-1">{children}</main>
+        <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
       </div>
     </div>
   );

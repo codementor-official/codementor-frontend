@@ -48,7 +48,7 @@ export function StudioShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <header className="shrink-0 border-b border-border px-3 py-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <Link
