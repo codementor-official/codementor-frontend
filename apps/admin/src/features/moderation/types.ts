@@ -147,6 +147,7 @@ export interface ArticlePreview {
 
 export interface CoursePreview {
   priceVnd?: number;
+  pendingPriceVnd?: number | null;
   title: string;
   description: string | null;
   level: string;

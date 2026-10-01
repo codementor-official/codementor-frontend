@@ -324,12 +324,23 @@ function CourseBody({
   hideReason: boolean;
 }) {
   const chapters = course.chapters ?? [];
+  const money = (value: number) =>
+    value === 0
+      ? "Miễn phí"
+      : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
+  const priceFacts: [string, string][] =
+    course.pendingPriceVnd === null || course.pendingPriceVnd === undefined
+      ? [["Giá khóa học", money(course.priceVnd ?? 0)]]
+      : [
+          ["Giá đang công khai", money(course.priceVnd ?? 0)],
+          ["Giá đề xuất chờ duyệt", money(course.pendingPriceVnd)],
+        ];
   return (
     <div>
       <Facts
         items={[
           ["Trình độ", course.level],
-          ["Giá khóa học", course.priceVnd ? new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(course.priceVnd) : 'Miễn phí'],
+          ...priceFacts,
           [
             "Thời lượng",
             course.durationHours ? `${course.durationHours} giờ` : "—",
