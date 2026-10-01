@@ -42,6 +42,7 @@ export const lecturerNavigation: LecturerNavGroup[] = [
       // ngoài khóa học; nó được soạn trong studio khóa học, không phải một màn riêng.
       { href: "/roadmaps", icon: Route, label: "Lộ trình" },
       { href: "/courses", icon: BookOpen, label: "Khóa học" },
+      { href: "/promotions", icon: BadgePercent, label: "Khuyến mãi" },
       { href: "/exercises", icon: Braces, label: "Bài code" },
       { href: "/articles", icon: Newspaper, label: "Bài viết" },
       // Cuối nhóm, sau bốn mục trên: chúng là nội dung phát hành cho người học, còn Tài liệu
@@ -54,7 +55,6 @@ export const lecturerNavigation: LecturerNavGroup[] = [
     items: [
       { href: "/profile", icon: User, label: "Hồ sơ" },
       { href: "/earnings", icon: Wallet, label: "Doanh thu" },
-      { href: "/promotions", icon: BadgePercent, label: "Khuyến mãi" },
     ],
   },
 ];

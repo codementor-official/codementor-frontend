@@ -574,7 +574,7 @@ export default function CourseStudioPage() {
         <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
           <div className="lg:col-span-3">
-            <PriceEditor id={course.id} status={course.status} />
+            <PriceEditor id={course.id} />
           </div>
           <Card className="p-5 lg:col-span-2">
             <CardHeading

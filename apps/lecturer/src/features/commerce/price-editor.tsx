@@ -5,7 +5,7 @@ import { Button, Card, CoursePrice, useToast } from "@codementor/ui";
 import type { CourseOffer, CoursePromotionRequest } from "@codementor/types";
 import { inputClassName } from "@/components/form/field";
 import { earningsApi, vnd } from "./api";
-export function PriceEditor({ id, status }: { id: string; status: string }) {
+export function PriceEditor({ id }: { id: string }) {
   const [price, setPrice] = useState("0");
   const [saved, setSaved] = useState<number | null>(null);
   const [offer, setOffer] = useState<CourseOffer | null>(null);
@@ -45,7 +45,6 @@ export function PriceEditor({ id, status }: { id: string; status: string }) {
       active = false;
     };
   }, [id]);
-  const editable = ["draft", "changes_requested", "rejected"].includes(status);
   async function save() {
     setBusy(true);
     setError("");
@@ -53,7 +52,7 @@ export function PriceEditor({ id, status }: { id: string; status: string }) {
       await earningsApi.price(id, Number(price));
       setSaved(Number(price));
       setOffer((current) => current ? { ...current, priceVnd: Number(price), listPriceVnd: Number(price), salePriceVnd: null, savingsVnd: 0, discountPercent: 0, promotion: null, pricingType: Number(price) ? "paid" : "free" } : current);
-      toast.success("Đã lưu giá. Giá này sẽ theo khóa học khi gửi duyệt.");
+      toast.success("Đã cập nhật giá khóa học.");
     } catch (e) {
       setError(apiErrorMessage(e));
     } finally {
@@ -117,7 +116,7 @@ export function PriceEditor({ id, status }: { id: string; status: string }) {
           max={1000000000}
           step={1000}
           value={price}
-          disabled={!editable || busy || saved === null}
+          disabled={busy || saved === null}
           onChange={(e) => setPrice(e.target.value)}
         />
       </label>
@@ -129,11 +128,6 @@ export function PriceEditor({ id, status }: { id: string; status: string }) {
             : `Giá đã lưu: ${vnd(saved)}`}
         . Quyền học đã cấp trước đó vẫn được giữ.
       </p>
-      {!editable && (
-        <p className="text-xs text-muted-foreground">
-          Chỉ thay đổi giá ở bản nháp hoặc bản được yêu cầu sửa.
-        </p>
-      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -142,7 +136,6 @@ export function PriceEditor({ id, status }: { id: string; status: string }) {
       <Button
         type="button"
         disabled={
-          !editable ||
           busy ||
           saved === null ||
           price === "" ||
