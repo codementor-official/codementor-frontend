@@ -13,6 +13,7 @@ import {
   Modal,
   PageHeader,
   StatStrip,
+  ServerPagination,
   useToast,
 } from "@codementor/ui";
 import { inputClassName } from "@/components/form/field";
@@ -79,6 +80,7 @@ export function LecturerPromotionScreen() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("title");
+  const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -156,6 +158,8 @@ export function LecturerPromotionScreen() {
     }
   }
 
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(visible.length / 20)));
+  const pagedItems = visible.slice((currentPage - 1) * 20, currentPage * 20);
   const counts = {
     total: items.length,
     pending: items.filter((item) => state(item) === "pending").length,
@@ -191,10 +195,10 @@ export function LecturerPromotionScreen() {
             className="h-9 w-full rounded-lg border bg-background pr-3 pl-9 text-sm"
             placeholder="Tìm khóa học"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => { setPage(1); setQuery(event.target.value); }}
           />
         </label>
-        <select className={inputClassName} value={filter} onChange={(event) => setFilter(event.target.value)}>
+        <select className={inputClassName} value={filter} onChange={(event) => { setPage(1); setFilter(event.target.value); }}>
           <option value="all">Mọi trạng thái</option>
           <option value="none">Chưa có khuyến mãi</option>
           <option value="pending">Chờ Admin duyệt</option>
@@ -204,7 +208,7 @@ export function LecturerPromotionScreen() {
           <option value="ended">Đã kết thúc</option>
           <option value="rejected">Cần chỉnh sửa</option>
         </select>
-        <select className={inputClassName} value={sort} onChange={(event) => setSort(event.target.value)}>
+        <select className={inputClassName} value={sort} onChange={(event) => { setPage(1); setSort(event.target.value); }}>
           <option value="title">Tên A–Z</option>
           <option value="discount">Giảm nhiều nhất</option>
           <option value="price_low">Giá thấp đến cao</option>
@@ -230,7 +234,7 @@ export function LecturerPromotionScreen() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {visible.map((item) => {
+                {pagedItems.map((item) => {
                   const current = state(item);
                   const campaign = item.promotionRequest?.label ?? item.promotion?.label;
                   return (
@@ -288,10 +292,7 @@ export function LecturerPromotionScreen() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between border-t border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
-            <span>Hiển thị {visible.length} khóa học</span>
-            <span>{filter === "all" ? "Tất cả trạng thái" : labels[filter]}</span>
-          </div>
+          <ServerPagination page={currentPage} total={visible.length} pageSize={20} disabled={loading || busy} onPageChange={setPage} />
         </Card>
       )}
       <Modal
