@@ -157,3 +157,13 @@ export const COMMERCE_STATUS: Record<string, string> = {
   platform: "Phần CodeMentor",
   fees: "Phí cổng thanh toán",
 };
+
+/** Proceeds can be on hold even after the related payment is complete. */
+export const COMMERCE_INCOME_STATUS: Record<string, string> = {
+  none: "Chưa ghi nhận doanh thu",
+  pending: "Chờ doanh thu khả dụng",
+  available: "Có thể rút",
+  refund_held: "Tạm giữ để xử lý hoàn tiền",
+  refunded: "Đã hoàn tiền",
+  debt: "Cần thu hồi",
+};

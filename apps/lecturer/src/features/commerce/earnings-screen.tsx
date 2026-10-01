@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Download, Wallet, RefreshCw, CircleHelp, Eye } from "lucide-react";
 import { Button, Card, CourseCover, Modal, PageHeader, ServerPagination, StatStrip } from "@codementor/ui";
 import {
+  COMMERCE_INCOME_STATUS,
   COMMERCE_STATUS,
   type CommerceOrder,
   type CommercePage,
@@ -198,11 +199,11 @@ export function EarningsScreen() {
                         {vnd(o.instructorAmount)} ({o.instructorBps / 100}%)
                       </td>
                       <td className="p-3">
-                        {COMMERCE_STATUS[o.status]}
+                        <p className="font-medium">{COMMERCE_STATUS[o.status] ?? o.status}</p>
                         <p className="text-xs text-muted-foreground">
-                          {COMMERCE_STATUS[o.incomeState]}
+                          Doanh thu: {COMMERCE_INCOME_STATUS[o.incomeState] ?? o.incomeState}
                           {o.availableAt &&
-                            ` · ${new Date(o.availableAt).toLocaleDateString("vi-VN")}`}
+                            ` · dự kiến ${new Date(o.availableAt).toLocaleDateString("vi-VN")}`}
                         </p>
                       </td>
                       <td className="p-3"><Button variant="outline" onClick={() => setDetail({ type: "order", item: o })}><Eye className="size-4" /> Chi tiết</Button></td>

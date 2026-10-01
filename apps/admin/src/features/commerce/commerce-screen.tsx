@@ -6,6 +6,7 @@ import { CircleHelp, Download, Eye, RefreshCw, ShieldCheck, Wallet } from "lucid
 import { Button, Card, CourseCover, Modal, PageHeader, ServerPagination, useToast } from "@codementor/ui";
 import { inputClassName } from "./form-style";
 import {
+  COMMERCE_INCOME_STATUS,
   COMMERCE_STATUS,
   type CommerceOrder,
   type CommercePage,
@@ -271,9 +272,9 @@ export function CommerceScreen() {
                             : `${vnd(o.feeAmount)} (${o.feeSource === "simulated" ? "Hệ thống" : "Cổng thanh toán"})`}
                         </td>
                         <td className="p-3">
-                          {COMMERCE_STATUS[o.status]}
+                          <p className="font-medium">{COMMERCE_STATUS[o.status] ?? o.status}</p>
                           <p className="text-xs text-muted-foreground">
-                            {COMMERCE_STATUS[o.incomeState]}
+                            Doanh thu: {COMMERCE_INCOME_STATUS[o.incomeState] ?? o.incomeState}
                           </p>
                         </td>
                         <td className="p-3">

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button, Modal } from "@codementor/ui";
 import { Printer } from "lucide-react";
 import { inputClassName } from "./form-style";
-import { COMMERCE_STATUS, type PurchaseDetail } from "@codementor/types";
+import { COMMERCE_INCOME_STATUS, COMMERCE_STATUS, type PurchaseDetail } from "@codementor/types";
 import { vnd } from "./api";
 export function OrderDialog({
   order,
@@ -40,6 +40,10 @@ export function OrderDialog({
                 : `${vnd(order.feeAmount)} · ${order.feeSource === "simulated" ? "Hệ thống" : "Cổng thanh toán"}`,
             ],
             ["Trạng thái", COMMERCE_STATUS[order.status]],
+            ["Trạng thái doanh thu", COMMERCE_INCOME_STATUS[order.incomeState] ?? order.incomeState],
+            ...(order.availableAt
+              ? [["Dự kiến doanh thu khả dụng", new Date(order.availableAt).toLocaleString("vi-VN")]]
+              : []),
             [
               "Thanh toán",
               `${order.payment.provider === "mock" ? "Thanh toán trực tuyến" : order.payment.provider.toUpperCase()} · ${COMMERCE_STATUS[order.payment.status] ?? order.payment.status}`,
