@@ -117,6 +117,7 @@ export interface QueueItem {
   id: string;
   slug: string;
   title: string;
+  coverImageUrl?: string | null;
   status: string;
   updatedAt: string;
   authorName: string | null;
@@ -152,6 +153,7 @@ export interface CoursePreview {
   priceVnd?: number;
   pendingPriceVnd?: number | null;
   title: string;
+  coverImageUrl: string | null;
   description: string | null;
   level: string;
   durationHours: number | null;
@@ -187,6 +189,7 @@ export interface LessonContentPreview {
 
 export interface RoadmapPreview {
   title: string;
+  coverImageUrl: string | null;
   shortDescription: string | null;
   description: string | null;
   field: string;

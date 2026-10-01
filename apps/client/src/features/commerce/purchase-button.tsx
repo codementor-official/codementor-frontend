@@ -59,6 +59,11 @@ export function PurchaseButton({
           {error}
         </p>
       )}
+      {config && config.methods.length === 0 && (
+        <p className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs leading-relaxed text-text-muted">
+          Cổng thanh toán đang được cấu hình. Giá và ưu đãi vẫn được giữ nguyên; bạn có thể quay lại thanh toán khi VNPay hoặc MoMo được kích hoạt.
+        </p>
+      )}
       {config && config.methods.length > 1 && (
         <label className="block text-xs text-text-muted">
           Phương thức
@@ -83,8 +88,10 @@ export function PurchaseButton({
         <CreditCard className="size-4" />
         {busy
           ? "Đang tạo đơn…"
+          : config === null
+            ? "Đang tải phương thức…"
           : config?.methods.length === 0
-            ? "Thanh toán chưa mở"
+            ? "Cổng thanh toán chưa sẵn sàng"
             : "Thanh toán khóa học"}
       </Button>
     </div>

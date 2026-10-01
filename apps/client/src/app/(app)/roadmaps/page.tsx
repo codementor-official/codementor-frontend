@@ -205,7 +205,7 @@ export default function RoadmapsPage() {
                     layout="horizontal"
                     tile={tileFor(roadmap.title)}
                     tileVariant={TILE_TONE[index % TILE_TONE.length]}
-                    coverImage={placeholderCoverUrl(roadmap.slug)}
+                    coverImage={roadmap.coverImageUrl || placeholderCoverUrl(roadmap.slug)}
                     kind={{ icon: MapIcon, label: FIELD_LABEL[roadmap.field] ?? roadmap.field }}
                     title={roadmap.title}
                     description={

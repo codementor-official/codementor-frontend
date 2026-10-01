@@ -379,6 +379,7 @@ export interface AdminCourseListItem {
   id: string;
   slug: string;
   title: string;
+    coverImageUrl: string | null;
   level: string;
   status: string;
   durationHours: number | null;
@@ -423,6 +424,7 @@ export interface AdminRoadmapListItem {
   id: string;
   slug: string;
   title: string;
+    coverImageUrl: string | null;
   field: string;
   level: string;
   status: string;

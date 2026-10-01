@@ -24,7 +24,7 @@ import {
   LEVELS,
   LEVEL_LABELS,
 } from "@codementor/types";
-import { Button, ConfirmButton, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
+import { Button, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, countOf, useSummary } from "@/features/shared/kpi-strip";
@@ -103,9 +103,12 @@ export function RoadmapsPage() {
         accessorKey: "title",
         header: "Lộ trình",
         cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="truncate font-medium">{row.original.title}</p>
-            <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <CourseCover className="h-12 w-20" src={row.original.coverImageUrl} title={row.original.title} />
+            <div className="min-w-0">
+              <p className="truncate font-medium">{row.original.title}</p>
+              <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
+            </div>
           </div>
         ),
       },

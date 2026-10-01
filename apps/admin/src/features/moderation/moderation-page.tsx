@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Archive, BadgePercent, CheckCheck, ShieldCheck, Undo2, XCircle } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ConfirmButton, formatVndPrice, ManagePage, RejectDialogButton, Select, StatusBadge } from "@codementor/ui";
+import { Button, ConfirmButton, CourseCover, formatVndPrice, ManagePage, RejectDialogButton, Select, StatusBadge } from "@codementor/ui";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, type ContentStatus, type CoursePromotionProduct } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi } from "@/lib/api";
@@ -197,10 +197,18 @@ export function ModerationPage() {
         cell: ({ row }) => {
           const Icon = KINDS[row.original.kind].icon;
           return (
-            <div className="flex min-w-0 items-start gap-2.5">
-              <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                <Icon aria-hidden="true" className="size-3.5" />
-              </span>
+            <div className="flex min-w-0 items-center gap-2.5">
+              {row.original.kind === "courses" || row.original.kind === "roadmaps" ? (
+                <CourseCover
+                  className="h-12 w-20"
+                  src={row.original.coverImageUrl}
+                  title={row.original.title}
+                />
+              ) : (
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  <Icon aria-hidden="true" className="size-3.5" />
+                </span>
+              )}
               <div className="min-w-0">
                 <p className="truncate font-medium">{row.original.title}</p>
                 <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>

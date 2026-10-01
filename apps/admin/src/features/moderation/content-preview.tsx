@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { resolveVideo } from "@codementor/utils";
-import { StatusBadge } from "@codementor/ui";
+import { CourseCover, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi } from "@/lib/api";
 import {
@@ -337,6 +337,7 @@ function CourseBody({
         ];
   return (
     <div>
+      <ModerationCover title={course.title} url={course.coverImageUrl} />
       <Facts
         items={[
           ["Trình độ", course.level],
@@ -551,6 +552,7 @@ function RoadmapBody({
   ).length;
   return (
     <div>
+      <ModerationCover title={roadmap.title} url={roadmap.coverImageUrl} />
       <Facts
         items={[
           ["Lĩnh vực", roadmap.field],
@@ -588,6 +590,17 @@ function RoadmapBody({
         </p>
       )}
     </div>
+  );
+}
+
+function ModerationCover({ title, url }: { title: string; url: string | null }) {
+  return (
+    <figure className="mb-4 overflow-hidden rounded-xl border bg-muted/20">
+      <CourseCover className="aspect-[16/7] h-auto max-h-72 w-full rounded-none" src={url} title={title} />
+      <figcaption className="border-t bg-background px-3 py-2 text-xs text-muted-foreground">
+        {url ? "Ảnh bìa sẽ hiển thị với người học" : "Chưa đặt ảnh bìa — hệ thống sẽ dùng ảnh mặc định"}
+      </figcaption>
+    </figure>
   );
 }
 
