@@ -122,7 +122,8 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
     setSalePrice(String(Math.max(1_000, Math.floor(saved * (100 - percent) / 100_000) * 1_000)));
   }
   return (
-    <Card className="space-y-3 p-5">
+    <Card className="min-w-0 overflow-hidden p-0">
+      <section className="space-y-3 p-5">
       <h2 className="font-semibold text-foreground">Giá khóa học</h2>
       <p className="text-xs text-muted-foreground">
         Nhập 0 để phát hành miễn phí; giá lớn hơn 0 là mức học viên thanh toán
@@ -177,10 +178,11 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
       >
         {busy ? "Đang lưu…" : "Lưu giá"}
       </Button>
+      </section>
       {offer !== null && offer.listPriceVnd > 0 && (
-        <div className="mt-5 space-y-4 border-t border-border pt-5">
+        <section className="min-w-0 space-y-4 border-t border-border bg-muted/10 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-foreground">Quản lý khuyến mãi</h3>
               <p className="mt-1 text-xs text-muted-foreground">Đề xuất tên, giá và lịch ưu đãi cho khóa học. Thay đổi chỉ xuất hiện với học viên sau khi Admin duyệt.</p>
             </div>
@@ -189,7 +191,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
           {promotionRequest?.status === "pending" && <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm"><p className="font-semibold text-primary">Đang chờ Admin duyệt</p><p className="mt-1 text-xs text-muted-foreground">Bạn có thể cập nhật đề xuất trong lúc chờ. Giá hiện tại trên Client chưa thay đổi cho đến khi Admin phê duyệt.</p></div>}
           {promotionRequest?.status === "rejected" && <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"><p className="font-semibold text-destructive">Đề xuất cần chỉnh sửa</p><p className="mt-1 text-xs text-muted-foreground">{promotionRequest.reviewReason || "Admin chưa phê duyệt đề xuất này."}</p></div>}
           {offer?.promotion && promotionRequest?.status !== "pending" && promotionRequest?.status !== "rejected" && <div className="rounded-lg border border-success/40 bg-success/5 p-3 text-sm"><p className="font-semibold text-success">Khuyến mãi đã được duyệt</p><p className="mt-1 text-xs text-muted-foreground">Ưu đãi đang theo lịch đã duyệt. Mọi chỉnh sửa hoặc yêu cầu gỡ sẽ được gửi lại cho Admin.</p></div>}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
             <label className="text-sm">Tên chương trình<input className={`${inputClassName} mt-1`} maxLength={60} value={label} onChange={(event) => setLabel(event.target.value)} /></label>
             <label className="text-sm">Giá ưu đãi (VND)<input className={`${inputClassName} mt-1`} type="number" min={1000} step={1000} value={salePrice} onChange={(event) => setSalePrice(event.target.value)} /></label>
             <div className="flex flex-wrap items-center gap-2 sm:col-span-2"><span className="text-xs text-muted-foreground">Giảm nhanh:</span>{[10, 20, 25, 30, 50].map((percent) => <button key={percent} type="button" onClick={() => applyDiscount(percent)} className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold hover:border-primary hover:text-primary">-{percent}%</button>)}</div>
@@ -197,12 +199,12 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
             <label className="text-sm">Kết thúc<input className={`${inputClassName} mt-1`} type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></label>
           </div>
           <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm"><input className="mt-0.5" type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /><span><strong className="block">Cho phép áp dụng khuyến mãi</strong><span className="mt-0.5 block text-xs text-muted-foreground">Tắt để tạm dừng nhưng vẫn giữ tên, giá và lịch áp dụng.</span></span></label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pb-1">
             <Button type="button" disabled={busy || locked || !label.trim() || !startsAt || !endsAt || !Number.isInteger(Number(salePrice)) || Number(salePrice) < 1000 || Number(salePrice) >= offer.listPriceVnd} onClick={() => void savePromotion()}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
             {(offer?.promotion || promotionRequest?.status === "pending") && <Button type="button" variant="outline" disabled={busy || locked} onClick={() => void removePromotion()}>{offer?.promotion ? "Gửi yêu cầu gỡ" : "Hủy đề xuất"}</Button>}
           </div>
           {salePrice && Number(salePrice) >= offer.listPriceVnd && <p className="text-xs text-destructive">Giá ưu đãi phải thấp hơn giá niêm yết.</p>}
-        </div>
+        </section>
       )}
     </Card>
   );

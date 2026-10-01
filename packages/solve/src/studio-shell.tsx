@@ -95,5 +95,5 @@ export function StudioShell({
 
 /** Scrollable, padded region for a studio tab that is a form rather than a pane split. */
 export function StudioScroll({ children }: { children: ReactNode }) {
-  return <div className="h-full overflow-y-auto px-3 py-3">{children}</div>;
+  return <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-3 pb-8">{children}</div>;
 }

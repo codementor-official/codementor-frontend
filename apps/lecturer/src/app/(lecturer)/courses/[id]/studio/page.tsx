@@ -574,11 +574,11 @@ export default function CourseStudioPage() {
         </StudioScroll>
       ) : (
         <StudioScroll>
-        <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
+        <fieldset className="grid min-w-0 gap-4 pb-5 lg:grid-cols-3" disabled={locked}>
           <div className="lg:col-span-3">
             <PriceEditor id={course.id} locked={locked} />
           </div>
-          <Card className="p-5 lg:col-span-2">
+          <Card className="min-w-0 p-5 lg:col-span-2">
             <CardHeading
               hint="Những gì học viên đọc thấy ở trang khóa học và ở danh mục. Mô tả là trường bắt buộc để gửi duyệt."
               icon={Info}
@@ -647,7 +647,7 @@ export default function CourseStudioPage() {
             </Field>
           </Card>
 
-          <Card className="h-fit p-5">
+          <Card className="min-w-0 h-fit p-5">
             <CardHeading
               hint="Quyết định khóa học xuất hiện ở bộ lọc nào và học viên có phải học lần lượt từng bài hay không."
               icon={Tags}

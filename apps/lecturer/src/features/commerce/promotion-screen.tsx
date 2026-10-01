@@ -54,6 +54,23 @@ const labels: Record<string, string> = {
   active: "Đang áp dụng",
 };
 
+function stateTone(value: string) {
+  if (value === "active") return "border-success/30 bg-success/10 text-success";
+  if (value === "pending" || value === "scheduled")
+    return "border-primary/30 bg-primary/10 text-primary";
+  if (value === "rejected")
+    return "border-destructive/30 bg-destructive/10 text-destructive";
+  return "border-border bg-muted text-muted-foreground";
+}
+
+function promotionPeriod(item: CoursePromotionProduct) {
+  const promotion = item.promotionRequest?.status === "pending" || item.promotionRequest?.status === "rejected"
+    ? item.promotionRequest
+    : item.promotion;
+  if (!promotion?.startsAt || !promotion.endsAt) return "Chưa thiết lập lịch";
+  return `${new Date(promotion.startsAt).toLocaleDateString("vi-VN")} – ${new Date(promotion.endsAt).toLocaleDateString("vi-VN")}`;
+}
+
 export function LecturerPromotionScreen() {
   const toast = useToast();
   const [items, setItems] = useState<CoursePromotionProduct[]>([]);
@@ -200,33 +217,82 @@ export function LecturerPromotionScreen() {
       ) : !visible.length ? (
         <Card className="p-10 text-center text-sm text-muted-foreground">Không có khóa học phù hợp.</Card>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
-          {visible.map((item) => {
-            const current = state(item);
-            return (
-              <Card key={item.courseId} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-                <CourseCover src={item.coverImageUrl} title={item.title} className="h-24 w-full sm:h-20 sm:w-32" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate font-semibold">{item.title}</p>
-                    <span className={current === "active" || current === "pending" ? "rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary" : "rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground"}>{labels[current]}</span>
-                  </div>
-                  <CoursePrice className="mt-2 text-sm" priceVnd={item.priceVnd} listPriceVnd={item.listPriceVnd} />
-                  {item.promotionRequest?.status === "rejected" && item.promotionRequest.reviewReason && (
-                    <p className="mt-1 line-clamp-2 text-xs text-destructive">Admin: {item.promotionRequest.reviewReason}</p>
-                  )}
-                  {item.promotion && <p className="mt-1 truncate text-xs text-muted-foreground">{item.promotion.label}</p>}
-                </div>
-                <Link
-                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
-                  href={`/courses/${item.courseId}/studio?tab=metadata`}
-                >
-                  Thiết lập
-                </Link>
-              </Card>
-            );
-          })}
-        </div>
+        <Card className="overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] table-fixed text-left text-sm">
+              <thead className="border-b border-border bg-muted/60 text-xs text-muted-foreground">
+                <tr>
+                  <th className="w-[34%] px-4 py-3 font-semibold">Khóa học</th>
+                  <th className="w-[18%] px-4 py-3 font-semibold">Giá bán</th>
+                  <th className="w-[22%] px-4 py-3 font-semibold">Chương trình</th>
+                  <th className="w-[16%] px-4 py-3 font-semibold">Trạng thái</th>
+                  <th className="w-[10%] px-4 py-3 text-right font-semibold">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {visible.map((item) => {
+                  const current = state(item);
+                  const campaign = item.promotionRequest?.label ?? item.promotion?.label;
+                  return (
+                    <tr key={item.courseId} className="align-middle transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <CourseCover
+                            src={item.coverImageUrl}
+                            title={item.title}
+                            className="h-14 w-24 shrink-0 rounded-md"
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-foreground" title={item.title}>{item.title}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">Mã {item.courseId.slice(0, 8)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <CoursePrice
+                          className="text-sm"
+                          priceVnd={item.priceVnd}
+                          listPriceVnd={item.listPriceVnd}
+                        />
+                        {item.discountPercent > 0 && (
+                          <p className="mt-1 text-xs font-semibold text-success">Tiết kiệm {item.discountPercent}%</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="truncate font-medium text-foreground" title={campaign ?? undefined}>
+                          {campaign ?? "Chưa có chương trình"}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{promotionPeriod(item)}</p>
+                        {item.promotionRequest?.status === "rejected" && item.promotionRequest.reviewReason && (
+                          <p className="mt-1 line-clamp-1 text-xs text-destructive" title={item.promotionRequest.reviewReason}>
+                            Admin: {item.promotionRequest.reviewReason}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${stateTone(current)}`}>
+                          {labels[current]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
+                          href={`/courses/${item.courseId}/studio?tab=metadata`}
+                        >
+                          Thiết lập
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-between border-t border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+            <span>Hiển thị {visible.length} khóa học</span>
+            <span>{filter === "all" ? "Tất cả trạng thái" : labels[filter]}</span>
+          </div>
+        </Card>
       )}
       <Modal
         open={open}
