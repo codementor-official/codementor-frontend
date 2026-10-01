@@ -24,6 +24,7 @@ export function StudioShell({
   actions,
   tabs,
   rejectionReason,
+  submissionNote,
   children,
 }: {
   backHref: string;
@@ -42,6 +43,8 @@ export function StudioShell({
    * tác ("Đã lưu", "Lưu thất bại") thì trôi qua được và đi bằng `useToast`.
    */
   rejectionReason?: string | null;
+  /** Ghi chú tác giả chủ động gửi kèm lần duyệt hiện tại, không phải lý do Admin trả về. */
+  submissionNote?: string | null;
   children: ReactNode;
 }) {
   return (
@@ -76,6 +79,11 @@ export function StudioShell({
         {rejectionReason && (
           <p className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs text-destructive">
             Lý do bị trả về: {rejectionReason}
+          </p>
+        )}
+        {submissionNote && (
+          <p className="mt-2 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+            <strong className="text-foreground">Ghi chú gửi duyệt:</strong> {submissionNote}
           </p>
         )}
       </header>

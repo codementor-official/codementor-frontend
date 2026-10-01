@@ -5,7 +5,7 @@ import { Button, Card, CoursePrice, useToast } from "@codementor/ui";
 import type { CourseOffer, CoursePromotionRequest } from "@codementor/types";
 import { inputClassName } from "@/components/form/field";
 import { earningsApi, vnd } from "./api";
-export function PriceEditor({ id }: { id: string }) {
+export function PriceEditor({ id, locked = false }: { id: string; locked?: boolean }) {
   const [price, setPrice] = useState("0");
   const [saved, setSaved] = useState<number | null>(null);
   const [offer, setOffer] = useState<CourseOffer | null>(null);
@@ -44,6 +44,22 @@ export function PriceEditor({ id }: { id: string }) {
       });
     return () => {
       active = false;
+    };
+  }, [id]);
+  useEffect(() => {
+    let active = true;
+    const refresh = () => {
+      void earningsApi.offer(id).then((next) => {
+        if (!active) return;
+        setOffer(next);
+        setSaved(next.pendingPriceVnd ?? next.listPriceVnd);
+        setPrice(String(next.pendingPriceVnd ?? next.listPriceVnd));
+      }).catch(() => undefined);
+    };
+    window.addEventListener("focus", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refresh);
     };
   }, [id]);
   async function save() {
@@ -121,7 +137,7 @@ export function PriceEditor({ id }: { id: string }) {
           max={1000000000}
           step={1000}
           value={price}
-          disabled={busy || saved === null}
+          disabled={busy || saved === null || locked}
           onChange={(e) => setPrice(e.target.value)}
         />
       </label>
@@ -135,6 +151,11 @@ export function PriceEditor({ id }: { id: string }) {
             : `Giá đã lưu: ${vnd(saved)}`}
         . Quyền học đã cấp trước đó vẫn được giữ.
       </p>
+      {locked && (
+        <p className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+          Khóa học đang chờ Admin duyệt. Hãy hủy gửi duyệt nếu bạn cần sửa lại giá đề xuất.
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -149,7 +170,8 @@ export function PriceEditor({ id }: { id: string }) {
           !Number.isInteger(Number(price)) ||
           Number(price) < 0 ||
           Number(price) > 1000000000 ||
-          Number(price) === saved
+          Number(price) === saved ||
+          locked
         }
         onClick={() => void save()}
       >
@@ -176,8 +198,8 @@ export function PriceEditor({ id }: { id: string }) {
           </div>
           <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm"><input className="mt-0.5" type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /><span><strong className="block">Cho phép áp dụng khuyến mãi</strong><span className="mt-0.5 block text-xs text-muted-foreground">Tắt để tạm dừng nhưng vẫn giữ tên, giá và lịch áp dụng.</span></span></label>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" disabled={busy || !label.trim() || !startsAt || !endsAt || !Number.isInteger(Number(salePrice)) || Number(salePrice) < 1000 || Number(salePrice) >= offer.listPriceVnd} onClick={() => void savePromotion()}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
-            {(offer?.promotion || promotionRequest?.status === "pending") && <Button type="button" variant="outline" disabled={busy} onClick={() => void removePromotion()}>{offer?.promotion ? "Gửi yêu cầu gỡ" : "Hủy đề xuất"}</Button>}
+            <Button type="button" disabled={busy || locked || !label.trim() || !startsAt || !endsAt || !Number.isInteger(Number(salePrice)) || Number(salePrice) < 1000 || Number(salePrice) >= offer.listPriceVnd} onClick={() => void savePromotion()}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
+            {(offer?.promotion || promotionRequest?.status === "pending") && <Button type="button" variant="outline" disabled={busy || locked} onClick={() => void removePromotion()}>{offer?.promotion ? "Gửi yêu cầu gỡ" : "Hủy đề xuất"}</Button>}
           </div>
           {salePrice && Number(salePrice) >= offer.listPriceVnd && <p className="text-xs text-destructive">Giá ưu đãi phải thấp hơn giá niêm yết.</p>}
         </div>

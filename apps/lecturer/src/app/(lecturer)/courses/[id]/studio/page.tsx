@@ -511,7 +511,8 @@ export default function CourseStudioPage() {
       meta={`${course.totalChapters} chương · ${course.totalLessons} bài · ${
         course.durationHours ? `${course.durationHours} giờ` : "chưa có thời lượng"
       }`}
-      rejectionReason={course.rejectionReason}
+      rejectionReason={course.status === "pending_review" ? null : course.rejectionReason}
+      submissionNote={course.status === "pending_review" ? course.submitNote : null}
       slug={course.slug}
       status={
         <StatusBadge tone={CONTENT_STATUS_TONES[course.status]}>
@@ -574,7 +575,7 @@ export default function CourseStudioPage() {
         <StudioScroll>
         <fieldset className="grid gap-4 lg:grid-cols-3" disabled={locked}>
           <div className="lg:col-span-3">
-            <PriceEditor id={course.id} />
+            <PriceEditor id={course.id} locked={locked} />
           </div>
           <Card className="p-5 lg:col-span-2">
             <CardHeading
