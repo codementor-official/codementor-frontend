@@ -7,6 +7,7 @@ import {
   BookOpen,
   Braces,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   FileText,
   LayoutDashboard,
@@ -304,6 +305,7 @@ function Suggestions({ items }: { items: Item[] }) {
   return (
     <Section
       count={suggestions.length}
+      collapsible
       description="Những chỗ nội dung chưa chạy đúng như bạn tưởng, không có thông báo lỗi nào."
       icon={Lightbulb}
       title="Gợi ý hoàn thiện"
@@ -430,6 +432,7 @@ function Section({
   icon: Icon,
   count,
   tone = "muted",
+  collapsible = false,
   children,
 }: {
   title: string;
@@ -437,12 +440,15 @@ function Section({
   icon: typeof AlertCircle;
   count: number;
   tone?: "warning" | "muted";
+  collapsible?: boolean;
   children: React.ReactNode;
 }) {
+  const [expanded, setExpanded] = useState(true);
   return (
     <section>
-      <div className="mb-3">
-        <h2 className="flex items-center gap-2 text-base font-semibold">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-base font-semibold">
           <Icon
             aria-hidden="true"
             className={tone === "warning" ? "size-4 text-warning" : "size-4 text-muted-foreground"}
@@ -459,10 +465,22 @@ function Section({
               {count}
             </span>
           )}
-        </h2>
-        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+          </h2>
+          {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+        </div>
+        {collapsible && (
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-label={expanded ? `Thu gọn ${title}` : `Mở rộng ${title}`}
+            onClick={() => setExpanded((value) => !value)}
+            className="rounded-lg border p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <ChevronDown className={`size-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+          </button>
+        )}
       </div>
-      {children}
+      {(!collapsible || expanded) && children}
     </section>
   );
 }
