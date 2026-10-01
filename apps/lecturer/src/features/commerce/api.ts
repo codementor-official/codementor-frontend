@@ -38,7 +38,7 @@ export const earningsApi = {
     }),
   offer: (id: string) => unwrap<CourseOffer>(`/commerce/courses/${id}`),
   price: (id: string, priceVnd: number) =>
-    unwrap(`/commerce/courses/${id}/price`, {
+    unwrap<{ priceVnd: number; pendingPriceVnd: number | null; requiresReview: boolean }>(`/commerce/courses/${id}/price`, {
       method: "PUT",
       body: { priceVnd },
     }),

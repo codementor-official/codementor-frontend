@@ -26,8 +26,9 @@ export function PriceEditor({ id }: { id: string }) {
           const request = products.find((item) => item.courseId === id)?.promotionRequest ?? null;
           setOffer(o);
           setPromotionRequest(request);
-          setSaved(o.listPriceVnd);
-          setPrice(String(o.listPriceVnd));
+          const editablePrice = o.pendingPriceVnd ?? o.listPriceVnd;
+          setSaved(editablePrice);
+          setPrice(String(editablePrice));
           setLabel(request?.action === "upsert" && request.label ? request.label : (o.promotion?.label ?? "Ưu đãi khóa học"));
           setSalePrice(request?.action === "upsert" && request.salePriceVnd ? String(request.salePriceVnd) : (o.salePriceVnd ? String(o.salePriceVnd) : ""));
           const local = (value: string | null | undefined) => value ? new Date(new Date(value).getTime() - new Date(value).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
@@ -49,10 +50,14 @@ export function PriceEditor({ id }: { id: string }) {
     setBusy(true);
     setError("");
     try {
-      await earningsApi.price(id, Number(price));
-      setSaved(Number(price));
-      setOffer((current) => current ? { ...current, priceVnd: Number(price), listPriceVnd: Number(price), salePriceVnd: null, savingsVnd: 0, discountPercent: 0, promotion: null, pricingType: Number(price) ? "paid" : "free" } : current);
-      toast.success("Đã cập nhật giá khóa học.");
+      const result = await earningsApi.price(id, Number(price));
+      const next = await earningsApi.offer(id);
+      setOffer(next);
+      setSaved(next.pendingPriceVnd ?? next.listPriceVnd);
+      setPrice(String(next.pendingPriceVnd ?? next.listPriceVnd));
+      toast.success(result.requiresReview
+        ? "Đã lưu giá đề xuất. Hãy gửi duyệt lại khóa học để Admin phê duyệt."
+        : "Đã cập nhật giá khóa học.");
     } catch (e) {
       setError(apiErrorMessage(e));
     } finally {
@@ -121,8 +126,10 @@ export function PriceEditor({ id }: { id: string }) {
         />
       </label>
       <p className="text-xs text-muted-foreground">
-        {saved === null
+        {saved === null || offer === null
           ? "Đang tải…"
+          : offer.pendingPriceVnd !== null
+            ? `Giá đang công khai: ${vnd(offer.listPriceVnd)}. Giá đề xuất chờ gửi duyệt: ${vnd(offer.pendingPriceVnd)}`
           : saved === 0
             ? "Hiện miễn phí"
             : `Giá đã lưu: ${vnd(saved)}`}
@@ -148,7 +155,7 @@ export function PriceEditor({ id }: { id: string }) {
       >
         {busy ? "Đang lưu…" : "Lưu giá"}
       </Button>
-      {saved !== null && saved > 0 && (
+      {offer !== null && offer.listPriceVnd > 0 && (
         <div className="mt-5 space-y-4 border-t border-border pt-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -169,10 +176,10 @@ export function PriceEditor({ id }: { id: string }) {
           </div>
           <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm"><input className="mt-0.5" type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /><span><strong className="block">Cho phép áp dụng khuyến mãi</strong><span className="mt-0.5 block text-xs text-muted-foreground">Tắt để tạm dừng nhưng vẫn giữ tên, giá và lịch áp dụng.</span></span></label>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" disabled={busy || !label.trim() || !startsAt || !endsAt || !Number.isInteger(Number(salePrice)) || Number(salePrice) < 1000 || Number(salePrice) >= saved} onClick={() => void savePromotion()}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
+            <Button type="button" disabled={busy || !label.trim() || !startsAt || !endsAt || !Number.isInteger(Number(salePrice)) || Number(salePrice) < 1000 || Number(salePrice) >= offer.listPriceVnd} onClick={() => void savePromotion()}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
             {(offer?.promotion || promotionRequest?.status === "pending") && <Button type="button" variant="outline" disabled={busy} onClick={() => void removePromotion()}>{offer?.promotion ? "Gửi yêu cầu gỡ" : "Hủy đề xuất"}</Button>}
           </div>
-          {salePrice && Number(salePrice) >= saved && <p className="text-xs text-destructive">Giá ưu đãi phải thấp hơn giá niêm yết.</p>}
+          {salePrice && Number(salePrice) >= offer.listPriceVnd && <p className="text-xs text-destructive">Giá ưu đãi phải thấp hơn giá niêm yết.</p>}
         </div>
       )}
     </Card>

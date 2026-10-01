@@ -7,6 +7,7 @@ export interface CommercePage<T> {
 export interface CourseOffer {
   priceVnd: number;
   listPriceVnd: number;
+  pendingPriceVnd: number | null;
   salePriceVnd: number | null;
   savingsVnd: number;
   discountPercent: number;
