@@ -27,7 +27,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { commerceApi, vnd } from "./api";
-import { downloadCsv } from "@codementor/utils";
+import { downloadCsv, printDocument } from "@codementor/utils";
 
 function paymentLabel(provider: string): string {
   if (provider === "mock") return "Thanh toán trực tuyến";
@@ -188,7 +188,7 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
                 ) : (
                   <Button href={`/courses/${detail.courseId}`} variant="outline">Xem khóa học</Button>
                 )}
-                <Button variant="outline" onClick={() => window.print()}><Printer className="size-4" /> Xuất hóa đơn</Button>
+                <Button variant="outline" onClick={() => printDocument({ title: "Chứng từ mua khóa học", rows: purchaseDocumentRows(detail) })}><Printer className="size-4" /> In / lưu PDF</Button>
                 <Button disabled={busy} onClick={() => void action()} variant="outline">
                   <RefreshCw className={`size-4 ${busy ? "animate-spin" : ""}`} /> Cập nhật trạng thái
                 </Button>
@@ -215,9 +215,6 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
           </div>
         </Card>
       )}
-      {detail && (
-        <style jsx global>{`@media print { body * { visibility: hidden !important; } #purchase-invoice, #purchase-invoice * { visibility: visible !important; } #purchase-invoice { position: absolute; inset: 0; width: 100%; border: 0; box-shadow: none; } .purchase-actions { display: none !important; } }`}</style>
-      )}
       {!orderId && (
         <Card className="overflow-hidden shadow-sm">
           <div className="space-y-4 border-b border-border-soft p-5">
@@ -238,7 +235,7 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
                   list.items.map((order) => [order.id, order.courseTitle, new Date(order.createdAt).toLocaleString("vi-VN"), order.amount, COMMERCE_STATUS[order.status] ?? order.status]),
                 )}
               >
-                <Download className="size-4" /> Xuất CSV
+                <Download className="size-4" /> Xuất CSV trang này
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_190px_190px]">
@@ -292,7 +289,7 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
           )}
         </Card>
       )}
-      <Modal open={!!quickDetail} onClose={() => setQuickDetail(null)} title="Chi tiết đơn hàng" width="lg">{quickDetail && <div className="space-y-5 text-sm"><div className="flex items-start gap-4"><CourseCover src={quickDetail.courseCoverImageUrl} title={quickDetail.courseTitle} className="size-20" /><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-primary">Khóa học</p><h3 className="mt-1 text-lg font-bold text-navy">{quickDetail.courseTitle}</h3><p className="mt-1 break-all text-xs text-text-muted">Đơn hàng #{orderCode(quickDetail.id)}</p></div></div><dl className="grid gap-3 sm:grid-cols-2"><QuickRow label="Ngày mua" value={new Date(quickDetail.createdAt).toLocaleString("vi-VN")} /><QuickRow label="Số tiền" value={vnd(quickDetail.amount)} /><QuickRow label="Phương thức" value={paymentLabel(quickDetail.payment.provider)} /><QuickRow label="Trạng thái" value={COMMERCE_STATUS[quickDetail.status] ?? quickDetail.status} /></dl><div className="flex flex-wrap justify-end gap-2"><Button variant="outline" onClick={() => window.print()}><Printer className="size-4" /> Xuất hóa đơn</Button><Button href={`/purchases/${quickDetail.id}`}>Mở chi tiết đầy đủ</Button>{quickDetail.status === "paid" && <Button href={`/courses/${quickDetail.courseId}`} variant="outline">Vào học</Button>}</div></div>}</Modal>
+      <Modal open={!!quickDetail} onClose={() => setQuickDetail(null)} title="Chi tiết đơn hàng" width="lg">{quickDetail && <div className="space-y-5 text-sm"><div className="flex items-start gap-4"><CourseCover src={quickDetail.courseCoverImageUrl} title={quickDetail.courseTitle} className="size-20" /><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-primary">Khóa học</p><h3 className="mt-1 text-lg font-bold text-navy">{quickDetail.courseTitle}</h3><p className="mt-1 break-all text-xs text-text-muted">Đơn hàng #{orderCode(quickDetail.id)}</p></div></div><dl className="grid gap-3 sm:grid-cols-2"><QuickRow label="Ngày mua" value={new Date(quickDetail.createdAt).toLocaleString("vi-VN")} /><QuickRow label="Số tiền" value={vnd(quickDetail.amount)} /><QuickRow label="Phương thức" value={paymentLabel(quickDetail.payment.provider)} /><QuickRow label="Trạng thái" value={COMMERCE_STATUS[quickDetail.status] ?? quickDetail.status} /></dl><div className="flex flex-wrap justify-end gap-2"><Button variant="outline" onClick={() => window.print()}><Printer className="size-4" /> In / lưu PDF</Button><Button href={`/purchases/${quickDetail.id}`}>Mở chi tiết đầy đủ</Button>{quickDetail.status === "paid" && <Button href={`/courses/${quickDetail.courseId}`} variant="outline">Vào học</Button>}</div></div>}</Modal>
     </div>
   );
 }
@@ -319,3 +316,16 @@ function InvoiceRow({ label, value, emphasize = false }: { label: string; value:
 }
 
 function QuickRow({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-border-soft p-3"><dt className="text-xs text-text-muted">{label}</dt><dd className="mt-1 font-semibold text-navy">{value}</dd></div>; }
+
+function purchaseDocumentRows(order: PurchaseDetail): Array<[string, string]> {
+  return [
+    ["Mã đơn", order.id], ["Khóa học", order.courseTitle],
+    ["Người mua", order.buyer?.name ?? "Học viên"], ["Email", order.buyer?.email ?? ""],
+    ["Ngày mua", new Date(order.createdAt).toLocaleString("vi-VN")],
+    ["Tổng thanh toán", vnd(order.amount)],
+    ["Trạng thái", COMMERCE_STATUS[order.status] ?? order.status],
+    ["Phương thức", paymentLabel(order.payment.provider)],
+    ["Xác nhận thanh toán", order.settledAt ? new Date(order.settledAt).toLocaleString("vi-VN") : "Chưa xác nhận"],
+    ...(order.refund ? [["Hoàn tiền", COMMERCE_STATUS[order.refund.status] ?? order.refund.status], ["Lý do hoàn tiền", order.refund.reason]] as Array<[string, string]> : []),
+  ];
+}

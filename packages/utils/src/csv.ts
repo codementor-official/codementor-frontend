@@ -1,5 +1,7 @@
 function csvCell(value: string | number | null | undefined): string {
-  const text = value == null ? "" : String(value);
+  const raw = value == null ? "" : String(value);
+  // Spreadsheet formulas must not execute user-provided names or notes.
+  const text = typeof value === "string" && /^[\s]*[=+@-]/.test(raw) ? `'${raw}` : raw;
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 

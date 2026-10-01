@@ -14,9 +14,9 @@ export const earningsApi = {
   wallet: () => unwrap<WalletSummary>("/commerce/wallet"),
   orders: (page: number, sort = "newest") =>
     unwrap<CommercePage<CommerceOrder>>(`/commerce/wallet/orders?${new URLSearchParams({ page: String(page), sort })}`),
-  courseOrders: (id: string, page: number, status = '', q = '') =>
+  courseOrders: (id: string, page: number, status = '', q = '', sort = 'newest') =>
     unwrap<CoursePurchasePage>(
-      `/commerce/wallet/courses/${id}/orders?${new URLSearchParams({ page: String(page), ...(status ? { status } : {}), ...(q ? { q } : {}) })}`,
+      `/commerce/wallet/courses/${id}/orders?${new URLSearchParams({ page: String(page), sort, ...(status ? { status } : {}), ...(q ? { q } : {}) })}`,
     ),
   ledger: (page: number, sort = "newest") =>
     unwrap<CommercePage<CommerceLedgerEntry>>(

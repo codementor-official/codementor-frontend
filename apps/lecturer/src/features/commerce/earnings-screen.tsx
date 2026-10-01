@@ -2,7 +2,7 @@
 import { apiErrorMessage } from "@codementor/api-client";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Download, Wallet, RefreshCw, CircleHelp, Eye } from "lucide-react";
+import { Download, Wallet, RefreshCw, CircleHelp, Eye, Printer } from "lucide-react";
 import { Button, Card, CourseCover, Modal, PageHeader, ServerPagination, StatStrip } from "@codementor/ui";
 import {
   COMMERCE_INCOME_STATUS,
@@ -15,7 +15,7 @@ import {
 } from "@codementor/types";
 import { earningsApi, vnd } from "./api";
 import { WithdrawalForm } from "./withdrawal-form";
-import { downloadCsv } from "@codementor/utils";
+import { downloadCsv, printDocument } from "@codementor/utils";
 type Tab = "orders" | "withdrawals" | "ledger";
 type Detail =
   | { type: "order"; item: CommerceOrder }
@@ -132,7 +132,7 @@ export function EarningsScreen() {
             </Button>
           ))}
           <Button variant="outline" className="ml-auto" disabled={!current?.items.length} onClick={exportCurrent}>
-            <Download className="size-4" /> Xuất CSV
+            <Download className="size-4" /> Xuất CSV trang này
           </Button>
           <select aria-label="Sắp xếp dữ liệu" className="rounded-lg border bg-background px-3 text-sm" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option><option value="amount_high">Số tiền cao nhất</option><option value="amount_low">Số tiền thấp nhất</option></select>
         </div>
@@ -270,9 +270,11 @@ export function EarningsScreen() {
 
 function Guide({ number, title, children }: { number: string; title: string; children: ReactNode }) { return <div className="flex gap-3"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{number}</span><div><p className="font-semibold">{title}</p><p className="mt-1 text-muted-foreground">{children}</p></div></div>; }
 function DetailView({ detail }: { detail: Detail }) {
-  if (detail.type === "order") { const item = detail.item; return <div className="space-y-4 text-sm"><div className="flex items-center gap-3"><CourseCover src={item.courseCoverImageUrl} title={item.courseTitle} className="size-16" /><div><h3 className="font-semibold">{item.courseTitle}</h3><p className="text-xs text-muted-foreground">#{item.id}</p></div></div><DetailRows rows={[["Học viên", `${item.buyer?.name ?? "Học viên"} · ${item.buyer?.email ?? ""}`], ["Ngày mua", new Date(item.createdAt).toLocaleString("vi-VN")], ["Giá bán", vnd(item.amount)], ["Doanh thu của bạn", `${vnd(item.instructorAmount)} (${item.instructorBps / 100}%)`], ["Trạng thái", COMMERCE_STATUS[item.status] ?? item.status]]} /></div>; }
-  if (detail.type === "withdrawal") { const item = detail.item; return <DetailRows rows={[["Mã yêu cầu", item.id], ["Ngày tạo", new Date(item.createdAt).toLocaleString("vi-VN")], ["Số tiền", vnd(item.amount)], ["Phương thức", item.recipient.method.toUpperCase()], ["Nơi nhận", `${item.recipient.institutionCode} · ••••${item.recipient.accountNumber?.slice(-4)}`], ["Chủ tài khoản", item.recipient.accountName], ["Trạng thái", COMMERCE_STATUS[item.status] ?? item.status], ["Ghi chú", item.reason ?? "Không có"]]} />; }
+  if (detail.type === "order") { const item = detail.item; return <div className="space-y-4 text-sm"><div className="flex items-center gap-3"><CourseCover src={item.courseCoverImageUrl} title={item.courseTitle} className="size-16" /><div><h3 className="font-semibold">{item.courseTitle}</h3><p className="text-xs text-muted-foreground">#{item.id}</p></div></div><DetailRows rows={[["Học viên", `${item.buyer?.name ?? "Học viên"} · ${item.buyer?.email ?? ""}`], ["Ngày mua", new Date(item.createdAt).toLocaleString("vi-VN")], ["Giá bán", vnd(item.amount)], ["Doanh thu của bạn", `${vnd(item.instructorAmount)} (${item.instructorBps / 100}%)`], ["Trạng thái thanh toán", COMMERCE_STATUS[item.status] ?? item.status], ["Trạng thái doanh thu", COMMERCE_INCOME_STATUS[item.incomeState] ?? item.incomeState], ["Dự kiến khả dụng", item.availableAt ? new Date(item.availableAt).toLocaleString("vi-VN") : "Chưa xác định"], ["Mã đơn", item.id]]} title="Chứng từ doanh thu khóa học" /></div>; }
+  if (detail.type === "withdrawal") { const item = detail.item; return <DetailRows title="Phiếu yêu cầu rút tiền" rows={[["Mã yêu cầu", item.id], ["Ngày tạo", new Date(item.createdAt).toLocaleString("vi-VN")], ["Số tiền", vnd(item.amount)], ["Phương thức", item.recipient.method.toUpperCase()], ["Nơi nhận", `${item.recipient.institutionCode} · ••••${item.recipient.accountNumber?.slice(-4)}`], ["Chủ tài khoản", item.recipient.accountName], ["Trạng thái", COMMERCE_STATUS[item.status] ?? item.status], ["Ghi chú", item.reason ?? "Không có"]]} />; }
   const item = detail.item;
-  return <DetailRows rows={[["Mã biến động", item.id], ["Thời điểm", new Date(item.createdAt).toLocaleString("vi-VN")], ["Sự kiện", item.event.split(":")[0]], ["Loại số dư", COMMERCE_STATUS[item.account] ?? item.account], ["Giá trị", `${item.amount > 0 ? "+" : ""}${vnd(item.amount)}`], ["Tham chiếu", item.orderId ?? item.withdrawalId ?? "Không có"]]} />;
+  return <DetailRows title="Phiếu biến động số dư" rows={[["Mã biến động", item.id], ["Thời điểm", new Date(item.createdAt).toLocaleString("vi-VN")], ["Sự kiện", item.event.split(":")[0]], ["Loại số dư", COMMERCE_STATUS[item.account] ?? item.account], ["Giá trị", `${item.amount > 0 ? "+" : ""}${vnd(item.amount)}`], ["Tham chiếu", item.orderId ?? item.withdrawalId ?? "Không có"]]} />;
 }
-function DetailRows({ rows }: { rows: Array<[string, string]> }) { return <dl className="grid gap-3 sm:grid-cols-2">{rows.map(([label, value]) => <div className="rounded-lg border p-3" key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}</dl>; }
+function DetailRows({ rows, title }: { rows: Array<[string, string]>; title: string }) {
+  return <div className="space-y-4"><dl className="grid gap-3 sm:grid-cols-2">{rows.map(([label, value]) => <div className="rounded-lg border p-3" key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}</dl><div className="flex flex-wrap justify-end gap-2 border-t pt-4"><Button variant="outline" onClick={() => downloadCsv("chi-tiet-giao-dich.csv", ["Thông tin", "Giá trị"], rows)}><Download className="size-4" /> Xuất CSV</Button><Button variant="outline" onClick={() => printDocument({ title, rows })}><Printer className="size-4" /> In / lưu PDF</Button></div></div>;
+}
