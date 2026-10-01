@@ -24,6 +24,7 @@ import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
+import { CoverImageField } from "@/components/form/cover-image-field";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import { CurriculumTree, type Selection } from "@/features/courses/curriculum-tree";
@@ -623,16 +624,17 @@ export default function CourseStudioPage() {
               />
             </Field>
 
-            <Field error={metaErrors.coverImageUrl}
-              htmlFor="coverImageUrl" hint="http:// hoặc https://" label="Ảnh bìa (URL)">
-              <input
-                className={inputClassName}
-                id="coverImageUrl"
-                onChange={(event) => patchMeta({ coverImageUrl: event.target.value })}
-                placeholder="https://"
-                value={meta.coverImageUrl}
-              />
-            </Field>
+            <CoverImageField
+              contentId={id}
+              createUpload={api.courses.coverUploadUrl}
+              disabled={locked}
+              error={metaErrors.coverImageUrl}
+              loadConfig={api.courses.coverUploadConfig}
+              onChange={(coverImageUrl) => patchMeta({ coverImageUrl })}
+              persist={(coverImageUrl) => api.courses.update(id, { coverImageUrl })}
+              title={meta.title}
+              value={meta.coverImageUrl}
+            />
 
             <Field error={metaErrors.prerequisiteNote}
               htmlFor="prerequisiteNote" label="Ghi chú điều kiện tiên quyết">

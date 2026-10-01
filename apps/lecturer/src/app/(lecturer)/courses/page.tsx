@@ -22,6 +22,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {
   Button,
+  CourseCover,
   DetailMeta,
   DetailRow,
   DetailSection,
@@ -125,10 +126,13 @@ function CoursesPageContent() {
         accessorKey: "title",
         header: "Khóa học",
         cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="truncate font-medium">{row.original.title}</p>
-            <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
-            <ReviewFlag status={row.original.status} />
+          <div className="flex min-w-0 items-center gap-3">
+            <CourseCover className="h-12 w-20" src={row.original.coverImageUrl} title={row.original.title} />
+            <div className="min-w-0">
+              <p className="truncate font-medium">{row.original.title}</p>
+              <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
+              <ReviewFlag status={row.original.status} />
+            </div>
           </div>
         ),
       },
@@ -387,6 +391,7 @@ function CourseDrawerBody({ row }: { row: CourseListItem }) {
         const chapters = course.chapters ?? [];
         return (
           <>
+            <CourseCover className="mb-4 aspect-[16/7] h-auto w-full" src={course.coverImageUrl} title={course.title} />
             <ReviewNotice reason={course.rejectionReason} status={course.status} />
             <RemovalPendingNotice
               reason={course.rejectionReason}

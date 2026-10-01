@@ -34,6 +34,7 @@ import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { Field, inputClassName, textareaClassName } from "@/components/form/field";
+import { CoverImageField } from "@/components/form/cover-image-field";
 import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import { SortableOverlay } from "@/components/sortable";
 import { addCourse, CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
@@ -551,16 +552,17 @@ export default function RoadmapStudioPage() {
             />
           </Field>
 
-          <Field error={errors.coverImageUrl}
-            htmlFor="coverImageUrl" hint="http:// hoặc https://" label="Ảnh bìa (URL)">
-            <input
-              className={inputClassName}
-              id="coverImageUrl"
-              onChange={(event) => patch({ coverImageUrl: event.target.value })}
-              placeholder="https://"
-              value={draft.coverImageUrl}
-            />
-          </Field>
+          <CoverImageField
+            contentId={id}
+            createUpload={api.roadmaps.coverUploadUrl}
+            disabled={locked}
+            error={errors.coverImageUrl}
+            loadConfig={api.roadmaps.coverUploadConfig}
+            onChange={(coverImageUrl) => patch({ coverImageUrl })}
+            persist={(coverImageUrl) => api.roadmaps.update(id, { coverImageUrl })}
+            title={draft.title}
+            value={draft.coverImageUrl}
+          />
 
           <Field error={errors.prerequisiteNote}
             htmlFor="prerequisiteNote" label="Ghi chú điều kiện tiên quyết">

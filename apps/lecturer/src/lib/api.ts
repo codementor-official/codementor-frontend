@@ -126,6 +126,12 @@ export const api = {
       unwrap<Roadmap>("/roadmaps", { method: "POST", body }),
     update: (id: string, body: Record<string, unknown>) =>
       unwrap<Roadmap>(`/roadmaps/${id}`, { method: "PATCH", body }),
+    coverUploadConfig: () =>
+      unwrap<ArticleCoverUploadConfig>("/roadmaps/cover-upload-config"),
+    coverUploadUrl: (
+      id: string,
+      body: { filename: string; contentType: string; sizeBytes: number },
+    ) => unwrap<ArticleCoverUpload>(`/roadmaps/${id}/cover-upload-url`, { method: "POST", body }),
     /** Ghi cả danh sách; thứ tự lấy theo thứ tự mảng, backend tự tính lại tổng giờ. */
     replaceCourses: (id: string, courses: { courseId: string; isOptional: boolean }[]) =>
       unwrap<Roadmap>(`/roadmaps/${id}/courses`, { method: "PUT", body: { courses } }),
@@ -251,6 +257,12 @@ export const api = {
       unwrap<Course>("/courses", { method: "POST", body }),
     update: (id: string, body: Record<string, unknown>) =>
       unwrap<Course>(`/courses/${id}`, { method: "PATCH", body }),
+    coverUploadConfig: () =>
+      unwrap<ArticleCoverUploadConfig>("/courses/cover-upload-config"),
+    coverUploadUrl: (
+      id: string,
+      body: { filename: string; contentType: string; sizeBytes: number },
+    ) => unwrap<ArticleCoverUpload>(`/courses/${id}/cover-upload-url`, { method: "POST", body }),
     /** Ghi cả cây; thứ tự lấy theo thứ tự mảng, id giữ nguyên để không mất tiến độ. */
     saveCurriculum: (id: string, chapters: unknown[]) =>
       unwrap<Course>(`/courses/${id}/curriculum`, { method: "PUT", body: { chapters } }),

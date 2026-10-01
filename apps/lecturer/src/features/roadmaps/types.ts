@@ -21,6 +21,7 @@ export interface RoadmapListItem {
   id: string;
   slug: string;
   title: string;
+  coverImageUrl: string | null;
   field: Field;
   level: Level;
   status: ContentStatus;

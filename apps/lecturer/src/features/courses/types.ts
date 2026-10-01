@@ -34,6 +34,7 @@ export interface CourseListItem {
   id: string;
   slug: string;
   title: string;
+  coverImageUrl: string | null;
   level: Level;
   status: ContentStatus;
   durationHours: number | null;
