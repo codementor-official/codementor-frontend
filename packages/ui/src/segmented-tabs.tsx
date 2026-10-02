@@ -37,7 +37,7 @@ export function SegmentedTabs({
             // `min-w-[6.5rem]` + căn giữa: nhãn ngắn ("Xin gỡ") và nhãn dài ("Đã từ chối")
             // chiếm cùng một ô, nên bấm qua lại không làm các tab bên cạnh xê dịch.
             className={`inline-flex h-9 min-w-[6.5rem] shrink-0 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-semibold whitespace-nowrap transition-colors ${
-              active ? "bg-foreground text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
             {opt.label}
@@ -46,7 +46,7 @@ export function SegmentedTabs({
             {typeof opt.count === "number" && opt.count > 0 && (
               <span
                 className={`rounded-full px-1.5 text-[10px] ${
-                  active ? "bg-background/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                  active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground"
                 }`}
               >
                 {opt.count}

@@ -222,7 +222,7 @@ function ViewSwitch({ value, onChange }: { value: ViewMode; onChange: (value: Vi
         aria-label="Hiển thị dạng thẻ"
         aria-pressed={value === "cards"}
         onClick={() => onChange("cards")}
-        className={`flex h-8 items-center gap-1.5 rounded px-2.5 text-xs font-semibold ${value === "cards" ? "bg-foreground text-primary-foreground" : "text-text-muted hover:bg-bg"}`}
+        className={`flex h-8 items-center gap-1.5 rounded px-2.5 text-xs font-semibold ${value === "cards" ? "bg-foreground text-background" : "text-text-muted hover:bg-bg"}`}
       >
         <Grid2X2 className="h-3.5 w-3.5" /> Thẻ
       </button>
@@ -231,7 +231,7 @@ function ViewSwitch({ value, onChange }: { value: ViewMode; onChange: (value: Vi
         aria-label="Hiển thị dạng bảng"
         aria-pressed={value === "table"}
         onClick={() => onChange("table")}
-        className={`flex h-8 items-center gap-1.5 rounded px-2.5 text-xs font-semibold ${value === "table" ? "bg-foreground text-primary-foreground" : "text-text-muted hover:bg-bg"}`}
+        className={`flex h-8 items-center gap-1.5 rounded px-2.5 text-xs font-semibold ${value === "table" ? "bg-foreground text-background" : "text-text-muted hover:bg-bg"}`}
       >
         <List className="h-3.5 w-3.5" /> Bảng
       </button>

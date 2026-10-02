@@ -80,7 +80,7 @@ function ToolbarButton({
       aria-pressed={active}
       title={label}
       className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-        active ? "bg-foreground text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"
       }`}
     >
       {children}
