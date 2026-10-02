@@ -198,6 +198,7 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                               : undefined
                         }
                         progressPercent={courseProgress?.progressPercent}
+                        owned={detail?.owned}
                         href={available ? `/courses/${course.courseId}` : null}
                       />
                     </div>

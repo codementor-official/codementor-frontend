@@ -51,6 +51,8 @@ export interface CourseCardProps {
   state?: "completed" | "locked";
   /** 0..100 tiến độ THẬT của người học trong khóa này. */
   progressPercent?: number;
+  /** Người xem đã có quyền học: giá không còn là thông tin cho họ, nên ẩn đi. */
+  owned?: boolean;
   /** Thẻ phụ theo ngữ cảnh, ví dụ "Tự chọn" trong lộ trình. */
   tags?: string[];
   /** Lý do khóa học được đề xuất. */
@@ -69,6 +71,7 @@ export function CourseCard({
   href,
   state,
   progressPercent,
+  owned = false,
   tags = [],
   note,
 }: CourseCardProps) {
@@ -82,7 +85,7 @@ export function CourseCard({
         course.coverImageUrl || COURSE_COVER_FALLBACK
       }
       kind={{ icon: BookOpen, label: course.authorName ?? "CodeMentor" }}
-      coverBadges={course.priceVnd === undefined ? undefined : (
+      coverBadges={owned || course.priceVnd === undefined ? undefined : (
         <CoursePriceBadges
           priceVnd={course.priceVnd}
           discountPercent={course.discountPercent}
@@ -118,7 +121,7 @@ export function CourseCard({
         ) : undefined
       }
       note={note}
-      footer={course.priceVnd === undefined ? undefined : (
+      footer={owned || course.priceVnd === undefined ? undefined : (
         <CoursePrice priceVnd={course.priceVnd} listPriceVnd={course.listPriceVnd} />
       )}
       progress={progressPercent}

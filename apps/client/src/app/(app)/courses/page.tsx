@@ -94,9 +94,10 @@ export default function CoursesPage() {
   const currentPage = Math.min(page, pageCount);
   const paginated = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  // Only the cards on screen: enrolment is one request per course. Used only for the
-  // "Hoàn thành" badge now — enrol/resume moved to the course detail page.
-  const { byCourse } = useCourseProgress(
+  // Only the cards on screen: enrolment is one request per course. Used for the "Hoàn thành"
+  // badge and to hide the price of courses the viewer already owns — enrol/resume moved to
+  // the course detail page.
+  const { byCourse, owned } = useCourseProgress(
     paginated.map((c) => c.id),
     authStatus === "authenticated",
   );
@@ -277,6 +278,7 @@ export default function CoursesPage() {
                           enrolled && enrollment.progressPercent >= 100 ? "completed" : undefined
                         }
                         progressPercent={enrolled ? enrollment.progressPercent : undefined}
+                        owned={enrolled && owned[course.id]}
                       />
                     </li>
                   );

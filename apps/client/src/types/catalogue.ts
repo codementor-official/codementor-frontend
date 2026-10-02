@@ -249,6 +249,8 @@ export interface CourseDetail extends CourseSummary {
   progressionMode: string;
   instructorId: string | null;
   publishedAt: string | null;
+  /** Người đang xem đã có quyền học (đã mua, được cấp, hoặc khoá miễn phí). */
+  owned?: boolean;
   chapters: {
     id: string;
     title: string;
