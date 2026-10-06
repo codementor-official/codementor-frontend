@@ -19,11 +19,13 @@ export function DailyBarCard<T extends { date: string }>({
   data,
   value,
   describe,
+  formatTick,
 }: {
   title: string;
   data: T[];
   value: keyof T & string;
   describe: (point: T) => string;
+  formatTick?: (value: number) => string;
 }) {
   const rows = data.map((point) => ({ ...point, label: dayLabel(point.date) }));
   return (
@@ -34,7 +36,7 @@ export function DailyBarCard<T extends { date: string }>({
       <CardContent className="pb-4">
         <div className="h-60 w-full">
           <ResponsiveContainer height="100%" width="100%">
-            <BarChart data={rows} margin={{ bottom: 0, left: -12, right: 4, top: 4 }}>
+            <BarChart data={rows} margin={{ bottom: 0, left: formatTick ? 0 : -12, right: 4, top: 4 }}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
               <XAxis
                 axisLine={false}
@@ -46,11 +48,12 @@ export function DailyBarCard<T extends { date: string }>({
                 tickLine={false}
               />
               <YAxis
+                width={formatTick ? 72 : 60}
                 allowDecimals={false}
                 axisLine={false}
                 fontSize={11}
                 stroke="var(--muted-foreground)"
-                tickFormatter={(tick: number) => tick.toLocaleString("vi-VN")}
+                tickFormatter={formatTick ?? ((tick: number) => tick.toLocaleString("vi-VN"))}
                 tickLine={false}
               />
               <Tooltip

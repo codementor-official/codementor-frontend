@@ -60,5 +60,6 @@ export { useWorkspace, WorkspaceProvider } from "./workspace/workspace-context";
 export type { PaneId, PanesState, PaneState, TabKind, TabMeta, TabMetaMap } from "./workspace/types";
 export { InfoHint } from "./info-hint";
 export { DailyBarCard } from "./daily-bar-card";
+export { RevenueOverview } from "./revenue-overview";
 export { countOf, KpiStrip, useSummary } from "./kpi-strip";
 export type { Kpi } from "./kpi-strip";
