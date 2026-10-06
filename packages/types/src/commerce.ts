@@ -23,6 +23,8 @@ export interface CoursePromotion {
   isActive: boolean;
 }
 export interface CoursePromotionRequest {
+  requiresPriceApproval?: boolean;
+  basePriceVnd?: number | null;
   id: string;
   action: "upsert" | "remove";
   salePriceVnd: number | null;
@@ -36,6 +38,7 @@ export interface CoursePromotionRequest {
   updatedAt: string | null;
 }
 export interface CoursePromotionProduct {
+  pendingPriceVnd?: number | null;
   courseId: string;
   title: string;
   coverImageUrl: string | null;
@@ -56,6 +59,13 @@ export interface CommerceConfig {
   label: string;
 }
 export interface CommerceOrder {
+  pricingSnapshot?: {
+    originalPriceVnd: number;
+    discountVnd: number;
+    finalAmountVnd: number;
+    priceVersion: number;
+    promotion: { label: string; salePriceVnd: number; startsAt: string; endsAt: string; version: string } | null;
+  } | null;
   id: string;
   buyer: { name: string; email: string } | null;
   courseId: string;

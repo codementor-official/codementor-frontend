@@ -23,6 +23,12 @@ export function OrderDialog({
             ["Người mua", `${order.buyer?.name ?? "Học viên"}${order.buyer?.email ? ` · ${order.buyer.email}` : ""}`],
             ["Thời điểm mua", new Date(order.createdAt).toLocaleString("vi-VN")],
             ["Học viên trả", vnd(order.amount)],
+            ...(order.pricingSnapshot ? [
+              ["Giá gốc khi mua", vnd(order.pricingSnapshot.originalPriceVnd)],
+              ["Giảm giá khi mua", vnd(order.pricingSnapshot.discountVnd)],
+              ["Khuyến mãi khi mua", order.pricingSnapshot.promotion?.label ?? "Không có"],
+              ["Phiên bản giá", String(order.pricingSnapshot.priceVersion)],
+            ] : []),
             [
               "Giảng viên",
               `${vnd(order.instructorAmount)} (${order.instructorBps / 100}%)`,

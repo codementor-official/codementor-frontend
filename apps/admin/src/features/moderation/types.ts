@@ -150,6 +150,7 @@ export interface ArticlePreview {
 }
 
 export interface CoursePreview {
+  promotionRequest?: import("@codementor/types").CoursePromotionRequest | null;
   priceVnd?: number;
   pendingPriceVnd?: number | null;
   title: string;

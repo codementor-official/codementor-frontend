@@ -201,7 +201,8 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
                 <p className="mt-2 text-3xl font-bold text-navy">{vnd(detail.amount)}</p>
               </div>
               <dl className="space-y-3 border-y border-border-soft py-4 text-sm">
-                <InvoiceRow label="Giá khóa học" value={vnd(detail.amount)} />
+                <InvoiceRow label="Giá tại thời điểm mua" value={vnd(detail.pricingSnapshot?.originalPriceVnd ?? detail.amount)} />
+                {detail.pricingSnapshot && <InvoiceRow label={detail.pricingSnapshot.promotion?.label ?? "Giảm giá"} value={`−${vnd(detail.pricingSnapshot.discountVnd)}`} />}
                 <InvoiceRow label="Phí bổ sung" value={vnd(0)} />
                 <InvoiceRow emphasize label="Tổng cộng" value={vnd(detail.amount)} />
               </dl>
@@ -323,6 +324,12 @@ function purchaseDocumentRows(order: PurchaseDetail): Array<[string, string]> {
     ["Người mua", order.buyer?.name ?? "Học viên"], ["Email", order.buyer?.email ?? ""],
     ["Ngày mua", new Date(order.createdAt).toLocaleString("vi-VN")],
     ["Tổng thanh toán", vnd(order.amount)],
+    ...(order.pricingSnapshot ? [
+      ["Giá gốc tại thời điểm mua", vnd(order.pricingSnapshot.originalPriceVnd)],
+      ["Giảm giá", vnd(order.pricingSnapshot.discountVnd)],
+      ["Khuyến mãi", order.pricingSnapshot.promotion?.label ?? "Không có"],
+      ["Phiên bản giá", String(order.pricingSnapshot.priceVersion)],
+    ] as Array<[string, string]> : []),
     ["Trạng thái", COMMERCE_STATUS[order.status] ?? order.status],
     ["Phương thức", paymentLabel(order.payment.provider)],
     ["Xác nhận thanh toán", order.settledAt ? new Date(order.settledAt).toLocaleString("vi-VN") : "Chưa xác nhận"],

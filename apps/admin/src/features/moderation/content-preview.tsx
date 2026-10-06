@@ -353,6 +353,16 @@ function CourseBody({
         ]}
       />
       <ReasonNote hidden={hideReason} reason={course.rejectionReason} />
+      {course.promotionRequest?.requiresPriceApproval && course.promotionRequest.status === "pending" && (
+        <Quote label="Khuyến mãi duyệt cùng giá mới">
+          {[
+            course.promotionRequest.action === "remove" ? "Gỡ khuyến mãi hiện tại" : `${course.promotionRequest.label}: ${money(course.promotionRequest.salePriceVnd ?? 0)}. ${course.promotionRequest.isActive ? "Áp dụng theo lịch" : "Lưu nhưng chưa kích hoạt"}.`,
+            course.promotionRequest.startsAt ? `Bắt đầu: ${new Date(course.promotionRequest.startsAt).toLocaleString("vi-VN")}.` : "",
+            course.promotionRequest.endsAt ? `Kết thúc: ${new Date(course.promotionRequest.endsAt).toLocaleString("vi-VN")}.` : "",
+            "Duyệt hoặc từ chối sẽ xử lý đồng thời cả giá và khuyến mãi; cấu hình công khai được giữ nguyên nếu từ chối.",
+          ].filter(Boolean).join(" ")}
+        </Quote>
+      )}
       {course.description && <Quote label="Mô tả">{course.description}</Quote>}
 
       {chapters.length === 0 ? (

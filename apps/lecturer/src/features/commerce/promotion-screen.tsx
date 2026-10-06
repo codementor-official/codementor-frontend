@@ -117,7 +117,7 @@ export function LecturerPromotionScreen() {
   }, [filter, items, query, sort]);
 
   const candidates = items.filter(
-    (item) => item.listPriceVnd > 1_000 && item.promotionRequest?.status !== "pending",
+    (item) => item.listPriceVnd > 1_000 && item.pendingPriceVnd == null && item.promotionRequest?.status !== "pending",
   );
 
   function startBatch() {
@@ -267,6 +267,7 @@ export function LecturerPromotionScreen() {
                           {campaign ?? "Chưa có chương trình"}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">{promotionPeriod(item)}</p>
+                        {item.promotionRequest?.status === "pending" && item.promotionRequest.requiresPriceApproval && <p className="mt-1 text-xs text-primary">Duyệt cùng giá mới của khóa học</p>}
                         {item.promotionRequest?.status === "rejected" && item.promotionRequest.reviewReason && (
                           <p className="mt-1 line-clamp-1 text-xs text-destructive" title={item.promotionRequest.reviewReason}>
                             Admin: {item.promotionRequest.reviewReason}

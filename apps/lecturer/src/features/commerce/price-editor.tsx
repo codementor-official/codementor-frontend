@@ -68,6 +68,8 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
     try {
       const result = await earningsApi.price(id, Number(price));
       const next = await earningsApi.offer(id);
+      const products = await earningsApi.promotions();
+      setPromotionRequest(products.find((item) => item.courseId === id)?.promotionRequest ?? null);
       setOffer(next);
       setSaved(next.pendingPriceVnd ?? next.listPriceVnd);
       setPrice(String(next.pendingPriceVnd ?? next.listPriceVnd));
@@ -95,7 +97,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
       const product = (await earningsApi.promotions()).find((item) => item.courseId === id);
       setOffer(next);
       setPromotionRequest(product?.promotionRequest ?? null);
-      toast.success("Đã gửi đề xuất khuyến mãi cho Admin duyệt.");
+      toast.success(next.pendingPriceVnd !== null ? "Đã lưu đề xuất khuyến mãi cùng giá mới. Hãy gửi duyệt khóa học để Admin duyệt toàn bộ cấu hình." : "Đã gửi đề xuất khuyến mãi cho Admin duyệt.");
     } catch (e) {
       setError(apiErrorMessage(e));
     } finally {
@@ -179,7 +181,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
         {busy ? "Đang lưu…" : "Lưu giá"}
       </Button>
       </section>
-      {offer !== null && offer.listPriceVnd > 0 && (
+      {offer !== null && (offer.pendingPriceVnd ?? offer.listPriceVnd) > 0 && (
         <section className="min-w-0 space-y-4 border-t border-border bg-muted/10 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -188,7 +190,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
             </div>
             {offer && <CoursePrice priceVnd={offer.priceVnd} listPriceVnd={offer.listPriceVnd} />}
           </div>
-          {promotionRequest?.status === "pending" && <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm"><p className="font-semibold text-primary">Đang chờ Admin duyệt</p><p className="mt-1 text-xs text-muted-foreground">Bạn có thể cập nhật đề xuất trong lúc chờ. Giá hiện tại trên Client chưa thay đổi cho đến khi Admin phê duyệt.</p></div>}
+          {promotionRequest?.status === "pending" && <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm"><p className="font-semibold text-primary">{promotionRequest.requiresPriceApproval ? "Đề xuất duyệt cùng giá khóa học" : "Đang chờ Admin duyệt"}</p><p className="mt-1 text-xs text-muted-foreground">{promotionRequest.requiresPriceApproval ? "Gửi duyệt khóa học để Admin duyệt đồng thời giá và khuyến mãi. Hủy gửi duyệt nếu cần sửa. Giá công khai chưa thay đổi." : "Bạn có thể cập nhật đề xuất trong lúc chờ. Giá hiện tại trên Client chưa thay đổi cho đến khi Admin phê duyệt."}</p></div>}
           {promotionRequest?.status === "rejected" && <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"><p className="font-semibold text-destructive">Đề xuất cần chỉnh sửa</p><p className="mt-1 text-xs text-muted-foreground">{promotionRequest.reviewReason || "Admin chưa phê duyệt đề xuất này."}</p></div>}
           {offer?.promotion && promotionRequest?.status !== "pending" && promotionRequest?.status !== "rejected" && <div className="rounded-lg border border-success/40 bg-success/5 p-3 text-sm"><p className="font-semibold text-success">Khuyến mãi đã được duyệt</p><p className="mt-1 text-xs text-muted-foreground">Ưu đãi đang theo lịch đã duyệt. Mọi chỉnh sửa hoặc yêu cầu gỡ sẽ được gửi lại cho Admin.</p></div>}
           <div className="grid min-w-0 gap-3 sm:grid-cols-2">
@@ -200,10 +202,10 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
           </div>
           <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm"><input className="mt-0.5" type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /><span><strong className="block">Cho phép áp dụng khuyến mãi</strong><span className="mt-0.5 block text-xs text-muted-foreground">Tắt để tạm dừng nhưng vẫn giữ tên, giá và lịch áp dụng.</span></span></label>
           <div className="flex flex-wrap gap-2 pb-1">
-            <Button type="button" disabled={busy || locked || !label.trim() || !startsAt || !endsAt || !Number.isInteger(Number(salePrice)) || Number(salePrice) < 1000 || Number(salePrice) >= offer.listPriceVnd} onClick={() => void savePromotion()}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
+            <Button type="button" disabled={busy || locked || !label.trim() || !startsAt || !endsAt || !Number.isInteger(Number(salePrice)) || Number(salePrice) < 1000 || Number(salePrice) >= (offer.pendingPriceVnd ?? offer.listPriceVnd)} onClick={() => void savePromotion()}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
             {(offer?.promotion || promotionRequest?.status === "pending") && <Button type="button" variant="outline" disabled={busy || locked} onClick={() => void removePromotion()}>{offer?.promotion ? "Gửi yêu cầu gỡ" : "Hủy đề xuất"}</Button>}
           </div>
-          {salePrice && Number(salePrice) >= offer.listPriceVnd && <p className="text-xs text-destructive">Giá ưu đãi phải thấp hơn giá niêm yết.</p>}
+          {salePrice && Number(salePrice) >= (offer.pendingPriceVnd ?? offer.listPriceVnd) && <p className="text-xs text-destructive">Giá ưu đãi phải thấp hơn giá {offer.pendingPriceVnd !== null ? "đề xuất" : "niêm yết"}.</p>}
         </section>
       )}
     </Card>
