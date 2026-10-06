@@ -3,7 +3,7 @@ import { apiErrorMessage } from "@codementor/api-client";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Download, Wallet, RefreshCw, CircleHelp, Eye, Printer } from "lucide-react";
-import { Button, Card, CourseCover, Modal, PageHeader, ServerPagination, StatStrip } from "@codementor/ui";
+import { Button, Card, CourseCover, Modal, PageHeader, RevenueOverview, ServerPagination, StatStrip } from "@codementor/ui";
 import {
   COMMERCE_INCOME_STATUS,
   COMMERCE_STATUS,
@@ -12,18 +12,21 @@ import {
   type CommerceWithdrawal,
   type CommerceLedgerEntry,
   type WalletSummary,
+  type RevenueReport,
 } from "@codementor/types";
 import { earningsApi, vnd } from "./api";
 import { WithdrawalForm } from "./withdrawal-form";
 import { downloadCsv, printDocument } from "@codementor/utils";
-type Tab = "orders" | "withdrawals" | "ledger";
+type Tab = "overview" | "orders" | "withdrawals" | "ledger";
 type Detail =
   | { type: "order"; item: CommerceOrder }
   | { type: "withdrawal"; item: CommerceWithdrawal }
   | { type: "ledger"; item: CommerceLedgerEntry };
 export function EarningsScreen() {
   const [wallet, setWallet] = useState<WalletSummary | null>(null);
-  const [tab, setTab] = useState<Tab>("orders");
+  const [tab, setTab] = useState<Tab>("overview");
+  const [days, setDays] = useState(30);
+  const [report, setReport] = useState<RevenueReport | null>(null);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("newest");
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -42,22 +45,24 @@ export function EarningsScreen() {
     try {
       const summary = await earningsApi.wallet();
       setWallet(summary);
+      if (tab === "overview") setReport(await earningsApi.analytics(days));
       if (tab === "orders") setOrders(await earningsApi.orders(page, sort));
       if (tab === "withdrawals")
         setWithdrawals(await earningsApi.withdrawals(page, sort));
       if (tab === "ledger") setLedger(await earningsApi.ledger(page, sort));
       setError("");
     } catch (e) {
+      if (tab === "overview") setReport(null);
       setError(apiErrorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [tab, page, sort]);
+  }, [tab, page, sort, days]);
   useEffect(() => {
     void load();
   }, [load]);
   const current =
-    tab === "orders" ? orders : tab === "withdrawals" ? withdrawals : ledger;
+    tab === "orders" ? orders : tab === "withdrawals" ? withdrawals : tab === "ledger" ? ledger : null;
   function exportCurrent() {
     if (tab === "orders") {
       downloadCsv("doanh-thu-khoa-hoc.csv", ["Khóa học", "Học viên", "Email", "Ngày", "Giá bán", "Doanh thu", "Trạng thái"], (orders?.items ?? []).map((o) => [o.courseTitle, o.buyer?.name ?? "Học viên", o.buyer?.email ?? "", new Date(o.createdAt).toLocaleString("vi-VN"), o.amount, o.instructorAmount, COMMERCE_STATUS[o.status] ?? o.status]));
@@ -94,7 +99,7 @@ export function EarningsScreen() {
             }))}
           />
           <p className="text-sm text-muted-foreground">
-            Bạn nhận {wallet.policy.instructorBps / 100}% trên mỗi đơn hàng.
+            Chính sách hiện tại: bạn nhận {wallet.policy.instructorBps / 100}% trên đơn mới. Đơn cũ giữ tỷ lệ đã lưu.
             Doanh thu khả dụng sau {wallet.policy.holdDays} ngày để xử lý hoàn
             tiền hoặc khiếu nại phát sinh.
           </p>
@@ -104,7 +109,7 @@ export function EarningsScreen() {
               từ thu nhập sau: {vnd(-wallet.balances.debt)}
             </Card>
           )}
-          <WithdrawalForm wallet={wallet} refresh={load} />
+          {tab === "withdrawals" && <WithdrawalForm wallet={wallet} refresh={load} />}
         </>
       )}
       <Card>
@@ -114,6 +119,7 @@ export function EarningsScreen() {
           aria-label="Lịch sử thu nhập"
         >
           {[
+            ["overview", "Tổng quan doanh thu"],
             ["orders", "Đơn hàng"],
             ["withdrawals", "Yêu cầu rút"],
             ["ledger", "Biến động số dư"],
@@ -131,12 +137,12 @@ export function EarningsScreen() {
               {label}
             </Button>
           ))}
-          <Button variant="outline" className="ml-auto" disabled={!current?.items.length} onClick={exportCurrent}>
+          {tab !== "overview" && <><Button variant="outline" className="ml-auto" disabled={!current?.items.length} onClick={exportCurrent}>
             <Download className="size-4" /> Xuất CSV trang này
           </Button>
-          <select aria-label="Sắp xếp dữ liệu" className="rounded-lg border bg-background px-3 text-sm" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option><option value="amount_high">Số tiền cao nhất</option><option value="amount_low">Số tiền thấp nhất</option></select>
+          <select aria-label="Sắp xếp dữ liệu" className="rounded-lg border bg-background px-3 text-sm" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option><option value="amount_high">Số tiền cao nhất</option><option value="amount_low">Số tiền thấp nhất</option></select></>}
         </div>
-        {loading ? (
+        {tab === "overview" ? <div className="p-4"><RevenueOverview report={report} days={days} onDaysChange={setDays} loading={loading} onExport={() => report && downloadCsv("bao-cao-doanh-thu.csv", ["Ngày (giờ Việt Nam)", "Số đơn đã thanh toán", "Giá trị đơn", "Doanh thu giảng viên trước phí", "Hoàn tiền của đơn trong kỳ"], report.daily.map((d) => [d.date, d.orders, d.gross, d.revenue, d.refunded]))} /></div> : loading ? (
           <p
             className="p-8 text-center text-sm text-muted-foreground"
             role="status"
@@ -260,9 +266,9 @@ export function EarningsScreen() {
             </table>
           </div>
         )}
-        <ServerPagination page={page} total={current?.total ?? 0} pageSize={current?.limit ?? 20} disabled={loading} onPageChange={setPage} />
+        {tab !== "overview" && <ServerPagination page={page} total={current?.total ?? 0} pageSize={current?.limit ?? 20} disabled={loading} onPageChange={setPage} />}
       </Card>
-      <Modal open={help} onClose={() => setHelp(false)} title="Hướng dẫn quản lý doanh thu"><div className="space-y-4 text-sm"><Guide number="1" title="Thiết lập nơi nhận tiền">Chọn ngân hàng, MoMo hoặc VNPAY; nhập đúng tên chủ tài khoản và số tài khoản.</Guide><Guide number="2" title="Theo dõi doanh thu">Khoản thu mới được giữ trong thời gian quy định trước khi chuyển sang số dư có thể rút.</Guide><Guide number="3" title="Tạo yêu cầu rút">Chọn số tiền, kiểm tra phương thức nhận và theo dõi trạng thái tại tab Yêu cầu rút.</Guide><Guide number="4" title="Đối chiếu dữ liệu">Mở Chi tiết hoặc xuất CSV để kiểm tra từng đơn hàng và biến động số dư.</Guide></div></Modal>
+      <Modal open={help} onClose={() => setHelp(false)} title="Hướng dẫn quản lý doanh thu"><div className="space-y-4 text-sm"><Guide number="1" title="Đọc biểu đồ và số dư">Tổng quan hiển thị doanh thu theo ngày xác nhận thanh toán, dùng tỷ lệ đã lưu của từng đơn. Loại trừ đơn đã hoàn tiền và chưa trừ phí cổng thanh toán. Số dư phía trên là toàn bộ lịch sử, không bị giới hạn bởi bộ chọn thời gian của biểu đồ.</Guide><Guide number="2" title="Khi nào có số dư khả dụng?">Thanh toán đã xác nhận vẫn phải chờ hết thời gian giữ của đơn và đủ điều kiện đối soát. Xem ngày dự kiến tại Chi tiết đơn. Đối soát không bỏ qua thời gian chờ; có sai lệch hoặc hoàn tiền đang xử lý thì doanh thu có thể chưa được mở.</Guide><Guide number="3" title="Thiết lập nơi nhận tiền & yêu cầu rút">Mở tab Yêu cầu rút để lưu phương thức nhận tiền, nhập số tiền và gửi duyệt. Chỉ rút từ số dư Sẵn sàng rút; duyệt yêu cầu không đồng nghĩa đã nhận tiền. Theo dõi trạng thái và lý do trong Chi tiết.</Guide><Guide number="4" title="Xuất và đối chiếu">CSV ở Tổng quan xuất số liệu toàn kỳ 7/30/90 ngày; CSV trong bảng lịch sử chỉ xuất trang đang xem. Mở Chi tiết để in/lưu PDF chứng từ; chứng từ giao dịch không thay thế hóa đơn thuế.</Guide></div></Modal>
       <Modal open={!!detail} onClose={() => setDetail(null)} title={detail?.type === "order" ? "Chi tiết đơn hàng" : detail?.type === "withdrawal" ? "Chi tiết yêu cầu rút" : "Chi tiết biến động số dư"}>{detail && <DetailView detail={detail} />}</Modal>
     </div>
   );

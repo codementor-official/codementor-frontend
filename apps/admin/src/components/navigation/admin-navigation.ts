@@ -1,5 +1,6 @@
 import {
   Activity,
+  ChartNoAxesCombined,
   BadgePercent,
   BookOpen,
   Bot,
@@ -49,6 +50,7 @@ export const adminNavigation: AdminNavGroup[] = [
       { href: "/learning-paths", icon: Route, label: "Lộ trình học" },
       { href: "/workspaces", icon: Network, label: "Nhóm học tập" },
       { href: "/commerce", icon: Wallet, label: "Giao dịch" },
+      { href: "/revenue", icon: ChartNoAxesCombined, label: "Doanh thu hệ thống" },
       { href: "/promotions", icon: BadgePercent, label: "Khuyến mãi" },
     ],
   },

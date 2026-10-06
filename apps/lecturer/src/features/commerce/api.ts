@@ -9,8 +9,10 @@ import type {
   WalletSummary,
   PayoutRecipient,
   CoursePromotionProduct,
+  RevenueReport,
 } from "@codementor/types";
 export const earningsApi = {
+  analytics: (days: number) => unwrap<RevenueReport>(`/commerce/wallet/analytics?days=${days}`),
   wallet: () => unwrap<WalletSummary>("/commerce/wallet"),
   orders: (page: number, sort = "newest") =>
     unwrap<CommercePage<CommerceOrder>>(`/commerce/wallet/orders?${new URLSearchParams({ page: String(page), sort })}`),

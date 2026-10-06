@@ -9,6 +9,8 @@ import type {
   CommercePolicy,
   PurchaseDetail,
   CoursePromotionProduct,
+  RevenueReport,
+  RevenueInstructor,
 } from "@codementor/types";
 type Request = ReturnType<typeof createApiClient>;
 async function get<T>(
@@ -24,8 +26,10 @@ async function get<T>(
   return r?.data;
 }
 export const commerceAdminApi = {
+  analytics: (r: Request, days: number, instructorId = '') => get<RevenueReport>(r, `analytics?${new URLSearchParams({ days: String(days), ...(instructorId ? { instructorId } : {}) })}`),
+  revenueInstructors: (r: Request, days: number) => get<RevenueInstructor[]>(r, `analytics/instructors?days=${days}`),
   reconciliation: (r: Request) =>
-    get<Record<string, number>>(r, "reconciliation"),
+    get<Record<string, number | null>>(r, "reconciliation"),
   orders: (r: Request, page: number, status = '', q = '', sort = 'newest') =>
     get<CommercePage<CommerceOrder>>(r, `orders?${new URLSearchParams({ page: String(page), sort, ...(status ? { status } : {}), ...(q ? { q } : {}) })}`),
   detail: (r: Request, id: string) => get<PurchaseDetail>(r, `orders/${id}`),

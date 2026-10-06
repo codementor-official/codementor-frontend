@@ -31,6 +31,7 @@ export function CommerceScreen() {
   const request = useAdminApi();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("orders");
+  const [runConfirmation, setRunConfirmation] = useState(false);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("newest");
   const [help, setHelp] = useState(false);
@@ -116,7 +117,7 @@ export function CommerceScreen() {
     if (tab === "audit") downloadCsv("nhat-ky-giao-dich.csv", ["Thời điểm", "Thao tác", "Đối tượng", "Chi tiết"], (audit?.items ?? []).map((e) => [new Date(e.createdAt).toLocaleString("vi-VN"), e.action, e.entityId, JSON.stringify(e.details)]));
   }
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <PageHeader
         icon={Wallet}
         title="Quản lý giao dịch"
@@ -125,11 +126,11 @@ export function CommerceScreen() {
       />
       <ReconciliationSummary refreshing={loading || busy} />
       <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <div className="flex max-w-3xl gap-3"><span className="rounded-lg bg-primary/10 p-2 text-primary"><ShieldCheck className="size-5" /></span><div><p className="font-semibold">Đối soát giao dịch</p><p className="mt-1 text-xs text-muted-foreground">Kiểm tra trạng thái thanh toán, hoàn tiền và các khoản chi trả đang chờ xác nhận. Những mục cần xử lý sẽ được cập nhật vào các chỉ số phía trên.</p></div></div>
+        <div className="flex max-w-3xl gap-3"><span className="rounded-lg bg-primary/10 p-2 text-primary"><ShieldCheck className="size-5" /></span><div><p className="font-semibold">Đối soát & xử lý tài chính</p><p className="mt-1 text-xs text-muted-foreground">Xác minh giao dịch theo lô, mở doanh thu đủ điều kiện và xử lý yêu cầu rút đã được duyệt. Không bỏ qua thời gian giữ doanh thu. Xem Hướng dẫn trước khi thực hiện.</p></div></div>
         <Button
           variant="outline"
           disabled={busy}
-          onClick={() => void command("jobs/run")}
+          onClick={() => setRunConfirmation(true)}
         >
           Đối soát ngay
         </Button>
@@ -204,14 +205,14 @@ export function CommerceScreen() {
           />
         )
       ) : (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           {!current?.items.length ? (
             <p className="p-8 text-center text-sm text-muted-foreground">
               Chưa có dữ liệu.
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full min-w-[800px] table-fixed text-left text-sm">
                 <thead className="bg-muted text-xs text-muted-foreground">
                   <tr>
                     {(tab === "orders"
@@ -406,7 +407,15 @@ export function CommerceScreen() {
           busy={busy}
         />
       )}
-      <Modal open={help} onClose={() => setHelp(false)} title="Hướng dẫn quản lý giao dịch"><div className="space-y-4 text-sm"><HelpStep number="1" title="Đơn hàng">Theo dõi tiền học viên thanh toán, phần chia cho giảng viên, phí và quyền học.</HelpStep><HelpStep number="2" title="Yêu cầu rút tiền">Kiểm tra thông tin người nhận trước khi duyệt; lý do là bắt buộc khi duyệt hoặc từ chối.</HelpStep><HelpStep number="3" title="Đối soát">Dùng Đối soát ngay để cập nhật các thanh toán, hoàn tiền và khoản chi đang chờ xác nhận.</HelpStep><HelpStep number="4" title="Báo cáo">Mở chi tiết từng bản ghi hoặc xuất CSV theo tab để kiểm tra và lưu trữ.</HelpStep></div></Modal>
+      <Modal open={help} onClose={() => setHelp(false)} title="Hướng dẫn quản lý giao dịch"><div className="space-y-4 text-sm">
+        <HelpStep number="1" title="Đọc đúng các số liệu">Tổng quan doanh thu dùng ngày xác nhận thanh toán và tỷ lệ chia đã lưu trên từng đơn. Phần thu hệ thống chưa trừ phí cổng thanh toán; phí chưa xác định không được coi là 0. Số liệu theo kỳ không phải số dư ngân hàng.</HelpStep>
+        <HelpStep number="2" title="Đối soát không phải duyệt tất cả đơn">Máy chủ chọn giao dịch cần xác minh, tối đa 20 thanh toán mỗi lượt. Giao dịch VNPAY đã tra soát cần chờ ít nhất 6 phút trước lần tiếp theo. Đơn đã xác minh không bị thu tiền lại; giao dịch chưa rõ kết quả vẫn chờ kiểm tra, không được ép thành công.</HelpStep>
+        <HelpStep number="3" title="Khi nào giảng viên được rút?">Thanh toán thành công → doanh thu đang chờ → hết thời gian giữ của đơn và đủ điều kiện xác minh → số dư khả dụng. Bấm đối soát không rút ngắn thời gian giữ. Xem ngày dự kiến trong chi tiết đơn và chính sách áp dụng; đơn cũ giữ tỷ lệ và thời gian đã lưu.</HelpStep>
+        <HelpStep number="4" title="Các tác vụ đi kèm">Nút Đối soát ngay còn kiểm tra hoàn tiền đang chờ, đánh dấu đơn hết hạn, mở doanh thu đủ điều kiện và xử lý chi trả đã được duyệt. Không tự duyệt yêu cầu rút mới. Kiểm tra hàng đợi Yêu cầu rút trước khi chạy.</HelpStep>
+        <HelpStep number="5" title="Kiểm tra kết quả và sai lệch">Sau khi chạy, làm mới số liệu; mở Chi tiết đơn và Nhật ký hoạt động để xem kết quả. Nếu cổng chưa phản hồi, chờ lượt sau; không nhấn liên tục. Các mục cần xác minh có thể chưa về 0 sau một lượt.</HelpStep>
+        <HelpStep number="6" title="Báo cáo & chứng từ">Mở Doanh thu hệ thống trên thanh điều hướng để xem toàn hệ thống hoặc từng giảng viên, chọn 7/30/90 ngày và xuất báo cáo toàn kỳ. CSV tại bảng lịch sử chỉ xuất trang đang xem. Mở Chi tiết để in/lưu PDF chứng từ; chứng từ giao dịch không thay thế hóa đơn thuế.</HelpStep>
+      </div></Modal>
+      <Modal open={runConfirmation} onClose={() => setRunConfirmation(false)} title="Xác nhận đối soát & xử lý tài chính"><div className="space-y-4 text-sm"><p>Hệ thống sẽ xác minh giao dịch cần xử lý, mở doanh thu đã đủ điều kiện và xử lý yêu cầu chi trả đã được duyệt. Không tự duyệt yêu cầu mới hoặc bỏ qua thời gian giữ doanh thu.</p><p className="text-muted-foreground">Kết quả có thể cần nhiều lượt; giao dịch VNPAY chưa đến lượt tra soát sẽ được giữ lại.</p><div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setRunConfirmation(false)}>Hủy</Button><Button disabled={busy} onClick={async () => { setRunConfirmation(false); await command("jobs/run"); }}>Xác nhận thực hiện</Button></div></div></Modal>
       <Modal open={!!recordDetail} onClose={() => setRecordDetail(null)} title={recordDetail?.type === "withdrawal" ? "Chi tiết yêu cầu rút" : recordDetail?.type === "ledger" ? "Chi tiết biến động số dư" : "Chi tiết nhật ký hoạt động"}>{recordDetail && <AdminRecordDetail detail={recordDetail} />}</Modal>
       <Modal
         open={!!decision}
