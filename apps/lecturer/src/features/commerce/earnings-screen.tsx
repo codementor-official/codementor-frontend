@@ -29,6 +29,7 @@ import {
   type CommerceLedgerEntry,
   type WalletSummary,
   type RevenueReport,
+  type RevenueDateRange,
 } from "@codementor/types";
 import { earningsApi, vnd } from "./api";
 import { WithdrawalForm } from "./withdrawal-form";
@@ -43,6 +44,7 @@ export function EarningsScreen() {
   const [wallet, setWallet] = useState<WalletSummary | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [days, setDays] = useState(30);
+  const [dateRange, setDateRange] = useState<RevenueDateRange | null>(null);
   const [report, setReport] = useState<RevenueReport | null>(null);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("newest");
@@ -57,7 +59,7 @@ export function EarningsScreen() {
     useState<CommercePage<CommerceLedgerEntry> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const scopeKey = `${tab}-${page}-${sort}-${days}`;
+  const scopeKey = `${tab}-${page}-${sort}-${days}-${dateRange?.from ?? ""}-${dateRange?.to ?? ""}`;
   const [loadedScope, setLoadedScope] = useState("");
   const generation = useRef(0);
   const load = useCallback(async () => {
@@ -68,7 +70,7 @@ export function EarningsScreen() {
       const [summary, result] = await Promise.all([
         earningsApi.wallet(),
         tab === "overview"
-          ? earningsApi.analytics(days)
+          ? earningsApi.analytics(days, dateRange)
           : tab === "orders"
             ? earningsApi.orders(page, sort)
             : tab === "withdrawals"
@@ -91,10 +93,10 @@ export function EarningsScreen() {
     } finally {
       if (requestGeneration === generation.current) {
         setLoading(false);
-        setLoadedScope(`${tab}-${page}-${sort}-${days}`);
+        setLoadedScope(scopeKey);
       }
     }
-  }, [tab, page, sort, days]);
+  }, [tab, page, sort, days, dateRange, scopeKey]);
   useEffect(() => {
     void load();
     return () => {
@@ -207,9 +209,10 @@ export function EarningsScreen() {
           />
           <p className="text-sm text-muted-foreground">
             Chính sách hiện tại: bạn nhận {wallet.policy.instructorBps / 100}%
-            trên đơn mới. Đơn cũ giữ tỷ lệ đã lưu. Doanh thu khả dụng sau{" "}
-            {wallet.policy.holdDays} ngày để xử lý hoàn tiền hoặc khiếu nại phát
-            sinh.
+            trên đơn mới; giữ doanh thu {wallet.policy.holdDays} ngày tính từ
+            khi xác nhận thanh toán. Hết thời gian giữ vẫn cần đối soát và đủ
+            điều kiện hoàn tiền trước khi mở số dư. Đơn cũ giữ cả tỷ lệ và thời
+            gian đã lưu; xem ngày dự kiến trong chi tiết đơn.
           </p>
           {(wallet.balances.refund_held > 0 || wallet.balances.debt < 0) && (
             <Card className="p-4 text-sm">
@@ -280,6 +283,8 @@ export function EarningsScreen() {
               report={report}
               days={days}
               onDaysChange={setDays}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
               loading={loading || loadedScope !== scopeKey}
               extraViews={[
                 {
@@ -514,9 +519,10 @@ export function EarningsScreen() {
             đã nhận tiền. Theo dõi trạng thái và lý do trong Chi tiết.
           </Guide>
           <Guide number="4" title="Xuất và đối chiếu">
-            CSV ở Tổng quan xuất số liệu toàn kỳ 7/30/90 ngày; CSV trong bảng
-            lịch sử chỉ xuất trang đang xem. Mở Chi tiết để in/lưu PDF chứng từ;
-            chứng từ giao dịch không thay thế hóa đơn thuế.
+            CSV ở Tổng quan xuất số liệu toàn kỳ đã chọn (7/30/90 ngày hoặc
+            khoảng ngày tùy ý); CSV trong bảng lịch sử chỉ xuất trang đang xem.
+            Mở Chi tiết để in/lưu PDF chứng từ; chứng từ giao dịch không thay
+            thế hóa đơn thuế.
           </Guide>
         </div>
       </Modal>

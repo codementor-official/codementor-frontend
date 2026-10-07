@@ -10,13 +10,25 @@ import type {
   PayoutRecipient,
   CoursePromotionProduct,
   RevenueReport,
+  RevenueDateRange,
 } from "@codementor/types";
 export const earningsApi = {
-  analytics: (days: number) => unwrap<RevenueReport>(`/commerce/wallet/analytics?days=${days}`),
+  analytics: (days: number, range?: RevenueDateRange | null) =>
+    unwrap<RevenueReport>(
+      `/commerce/wallet/analytics?${new URLSearchParams(range ? { from: range.from, to: range.to } : { days: String(days) })}`,
+    ),
   wallet: () => unwrap<WalletSummary>("/commerce/wallet"),
   orders: (page: number, sort = "newest") =>
-    unwrap<CommercePage<CommerceOrder>>(`/commerce/wallet/orders?${new URLSearchParams({ page: String(page), sort })}`),
-  courseOrders: (id: string, page: number, status = '', q = '', sort = 'newest') =>
+    unwrap<CommercePage<CommerceOrder>>(
+      `/commerce/wallet/orders?${new URLSearchParams({ page: String(page), sort })}`,
+    ),
+  courseOrders: (
+    id: string,
+    page: number,
+    status = "",
+    q = "",
+    sort = "newest",
+  ) =>
     unwrap<CoursePurchasePage>(
       `/commerce/wallet/courses/${id}/orders?${new URLSearchParams({ page: String(page), sort, ...(status ? { status } : {}), ...(q ? { q } : {}) })}`,
     ),
@@ -40,17 +52,40 @@ export const earningsApi = {
     }),
   offer: (id: string) => unwrap<CourseOffer>(`/commerce/courses/${id}`),
   price: (id: string, priceVnd: number) =>
-    unwrap<{ priceVnd: number; pendingPriceVnd: number | null; requiresReview: boolean }>(`/commerce/courses/${id}/price`, {
+    unwrap<{
+      priceVnd: number;
+      pendingPriceVnd: number | null;
+      requiresReview: boolean;
+    }>(`/commerce/courses/${id}/price`, {
       method: "PUT",
       body: { priceVnd },
     }),
   promotions: () => unwrap<CoursePromotionProduct[]>("/commerce/promotions"),
-  batchPromotion: (data: { courseIds: string[]; discountPercent: number; label: string; startsAt: string; endsAt: string; isActive: boolean }) =>
-    unwrap<{ submitted: number; requestIds: string[] }>("/commerce/promotions/batch", {
-      method: "PUT",
-      body: data,
-    }),
-  promotion: (id: string, data: { salePriceVnd: number; label: string; startsAt: string; endsAt: string; isActive: boolean }) =>
+  batchPromotion: (data: {
+    courseIds: string[];
+    discountPercent: number;
+    label: string;
+    startsAt: string;
+    endsAt: string;
+    isActive: boolean;
+  }) =>
+    unwrap<{ submitted: number; requestIds: string[] }>(
+      "/commerce/promotions/batch",
+      {
+        method: "PUT",
+        body: data,
+      },
+    ),
+  promotion: (
+    id: string,
+    data: {
+      salePriceVnd: number;
+      label: string;
+      startsAt: string;
+      endsAt: string;
+      isActive: boolean;
+    },
+  ) =>
     unwrap(`/commerce/courses/${id}/promotion`, { method: "PUT", body: data }),
   removePromotion: (id: string) =>
     unwrap(`/commerce/courses/${id}/promotion/remove`, { method: "POST" }),

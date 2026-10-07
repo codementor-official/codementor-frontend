@@ -2,7 +2,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiErrorMessage } from "@codementor/api-client";
-import type { RevenueInstructor, RevenueReport } from "@codementor/types";
+import type {
+  RevenueDateRange,
+  RevenueInstructor,
+  RevenueReport,
+} from "@codementor/types";
 import { Button, Modal, PageHeader, RevenueOverview } from "@codementor/ui";
 import { ChartNoAxesCombined, CircleHelp, RefreshCw } from "lucide-react";
 import { downloadCsv, printDocument } from "@codementor/utils";
@@ -20,6 +24,7 @@ import { SystemRevenueOverview } from "./revenue/system-overview";
 export function RevenueScreen() {
   const request = useAdminApi();
   const [days, setDays] = useState(30);
+  const [dateRange, setDateRange] = useState<RevenueDateRange | null>(null);
   const [instructorId, setInstructorId] = useState("");
   const [instructorMetric, setInstructorMetric] =
     useState<InstructorRevenueMetric>("revenue");
@@ -30,15 +35,15 @@ export function RevenueScreen() {
   const [refresh, setRefresh] = useState(0);
   const [help, setHelp] = useState(false);
   const [loadedScope, setLoadedScope] = useState("");
-  const scopeKey = `${days}-${instructorId}-${refresh}`;
+  const scopeKey = `${days}-${instructorId}-${refresh}-${dateRange?.from ?? ""}-${dateRange?.to ?? ""}`;
   useEffect(() => {
     let active = true;
     setLoading(true);
     setReport(null);
     setError("");
     Promise.all([
-      api.analytics(request, days, instructorId),
-      api.revenueInstructors(request, days),
+      api.analytics(request, days, instructorId, dateRange),
+      api.revenueInstructors(request, days, dateRange),
     ])
       .then(([nextReport, nextInstructors]) => {
         if (active) {
@@ -52,13 +57,13 @@ export function RevenueScreen() {
       .finally(() => {
         if (active) {
           setLoading(false);
-          setLoadedScope(`${days}-${instructorId}-${refresh}`);
+          setLoadedScope(scopeKey);
         }
       });
     return () => {
       active = false;
     };
-  }, [request, days, instructorId, refresh]);
+  }, [request, days, instructorId, refresh, dateRange, scopeKey]);
   const selected = instructors.find((i) => i.id === instructorId);
   const scopedInstructors = instructorId
     ? instructors.filter((i) => i.id === instructorId)
@@ -98,6 +103,8 @@ export function RevenueScreen() {
         report={report}
         days={days}
         onDaysChange={setDays}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
         loading={loading || loadedScope !== scopeKey}
         summaryContent={
           report && (
@@ -132,7 +139,7 @@ export function RevenueScreen() {
             label: "Hiệu quả giảng viên",
             content: (
               <InstructorPerformance
-                key={`${days}-${instructorId}`}
+                key={`${days}-${instructorId}-${dateRange?.from}-${dateRange?.to}`}
                 instructors={instructors}
                 selectedId={instructorId}
                 onSelect={setInstructorId}
@@ -189,8 +196,9 @@ export function RevenueScreen() {
         <div className="space-y-4 text-sm leading-6">
           <p>
             <strong>1. Chọn phạm vi:</strong> tìm giảng viên theo tên/email hoặc
-            Tất cả giảng viên, chọn 7/30/90 ngày. Các số liệu và biểu đồ cập
-            nhật cùng phạm vi. Đặt lại trở về toàn hệ thống trong 30 ngày.
+            Tất cả giảng viên, chọn 7/30/90 ngày hoặc chọn ngày trên lịch và bấm
+            Áp dụng ngày. Các số liệu và biểu đồ cập nhật cùng phạm vi. Đặt lại
+            trở về toàn hệ thống trong 30 ngày.
           </p>
           <p>
             <strong>2. Chọn góc nhìn:</strong> Tổng quan hệ thống hiển thị xu
@@ -220,8 +228,9 @@ export function RevenueScreen() {
             đơn thuế.
           </p>
           <p className="text-muted-foreground">
-            API hiện hỗ trợ 7/30/90 ngày. Chưa có dữ liệu so sánh kỳ trước hoặc
-            khoảng tùy chọn, nên không hiển thị tăng trưởng ước đoán.
+            Khoảng tùy chọn tối đa 366 ngày, tính cả hai ngày theo giờ Việt Nam.
+            Chọn góc nhìn Tất cả để xem đầy đủ các phần trên cùng trang. Chưa có
+            dữ liệu so sánh kỳ trước nên không hiển thị tăng trưởng ước đoán.
           </p>
           <Button
             variant="outline"

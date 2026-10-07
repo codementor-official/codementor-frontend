@@ -2,7 +2,7 @@
 
 ## Scope and data sources
 
-This is a presentation-only change. No commerce business rules, database schema,
+This includes read-only reporting filters and presentation. No commerce business rules, database schema,
 payment requests, reconciliation jobs, hold periods or ledger entries are changed.
 
 - Admin report: `GET /commerce/admin/analytics?days=7|30|90&instructorId=…`.
@@ -10,7 +10,9 @@ payment requests, reconciliation jobs, hold periods or ledger entries are change
 - Lecturer report: `GET /commerce/wallet/analytics?days=7|30|90`.
 - Lecturer balances: the existing `GET /commerce/wallet` endpoint.
 
-The API does not currently provide arbitrary ranges, previous-period comparisons,
+All three reporting endpoints also accept paired `from`/`to` ISO calendar dates
+(inclusive in Vietnam, up to 366 days); missing/invalid/reversed ranges return 400.
+The API does not currently provide previous-period comparisons,
 instructor avatars, or daily revenue per individual course. The UI does not invent
 these values. Initials identify instructors; course drill-down displays aggregate
 values in the selected reporting period rather than implying a per-course trend.
@@ -32,7 +34,9 @@ gross, so refunded orders or provider fees cannot turn into invented income.
 The allocation donut only partitions the two recorded shares, not bank cash.
 The `Góc nhìn` selector opens course performance, instructor performance (Admin),
 order-status distribution, ledger balances, or daily detail records. Tables are
-not shown alongside the main trend by default.
+not shown alongside the main trend by default. Select `Tất cả` to render every
+report section together, including the course table, daily detail and current balances.
+The redundant trend-to-distribution hint has been removed from Lecturer.
 
 - Share revenue excludes refunded orders and uses the split saved on each order;
   it is before payment-provider fees, not net bank proceeds or withdrawable cash.
@@ -52,6 +56,10 @@ not shown alongside the main trend by default.
 Report and summary data disappear into a loading state while their scope changes.
 Obsolete requests cannot replace the latest result. Export is disabled during
 loading. Reset restores 30 days, the trend view and all instructors (Admin).
+The calendar is available under `Chọn ngày tùy ý`. Both dates must be selected,
+then `Áp dụng ngày` updates the API scope. Draft dates do not change reports or CSV.
+Preset selection and Reset clear the custom dates. All views retain the same applied
+period, and the Admin instructor directory uses those same bounds.
 
 The instructor picker searches name/email with deferred input, supports arrows,
 Enter and Escape, confines scrolling to a bounded list, and initially renders
@@ -90,3 +98,11 @@ EC2-backed environment.
 - Inspect desktop/mobile charts, legends, units, tooltips and internal table scroll.
 - Run root lint, typecheck and production builds. Local HTTP login uses dev mode;
   production login retains its HTTPS requirement.
+
+Calendar verification (2026-10-07): 10 visible Chromium checks passed across Admin
+and Lecturer, using existing EC2 data and local services with commerce jobs disabled.
+Covered All view and scroll access, both calendar bounds, exact CSV dates/totals,
+draft/invalid input, server 400/role 403, one day/leap day/366 days, reset, mobile
+and dark mode. No financial commands were called. Backend: 27 focused reporting
+tests passed. Frontend root typecheck/build passed; lint has 0 errors and the
+existing 40 warnings. Deployment must update learning-service before these frontends.
