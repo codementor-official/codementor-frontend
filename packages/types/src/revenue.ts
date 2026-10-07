@@ -1,11 +1,33 @@
+export interface RevenueDateRange {
+  from: string;
+  to: string;
+}
+
 export interface RevenueReport {
   scope: "admin" | "lecturer";
   from: string;
   to: string;
   timezone: string;
-  totals: { gross: number; revenue: number; refunded: number; paidOrders: number };
-  daily: { date: string; gross: number; revenue: number; refunded: number; orders: number }[];
-  courses: { id: string; title: string; gross: number; revenue: number; orders: number }[];
+  totals: {
+    gross: number;
+    revenue: number;
+    refunded: number;
+    paidOrders: number;
+  };
+  daily: {
+    date: string;
+    gross: number;
+    revenue: number;
+    refunded: number;
+    orders: number;
+  }[];
+  courses: {
+    id: string;
+    title: string;
+    gross: number;
+    revenue: number;
+    orders: number;
+  }[];
   statuses: Record<string, number>;
 }
 export interface RevenueInstructor {

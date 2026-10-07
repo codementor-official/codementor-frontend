@@ -104,6 +104,26 @@ export interface CommercePolicy {
   minimumWithdrawal: number;
   approvalRequired: boolean;
 }
+export interface CommerceJobStage {
+  name: "payments" | "refunds" | "expiry" | "income" | "payouts";
+  selected: number;
+  completed: number;
+  waiting: number;
+  failed: number;
+  error?: string;
+  items: { id: string; outcome: "completed" | "waiting" | "failed"; status?: string }[];
+}
+export interface CommerceJobRun {
+  runId: string;
+  startedAt: string;
+  finishedAt: string;
+  status: "completed" | "partial" | "already_running";
+  processed: boolean;
+  stages: CommerceJobStage[];
+  releasedAmountVnd: number;
+  debtOffsetVnd: number;
+  remaining: { holding: number; refundBlocked: number; unverified: number; eligible: number } | null;
+}
 export type PayoutMethod = "bank" | "momo" | "vnpay";
 export interface PayoutRecipient {
   method: PayoutMethod;

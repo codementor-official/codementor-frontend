@@ -1,11 +1,12 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import type { RevenueReport } from "@codementor/types";
+import type { RevenueDateRange, RevenueReport } from "@codementor/types";
 import { COMMERCE_STATUS } from "@codementor/types";
 import { Download, RotateCcw } from "lucide-react";
 import { Button } from "./button";
 import { Modal } from "./modal";
 import { RevenueSummary } from "./revenue/revenue-summary";
+import { RevenuePeriodPicker } from "./revenue/revenue-period-picker";
 import { RevenueTrendChart } from "./revenue/revenue-trend-chart";
 import { RevenueBreakdownChart } from "./revenue/revenue-breakdown-chart";
 import {
@@ -29,6 +30,8 @@ export function RevenueOverview({
   report,
   days,
   onDaysChange,
+  dateRange,
+  onDateRangeChange,
   onExport,
   loading,
   scopeControl,
@@ -40,6 +43,8 @@ export function RevenueOverview({
   report: RevenueReport | null;
   days: number;
   onDaysChange: (days: number) => void;
+  dateRange: RevenueDateRange | null;
+  onDateRangeChange: (range: RevenueDateRange | null) => void;
   onExport: () => void;
   loading: boolean;
   scopeControl?: ReactNode;
@@ -56,6 +61,7 @@ export function RevenueOverview({
 }) {
   const [metric, setMetric] = useState<RevenueMetric>("revenue");
   const [view, setView] = useState("overview");
+  const [periodKey, setPeriodKey] = useState(0);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [courseMetric, setCourseMetric] = useState<
     "revenue" | "gross" | "orders"
@@ -74,6 +80,8 @@ export function RevenueOverview({
     setCourseMetric("revenue");
     setView("overview");
     setSelectedCourse("");
+    setPeriodKey((key) => key + 1);
+    onDateRangeChange(null);
     onDaysChange(30);
     onResetScope?.();
   };
@@ -86,22 +94,20 @@ export function RevenueOverview({
       <div className="rounded-lg border bg-card p-4">
         <div className="flex flex-wrap items-end gap-4">
           {scopeControl}
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
-            Khoảng thời gian
-            <select
-              aria-label="Khoảng thời gian báo cáo"
-              className="rounded-md border bg-background px-3 py-2 font-normal"
-              value={days}
-              onChange={(e) => {
-                setSelectedCourse("");
-                onDaysChange(Number(e.target.value));
-              }}
-            >
-              <option value={7}>7 ngày gần nhất</option>
-              <option value={30}>30 ngày gần nhất</option>
-              <option value={90}>90 ngày gần nhất</option>
-            </select>
-          </label>
+          <RevenuePeriodPicker
+            key={periodKey}
+            days={days}
+            range={dateRange}
+            report={report}
+            onDaysChange={(value) => {
+              setSelectedCourse("");
+              onDaysChange(value);
+            }}
+            onRangeChange={(value) => {
+              setSelectedCourse("");
+              onDateRangeChange(value);
+            }}
+          />
           <label className="flex flex-col gap-1.5 text-sm font-medium">
             Góc nhìn
             <select
@@ -121,6 +127,7 @@ export function RevenueOverview({
               ))}
               <option value="statuses">Trạng thái đơn hàng</option>
               <option value="details">Số liệu chi tiết</option>
+              <option value="all">Tất cả</option>
             </select>
           </label>
           <div className="flex flex-wrap gap-2 sm:ml-auto">
@@ -158,7 +165,7 @@ export function RevenueOverview({
       ) : (
         <>
           {summaryContent ?? <RevenueSummary report={report} />}
-          {view === "overview" &&
+          {(view === "overview" || view === "all") &&
             (renderOverview ? (
               renderOverview({
                 report,
@@ -174,26 +181,9 @@ export function RevenueOverview({
                   metric={metric}
                   onMetricChange={setMetric}
                 />
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4">
-                  <p className="text-sm text-muted-foreground">
-                    Muốn biết khóa học hoặc giảng viên nào đóng góp nhiều nhất?
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      setView(
-                        extraViews.some((v) => v.id === "instructors")
-                          ? "instructors"
-                          : "courses",
-                      )
-                    }
-                  >
-                    Xem phân bổ doanh thu
-                  </Button>
-                </div>
               </>
             ))}
-          {view === "courses" && (
+          {(view === "courses" || view === "all") && (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -245,9 +235,9 @@ export function RevenueOverview({
                   onSelect={setSelectedCourse}
                 />
               </div>
-              <details>
+              <details open={view === "all" || undefined}>
                 <summary className="w-fit cursor-pointer py-2 text-sm font-medium">
-                  Mở bảng chi tiết {report.courses.length} khóa học
+                  {view === "all" ? "Bảng chi tiết" : "Mở bảng chi tiết"} {report.courses.length} khóa học
                 </summary>
                 <RevenueCourseTable
                   report={report}
@@ -256,7 +246,7 @@ export function RevenueOverview({
               </details>
             </>
           )}
-          {view === "statuses" && (
+          {(view === "statuses" || view === "all") && (
             <>
               <RevenueBreakdownChart
                 title="Trạng thái đơn hàng trong kỳ"
@@ -275,8 +265,20 @@ export function RevenueOverview({
               </p>
             </>
           )}
-          {view === "details" && <RevenueDetailTable report={report} />}
-          {extra?.content}
+          {(view === "details" || view === "all") && (
+            <RevenueDetailTable report={report} />
+          )}
+          {view === "all"
+            ? extraViews.map((item) => (
+                <section
+                  key={item.id}
+                  className="min-w-0 space-y-3"
+                  aria-label={item.label}
+                >
+                  {item.content}
+                </section>
+              ))
+            : extra?.content}
           <Modal
             open={!!course}
             onClose={() => setSelectedCourse("")}
