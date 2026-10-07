@@ -5,7 +5,11 @@ export { Breadcrumb } from "./breadcrumb";
 export type { BreadcrumbItem } from "./breadcrumb";
 export { breadcrumbTrail } from "./breadcrumb-trail";
 export type { BreadcrumbTitleEntry, RouteMeta } from "./breadcrumb-trail";
-export { BreadcrumbTitle, setBreadcrumbTitle, useBreadcrumbTitles } from "./breadcrumb-title-store";
+export {
+  BreadcrumbTitle,
+  setBreadcrumbTitle,
+  useBreadcrumbTitles,
+} from "./breadcrumb-title-store";
 export { Button, buttonClassName } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
 export { ConfirmButton } from "./confirm-button";
@@ -20,7 +24,12 @@ export {
   useDataTable,
   useFittedPageSize,
 } from "./data-table";
-export { DetailMeta, DetailRow, DetailSection, DrawerDetail } from "./drawer-detail";
+export {
+  DetailMeta,
+  DetailRow,
+  DetailSection,
+  DrawerDetail,
+} from "./drawer-detail";
 export { exportTableToCsv } from "./export-csv";
 export type { ExportableColumnMeta } from "./export-csv";
 export { FilterBar } from "./filter-bar";
@@ -57,9 +66,20 @@ export { Pane } from "./workspace/pane";
 export { ResizeHandle } from "./workspace/resize-handle";
 export { TabBar } from "./workspace/tab-bar";
 export { useWorkspace, WorkspaceProvider } from "./workspace/workspace-context";
-export type { PaneId, PanesState, PaneState, TabKind, TabMeta, TabMetaMap } from "./workspace/types";
+export type {
+  PaneId,
+  PanesState,
+  PaneState,
+  TabKind,
+  TabMeta,
+  TabMetaMap,
+} from "./workspace/types";
 export { InfoHint } from "./info-hint";
 export { DailyBarCard } from "./daily-bar-card";
 export { RevenueOverview } from "./revenue-overview";
+export { RevenueTrendChart } from "./revenue/revenue-trend-chart";
+export type { RevenueMetric } from "./revenue/format";
+export { RevenueBreakdownChart } from "./revenue/revenue-breakdown-chart";
+export type { RevenueSegment } from "./revenue/revenue-breakdown-chart";
 export { countOf, KpiStrip, useSummary } from "./kpi-strip";
 export type { Kpi } from "./kpi-strip";
