@@ -2,8 +2,24 @@
 import { apiErrorMessage } from "@codementor/api-client";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { CircleHelp, Download, Eye, Printer, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
-import { Button, Card, CourseCover, Modal, PageHeader, ServerPagination, useToast } from "@codementor/ui";
+import {
+  CircleHelp,
+  Download,
+  Eye,
+  Printer,
+  RefreshCw,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
+import {
+  Button,
+  Card,
+  CourseCover,
+  Modal,
+  PageHeader,
+  ServerPagination,
+  useToast,
+} from "@codementor/ui";
 import { inputClassName } from "./form-style";
 import {
   COMMERCE_INCOME_STATUS,
@@ -14,11 +30,13 @@ import {
   type CommerceLedgerEntry,
   type CommerceAudit,
   type CommercePolicy,
+  type CommerceJobRun,
   type PurchaseDetail,
 } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { commerceAdminApi as api, vnd } from "./api";
 import { PolicyForm } from "./policy-form";
+import { JobResultDialog } from "./job-result-dialog";
 import { OrderDialog } from "./order-dialog";
 import { ReconciliationSummary } from "./reconciliation-summary";
 import { downloadCsv, printDocument } from "@codementor/utils";
@@ -32,6 +50,8 @@ export function CommerceScreen() {
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("orders");
   const [runConfirmation, setRunConfirmation] = useState(false);
+  const [lastRun, setLastRun] = useState<CommerceJobRun | null>(null);
+  const [showRunResult, setShowRunResult] = useState(false);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("newest");
   const [help, setHelp] = useState(false);
@@ -60,7 +80,10 @@ export function CommerceScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      if (tab === "orders") setOrders(await api.orders(request, page, orderStatus, orderQuery, sort));
+      if (tab === "orders")
+        setOrders(
+          await api.orders(request, page, orderStatus, orderQuery, sort),
+        );
       if (tab === "withdrawals")
         setWithdrawals(await api.withdrawals(request, page, sort));
       if (tab === "ledger") setLedger(await api.ledger(request, page, sort));
@@ -76,6 +99,31 @@ export function CommerceScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+  async function runJobs() {
+    if (busy) return;
+    setBusy(true);
+    setRunConfirmation(false);
+    try {
+      const result = await api.runJobs(request);
+      setLastRun(result);
+      setShowRunResult(true);
+      if (result.status === "already_running")
+        toast.info("Đã có lượt đang chạy; không tạo thêm tác vụ.");
+      else if (result.status === "partial")
+        toast.info("Một số tác vụ cần kiểm tra. Xem báo cáo kết quả.");
+      else
+        toast.success(
+          "Đã nhận báo cáo đối soát. Xem số liệu và giao dịch còn chờ.",
+        );
+      await load();
+    } catch (e) {
+      toast.error(
+        `${apiErrorMessage(e)} Chưa xác nhận được kết quả lượt này. Làm mới dữ liệu/nhật ký trước khi thử lại; không bấm liên tục.`,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   async function command(path: string, body: Record<string, unknown> = {}) {
     setBusy(true);
     try {
@@ -111,10 +159,77 @@ export function CommerceScreen() {
             ? audit
             : null;
   function exportCurrent() {
-    if (tab === "orders") downloadCsv("giao-dich-khoa-hoc.csv", ["Mã đơn", "Khóa học", "Người mua", "Email", "Ngày", "Giá bán", "Doanh thu giảng viên", "Doanh thu hệ thống", "Trạng thái"], (orders?.items ?? []).map((o) => [o.id, o.courseTitle, o.buyer?.name ?? "Học viên", o.buyer?.email ?? "", new Date(o.createdAt).toLocaleString("vi-VN"), o.amount, o.instructorAmount, o.platformAmount, COMMERCE_STATUS[o.status] ?? o.status]));
-    if (tab === "withdrawals") downloadCsv("yeu-cau-rut-tien.csv", ["Mã yêu cầu", "Ngày", "Số tiền", "Phương thức", "Người nhận", "Tài khoản", "Trạng thái"], (withdrawals?.items ?? []).map((w) => [w.id, new Date(w.createdAt).toLocaleString("vi-VN"), w.amount, w.recipient.method.toUpperCase(), w.recipient.accountName, `${w.recipient.institutionCode} · ****${w.recipient.accountNumber?.slice(-4)}`, COMMERCE_STATUS[w.status] ?? w.status]));
-    if (tab === "ledger") downloadCsv("bien-dong-so-du.csv", ["Ngày", "Sự kiện", "Tài khoản", "Biến động", "Mã tham chiếu"], (ledger?.items ?? []).map((e) => [new Date(e.createdAt).toLocaleString("vi-VN"), e.event.split(":")[0], COMMERCE_STATUS[e.account] ?? e.account, e.amount, e.orderId ?? e.withdrawalId ?? ""]));
-    if (tab === "audit") downloadCsv("nhat-ky-giao-dich.csv", ["Thời điểm", "Thao tác", "Đối tượng", "Chi tiết"], (audit?.items ?? []).map((e) => [new Date(e.createdAt).toLocaleString("vi-VN"), e.action, e.entityId, JSON.stringify(e.details)]));
+    if (tab === "orders")
+      downloadCsv(
+        "giao-dich-khoa-hoc.csv",
+        [
+          "Mã đơn",
+          "Khóa học",
+          "Người mua",
+          "Email",
+          "Ngày",
+          "Giá bán",
+          "Doanh thu giảng viên",
+          "Doanh thu hệ thống",
+          "Trạng thái",
+        ],
+        (orders?.items ?? []).map((o) => [
+          o.id,
+          o.courseTitle,
+          o.buyer?.name ?? "Học viên",
+          o.buyer?.email ?? "",
+          new Date(o.createdAt).toLocaleString("vi-VN"),
+          o.amount,
+          o.instructorAmount,
+          o.platformAmount,
+          COMMERCE_STATUS[o.status] ?? o.status,
+        ]),
+      );
+    if (tab === "withdrawals")
+      downloadCsv(
+        "yeu-cau-rut-tien.csv",
+        [
+          "Mã yêu cầu",
+          "Ngày",
+          "Số tiền",
+          "Phương thức",
+          "Người nhận",
+          "Tài khoản",
+          "Trạng thái",
+        ],
+        (withdrawals?.items ?? []).map((w) => [
+          w.id,
+          new Date(w.createdAt).toLocaleString("vi-VN"),
+          w.amount,
+          w.recipient.method.toUpperCase(),
+          w.recipient.accountName,
+          `${w.recipient.institutionCode} · ****${w.recipient.accountNumber?.slice(-4)}`,
+          COMMERCE_STATUS[w.status] ?? w.status,
+        ]),
+      );
+    if (tab === "ledger")
+      downloadCsv(
+        "bien-dong-so-du.csv",
+        ["Ngày", "Sự kiện", "Tài khoản", "Biến động", "Mã tham chiếu"],
+        (ledger?.items ?? []).map((e) => [
+          new Date(e.createdAt).toLocaleString("vi-VN"),
+          e.event.split(":")[0],
+          COMMERCE_STATUS[e.account] ?? e.account,
+          e.amount,
+          e.orderId ?? e.withdrawalId ?? "",
+        ]),
+      );
+    if (tab === "audit")
+      downloadCsv(
+        "nhat-ky-giao-dich.csv",
+        ["Thời điểm", "Thao tác", "Đối tượng", "Chi tiết"],
+        (audit?.items ?? []).map((e) => [
+          new Date(e.createdAt).toLocaleString("vi-VN"),
+          e.action,
+          e.entityId,
+          JSON.stringify(e.details),
+        ]),
+      );
   }
   return (
     <div className="min-w-0 space-y-4">
@@ -122,18 +237,59 @@ export function CommerceScreen() {
         icon={Wallet}
         title="Quản lý giao dịch"
         description="Theo dõi thanh toán khóa học, hoàn tiền, doanh thu và yêu cầu rút tiền."
-        action={<div className="flex gap-2"><Button variant="outline" onClick={() => setHelp(true)}><CircleHelp className="size-4" /> Hướng dẫn</Button><Button variant="outline" disabled={busy || loading} onClick={() => void load()}><RefreshCw className="size-4" /> Làm mới</Button></div>}
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setHelp(true)}>
+              <CircleHelp className="size-4" /> Hướng dẫn
+            </Button>
+            <Button
+              variant="outline"
+              disabled={busy || loading}
+              onClick={() => void load()}
+            >
+              <RefreshCw className="size-4" /> Làm mới
+            </Button>
+          </div>
+        }
       />
       <ReconciliationSummary refreshing={loading || busy} />
       <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <div className="flex max-w-3xl gap-3"><span className="rounded-lg bg-primary/10 p-2 text-primary"><ShieldCheck className="size-5" /></span><div><p className="font-semibold">Đối soát & xử lý tài chính</p><p className="mt-1 text-xs text-muted-foreground">Xác minh giao dịch theo lô, mở doanh thu đủ điều kiện và xử lý yêu cầu rút đã được duyệt. Không bỏ qua thời gian giữ doanh thu. Xem Hướng dẫn trước khi thực hiện.</p></div></div>
-        <Button
-          variant="outline"
-          disabled={busy}
-          onClick={() => setRunConfirmation(true)}
-        >
-          Đối soát ngay
-        </Button>
+        <div className="flex max-w-3xl gap-3">
+          <span className="rounded-lg bg-primary/10 p-2 text-primary">
+            <ShieldCheck className="size-5" />
+          </span>
+          <div>
+            <p className="font-semibold">Đối soát & xử lý tài chính</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Xác minh giao dịch theo lô, mở doanh thu đủ điều kiện và xử lý yêu
+              cầu rút đã được duyệt. Không bỏ qua thời gian giữ doanh thu. Xem
+              Hướng dẫn trước khi thực hiện.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {lastRun && (
+            <Button variant="outline" onClick={() => setShowRunResult(true)}>
+              Kết quả lượt gần nhất
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => {
+              setTab("policy");
+              setPage(1);
+            }}
+          >
+            Cấu hình thời gian giữ
+          </Button>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => setRunConfirmation(true)}
+          >
+            {busy ? "Đang xử lý…" : "Đối soát ngay"}
+          </Button>
+        </div>
       </Card>
       <div
         className="flex flex-wrap items-center gap-2"
@@ -161,7 +317,7 @@ export function CommerceScreen() {
             {l}
           </Button>
         ))}
-        {tab !== 'policy' && (
+        {tab !== "policy" && (
           <Button
             className="ml-auto"
             variant="outline"
@@ -171,21 +327,82 @@ export function CommerceScreen() {
             <Download className="size-4" /> Xuất CSV trang này
           </Button>
         )}
-        {tab !== 'policy' && <select aria-label="Sắp xếp dữ liệu" className="rounded-lg border bg-background px-3 py-2 text-sm" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option>{tab !== "audit" && <><option value="amount_high">Số tiền cao nhất</option><option value="amount_low">Số tiền thấp nhất</option></>}</select>}
+        {tab !== "policy" && (
+          <select
+            aria-label="Sắp xếp dữ liệu"
+            className="rounded-lg border bg-background px-3 py-2 text-sm"
+            value={sort}
+            onChange={(event) => {
+              setSort(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+            {tab !== "audit" && (
+              <>
+                <option value="amount_high">Số tiền cao nhất</option>
+                <option value="amount_low">Số tiền thấp nhất</option>
+              </>
+            )}
+          </select>
+        )}
       </div>
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
-      {tab === "orders" && <Card className="flex flex-wrap items-center gap-3 p-4">
-        <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); setPage(1); setOrderQuery(orderSearch.trim()); }}>
-          <input aria-label="Tìm đơn hàng" className="min-w-64 rounded-md border border-border bg-transparent px-3 py-2 text-sm" placeholder="Tên học viên, email hoặc khóa học" value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)} />
-          <Button type="submit" variant="outline">Tìm</Button>
-        </form>
-        <select aria-label="Lọc trạng thái đơn" className="rounded-md border border-border bg-transparent px-3 py-2 text-sm" value={orderStatus} onChange={(e) => { setPage(1); setOrderStatus(e.target.value); }}><option value="">Mọi trạng thái</option>{["paid", "pending", "review", "failed", "cancelled", "refunded", "expired"].map((s) => <option key={s} value={s}>{COMMERCE_STATUS[s]}</option>)}</select>
-        <span className="text-sm text-muted-foreground">{orders?.total ?? 0} đơn phù hợp</span>
-      </Card>}
+      {tab === "orders" && (
+        <Card className="flex flex-wrap items-center gap-3 p-4">
+          <form
+            className="flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setPage(1);
+              setOrderQuery(orderSearch.trim());
+            }}
+          >
+            <input
+              aria-label="Tìm đơn hàng"
+              className="min-w-64 rounded-md border border-border bg-transparent px-3 py-2 text-sm"
+              placeholder="Tên học viên, email hoặc khóa học"
+              value={orderSearch}
+              onChange={(e) => setOrderSearch(e.target.value)}
+            />
+            <Button type="submit" variant="outline">
+              Tìm
+            </Button>
+          </form>
+          <select
+            aria-label="Lọc trạng thái đơn"
+            className="rounded-md border border-border bg-transparent px-3 py-2 text-sm"
+            value={orderStatus}
+            onChange={(e) => {
+              setPage(1);
+              setOrderStatus(e.target.value);
+            }}
+          >
+            <option value="">Mọi trạng thái</option>
+            {[
+              "paid",
+              "pending",
+              "review",
+              "failed",
+              "cancelled",
+              "refunded",
+              "expired",
+            ].map((s) => (
+              <option key={s} value={s}>
+                {COMMERCE_STATUS[s]}
+              </option>
+            ))}
+          </select>
+          <span className="text-sm text-muted-foreground">
+            {orders?.total ?? 0} đơn phù hợp
+          </span>
+        </Card>
+      )}
       {loading ? (
         <p
           role="status"
@@ -240,7 +457,13 @@ export function CommerceScreen() {
                               "Liên kết",
                               "Thao tác",
                             ]
-                          : ["Thời điểm", "Thao tác", "Đối tượng", "Chi tiết", "Xem"]
+                          : [
+                              "Thời điểm",
+                              "Thao tác",
+                              "Đối tượng",
+                              "Chi tiết",
+                              "Xem",
+                            ]
                     ).map((h) => (
                       <th className="p-3 font-medium" key={h}>
                         {h}
@@ -253,12 +476,29 @@ export function CommerceScreen() {
                     orders?.items.map((o) => (
                       <tr key={o.id}>
                         <td className="max-w-xs p-3">
-                          <div className="flex items-center gap-3"><CourseCover src={o.courseCoverImageUrl} title={o.courseTitle} className="size-11" /><div><p className="font-medium">{o.courseTitle}</p>
-                          <p className="break-all text-xs text-muted-foreground">
-                            {new Date(o.createdAt).toLocaleString("vi-VN")} · #{o.id.slice(0, 8)}
-                          </p></div></div>
+                          <div className="flex items-center gap-3">
+                            <CourseCover
+                              src={o.courseCoverImageUrl}
+                              title={o.courseTitle}
+                              className="size-11"
+                            />
+                            <div>
+                              <p className="font-medium">{o.courseTitle}</p>
+                              <p className="break-all text-xs text-muted-foreground">
+                                {new Date(o.createdAt).toLocaleString("vi-VN")}{" "}
+                                · #{o.id.slice(0, 8)}
+                              </p>
+                            </div>
+                          </div>
                         </td>
-                        <td className="p-3"><p className="font-medium">{o.buyer?.name ?? "Học viên"}</p><p className="text-xs text-muted-foreground">{o.buyer?.email}</p></td>
+                        <td className="p-3">
+                          <p className="font-medium">
+                            {o.buyer?.name ?? "Học viên"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {o.buyer?.email}
+                          </p>
+                        </td>
                         <td className="whitespace-nowrap p-3">
                           {vnd(o.amount)}
                         </td>
@@ -273,9 +513,13 @@ export function CommerceScreen() {
                             : `${vnd(o.feeAmount)} (${o.feeSource === "simulated" ? "Hệ thống" : "Cổng thanh toán"})`}
                         </td>
                         <td className="p-3">
-                          <p className="font-medium">{COMMERCE_STATUS[o.status] ?? o.status}</p>
+                          <p className="font-medium">
+                            {COMMERCE_STATUS[o.status] ?? o.status}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            Doanh thu: {COMMERCE_INCOME_STATUS[o.incomeState] ?? o.incomeState}
+                            Doanh thu:{" "}
+                            {COMMERCE_INCOME_STATUS[o.incomeState] ??
+                              o.incomeState}
                           </p>
                         </td>
                         <td className="p-3">
@@ -313,7 +557,14 @@ export function CommerceScreen() {
                         </td>
                         <td className="p-3">
                           <div className="flex flex-wrap gap-2">
-                            <Button variant="outline" onClick={() => setRecordDetail({ type: "withdrawal", item: w })}><Eye className="size-4" /> Chi tiết</Button>
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                setRecordDetail({ type: "withdrawal", item: w })
+                              }
+                            >
+                              <Eye className="size-4" /> Chi tiết
+                            </Button>
                             {w.status === "requested" ? (
                               <>
                                 {[true, false].map((approve) => (
@@ -373,7 +624,16 @@ export function CommerceScreen() {
                         <td className="max-w-56 break-all p-3 text-xs">
                           {e.orderId ?? e.withdrawalId}
                         </td>
-                        <td className="p-3"><Button variant="outline" onClick={() => setRecordDetail({ type: "ledger", item: e })}><Eye className="size-4" /> Chi tiết</Button></td>
+                        <td className="p-3">
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              setRecordDetail({ type: "ledger", item: e })
+                            }
+                          >
+                            <Eye className="size-4" /> Chi tiết
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   {tab === "audit" &&
@@ -389,14 +649,29 @@ export function CommerceScreen() {
                         <td className="max-w-xs break-words p-3 text-xs">
                           {JSON.stringify(e.details)}
                         </td>
-                        <td className="p-3"><Button variant="outline" onClick={() => setRecordDetail({ type: "audit", item: e })}><Eye className="size-4" /> Chi tiết</Button></td>
+                        <td className="p-3">
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              setRecordDetail({ type: "audit", item: e })
+                            }
+                          >
+                            <Eye className="size-4" /> Chi tiết
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                 </tbody>
               </table>
             </div>
           )}
-          <ServerPagination page={page} total={current?.total ?? 0} pageSize={current?.limit ?? 20} disabled={loading} onPageChange={setPage} />
+          <ServerPagination
+            page={page}
+            total={current?.total ?? 0}
+            pageSize={current?.limit ?? 20}
+            disabled={loading}
+            onPageChange={setPage}
+          />
         </Card>
       )}
       {detail && (
@@ -407,16 +682,108 @@ export function CommerceScreen() {
           busy={busy}
         />
       )}
-      <Modal open={help} onClose={() => setHelp(false)} title="Hướng dẫn quản lý giao dịch"><div className="space-y-4 text-sm">
-        <HelpStep number="1" title="Đọc đúng các số liệu">Tổng quan doanh thu dùng ngày xác nhận thanh toán và tỷ lệ chia đã lưu trên từng đơn. Phần thu hệ thống chưa trừ phí cổng thanh toán; phí chưa xác định không được coi là 0. Số liệu theo kỳ không phải số dư ngân hàng.</HelpStep>
-        <HelpStep number="2" title="Đối soát không phải duyệt tất cả đơn">Máy chủ chọn giao dịch cần xác minh, tối đa 20 thanh toán mỗi lượt. Giao dịch VNPAY đã tra soát cần chờ ít nhất 6 phút trước lần tiếp theo. Đơn đã xác minh không bị thu tiền lại; giao dịch chưa rõ kết quả vẫn chờ kiểm tra, không được ép thành công.</HelpStep>
-        <HelpStep number="3" title="Khi nào giảng viên được rút?">Thanh toán thành công → doanh thu đang chờ → hết thời gian giữ của đơn và đủ điều kiện xác minh → số dư khả dụng. Bấm đối soát không rút ngắn thời gian giữ. Xem ngày dự kiến trong chi tiết đơn và chính sách áp dụng; đơn cũ giữ tỷ lệ và thời gian đã lưu.</HelpStep>
-        <HelpStep number="4" title="Các tác vụ đi kèm">Nút Đối soát ngay còn kiểm tra hoàn tiền đang chờ, đánh dấu đơn hết hạn, mở doanh thu đủ điều kiện và xử lý chi trả đã được duyệt. Không tự duyệt yêu cầu rút mới. Kiểm tra hàng đợi Yêu cầu rút trước khi chạy.</HelpStep>
-        <HelpStep number="5" title="Kiểm tra kết quả và sai lệch">Sau khi chạy, làm mới số liệu; mở Chi tiết đơn và Nhật ký hoạt động để xem kết quả. Nếu cổng chưa phản hồi, chờ lượt sau; không nhấn liên tục. Các mục cần xác minh có thể chưa về 0 sau một lượt.</HelpStep>
-        <HelpStep number="6" title="Báo cáo & chứng từ">Mở Doanh thu hệ thống trên thanh điều hướng để xem toàn hệ thống hoặc từng giảng viên, chọn 7/30/90 ngày và xuất báo cáo toàn kỳ. CSV tại bảng lịch sử chỉ xuất trang đang xem. Mở Chi tiết để in/lưu PDF chứng từ; chứng từ giao dịch không thay thế hóa đơn thuế.</HelpStep>
-      </div></Modal>
-      <Modal open={runConfirmation} onClose={() => setRunConfirmation(false)} title="Xác nhận đối soát & xử lý tài chính"><div className="space-y-4 text-sm"><p>Hệ thống sẽ xác minh giao dịch cần xử lý, mở doanh thu đã đủ điều kiện và xử lý yêu cầu chi trả đã được duyệt. Không tự duyệt yêu cầu mới hoặc bỏ qua thời gian giữ doanh thu.</p><p className="text-muted-foreground">Kết quả có thể cần nhiều lượt; giao dịch VNPAY chưa đến lượt tra soát sẽ được giữ lại.</p><div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setRunConfirmation(false)}>Hủy</Button><Button disabled={busy} onClick={async () => { setRunConfirmation(false); await command("jobs/run"); }}>Xác nhận thực hiện</Button></div></div></Modal>
-      <Modal open={!!recordDetail} onClose={() => setRecordDetail(null)} title={recordDetail?.type === "withdrawal" ? "Chi tiết yêu cầu rút" : recordDetail?.type === "ledger" ? "Chi tiết biến động số dư" : "Chi tiết nhật ký hoạt động"}>{recordDetail && <AdminRecordDetail detail={recordDetail} />}</Modal>
+      <Modal
+        open={help}
+        onClose={() => setHelp(false)}
+        title="Hướng dẫn quản lý giao dịch"
+      >
+        <div className="space-y-4 text-sm">
+          <HelpStep number="1" title="Đọc đúng các số liệu">
+            Tổng quan doanh thu dùng ngày xác nhận thanh toán và tỷ lệ chia đã
+            lưu trên từng đơn. Phần thu hệ thống chưa trừ phí cổng thanh toán;
+            phí chưa xác định không được coi là 0. Số liệu theo kỳ không phải số
+            dư ngân hàng.
+          </HelpStep>
+          <HelpStep number="2" title="Đối soát không phải duyệt tất cả đơn">
+            Máy chủ chọn giao dịch cần xác minh, tối đa 20 thanh toán mỗi lượt.
+            Giao dịch VNPAY đã tra soát cần chờ ít nhất 6 phút trước lần tiếp
+            theo. Đơn đã xác minh không bị thu tiền lại; giao dịch chưa rõ kết
+            quả vẫn chờ kiểm tra, không được ép thành công.
+          </HelpStep>
+          <HelpStep number="3" title="Khi nào giảng viên được rút?">
+            Thanh toán thành công → doanh thu đang chờ → hết thời gian giữ của
+            đơn và đủ điều kiện xác minh → số dư khả dụng. Bấm đối soát không
+            rút ngắn thời gian giữ. Xem ngày dự kiến trong chi tiết đơn và chính
+            sách áp dụng; đơn cũ giữ tỷ lệ và thời gian đã lưu.
+          </HelpStep>
+          <HelpStep number="4" title="Các tác vụ đi kèm">
+            Nút Đối soát ngay còn kiểm tra hoàn tiền đang chờ, đánh dấu đơn hết
+            hạn, mở doanh thu đủ điều kiện và xử lý chi trả đã được duyệt. Không
+            tự duyệt yêu cầu rút mới. Kiểm tra hàng đợi Yêu cầu rút trước khi
+            chạy.
+          </HelpStep>
+          <HelpStep number="5" title="Đọc báo cáo sau mỗi lượt">
+            Báo cáo tự mở sau khi máy chủ phản hồi: số được chọn, đã xác nhận,
+            còn chờ, lỗi và số tiền thực sự mở sang khả dụng. Đã xác nhận có thể
+            là kết quả thất bại, không đồng nghĩa đã thanh toán. Nếu số dư không
+            tăng, xem các lý do còn chờ. Có thể mở lại Kết quả lượt gần nhất
+            hoặc xuất CSV; nhật ký lưu các thay đổi thực tế.
+          </HelpStep>
+          <HelpStep number="7" title="Cấu hình thời gian giữ">
+            Vào Chính sách doanh thu để chọn từ 0 đến 90 ngày. Thời gian được
+            lưu trên đơn lúc tạo; mốc khả dụng tính từ lúc xác nhận thanh toán.
+            Đổi chính sách không đổi đơn cũ, không bỏ qua xác minh/hoàn tiền và
+            không lập tức mở toàn bộ số dư.
+          </HelpStep>
+          <HelpStep number="6" title="Báo cáo & chứng từ">
+            Mở Doanh thu hệ thống trên thanh điều hướng để xem toàn hệ thống
+            hoặc từng giảng viên, chọn 7/30/90 ngày và xuất báo cáo toàn kỳ. CSV
+            tại bảng lịch sử chỉ xuất trang đang xem. Mở Chi tiết để in/lưu PDF
+            chứng từ; chứng từ giao dịch không thay thế hóa đơn thuế.
+          </HelpStep>
+        </div>
+      </Modal>
+      <Modal
+        open={runConfirmation}
+        onClose={() => setRunConfirmation(false)}
+        title="Xác nhận đối soát & xử lý tài chính"
+      >
+        <div className="space-y-4 text-sm">
+          <p>
+            Hệ thống sẽ xác minh giao dịch cần xử lý, mở doanh thu đã đủ điều
+            kiện và xử lý yêu cầu chi trả đã được duyệt. Không tự duyệt yêu cầu
+            mới hoặc bỏ qua thời gian giữ doanh thu.
+          </p>
+          <p className="text-muted-foreground">
+            Báo cáo kết quả sẽ tự mở sau khi hoàn tất. Giao dịch chưa đến lượt
+            tra soát vẫn được giữ lại.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setRunConfirmation(false)}
+            >
+              Hủy
+            </Button>
+            <Button disabled={busy} onClick={() => void runJobs()}>
+              Xác nhận thực hiện
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <JobResultDialog
+        result={showRunResult ? lastRun : null}
+        close={() => setShowRunResult(false)}
+        policy={() => {
+          setShowRunResult(false);
+          setTab("policy");
+          setPage(1);
+        }}
+      />
+      <Modal
+        open={!!recordDetail}
+        onClose={() => setRecordDetail(null)}
+        title={
+          recordDetail?.type === "withdrawal"
+            ? "Chi tiết yêu cầu rút"
+            : recordDetail?.type === "ledger"
+              ? "Chi tiết biến động số dư"
+              : "Chi tiết nhật ký hoạt động"
+        }
+      >
+        {recordDetail && <AdminRecordDetail detail={recordDetail} />}
+      </Modal>
       <Modal
         open={!!decision}
         onClose={() => setDecision(null)}
@@ -455,13 +822,124 @@ export function CommerceScreen() {
   );
 }
 
-function HelpStep({ number, title, children }: { number: string; title: string; children: ReactNode }) { return <div className="flex gap-3"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{number}</span><div><p className="font-semibold">{title}</p><p className="mt-1 text-muted-foreground">{children}</p></div></div>; }
-function AdminRecordDetail({ detail }: { detail: RecordDetail }) {
-  if (detail.type === "withdrawal") { const item = detail.item; return <AdminRows title="Phiếu yêu cầu rút tiền" rows={[["Mã yêu cầu", item.id], ["Ngày tạo", new Date(item.createdAt).toLocaleString("vi-VN")], ["Số tiền", vnd(item.amount)], ["Phương thức", item.recipient.method.toUpperCase()], ["Nơi nhận", `${item.recipient.institutionCode} · ••••${item.recipient.accountNumber?.slice(-4)}`], ["Chủ tài khoản", item.recipient.accountName], ["Trạng thái", COMMERCE_STATUS[item.status] ?? item.status], ["Lý do / ghi chú", item.reason ?? "Không có"]]} />; }
-  if (detail.type === "ledger") { const item = detail.item; return <AdminRows title="Phiếu biến động số dư" rows={[["Mã biến động", item.id], ["Thời điểm", new Date(item.createdAt).toLocaleString("vi-VN")], ["Sự kiện", item.event.split(":")[0]], ["Tài khoản", COMMERCE_STATUS[item.account] ?? item.account], ["Giá trị", `${item.amount > 0 ? "+" : ""}${vnd(item.amount)}`], ["Tham chiếu", item.orderId ?? item.withdrawalId ?? "Không có"]]} />; }
-  const item = detail.item;
-  return <div className="space-y-4"><AdminRows title="Nhật ký giao dịch" rows={[["Mã nhật ký", item.id], ["Thời điểm", new Date(item.createdAt).toLocaleString("vi-VN")], ["Thao tác", item.action], ["Đối tượng", item.entityId ?? "Không có"], ["Nội dung", JSON.stringify(item.details, null, 2)]]} /><div className="rounded-lg border bg-muted/30 p-3"><p className="mb-2 text-xs text-muted-foreground">Dữ liệu chi tiết</p><pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs">{JSON.stringify(item.details, null, 2)}</pre></div></div>;
+function HelpStep({
+  number,
+  title,
+  children,
+}: {
+  number: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex gap-3">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+        {number}
+      </span>
+      <div>
+        <p className="font-semibold">{title}</p>
+        <p className="mt-1 text-muted-foreground">{children}</p>
+      </div>
+    </div>
+  );
 }
-function AdminRows({ rows, title }: { rows: Array<[string, string]>; title: string }) {
-  return <div className="space-y-4"><dl className="grid gap-3 sm:grid-cols-2">{rows.map(([label, value]) => <div className="rounded-lg border p-3" key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}</dl><div className="flex flex-wrap justify-end gap-2 border-t pt-4"><Button variant="outline" onClick={() => downloadCsv("chi-tiet-giao-dich.csv", ["Thông tin", "Giá trị"], rows)}><Download className="size-4" /> Xuất CSV</Button><Button variant="outline" onClick={() => printDocument({ title, rows })}><Printer className="size-4" /> In / lưu PDF</Button></div></div>;
+function AdminRecordDetail({ detail }: { detail: RecordDetail }) {
+  if (detail.type === "withdrawal") {
+    const item = detail.item;
+    return (
+      <AdminRows
+        title="Phiếu yêu cầu rút tiền"
+        rows={[
+          ["Mã yêu cầu", item.id],
+          ["Ngày tạo", new Date(item.createdAt).toLocaleString("vi-VN")],
+          ["Số tiền", vnd(item.amount)],
+          ["Phương thức", item.recipient.method.toUpperCase()],
+          [
+            "Nơi nhận",
+            `${item.recipient.institutionCode} · ••••${item.recipient.accountNumber?.slice(-4)}`,
+          ],
+          ["Chủ tài khoản", item.recipient.accountName],
+          ["Trạng thái", COMMERCE_STATUS[item.status] ?? item.status],
+          ["Lý do / ghi chú", item.reason ?? "Không có"],
+        ]}
+      />
+    );
+  }
+  if (detail.type === "ledger") {
+    const item = detail.item;
+    return (
+      <AdminRows
+        title="Phiếu biến động số dư"
+        rows={[
+          ["Mã biến động", item.id],
+          ["Thời điểm", new Date(item.createdAt).toLocaleString("vi-VN")],
+          ["Sự kiện", item.event.split(":")[0]],
+          ["Tài khoản", COMMERCE_STATUS[item.account] ?? item.account],
+          ["Giá trị", `${item.amount > 0 ? "+" : ""}${vnd(item.amount)}`],
+          ["Tham chiếu", item.orderId ?? item.withdrawalId ?? "Không có"],
+        ]}
+      />
+    );
+  }
+  const item = detail.item;
+  return (
+    <div className="space-y-4">
+      <AdminRows
+        title="Nhật ký giao dịch"
+        rows={[
+          ["Mã nhật ký", item.id],
+          ["Thời điểm", new Date(item.createdAt).toLocaleString("vi-VN")],
+          ["Thao tác", item.action],
+          ["Đối tượng", item.entityId ?? "Không có"],
+          ["Nội dung", JSON.stringify(item.details, null, 2)],
+        ]}
+      />
+      <div className="rounded-lg border bg-muted/30 p-3">
+        <p className="mb-2 text-xs text-muted-foreground">Dữ liệu chi tiết</p>
+        <pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs">
+          {JSON.stringify(item.details, null, 2)}
+        </pre>
+      </div>
+    </div>
+  );
+}
+function AdminRows({
+  rows,
+  title,
+}: {
+  rows: Array<[string, string]>;
+  title: string;
+}) {
+  return (
+    <div className="space-y-4">
+      <dl className="grid gap-3 sm:grid-cols-2">
+        {rows.map(([label, value]) => (
+          <div className="rounded-lg border p-3" key={label}>
+            <dt className="text-xs text-muted-foreground">{label}</dt>
+            <dd className="mt-1 break-words font-medium">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
+        <Button
+          variant="outline"
+          onClick={() =>
+            downloadCsv(
+              "chi-tiet-giao-dich.csv",
+              ["Thông tin", "Giá trị"],
+              rows,
+            )
+          }
+        >
+          <Download className="size-4" /> Xuất CSV
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => printDocument({ title, rows })}
+        >
+          <Printer className="size-4" /> In / lưu PDF
+        </Button>
+      </div>
+    </div>
+  );
 }
