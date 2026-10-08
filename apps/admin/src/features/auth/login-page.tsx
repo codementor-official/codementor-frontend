@@ -54,7 +54,7 @@ export function LoginPage() {
 
       <div className="relative grid w-full max-w-5xl overflow-hidden rounded-3xl border bg-card shadow-xl lg:grid-cols-[1fr_1fr]">
         <div className="hidden min-h-[570px] flex-col justify-between bg-primary/5 p-10 lg:flex">
-          <div className="flex items-center gap-3"><BrandLogo size={42} /><span className="text-lg font-bold">CodeMentor Admin</span></div>
+          <BrandLogo showName size={42} />
           <div>
             <div className="mb-7 flex size-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary"><ShieldCheck className="size-8" aria-hidden="true" /></div>
             <h2 className="max-w-sm text-3xl font-bold tracking-tight">Không gian quản trị an toàn và tập trung.</h2>
@@ -63,7 +63,7 @@ export function LoginPage() {
           <p className="text-xs text-muted-foreground">Chỉ dành cho tài khoản đã được cấp quyền quản trị.</p>
         </div>
         <div className="flex min-h-[570px] flex-col justify-center p-7 sm:p-12">
-          <div className="mb-9 lg:hidden"><BrandLogo size={42} /></div>
+          <div className="mb-9 lg:hidden"><BrandLogo showName size={42} /></div>
           <span className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium text-primary"><LockKeyhole className="size-3.5" /> Cổng quản trị</span>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Chào mừng trở lại</h1>
           <p className="mt-2 text-sm text-muted-foreground">Đăng nhập bằng tài khoản CodeMentor được cấp quyền Admin.</p>

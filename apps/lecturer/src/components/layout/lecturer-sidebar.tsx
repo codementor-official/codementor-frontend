@@ -24,14 +24,8 @@ export function LecturerSidebar({ collapsed, mobile, onToggle, onClose }: Lectur
       activePath={pathname}
       ariaLabel="Điều hướng giảng viên"
       brand={
-        <Link className="flex min-w-0 items-center gap-2.5" href="/dashboard" title="CodeMentor">
-          <BrandLogo size={28} />
-          {!compact && (
-            <span className="min-w-0 leading-tight">
-              <span className="block truncate text-sm font-semibold">CodeMentor</span>
-              <span className="block truncate text-xs text-muted-foreground">Trang giảng viên</span>
-            </span>
-          )}
+        <Link className="flex min-w-0 items-center" href="/dashboard" title="CodeMentor Lecturer">
+          <BrandLogo showName={!compact} size={32} />
         </Link>
       }
       collapsed={collapsed}
