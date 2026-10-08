@@ -104,21 +104,60 @@
   }
 }
 
+/* Arrivals decelerate: fast start, long settle. */
 @utility animate-overlay-in {
   animation: overlay-in var(--duration-base, 180ms) var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
 }
 @utility animate-modal-in {
-  animation: modal-in var(--duration-base, 180ms) var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+  animation: modal-in var(--duration-base, 180ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
 }
 @utility animate-drawer-in {
-  animation: drawer-in-right var(--duration-base, 180ms) var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+  animation: drawer-in-right 240ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
-/* Motion here is decoration; dropping it entirely is safe. */
+/* State motion shared by all three applications (DESIGN-SYSTEM.md → Motion). Each explains a
+ * change; none plays on a page that is just sitting there. */
+
+/* A progress bar fills from zero on mount, so the number reads as an amount. */
+@keyframes progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+@utility animate-progress-fill {
+  transform-origin: left;
+  animation: progress-fill 600ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+/* Tab content swapped in place: a short rise ties the new panel to the tab pressed. Key the
+ * element on the tab so it plays once per switch. */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@utility animate-panel-in {
+  animation: panel-in var(--duration-base, 180ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+/* Loaders that are usually gone within 400ms stay invisible that long instead of flashing. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@utility animate-fade-in-late {
+  animation: fade-in var(--duration-base, 180ms) var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1)) 400ms both;
+}
+
+/* Reduced motion removes travel; the late loader keeps its opacity fade. */
 @media (prefers-reduced-motion: reduce) {
   .animate-overlay-in,
   .animate-modal-in,
-  .animate-drawer-in {
+  .animate-drawer-in,
+  .animate-progress-fill,
+  .animate-panel-in {
     animation: none;
   }
 }

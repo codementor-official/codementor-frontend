@@ -92,7 +92,7 @@ function TopCourses({ courses }: { courses: LecturerInsights["topCourses"] }) {
                   className="h-1.5 overflow-hidden rounded-full bg-muted"
                   role="img"
                 >
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${course.avgProgress}%` }} />
+                  <div className="animate-progress-fill h-full rounded-full bg-primary" style={{ width: `${course.avgProgress}%` }} />
                 </div>
               </li>
             ))}

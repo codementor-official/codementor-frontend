@@ -161,7 +161,7 @@ export function LecturerDashboardPage() {
       )}
 
       {items === null ? (
-        <p className="flex items-center gap-2 py-16 text-sm text-muted-foreground">
+        <p className="animate-fade-in-late flex items-center gap-2 py-16 text-sm text-muted-foreground">
           <Loader2 aria-hidden="true" className="size-4 animate-spin" />
           Đang tải nội dung của bạn…
         </p>
@@ -213,7 +213,7 @@ function Returned({ items }: { items: Item[] }) {
           đăng.
         </Note>
       ) : (
-        <ul className="grid gap-2">
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card">
           {rows.map((item) => (
             <ItemRow item={item} key={`${item.kind}-${item.id}`} />
           ))}
@@ -238,7 +238,7 @@ function PendingReview({ items }: { items: Item[] }) {
       icon={Clock3}
       title="Đang chờ duyệt"
     >
-      <ul className="grid gap-2">
+      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
         {rows.map((item) => (
           <ItemRow item={item} key={`${item.kind}-${item.id}`} />
         ))}
@@ -312,11 +312,11 @@ function Suggestions({ items }: { items: Item[] }) {
       icon={Lightbulb}
       title="Gợi ý hoàn thiện"
     >
-      <ul className="grid gap-2">
+      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
         {suggestions.map((suggestion) => (
           <li key={suggestion.id}>
             <Link
-              className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 text-sm transition-colors hover:bg-muted"
+              className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted"
               href={suggestion.href}
             >
               <Lightbulb aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
@@ -356,7 +356,7 @@ function Drafts({ items }: { items: Item[] }) {
       icon={PencilLine}
       title="Đang viết dở"
     >
-      <ul className="grid gap-2">
+      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
         {rows.map((item) => (
           <ItemRow item={item} key={`${item.kind}-${item.id}`} />
         ))}
@@ -381,7 +381,7 @@ function RecentlyPublished({ items }: { items: Item[] }) {
       icon={CheckCircle2}
       title="Đã đăng gần đây"
     >
-      <ul className="grid gap-2">
+      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
         {rows.map((item) => (
           <ItemRow item={item} key={`${item.kind}-${item.id}`} />
         ))}
@@ -489,7 +489,7 @@ function Section({
 
 function Note({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex items-center gap-2 rounded-xl border bg-card px-4 py-6 text-sm text-muted-foreground">
+    <p className="flex items-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
       <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-success" />
       {children}
     </p>
@@ -502,7 +502,7 @@ function ItemRow({ item }: { item: Item }) {
   return (
     <li>
       <Link
-        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted"
+        className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 transition-colors hover:bg-muted"
         href={kind?.href ?? "/"}
       >
         <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />

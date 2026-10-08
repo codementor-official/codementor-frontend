@@ -144,7 +144,11 @@ function CoursesPageContent() {
       {
         accessorKey: "totalChapters",
         header: "Nội dung",
-        cell: ({ row }) => `${row.original.totalChapters} chương · ${row.original.totalLessons} bài`,
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap">
+            {row.original.totalChapters} chương · {row.original.totalLessons} bài
+          </span>
+        ),
       },
       {
         accessorKey: "durationHours",
@@ -175,7 +179,7 @@ function CoursesPageContent() {
         accessorKey: "updatedAt",
         header: "Cập nhật",
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm whitespace-nowrap text-muted-foreground">
             {dateFormat.format(new Date(row.original.updatedAt))}
           </span>
         ),
@@ -187,10 +191,11 @@ function CoursesPageContent() {
               header: "Thao tác",
               enableSorting: false,
               cell: ({ row }) => (
-                <div className="flex flex-wrap gap-2">
+                // Một hàng: `flex-wrap` xếp hai nút chồng nhau và mỗi dòng của bảng cao gấp đôi.
+                <div className="flex gap-1.5">
                   <Link
                     aria-label={`Mở studio ${row.original.title}`}
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors hover:border-primary hover:text-primary"
                     href={`/courses/${row.original.id}/studio`}
                     onClick={(event) => event.stopPropagation()}
                   >
@@ -199,7 +204,7 @@ function CoursesPageContent() {
                   </Link>
                   <Link
                     aria-label={`Thiết lập giá và khuyến mãi ${row.original.title}`}
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors hover:border-primary hover:text-primary"
                     href={`/courses/${row.original.id}/studio?tab=metadata`}
                     onClick={(event) => event.stopPropagation()}
                   >

@@ -352,47 +352,8 @@ html {
   animation: notification-in var(--duration-normal, 240ms) var(--ease-standard);
 }
 
-/* State motion. Each one explains something that just changed; none plays on a static page.
- * Arrivals decelerate (`--ease-out-expo`); the routine 120–180ms colour deltas keep
- * `--ease-standard`. */
-
-/* A progress bar fills from zero when it mounts, so the number reads as an amount rather than
- * a static stripe; later value changes slide via the width transition on the same element. */
-@keyframes progress-fill {
-  from {
-    transform: scaleX(0);
-  }
-}
-
-@utility animate-progress-fill {
-  transform-origin: left;
-  animation: progress-fill 600ms var(--ease-out-expo);
-}
-
-/* Tab content swaps in place. A short rise ties the new panel to the tab that was pressed
- * instead of the whole region blinking. */
-@keyframes panel-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
-@utility animate-panel-in {
-  animation: panel-in var(--duration-base) var(--ease-out-expo);
-}
-
-/* Loaders that are usually gone in a few hundred ms: stay invisible that long, so a fast
- * check doesn't flash a spinner. */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-}
-
-@utility animate-fade-in-late {
-  animation: fade-in var(--duration-base) var(--ease-standard) 400ms both;
-}
+/* State motion shared by all three apps (progress fill, panel swap, late loader) lives in
+ * @codementor/ui/theme.css. Only the client-specific moment is below. */
 
 /* The studio's authored moment: Lecter just wrote into the author's form. A ring settles onto
  * exactly the fields it touched and fades, so the author knows what to re-read before saving.
@@ -432,8 +393,6 @@ html {
   }
   .animate-menu-in,
   .animate-notification-in,
-  .animate-progress-fill,
-  .animate-panel-in,
   .mascot-sprite-idle {
     animation: none;
   }

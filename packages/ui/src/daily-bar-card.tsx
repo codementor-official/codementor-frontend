@@ -20,20 +20,30 @@ export function DailyBarCard<T extends { date: string }>({
   value,
   describe,
   formatTick,
+  emptyText = "Chưa có số liệu nào trong khoảng này.",
 }: {
   title: string;
   data: T[];
   value: keyof T & string;
   describe: (point: T) => string;
   formatTick?: (value: number) => string;
+  /** Hiện thay cho biểu đồ khi mọi ngày đều bằng 0. */
+  emptyText?: string;
 }) {
   const rows = data.map((point) => ({ ...point, label: dayLabel(point.date) }));
+  // Toàn số 0 thì chỉ còn lưới và trục, đọc như biểu đồ hỏng chứ không như "chưa có gì".
+  const empty = data.every((point) => !Number(point[value]));
   return (
     <Card className="min-w-0">
       <CardHeader>
         <h2 className="text-sm font-semibold">{title}</h2>
       </CardHeader>
       <CardContent className="pb-4">
+        {empty ? (
+          <p className="flex h-60 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
+            {emptyText}
+          </p>
+        ) : (
         <div className="h-60 w-full">
           <ResponsiveContainer height="100%" width="100%">
             <BarChart data={rows} margin={{ bottom: 0, left: formatTick ? 0 : -12, right: 4, top: 4 }}>
@@ -73,6 +83,7 @@ export function DailyBarCard<T extends { date: string }>({
             </BarChart>
           </ResponsiveContainer>
         </div>
+        )}
       </CardContent>
     </Card>
   );
