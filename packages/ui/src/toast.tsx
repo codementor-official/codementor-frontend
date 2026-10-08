@@ -80,7 +80,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           tồn tại từ trước thì mới đọc nội dung mới thêm vào. */}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 p-4 sm:inset-x-auto sm:right-0 sm:items-end"
+        // Giữa, ngay dưới topbar: góc dưới phải là chỗ của ô soạn trong drawer Lecter và các
+        // khung chat — toast "Đã đưa vào biểu mẫu" từng đè đúng lên nút gửi.
+        className="pointer-events-none fixed inset-x-0 top-14 z-[60] flex flex-col items-center gap-2 p-3"
       >
         {toasts.map((toast) => (
           <ToastCard key={toast.id} onDismiss={() => dismiss(toast.id)} toast={toast} />

@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { DifficultyBadge, type Difficulty } from "@/components/ui/badge";
 
-const tileVariantClasses = {
-  navy: "bg-navy",
-  accent: "bg-accent",
-  primary: "bg-primary",
-} as const;
-
 export interface ProblemRowStat {
   label: string;
   value: string | number;
@@ -14,7 +8,6 @@ export interface ProblemRowStat {
 
 export function ProblemRow({
   tile,
-  tileVariant = "navy",
   title,
   meta,
   difficulty,
@@ -22,7 +15,6 @@ export function ProblemRow({
   href,
 }: {
   tile: string;
-  tileVariant?: keyof typeof tileVariantClasses;
   title: string;
   meta: string;
   difficulty?: Difficulty;
@@ -38,7 +30,7 @@ export function ProblemRow({
       className="flex items-center gap-3.5 border-t border-border-soft px-4 py-3 first:border-t-0 hover:bg-bg focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-inset"
     >
       <span
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold text-on-ink ${tileVariantClasses[tileVariant]}`}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft font-mono text-xs font-bold text-navy"
       >
         {tile}
       </span>

@@ -14,7 +14,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { SegmentedTabs, StatusBadge } from "@codementor/ui";
+import { SegmentedTabs } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import {
   usersApi,
@@ -57,6 +57,13 @@ const ACTIVITY_LABELS: Record<ActivityEntry["kind"], { label: string; icon: type
  * đã dựng sẵn lúc ghi — nên thêm một loại hành động mới ở backend không làm màn này vỡ,
  * chỉ là mất phần tô màu.
  */
+const TONE_DOT = {
+  neutral: "bg-muted-foreground",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-destructive",
+} as const;
+
 const AUDIT_TONES: Record<string, "neutral" | "success" | "warning" | "danger"> = {
   "user.created": "success",
   "user.activated": "success",
@@ -300,7 +307,13 @@ function AuditTab({ entries }: { entries: AuditLogEntry[] }) {
     <ol className="grid gap-3">
       {entries.map((entry) => (
         <li className="flex flex-wrap items-start gap-x-3 gap-y-1" key={entry.id}>
-          <StatusBadge tone={AUDIT_TONES[entry.action] ?? "neutral"}>{entry.summary}</StatusBadge>
+          <span className="flex min-w-0 items-start gap-2 text-sm">
+            <span
+              aria-hidden="true"
+              className={`mt-1.5 size-1.5 shrink-0 rounded-full ${TONE_DOT[AUDIT_TONES[entry.action] ?? "neutral"]}`}
+            />
+            {entry.summary}
+          </span>
           <span className="text-xs text-muted-foreground">bởi {entry.actorEmail}</span>
           <span className="ml-auto shrink-0 text-xs text-muted-foreground">
             {dateTimeFormat.format(new Date(entry.createdAt))}

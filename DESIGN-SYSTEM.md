@@ -271,11 +271,25 @@ Named layers, so a new component cannot pick a value that collides with an exist
 |---|---|---|
 | `--duration-fast` | `120ms` | Hover colour/border delta |
 | `--duration-base` | `180ms` | Default — matches the sidebar width transition |
-| `--ease-standard` | `cubic-bezier(0.4, 0, 0.2, 1)` | The only easing curve. No bounce, no elastic |
+| `--ease-standard` | `cubic-bezier(0.4, 0, 0.2, 1)` | Colour/border deltas and exits. No bounce, no elastic |
+| `--ease-out-expo` | `cubic-bezier(0.16, 1, 0.3, 1)` | Arrivals only: overlays, panels, fills |
 
-Only `color`, `background-color`, `border-color`, and `transform: translate/rotate` on a chevron
-or the sidebar width are ever animated. Never `box-shadow`, never `scale` — see Interaction above,
-which lint enforces.
+**Motion explains a state change; nothing animates on a page that is just sitting there.**
+Hover is still a colour/border delta (Interaction above) — never `box-shadow`, never a hover
+`scale` or lift, which lint enforces. Beyond hover, the vocabulary is closed:
+
+| Utility | What it explains |
+|---|---|
+| `animate-overlay-in` / `animate-modal-in` / `animate-drawer-in` / `animate-menu-in` | An overlay arrived (packages/ui) |
+| `animate-panel-in` | Tab content swapped in place — keyed on the tab so it plays once per switch |
+| `animate-progress-fill` | A progress bar's amount, filled from zero on mount (`ProgressBar` carries it) |
+| `animate-fade-in-late` | A loader that is usually gone in <400ms stays invisible that long instead of flashing |
+| `animate-notification-in` | A realtime item was inserted at the top of a list |
+| `.lecter-applied` | **The one authored moment:** Lecter wrote into the author's form — a ring settles onto exactly the fields it touched, then fades |
+
+No page-load choreography, no scroll reveals, no staggered entrances. Every utility has a
+`prefers-reduced-motion` path: movement is removed, colour/opacity that carries meaning stays
+(the Lecter ring still fades, it just doesn't travel).
 
 ## Difficulty badges
 

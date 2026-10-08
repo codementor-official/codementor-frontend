@@ -4,24 +4,23 @@ import {
   type BreadcrumbTitleEntry,
   type RouteMeta,
 } from "@codementor/ui";
+import { lecturerNavigation } from "@/components/navigation/lecturer-navigation";
 
-/**
- * The one place a lecturer route's human name lives. Same contract as the web
- * application's map: keys are top-level prefixes, each entry names its parent.
- */
 const HOME = "/dashboard";
 
-const ROUTES: Record<string, RouteMeta> = {
-  "/dashboard": { label: "Bảng điều khiển" },
-  "/lecter": { label: "Lecter", parent: HOME },
-  "/roadmaps": { label: "Lộ trình", parent: HOME },
-  "/courses": { label: "Khóa học", parent: HOME },
-  "/exercises": { label: "Bài code", parent: HOME },
-  "/articles": { label: "Bài viết", parent: HOME },
-  "/profile": { label: "Hồ sơ", parent: HOME },
-  "/earnings": { label: "Doanh thu", parent: HOME },
-  "/promotions": { label: "Khuyến mãi", parent: HOME },
-};
+/**
+ * Derived from the navigation, as in apps/admin. The hand-kept copy this replaces had
+ * already drifted: "/documents" was in the sidebar but not here, so that page rendered with
+ * an empty topbar.
+ */
+const ROUTES: Record<string, RouteMeta> = Object.fromEntries(
+  lecturerNavigation.flatMap((group) =>
+    group.items.map((item) => [
+      item.href,
+      { label: item.label, parent: item.href === HOME ? undefined : HOME },
+    ]),
+  ),
+);
 
 /** Labels for the trailing segments the studio routes end in. */
 const SEGMENT_LABELS = { studio: "Studio", solve: "Làm thử" };

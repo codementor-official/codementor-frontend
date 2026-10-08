@@ -81,7 +81,7 @@ export function PickedCourses({ picked, onChange, disabled }: Omit<Props, "avail
           </p>
         ) : (
           <SortableContext items={picked.map((course) => course.courseId)} strategy={verticalListSortingStrategy}>
-            <ol className="grid gap-2">
+            <ol className="grid grid-cols-[minmax(0,1fr)] gap-2">
               {picked.map((course, index) => (
                 <SortablePicked
                   course={course}
@@ -156,7 +156,7 @@ export function CourseLibrary({ picked, available, onChange, disabled }: Props) 
             : "Không có khóa học nào khớp bộ lọc."}
         </p>
       ) : (
-        <ul className="grid gap-2">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-2">
           {list.visible.map((course) => (
             <DraggableCourse
               course={course}
@@ -338,7 +338,7 @@ function CourseDrawer({ course, onClose }: { course: CourseListItem; onClose: ()
               {(detail.chapters?.length ?? 0) === 0 ? (
                 <p className="text-sm text-muted-foreground">Khóa học chưa có chương nào.</p>
               ) : (
-                <ol className="grid gap-2">
+                <ol className="grid grid-cols-[minmax(0,1fr)] gap-2">
                   {detail.chapters?.map((chapter, index) => (
                     <li className="rounded-md border" key={chapter.id ?? chapter.title}>
                       <div className="flex items-baseline gap-2 px-3 py-2">

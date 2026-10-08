@@ -6,56 +6,22 @@ type BrandLogoProps = {
   priority?: boolean;
 };
 
-// Display windows in the original 1672×941 artwork; keep both source files intact.
-// Navigation needs a readable wordmark, not the poster's small descriptive text.
-const CROPS = {
-  mark: { x: 108, y: 185, width: 468, height: 484 },
-  wordmark: { x: 590, y: 287, width: 1024, height: 146 },
-  full: { x: 108, y: 185, width: 1512, height: 496 },
+const SIZES = {
+  sm: { mark: 32, text: "text-lg" },
+  md: { mark: 40, text: "text-xl" },
+  lg: { mark: 64, text: "text-3xl" },
 } as const;
 
-function LogoArtwork({
-  crop,
-  className,
-  priority,
-}: {
-  crop: keyof typeof CROPS;
-  className: string;
-  priority: boolean;
-}) {
-  const { x, y, width, height } = CROPS[crop];
-  const style = {
-    width: `${(1672 / width) * 100}%`,
-    left: `${(-x / width) * 100}%`,
-    top: `${(-y / height) * 100}%`,
-  };
-
+/**
+ * Square mark, transparent PNGs. CSS picks the theme variant so there is no flash before
+ * hydration. `eager`, not `priority`: priority preloads BOTH variants and one of them is
+ * always hidden, so the browser warns about an unused preload on every page.
+ */
+function BrandMark({ size, priority }: { size: number; priority: boolean }) {
   return (
-    <span
-      aria-hidden="true"
-      className={`relative block overflow-hidden ${className}`}
-      style={{ aspectRatio: `${width} / ${height}` }}
-    >
-      <Image
-        src="/logo-lightmode.png"
-        alt=""
-        width={1672}
-        height={941}
-        sizes="320px"
-        priority={priority}
-        className="absolute h-auto max-w-none dark:hidden"
-        style={style}
-      />
-      <Image
-        src="/logo-darkmode.png"
-        alt=""
-        width={1672}
-        height={941}
-        sizes="320px"
-        priority={priority}
-        className="absolute hidden h-auto max-w-none dark:block"
-        style={style}
-      />
+    <span className="relative block shrink-0" style={{ height: size, width: size }}>
+      <Image alt="" className="dark:hidden" fill loading={priority ? "eager" : "lazy"} sizes={`${size}px`} src="/brand-mark.png" />
+      <Image alt="" className="hidden dark:block" fill loading={priority ? "eager" : "lazy"} sizes={`${size}px`} src="/brand-mark-dark.png" />
     </span>
   );
 }
@@ -65,35 +31,25 @@ export function BrandLogo({
   size = "md",
   priority = false,
 }: BrandLogoProps) {
-  const box = compact
-    ? "h-10 w-10"
-    : size === "lg"
-      ? "h-[76px] w-[220px]"
-      : size === "sm"
-        ? "h-9 w-[150px]"
-        : "h-12 w-[188px]";
+  const { mark, text } = SIZES[size];
 
   return (
-    // The supplied PNGs have opaque backgrounds. Blend those into the current
-    // surface; CSS theme variants also select the right image before hydration.
-    <span
-      role="img"
-      aria-label="CodeMentor"
-      className={`flex shrink-0 items-center justify-center gap-2 mix-blend-multiply dark:mix-blend-screen ${box}`}
-    >
-      {size === "lg" && !compact ? (
-        <LogoArtwork crop="full" className="w-full" priority={priority} />
-      ) : (
-        <>
-          <LogoArtwork
-            crop="mark"
-            className={`shrink-0 ${compact ? "w-9" : size === "sm" ? "w-8" : "w-10"}`}
-            priority={priority}
-          />
-          {!compact && (
-            <LogoArtwork crop="wordmark" className="min-w-0 flex-1" priority={priority} />
+    <span role="img" aria-label="CodeMentor" className="flex shrink-0 items-center gap-2.5">
+      <BrandMark size={compact ? 36 : mark} priority={priority} />
+      {!compact && (
+        <span className="min-w-0">
+          {/* Colours are the mark's own navy/orange, not theme tokens: the wordmark must
+              match the artwork, and the client's `navy` token is really near-black ink. */}
+          <span className={`block font-extrabold leading-none tracking-tight ${text}`}>
+            <span className="text-[#022761] dark:text-white">Code</span>
+            <span className="text-[#fd6e01]">Mentor</span>
+          </span>
+          {size === "lg" && (
+            <span className="mt-2 block text-2xs font-bold tracking-wider text-text-muted uppercase">
+              Học tốt hơn – Lập trình tự tin hơn
+            </span>
           )}
-        </>
+        </span>
       )}
     </span>
   );

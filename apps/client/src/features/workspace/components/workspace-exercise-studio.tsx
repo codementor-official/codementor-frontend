@@ -20,12 +20,11 @@ import {
 } from "@codementor/solve";
 import {
   Modal,
-  ResizeHandle,
   StatusBadge,
   useResolvedTheme,
   useToast,
+  StudioSplit,
 } from "@codementor/ui";
-import { Group, Panel } from "react-resizable-panels";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -52,6 +51,63 @@ const EMPTY_CONTENT: ExerciseContent = {
 };
 
 type StudioTab = "content" | "assignment";
+
+/** Ô hoặc thẻ trên form mà mỗi khoá trong đề nghị của Lecter đổ vào (id DOM). */
+const PATCH_TARGETS: Record<string, string> = {
+  title: "title",
+  slug: "slug",
+  summary: "summary",
+  difficulty: "difficulty",
+  estimatedMinutes: "estimatedMinutes",
+  timeLimitMs: "timeLimitMs",
+  memoryLimitKb: "memoryLimitKb",
+  statement: "studio-statement",
+  constraints: "studio-statement",
+  hints: "studio-statement",
+  examples: "studio-statement",
+  ioMode: "studio-io",
+  signature: "studio-io",
+  languages: "studio-languages",
+  testCases: "studio-testcases",
+  evaluation: "studio-grading",
+};
+
+/**
+ * Khoảnh khắc chính của studio: agent vừa viết vào form của người soạn. Toast chỉ nói "đã
+ * đưa vào"; vòng sáng chỉ ra ĐÚNG những ô nó đã chạm, để người soạn biết cần đọc lại chỗ nào
+ * trước khi lưu — đúng nguyên tắc "AI đề xuất, con người quyết".
+ */
+function markPatchedFields(patch: LecterDraftPatch) {
+  const keys = [
+    ...Object.keys(patch),
+    ...Object.keys(patch.content ?? {}),
+    ...(patch.title ? ["slug"] : []),
+  ];
+  const ids = [...new Set(keys.map((key) => PATCH_TARGETS[key]).filter(Boolean))];
+  // Hai frame: patch có thể vừa chuyển từ tab Giao bài sang Nội dung, form còn chưa mount.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      const nodes = ids
+        .map((id) => document.getElementById(id))
+        .filter((node): node is HTMLElement => node !== null);
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      nodes[0]?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+      for (const node of nodes) {
+        node.classList.remove("lecter-applied");
+        void node.offsetWidth; // áp hai lần liên tiếp vào cùng ô thì hiệu ứng chạy lại từ đầu
+        node.classList.add("lecter-applied");
+        // Chỉ nghe animation của CHÍNH nó: `animationend` nổi lên từ con (menu, thanh tiến độ
+        // trong thẻ test case), và nghe lẫn thì vòng sáng bị gỡ trước khi chạy xong.
+        const done = (event: AnimationEvent) => {
+          if (event.target !== node) return;
+          node.classList.remove("lecter-applied");
+          node.removeEventListener("animationend", done);
+        };
+        node.addEventListener("animationend", done);
+      }
+    }),
+  );
+}
 
 /**
  * Studio bài tập của Workspace — một TRANG, không phải hộp thoại.
@@ -258,6 +314,7 @@ export function WorkspaceExerciseStudio({
     updateDraft(patch.title ? { ...next, slug: slugifyExercise(patch.title) } : next);
     setGeneratedByAi(true);
     setTab("content");
+    markPatchedFields(patch);
     toast.success("Đã đưa vào biểu mẫu. Bấm Lưu khi bạn thấy ổn.");
   };
 
@@ -377,30 +434,39 @@ export function WorkspaceExerciseStudio({
           // chiều cao liền mạch từ <html> xuống, không còn `min(74vh,860px)` đoán mò để lại
           // một dải trống dưới đáy.
           <div className="h-full overflow-hidden bg-bg/30">
-            <Group orientation="horizontal" className="h-full">
-              <Panel id="workspace-brief" defaultSize="50%" minSize="30%">
-                <div className="h-full overflow-y-auto p-3">
-                  <ExerciseBriefForm
-                    value={draft}
-                    onChange={updateDraft}
-                    slugLocked={Boolean(exerciseId)}
-                    tagOptions={tags}
-                  />
-                </div>
-              </Panel>
-              <ResizeHandle orientation="horizontal" />
-              <Panel id="workspace-code" defaultSize="50%" minSize="30%">
-                <div className="h-full overflow-y-auto p-3">
-                  <ExerciseCodeForm
-                    value={draft}
-                    onChange={updateDraft}
-                    ai={api.aiStudio}
-                    judge={api.judge}
-                    theme={theme}
-                  />
-                </div>
-              </Panel>
-            </Group>
+            <StudioSplit
+              start={{
+                id: "workspace-brief",
+                defaultSize: "50%",
+                minSize: "30%",
+                content: (
+                  <div className="h-full overflow-y-auto p-3">
+                    <ExerciseBriefForm
+                      value={draft}
+                      onChange={updateDraft}
+                      slugLocked={Boolean(exerciseId)}
+                      tagOptions={tags}
+                    />
+                  </div>
+                ),
+              }}
+              end={{
+                id: "workspace-code",
+                defaultSize: "50%",
+                minSize: "30%",
+                content: (
+                  <div className="h-full overflow-y-auto p-3">
+                    <ExerciseCodeForm
+                      value={draft}
+                      onChange={updateDraft}
+                      ai={api.aiStudio}
+                      judge={api.judge}
+                      theme={theme}
+                    />
+                  </div>
+                ),
+              }}
+            />
           </div>
         ) : (
           <StudioScroll>

@@ -248,19 +248,22 @@ export function StudyGroupBoard({ initialScope = "mine" }: { initialScope?: Scop
         ]}
       />
 
-      <StudyGroupActions onJoin={join} onCreate={create} />
-
-      <SegmentedTabs
-        className="mb-4"
-        value={scope}
-        onChange={(value) => changeScope(value as Scope)}
-        options={[
-          { value: "all", label: "Tất cả" },
-          { value: "mine", label: "Nhóm của tôi" },
-          { value: "owned", label: "Tôi quản lý" },
-          { value: "joined", label: "Đã tham gia" },
-          { value: "public", label: "Nhóm công khai" },
-        ]}
+      <StudyGroupActions
+        onJoin={join}
+        onCreate={create}
+        leading={
+          <SegmentedTabs
+            value={scope}
+            onChange={(value) => changeScope(value as Scope)}
+            options={[
+              { value: "all", label: "Tất cả" },
+              { value: "mine", label: "Nhóm của tôi" },
+              { value: "owned", label: "Tôi quản lý" },
+              { value: "joined", label: "Đã tham gia" },
+              { value: "public", label: "Nhóm công khai" },
+            ]}
+          />
+        }
       />
 
       <FilterBar

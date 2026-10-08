@@ -36,12 +36,12 @@ export function ProblemPicker({ current }: { current: Problem }) {
   }, [open, items]);
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-bg"
+        className="flex max-w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 hover:bg-bg"
       >
-        <span className="max-w-52 truncate text-sm font-semibold text-navy">{current.title}</span>
+        <span className="max-w-[28rem] min-w-0 truncate text-sm font-semibold text-navy">{current.title}</span>
         <ChevronDown className={`h-3.5 w-3.5 text-text-faint transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (

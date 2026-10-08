@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Info, Save, Send, Tags, TriangleAlert, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Group, Panel } from "react-resizable-panels";
 import {
   BreadcrumbTitle,
   Button,
@@ -14,11 +13,11 @@ import {
   Modal,
   PageHeader,
   ReasonButton,
-  ResizeHandle,
   StatusBadge,
   useToast,
   useUndoableDelete,
   TopicPicker,
+  StudioSplit,
 } from "@codementor/ui";
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
@@ -535,39 +534,46 @@ export default function CourseStudioPage() {
         // Two panes rather than a fixed 380px column: how much room the inspector needs
         // depends on whether the selected lesson is a one-field chapter or a rich-text
         // body, and only the person editing knows which.
-        <Group orientation="horizontal" className="h-full">
-          <Panel id="tree" defaultSize="55%" minSize="25%" className="min-h-0">
-            <div className="h-full overflow-y-auto p-3">
-              <CurriculumTree
-                chapters={chapters}
-                disabled={locked}
-                onChange={setChapters}
-                onSelect={setSelection}
-                selection={selection}
-              />
-            </div>
-          </Panel>
-
-          <ResizeHandle orientation="horizontal" />
-
-          <Panel id="inspector" defaultSize="45%" minSize="20%" className="min-h-0">
-            <div className="h-full overflow-y-auto p-3">
-              <Inspector
-                chapters={chapters}
-                contentSaveRef={contentSaveRef}
-                courseId={id}
-                disabled={locked}
-                ensureLessonId={ensureLessonId}
-                exercises={exercises}
-                loadContent={loadContent}
-                onChange={setChapters}
-                onContentBlockerChange={setContentBlocker}
-                saveContent={saveContent}
-                selection={selection}
-              />
-            </div>
-          </Panel>
-        </Group>
+        <StudioSplit
+          start={{
+            id: "tree",
+            defaultSize: "55%",
+            minSize: "25%",
+            content: (
+              <div className="h-full overflow-y-auto p-3">
+                <CurriculumTree
+                  chapters={chapters}
+                  disabled={locked}
+                  onChange={setChapters}
+                  onSelect={setSelection}
+                  selection={selection}
+                />
+              </div>
+            ),
+          }}
+          end={{
+            id: "inspector",
+            defaultSize: "45%",
+            minSize: "20%",
+            content: (
+              <div className="h-full overflow-y-auto p-3">
+                <Inspector
+                  chapters={chapters}
+                  contentSaveRef={contentSaveRef}
+                  courseId={id}
+                  disabled={locked}
+                  ensureLessonId={ensureLessonId}
+                  exercises={exercises}
+                  loadContent={loadContent}
+                  onChange={setChapters}
+                  onContentBlockerChange={setContentBlocker}
+                  saveContent={saveContent}
+                  selection={selection}
+                />
+              </div>
+            ),
+          }}
+        />
       ) : tab === "purchases" ? (
         <StudioScroll>
           <CoursePurchases courseId={course.id} />

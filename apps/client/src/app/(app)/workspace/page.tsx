@@ -16,13 +16,14 @@ export default async function WorkspaceListPage({
         title="Nhóm học tập"
         subtitle="Quản lý nhóm của bạn hoặc tìm nhóm công khai để xem thông tin và gửi yêu cầu tham gia."
       />
-      {/* Dải cá nhân hóa giúp người dùng thấy gợi ý ngay; tab Nhóm công khai bên
-          dưới là catalogue đầy đủ, có tìm kiếm và phân trang server-side. */}
-      <section className="mb-8">
+      <StudyGroupBoard initialScope={tab === "public" ? "public" : "mine"} />
+      {/* Gợi ý đứng SAU nhóm của chính người dùng: người vào trang này phần lớn để mở lại
+          nhóm đang học, và trên mobile hai thẻ gợi ý từng đẩy nhóm của họ xuống hơn một màn.
+          Tab Nhóm công khai phía trên vẫn là catalogue đầy đủ. */}
+      <section className="mt-10">
         <h2 className="mb-3 text-sm font-bold text-navy">Nhóm có thể hợp với bạn</h2>
         <RecommendedGroups />
       </section>
-      <StudyGroupBoard initialScope={tab === "public" ? "public" : "mine"} />
     </div>
   );
 }

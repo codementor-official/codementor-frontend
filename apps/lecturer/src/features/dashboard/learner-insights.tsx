@@ -53,7 +53,7 @@ export function LearnerInsights() {
       />
 
       {data && (
-        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
           <DailyBarCard
             data={data.daily}
             describe={(point) => `${point.completions} bài học hoàn thành · ${point.enrollments} ghi danh mới`}
@@ -92,7 +92,7 @@ function TopCourses({ courses }: { courses: LecturerInsights["topCourses"] }) {
                   className="h-1.5 overflow-hidden rounded-full bg-muted"
                   role="img"
                 >
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${course.avgProgress}%` }} />
+                  <div className="animate-progress-fill h-full rounded-full bg-primary" style={{ width: `${course.avgProgress}%` }} />
                 </div>
               </li>
             ))}

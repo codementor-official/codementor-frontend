@@ -30,7 +30,8 @@ function assignmentAction(data: DashboardData, index = 0): DashboardAction | nul
       ? `${assignment.workspaceName} · Kiểm tra khả năng nộp muộn ngay.`
       : `${assignment.workspaceName} · ${assignment.dueAt ? 'Ưu tiên theo hạn nộp.' : 'Bài đang chờ bạn xử lý.'}`,
     cta: 'Mở bài tập',
-    status: overdue ? 'Quá hạn' : assignment.status === 'inprogress' ? 'Đang làm' : 'Chưa làm',
+    // Nhãn đã nói "quá hạn"; thêm pill "Quá hạn" cạnh nó chỉ lặp lại.
+    status: overdue ? undefined : assignment.status === 'inprogress' ? 'Đang làm' : 'Chưa làm',
   };
 }
 

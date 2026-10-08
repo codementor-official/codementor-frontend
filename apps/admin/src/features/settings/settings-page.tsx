@@ -32,7 +32,7 @@ export function SettingsPage() {
         icon={Settings}
         title="Cài đặt"
       />
-      <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
         {platform.data ? (
           <PlatformCards settings={platform.data} />
         ) : (

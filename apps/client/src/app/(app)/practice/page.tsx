@@ -44,11 +44,11 @@ function exerciseKindLabel(kind: string) {
 function ExerciseRow({ item, number }: { item: ExerciseSummary; number: number }) {
   const difficulty = exerciseDifficulty(item.difficulty);
   return (
-    <li className={`group flex items-center gap-3 border-t border-l-2 border-border-soft px-3 py-3 transition-colors duration-150 hover:bg-bg sm:px-4 ${item.progressStatus === "solved" ? "border-l-success" : item.progressStatus === "attempted" ? "border-l-primary" : "border-l-transparent"}`}>
+    <li className="group flex items-center gap-3 border-t border-border-soft px-3 py-3 transition-colors duration-150 hover:bg-bg sm:px-4">
       <span className="hidden w-7 shrink-0 text-right text-xs tabular-nums text-text-faint md:block">{number}</span>
       <span className={`hidden h-8 w-8 shrink-0 items-center justify-center rounded-md sm:flex ${
         item.progressStatus === "solved"
-          ? "bg-success text-on-ink"
+          ? "bg-success/10 text-success"
           : item.progressStatus === "attempted"
             ? "bg-primary/10 text-primary"
             : "bg-muted text-muted-foreground"
@@ -305,13 +305,13 @@ export default function PracticePage() {
               <div className="flex items-center gap-3 border-b border-border bg-bg px-4 py-3">
                 <span className="hidden w-7 md:block" />
                 <span className="hidden w-8 sm:block" />
-                <span className="flex-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="flex-1 text-xs font-semibold text-muted-foreground">
                   Bài tập
                 </span>
                 <span className="hidden w-28 text-xs font-semibold text-muted-foreground lg:block">
                   Dạng bài
                 </span>
-                <span className="w-20 text-right text-xs text-text-faint">Độ khó</span>
+                <span className="w-20 text-right text-xs font-semibold text-muted-foreground">Độ khó</span>
                 <span className="w-20" />
               </div>
               {loading ? (

@@ -37,7 +37,6 @@ function WelcomeContent() {
         <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Sparkles aria-hidden="true" className="size-7" />
         </div>
-        <p className="mb-2 text-sm font-medium text-primary">Trợ lý soạn bài của bạn</p>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           Bắt đầu với một ý tưởng bài code
         </h1>

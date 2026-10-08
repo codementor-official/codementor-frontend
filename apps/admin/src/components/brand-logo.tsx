@@ -1,27 +1,23 @@
 import Image from "next/image";
 
 /**
- * Crops `/logo.png` (460x159, full wordmark) down to just the mark at the left edge —
- * same ratio apps/client uses for its compact variant, so the mark reads identically
- * across every CodeMentor surface.
+ * CodeMentor mark, optionally followed by this console's name. The name is split navy/orange
+ * like the client's "Code|Mentor" wordmark, in the mark's own colours rather than theme tokens.
+ * Transparent PNGs; CSS picks the theme variant so there is no flash before hydration.
  */
-export function BrandLogo({ size = 40 }: { size?: number }) {
-  const cropWidth = Math.round((size / 40) * 130);
+export function BrandLogo({ size = 40, showName = false }: { size?: number; showName?: boolean }) {
   return (
-    <span
-      aria-label="CodeMentor"
-      className="relative block shrink-0 overflow-hidden"
-      style={{ height: size, width: size }}
-    >
-      <Image
-        alt="CodeMentor"
-        className="absolute left-0 top-0 h-auto max-w-none"
-        height={159}
-        priority
-        src="/logo.png"
-        style={{ width: cropWidth }}
-        width={460}
-      />
+    <span aria-label="CodeMentor Admin" className="flex shrink-0 items-center gap-2.5" role="img">
+      <span className="relative block shrink-0" style={{ height: size, width: size }}>
+        <Image alt="" className="dark:hidden" fill loading="eager" sizes={`${size}px`} src="/brand-mark.png" />
+        <Image alt="" className="hidden dark:block" fill loading="eager" sizes={`${size}px`} src="/brand-mark-dark.png" />
+      </span>
+      {showName && (
+        <span className="font-extrabold leading-none tracking-tight" style={{ fontSize: Math.round(size * 0.6) }}>
+          <span className="text-[#022761] dark:text-white">Ad</span>
+          <span className="text-[#fd6e01]">min</span>
+        </span>
+      )}
     </span>
   );
 }

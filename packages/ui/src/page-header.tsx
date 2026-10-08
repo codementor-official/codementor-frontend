@@ -30,14 +30,14 @@ export function PageHeader({ title, description, icon: Icon, center, action }: P
         <div className="min-w-0">
           <h1 className="truncate text-lg font-semibold">{title}</h1>
           {description && (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground" title={description}>
+            <p className="mt-0.5 line-clamp-2 max-w-[90ch] text-xs text-muted-foreground" title={description}>
               {description}
             </p>
           )}
         </div>
       </div>
-      {center && <div className="shrink-0">{center}</div>}
-      {action && <div className="shrink-0">{action}</div>}
+      {center && <div className="max-w-full shrink-0">{center}</div>}
+      {action && <div className="max-w-full shrink-0">{action}</div>}
     </header>
   );
 }

@@ -169,7 +169,18 @@ export function ExerciseBriefForm({
   slugLocked = false,
 }: Props) {
   const [previewStatement, setPreviewStatement] = useState(false);
-  const errors = exerciseBriefErrors(value, { slugLocked });
+  const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
+  const allErrors = exerciseBriefErrors(value, { slugLocked });
+  // Ô trống mà chưa ai chạm vào thì chưa báo "không được để trống": form mới mở ra đỏ sẵn
+  // trước khi người soạn kịp gõ chữ nào. Ô đã có chữ (gõ, nạp từ bài cũ, Lecter điền) thì
+  // báo ngay. Nút Lưu vẫn bị chặn bởi `exerciseBriefBlocker`, không phụ thuộc vào đây.
+  const errors = Object.fromEntries(
+    Object.entries(allErrors).filter(
+      ([key]) =>
+        touched.has(key) ||
+        String((value as unknown as Record<string, unknown>)[key] ?? "").trim() !== "",
+    ),
+  ) as typeof allErrors;
 
   const patch = (partial: Partial<ExerciseDraft>) =>
     onChange({ ...value, ...partial });
@@ -187,7 +198,14 @@ export function ExerciseBriefForm({
     onChange({ ...value, content: { ...value.content, ...partial } });
 
   return (
-    <fieldset className="grid gap-3" disabled={readOnly}>
+    <fieldset
+      className="grid gap-3"
+      disabled={readOnly}
+      onBlur={(event) => {
+        const id = event.target.id;
+        if (id && !touched.has(id)) setTouched(new Set(touched).add(id));
+      }}
+    >
       <Card className="p-4">
         <CardHeading
           hint="Tên bài, slug và các giới hạn chấm. Đây là phần học viên thấy trước khi mở bài."
@@ -195,134 +213,135 @@ export function ExerciseBriefForm({
           title="Thông tin chung"
         />
 
-        <Field
-          error={errors.title}
-          htmlFor="title"
-          label="Tiêu đề"
-        >
-          <input
-            className={inputClassName}
-            id="title"
-            onChange={(event) => patchTitle(event.target.value)}
-            value={value.title}
-          />
-        </Field>
-
-        <Field
-          hint={
-            slugLocked
-              ? "Đã công khai nên không đổi được — đường dẫn đã phát ra ngoài."
-              : "Phần định danh trong đường dẫn. Chỉ đổi được khi chưa công khai."
-          }
-          error={errors.slug}
-          htmlFor="slug"
-          label="Slug"
-        >
-          <input
-            className={inputClassName}
-            disabled={slugLocked}
-            id="slug"
-            onChange={(event) => patch({ slug: event.target.value })}
-            value={value.slug}
-          />
-        </Field>
-
-        <Field
-          error={errors.summary}
-          htmlFor="summary"
-          label="Tóm tắt"
-          hint="Một dòng hiện ở danh sách."
-        >
-          <input
-            className={inputClassName}
-            id="summary"
-            onChange={(event) => patch({ summary: event.target.value })}
-            value={value.summary}
-          />
-        </Field>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field htmlFor="difficulty" label="Độ khó">
-            <select
-              className={inputClassName}
-              id="difficulty"
-              onChange={(event) => patch({ difficulty: event.target.value })}
-              value={value.difficulty}
-            >
-              {DIFFICULTIES.map((option) => (
-                <option key={option} value={option}>
-                  {DIFFICULTY_LABELS[option]}
-                </option>
-              ))}
-            </select>
-          </Field>
-
+        <div className="grid gap-4">
           <Field
-            error={errors.estimatedMinutes}
-            htmlFor="estimatedMinutes"
-            label="Thời lượng ước tính (phút)"
+            error={errors.title}
+            htmlFor="title"
+            label="Tiêu đề"
           >
             <input
               className={inputClassName}
-              id="estimatedMinutes"
-              inputMode="numeric"
-              onChange={(event) =>
-                patch({ estimatedMinutes: event.target.value })
-              }
-              value={value.estimatedMinutes}
+              id="title"
+              onChange={(event) => patchTitle(event.target.value)}
+              value={value.title}
             />
           </Field>
 
           <Field
-            error={errors.timeLimitMs}
-            htmlFor="timeLimitMs"
-            hint="100–60000 ms"
-            label="Giới hạn thời gian chạy (ms)"
-          >
-            <input
-              className={inputClassName}
-              id="timeLimitMs"
-              inputMode="numeric"
-              onChange={(event) => patch({ timeLimitMs: event.target.value })}
-              value={value.timeLimitMs}
-            />
-          </Field>
-
-          <Field
-            error={errors.memoryLimitKb}
-            htmlFor="memoryLimitKb"
-            hint="1024–4194304 KB"
-            label="Giới hạn bộ nhớ (KB)"
-          >
-            <input
-              className={inputClassName}
-              id="memoryLimitKb"
-              inputMode="numeric"
-              onChange={(event) => patch({ memoryLimitKb: event.target.value })}
-              value={value.memoryLimitKb}
-            />
-          </Field>
-        </div>
-
-        {tagOptions && (
-          <TopicPicker
             hint={
-              onCreateTag
-                ? "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới."
-                : "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; chỉ chọn được chủ đề đã có."
+              slugLocked
+                ? "Đã công khai nên không đổi được — đường dẫn đã phát ra ngoài."
+                : "Phần định danh trong đường dẫn. Chỉ đổi được khi chưa công khai."
             }
-            max={MAX_TAGS}
-            onChange={(tagIds) => patch({ tagIds })}
-            onCreate={onCreateTag}
-            options={tagOptions}
-            readOnly={readOnly}
-            value={value.tagIds ?? []}
-          />
-        )}
+            error={errors.slug}
+            htmlFor="slug"
+            label="Slug"
+          >
+            <input
+              className={inputClassName}
+              disabled={slugLocked}
+              id="slug"
+              onChange={(event) => patch({ slug: event.target.value })}
+              value={value.slug}
+            />
+          </Field>
 
+          <Field
+            error={errors.summary}
+            htmlFor="summary"
+            label="Tóm tắt"
+            hint="Một dòng hiện ở danh sách."
+          >
+            <input
+              className={inputClassName}
+              id="summary"
+              onChange={(event) => patch({ summary: event.target.value })}
+              value={value.summary}
+            />
+          </Field>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field htmlFor="difficulty" label="Độ khó">
+              <select
+                className={inputClassName}
+                id="difficulty"
+                onChange={(event) => patch({ difficulty: event.target.value })}
+                value={value.difficulty}
+              >
+                {DIFFICULTIES.map((option) => (
+                  <option key={option} value={option}>
+                    {DIFFICULTY_LABELS[option]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field
+              error={errors.estimatedMinutes}
+              htmlFor="estimatedMinutes"
+              label="Thời lượng ước tính (phút)"
+            >
+              <input
+                className={inputClassName}
+                id="estimatedMinutes"
+                inputMode="numeric"
+                onChange={(event) =>
+                  patch({ estimatedMinutes: event.target.value })
+                }
+                value={value.estimatedMinutes}
+              />
+            </Field>
+
+            <Field
+              error={errors.timeLimitMs}
+              htmlFor="timeLimitMs"
+              hint="100–60000 ms"
+              label="Giới hạn thời gian chạy (ms)"
+            >
+              <input
+                className={inputClassName}
+                id="timeLimitMs"
+                inputMode="numeric"
+                onChange={(event) => patch({ timeLimitMs: event.target.value })}
+                value={value.timeLimitMs}
+              />
+            </Field>
+
+            <Field
+              error={errors.memoryLimitKb}
+              htmlFor="memoryLimitKb"
+              hint="1024–4194304 KB"
+              label="Giới hạn bộ nhớ (KB)"
+            >
+              <input
+                className={inputClassName}
+                id="memoryLimitKb"
+                inputMode="numeric"
+                onChange={(event) => patch({ memoryLimitKb: event.target.value })}
+                value={value.memoryLimitKb}
+              />
+            </Field>
+          </div>
+
+          {tagOptions && (
+            <TopicPicker
+              hint={
+                onCreateTag
+                  ? "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới."
+                  : "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; chỉ chọn được chủ đề đã có."
+              }
+              max={MAX_TAGS}
+              onChange={(tagIds) => patch({ tagIds })}
+              onCreate={onCreateTag}
+              options={tagOptions}
+              readOnly={readOnly}
+              value={value.tagIds ?? []}
+            />
+          )}
+        </div>
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4" id="studio-statement">
         <CardHeading
           action={
             <Button
@@ -558,11 +577,11 @@ function SignatureCard({
       </Field>
 
       {parameters.length === 0 ? (
-        <p className="mb-4 rounded-lg border border-dashed px-4 py-4 text-center text-sm text-muted-foreground">
+        <p className="my-4 rounded-lg border border-dashed px-4 py-4 text-center text-sm text-muted-foreground">
           Chưa có tham số nào.
         </p>
       ) : (
-        <div className="mb-4 grid gap-2">
+        <div className="my-4 grid gap-2">
           {parameters.map((parameter, index) => (
             <div className="flex items-end gap-2" key={index}>
               <label className="min-w-0 flex-1 text-xs text-muted-foreground">
@@ -1018,7 +1037,7 @@ export function ExerciseCodeForm({
 
   return (
     <fieldset className="grid gap-3" disabled={readOnly}>
-      <Card className="p-4">
+      <Card className="p-4" id="studio-io">
         <CardHeading
           hint={
             isFunction
@@ -1046,7 +1065,7 @@ export function ExerciseCodeForm({
         />
       )}
 
-      <Card className="p-4">
+      <Card className="p-4" id="studio-languages">
         <CardHeading
           hint={
             "Mỗi ngôn ngữ đã chọn phải có lời giải mẫu thì mới gửi duyệt được." +
@@ -1126,7 +1145,7 @@ export function ExerciseCodeForm({
         ))}
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4" id="studio-testcases">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold">
             <FlaskConical
@@ -1399,7 +1418,7 @@ export function ExerciseCodeForm({
         ))}
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4" id="studio-grading">
         <CardHeading
           className="mb-3"
           hint="Quy tắc so sánh kết quả của học viên với đáp án. Chọn sai bộ so khớp là bài đúng vẫn bị chấm sai."

@@ -172,8 +172,20 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                   // Số thứ tự đứng NGOÀI thẻ, không đè lên thumbnail — layout ngang đặt
                   // thumbnail bên trái, thông tin bên phải, nên không còn chỗ nào để lồng số
                   // thứ tự vào ảnh bìa nữa.
-                  <li key={course.courseId} className="flex items-start gap-3">
-                    <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy font-mono text-xs font-bold text-on-ink">
+                  //
+                  // Đường nối dọc giữa các số cho thấy đây là một chuỗi, không phải năm thẻ
+                  // ngang hàng; bước đã xong chuyển sang cam để nhìn ra mình đang ở đâu.
+                  <li
+                    key={course.courseId}
+                    className="relative flex items-start gap-3 before:absolute before:top-9 before:-bottom-3 before:left-3.5 before:w-px before:bg-border last:before:hidden"
+                  >
+                    <span
+                      className={`relative mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold ${
+                        courseProgress?.enrollmentStatus === "completed"
+                          ? "bg-primary text-on-ink"
+                          : "bg-navy text-on-ink"
+                      }`}
+                    >
                       {course.position}
                     </span>
                     <div className="min-w-0 flex-1">

@@ -4,6 +4,7 @@
 
 @source "../../../../packages/ui/src";
 @source "../../../../packages/editor/src";
+@source "../../../../packages/solve/src";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -55,16 +56,20 @@
   --color-ink-fixed: #18181b;
 }
 
-* {
-  border-color: var(--border);
-}
-
-html {
-  min-width: 320px;
-  background: var(--background);
-}
-
+/* PHẢI nằm trong `@layer base` — cùng bẫy apps/lecturer đã sửa. CSS không thuộc layer nào
+ * THẮNG mọi utility ở Tailwind v4: `button, input, select { font: inherit }` để trần kéo cỡ chữ
+ * của mọi nút, tab và ô tìm kiếm lên 16px bất chấp `text-xs`/`text-sm`, còn `* { border-color }`
+ * để trần thì đè cả `border-primary` lẫn `border-destructive`. */
 @layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    min-width: 320px;
+    background: var(--background);
+  }
+
   /* Keyboard focus, once, for everything — including components that do not exist yet.
    * `:where()` keeps specificity at zero so a component can still declare its own, and
    * `:focus-visible` means only keyboard navigation paints a ring, not a mouse click.
@@ -74,53 +79,56 @@ html {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
-}
 
-body {
-  min-height: 100vh;
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
-  text-rendering: optimizeLegibility;
-}
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+  }
 
-button,
-input,
-select {
-  font: inherit;
-}
+  /* Chỉ kế thừa họ chữ, KHÔNG kế thừa cỡ chữ: `font: inherit` kéo theo cả `font-size`. */
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-weight: inherit;
+  }
 
-button,
-a,
-select {
-  -webkit-tap-highlight-color: transparent;
-}
+  button,
+  a,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: var(--border);
-}
+  ::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--border);
+  }
 
-::-webkit-scrollbar-button {
-  display: none;
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
 }
 
 .recharts-surface:focus {

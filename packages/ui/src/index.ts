@@ -64,6 +64,7 @@ export { TopicPicker } from "./topic-picker";
 export type { TopicOption } from "./topic-picker";
 export { Pane } from "./workspace/pane";
 export { ResizeHandle } from "./workspace/resize-handle";
+export { StudioSplit, useCompactLayout } from "./workspace/studio-split";
 export { TabBar } from "./workspace/tab-bar";
 export { useWorkspace, WorkspaceProvider } from "./workspace/workspace-context";
 export type {

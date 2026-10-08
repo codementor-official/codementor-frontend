@@ -4,6 +4,7 @@
 @import "@codementor/ui/theme.css";
 @source "../../../../packages/ui/src";
 @source "../../../../packages/editor/src";
+@source "../../../../packages/solve/src";
 
 /* Class-based, not `prefers-color-scheme`: the theme picker offers an explicit
  * light/dark override, which a media query alone can't express. `useThemeStore`
@@ -45,6 +46,8 @@
   --color-sidebar-border: var(--color-border);
   --color-popover: var(--color-surface);
   --color-popover-foreground: var(--color-ink);
+  /* Focus border of @codementor/solve fields (`focus-visible:border-ring`). */
+  --color-ring: var(--color-text-faint);
 }
 
 @theme {
@@ -113,6 +116,8 @@
   --duration-base: 180ms;
   --duration-theme: 220ms;
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Arrivals only (overlays, panels, fills): fast start, long settle. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-roboto-mono);
@@ -347,7 +352,35 @@ html {
   animation: notification-in var(--duration-normal, 240ms) var(--ease-standard);
 }
 
-/* Motion is decoration here — every one of these animations is safe to drop entirely. */
+/* State motion shared by all three apps (progress fill, panel swap, late loader) lives in
+ * @codementor/ui/theme.css. Only the client-specific moment is below. */
+
+/* The studio's authored moment: Lecter just wrote into the author's form. A ring settles onto
+ * exactly the fields it touched and fades, so the author knows what to re-read before saving.
+ * Outline, not box-shadow or background: cards and inputs keep their own surface throughout. */
+@keyframes lecter-applied {
+  from {
+    outline-color: var(--color-primary);
+    outline-offset: 8px;
+  }
+  25% {
+    outline-color: var(--color-primary);
+    outline-offset: 3px;
+  }
+  to {
+    outline-color: transparent;
+    outline-offset: 3px;
+  }
+}
+
+.lecter-applied {
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  animation: lecter-applied 1600ms var(--ease-out-expo);
+}
+
+/* Reduced motion drops movement, never meaning: the Lecter ring and the loader still fade
+ * (colour/opacity), only the travel is removed. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -358,21 +391,39 @@ html {
   .theme-transition *::after {
     transition: none !important;
   }
-  .animate-menu-in {
-    animation: none;
-  }
-  .animate-notification-in {
-    animation: none;
-  }
+  .animate-menu-in,
+  .animate-notification-in,
   .mascot-sprite-idle {
     animation: none;
   }
+  @keyframes lecter-applied {
+    from {
+      outline-color: var(--color-primary);
+    }
+    60% {
+      outline-color: var(--color-primary);
+    }
+    to {
+      outline-color: transparent;
+    }
+  }
 }
+
 
 /* Component default: buttons/inputs/textareas are square-ish (radius-md), not pills.
  * Must live in `@layer base` — unlayered CSS outranks Tailwind's layered utilities in v4,
  * so leaving this unlayered silently killed every `rounded-full`/`rounded-lg` on a button. */
 @layer base {
+  /* Tailwind v4 defaults a bare `border` to currentColor. The shared packages (`Card` in
+   * @codementor/ui, every field in @codementor/solve) write bare `border` and rely on this
+   * default, like the two consoles already declare — without it they drew ink-black lines
+   * in light mode and white ones in dark. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
   button,
   input[type="text"],
   input[type="password"],

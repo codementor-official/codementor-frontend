@@ -1,5 +1,5 @@
 import { History } from "lucide-react";
-import { Card, CardContent, CardHeader, StatusBadge } from "@codementor/ui";
+import { Card, CardContent, CardHeader } from "@codementor/ui";
 import type { AuditLogEntry } from "@/lib/api";
 
 const dateTimeFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
@@ -10,6 +10,13 @@ const ACTION_TONES: Record<string, "neutral" | "success" | "warning" | "danger">
   "user.role_changed": "warning",
   "user.suspended": "danger",
 };
+
+const TONE_DOT = {
+  neutral: "bg-muted-foreground",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-destructive",
+} as const;
 
 /**
  * Hoạt động quản trị gần đây, đọc từ bảng `audit_logs`.
@@ -54,9 +61,15 @@ export function OperationsOverview({ entries }: { entries: AuditLogEntry[] }) {
                 {entries.map((entry) => (
                   <tr className="border-b border-border last:border-0" key={entry.id}>
                     <td className="px-3 py-2.5">
-                      <StatusBadge tone={ACTION_TONES[entry.action] ?? "neutral"}>
+                      {/* Một câu, không phải nhãn: bọc cả câu trong badge biến bảng thành một
+                          cột pill xám và câu dài thì tràn khỏi ô. Màu loại thao tác là một chấm. */}
+                      <span className="flex items-start gap-2">
+                        <span
+                          aria-hidden="true"
+                          className={`mt-1.5 size-1.5 shrink-0 rounded-full ${TONE_DOT[ACTION_TONES[entry.action] ?? "neutral"]}`}
+                        />
                         {entry.summary}
-                      </StatusBadge>
+                      </span>
                     </td>
                     <td className="px-3 py-2.5 text-muted-foreground">{entry.actorEmail}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">

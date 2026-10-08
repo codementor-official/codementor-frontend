@@ -13,6 +13,7 @@ import { exerciseDifficulty, levelToDifficulty, FIELD_LABEL } from "@/lib/catalo
 import { useRecommendations } from "@/features/recommendations/use-recommendations";
 import { inRecommendationOrder } from "@/features/recommendations/ranked-items";
 import { RecommendationError, RecommendationNotice } from "@/features/recommendations/recommendation-feedback";
+import { roadmapCoverFallback } from "@/lib/cover-fallback";
 
 const GRID = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 const VISIBLE = 4;
@@ -48,8 +49,8 @@ export function RecommendedExercises({ limit = 5, title, layout = "list" }: { li
         <span className="mt-auto flex items-center gap-1 pt-3 text-xs font-semibold text-primary">Mở bài tập <ArrowUpRight className="h-3.5 w-3.5" /></span>
       </Link></li>;
     })}</ul> : <Card className="overflow-hidden">
-      {data.items.map((item, i) => <ProblemRow key={item.id} tile={tileFor(item.title)}
-        tileVariant={i % 2 === 0 ? "primary" : "navy"} title={item.title}
+      {data.items.map((item) => <ProblemRow key={item.id} tile={tileFor(item.title)}
+        title={item.title}
         meta={item.reasons[0] ?? "Gợi ý cho bạn"} difficulty={exerciseDifficulty(item.difficulty ?? "easy")}
         href={`/solve/${item.id}`} />)}
     </Card>}
@@ -85,6 +86,7 @@ export function RecommendedRoadmaps({ excludeId, limit = 6, title }: { excludeId
     <ul className={GRID}>
       {visible.map((roadmap) => <li key={roadmap.id}>
         <EntityCard tile={tileFor(roadmap.title)} tileHeight="md"
+          coverImage={roadmapCoverFallback(roadmap.field ?? "")}
           kind={{ icon: MapIcon, label: FIELD_LABEL[roadmap.field ?? ""] ?? "Lộ trình" }}
           title={roadmap.title} description="" difficulty={levelToDifficulty(roadmap.level ?? "basic")}
           tags={roadmap.technologies.slice(0, 3)} note={roadmap.reasons[0]} href={`/roadmaps/${roadmap.id}`} />

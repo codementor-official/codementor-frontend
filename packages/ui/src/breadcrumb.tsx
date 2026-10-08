@@ -29,9 +29,17 @@ export function Breadcrumb({
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
-            <li key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1">
+            // Dưới md, topbar còn chỗ cho logo + nút menu + chuông: cả chuỗi bị cắt thành
+            // "Tổng ... › Nhóm h...", không đọc được mục nào. Chỉ giữ trang hiện tại.
+            <li
+              key={`${item.label}-${index}`}
+              className={`min-w-0 items-center gap-1 ${isLast ? "flex" : "hidden md:flex"}`}
+            >
               {index > 0 && (
-                <ChevronRight aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <ChevronRight
+                  aria-hidden
+                  className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground md:block"
+                />
               )}
               {isLast || !item.href ? (
                 // The current page is announced, not linked — a link to where you already

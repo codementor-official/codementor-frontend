@@ -91,9 +91,8 @@ export function DashboardCoach({ dashboard, data, isLoading, error, reload, onDa
       <div className="grid min-w-0 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)_220px]">
         <div className="grid min-w-0 items-center gap-3 p-5 sm:grid-cols-[minmax(0,1fr)_180px]">
           <div className="min-w-0">
-            <p className="text-2xs font-bold uppercase tracking-wide text-primary">Nhận định hiện tại</p>
-            <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-text">{applied && firstStep ? `Bạn đang ưu tiên “${firstStep.title}”. ${insight?.summary ?? ''}` : insight?.summary ?? 'AI Coach sẽ phân tích mục tiêu, nội dung đang học và hoạt động gần đây khi bạn yêu cầu. Hệ thống không tự tạo số liệu hoặc tự đánh dấu hoàn thành.'}</p>
-            {insight?.focus && <p className="mt-3 line-clamp-2 text-xs text-text-muted"><strong className="text-navy">Trọng tâm:</strong> {insight.focus}</p>}
+            <p className="line-clamp-4 text-sm leading-relaxed text-text">{applied && firstStep ? `Bạn đang ưu tiên “${firstStep.title}”. ${insight?.summary ?? ''}` : insight?.summary ?? 'AI Coach sẽ phân tích mục tiêu, nội dung đang học và hoạt động gần đây khi bạn yêu cầu. Hệ thống không tự tạo số liệu hoặc tự đánh dấu hoàn thành.'}</p>
+            {insight?.focus && <p className="mt-3 text-xs text-text-muted"><strong className="text-navy">Trọng tâm:</strong> {insight.focus}</p>}
           </div>
           <div className="hidden h-32 min-w-0 sm:block"><DashboardCoachVisual /></div>
         </div>

@@ -10,6 +10,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  type YAxisTickContentProps,
 } from "recharts";
 import { Card, CardContent, CardHeader } from "@codementor/ui";
 
@@ -189,11 +190,19 @@ export function CourseSizeChart({ courses }: { courses: CourseSize[] }) {
                 <YAxis
                   axisLine={false}
                   dataKey="title"
-                  fontSize={11}
-                  stroke="var(--muted-foreground)"
+                  // Nhãn tự vẽ, một <text> duy nhất: tick mặc định của Recharts bẻ tên dài thành
+                  // nhiều dòng chồng lên thanh bên cạnh. Tên đầy đủ vẫn ở tooltip.
+                  tick={({ x, y, payload }: YAxisTickContentProps) => {
+                    const title = String(payload.value);
+                    return (
+                      <text dy={4} fill="var(--muted-foreground)" fontSize={11} textAnchor="end" x={x} y={y}>
+                        {title.length > 20 ? `${title.slice(0, 19).trimEnd()}…` : title}
+                      </text>
+                    );
+                  }}
                   tickLine={false}
                   type="category"
-                  width={120}
+                  width={140}
                 />
                 <Tooltip
                   contentStyle={tooltipStyle}

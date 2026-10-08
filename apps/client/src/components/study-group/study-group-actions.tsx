@@ -12,9 +12,12 @@ type Panel = "join" | "create";
 export function StudyGroupActions({
   onJoin,
   onCreate,
+  leading,
 }: {
   onJoin: (code: string) => Promise<void>;
   onCreate: (name: string, description: string) => Promise<void>;
+  /** Nằm cùng hàng, bên trái hai nút (bộ lọc phạm vi). Panel vẫn mở ngay dưới hàng này. */
+  leading?: React.ReactNode;
 }) {
   const [panel, setPanel] = useState<Panel | null>(null);
   const [joinCode, setJoinCode] = useState("");
@@ -62,8 +65,10 @@ export function StudyGroupActions({
   };
 
   return (
-    <div className="mb-5">
-      <div className="flex flex-wrap items-center justify-end gap-2">
+    <div className="mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {leading}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
         <Button
           type="button"
           size="sm"
@@ -91,6 +96,7 @@ export function StudyGroupActions({
           )}
           Tham gia bằng mã mời
         </Button>
+        </div>
       </div>
 
       {panel === "join" && (

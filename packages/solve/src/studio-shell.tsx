@@ -88,7 +88,10 @@ export function StudioShell({
         )}
       </header>
 
-      <div className="min-h-0 flex-1">{children}</div>
+      {/* Khoá theo tab: đổi tab thì khung mount lại và chạy `panel-in` một lần. */}
+      <div className="animate-panel-in min-h-0 flex-1" key={tabs?.value}>
+        {children}
+      </div>
     </div>
   );
 }
