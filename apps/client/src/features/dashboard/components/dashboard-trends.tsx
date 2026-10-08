@@ -59,7 +59,7 @@ export function DashboardTrends({ data, onRetry }: { data: DashboardData; onRetr
     title="Phân tích tiến độ"
     description="Tổng hợp hoạt động, chủ đề luyện tập và nội dung đang học từ dữ liệu đã ghi nhận của bạn."
   >
-    <div className="grid min-w-0 gap-4 xl:grid-cols-12">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-12">
       <Card className="min-w-0 p-5 xl:col-span-7">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

@@ -20,12 +20,11 @@ import {
 } from "@codementor/solve";
 import {
   Modal,
-  ResizeHandle,
   StatusBadge,
   useResolvedTheme,
   useToast,
+  StudioSplit,
 } from "@codementor/ui";
-import { Group, Panel } from "react-resizable-panels";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -430,30 +429,39 @@ export function WorkspaceExerciseStudio({
           // chiều cao liền mạch từ <html> xuống, không còn `min(74vh,860px)` đoán mò để lại
           // một dải trống dưới đáy.
           <div className="h-full overflow-hidden bg-bg/30">
-            <Group orientation="horizontal" className="h-full">
-              <Panel id="workspace-brief" defaultSize="50%" minSize="30%">
-                <div className="h-full overflow-y-auto p-3">
-                  <ExerciseBriefForm
-                    value={draft}
-                    onChange={updateDraft}
-                    slugLocked={Boolean(exerciseId)}
-                    tagOptions={tags}
-                  />
-                </div>
-              </Panel>
-              <ResizeHandle orientation="horizontal" />
-              <Panel id="workspace-code" defaultSize="50%" minSize="30%">
-                <div className="h-full overflow-y-auto p-3">
-                  <ExerciseCodeForm
-                    value={draft}
-                    onChange={updateDraft}
-                    ai={api.aiStudio}
-                    judge={api.judge}
-                    theme={theme}
-                  />
-                </div>
-              </Panel>
-            </Group>
+            <StudioSplit
+              start={{
+                id: "workspace-brief",
+                defaultSize: "50%",
+                minSize: "30%",
+                content: (
+                  <div className="h-full overflow-y-auto p-3">
+                    <ExerciseBriefForm
+                      value={draft}
+                      onChange={updateDraft}
+                      slugLocked={Boolean(exerciseId)}
+                      tagOptions={tags}
+                    />
+                  </div>
+                ),
+              }}
+              end={{
+                id: "workspace-code",
+                defaultSize: "50%",
+                minSize: "30%",
+                content: (
+                  <div className="h-full overflow-y-auto p-3">
+                    <ExerciseCodeForm
+                      value={draft}
+                      onChange={updateDraft}
+                      ai={api.aiStudio}
+                      judge={api.judge}
+                      theme={theme}
+                    />
+                  </div>
+                ),
+              }}
+            />
           </div>
         ) : (
           <StudioScroll>

@@ -19,6 +19,7 @@ import {
   PageHeader,
   ServerPagination,
   useToast,
+  SegmentedTabs,
 } from "@codementor/ui";
 import { inputClassName } from "./form-style";
 import {
@@ -293,32 +294,22 @@ export function CommerceScreen() {
           </Button>
         </div>
       </Card>
-      <div
-        className="flex flex-wrap items-center gap-2"
-        role="tablist"
-        aria-label="Quản lý giao dịch"
-      >
-        {[
-          ["orders", "Đơn hàng"],
-          ["withdrawals", "Yêu cầu rút tiền"],
-          ["ledger", "Biến động số dư"],
-          ["audit", "Nhật ký hoạt động"],
-          ["policy", "Chính sách doanh thu"],
-        ].map(([v, l]) => (
-          <Button
-            key={v}
-            role="tab"
-            aria-selected={tab === v}
-            variant={tab === v ? "default" : "outline"}
-            onClick={() => {
-              setTab(v as Tab);
-              setPage(1);
-              setSort("newest");
-            }}
-          >
-            {l}
-          </Button>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <SegmentedTabs
+          onChange={(v) => {
+            setTab(v as Tab);
+            setPage(1);
+            setSort("newest");
+          }}
+          options={[
+            { value: "orders", label: "Đơn hàng" },
+            { value: "withdrawals", label: "Yêu cầu rút tiền" },
+            { value: "ledger", label: "Biến động số dư" },
+            { value: "audit", label: "Nhật ký hoạt động" },
+            { value: "policy", label: "Chính sách doanh thu" },
+          ]}
+          value={tab}
+        />
         {tab !== "policy" && (
           <Button
             className="ml-auto"

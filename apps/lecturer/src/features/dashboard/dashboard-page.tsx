@@ -172,11 +172,11 @@ export function LecturerDashboardPage() {
           <LearnerInsights />
           <Suggestions items={mine} />
           <StatusOverview items={mine} unavailable={unavailable} />
-          <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
             <StatusByKindChart items={chartItems} />
             <CourseSizeChart courses={courseSizes} />
           </div>
-          <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
             <Drafts items={mine} />
             <RecentlyPublished items={mine} />
           </div>

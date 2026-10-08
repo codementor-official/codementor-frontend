@@ -36,8 +36,8 @@ export function PageHeader({ title, description, icon: Icon, center, action }: P
           )}
         </div>
       </div>
-      {center && <div className="shrink-0">{center}</div>}
-      {action && <div className="shrink-0">{action}</div>}
+      {center && <div className="max-w-full shrink-0">{center}</div>}
+      {action && <div className="max-w-full shrink-0">{action}</div>}
     </header>
   );
 }

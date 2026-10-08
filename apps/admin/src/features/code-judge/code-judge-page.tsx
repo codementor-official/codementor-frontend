@@ -96,7 +96,7 @@ export function CodeJudgePage() {
       )}
 
       {data && (
-        <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
           <DailyBarCard
             data={data.daily}
             describe={(point) => `${point.total} lượt nộp · ${point.accepted} đạt`}

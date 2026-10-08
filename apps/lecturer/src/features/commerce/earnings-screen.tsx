@@ -17,6 +17,7 @@ import {
   Modal,
   PageHeader,
   RevenueOverview,
+  SegmentedTabs,
   ServerPagination,
   StatStrip,
 } from "@codementor/ui";
@@ -285,30 +286,22 @@ export function EarningsScreen() {
       )}
       {wallet && <HoldingExplanation wallet={wallet} />}
       <Card>
-        <div
-          className="flex flex-wrap gap-2 border-b border-border p-3"
-          role="tablist"
-          aria-label="Lịch sử thu nhập"
-        >
-          {[
-            ["overview", "Tổng quan doanh thu"],
-            ["orders", "Đơn hàng"],
-            ["withdrawals", "Yêu cầu rút"],
-            ["ledger", "Biến động số dư"],
-          ].map(([key, label]) => (
-            <Button
-              key={key}
-              role="tab"
-              aria-selected={tab === key}
-              variant={tab === key ? "default" : "outline"}
-              onClick={() => {
-                setTab(key as Tab);
-                setPage(1);
-              }}
-            >
-              {label}
-            </Button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+          {/* Cùng kiểu tab với mọi màn khác: bốn nút đặc/viền rời nhau trước đây đọc như bốn
+              hành động chứ không phải bốn góc nhìn của một dữ liệu. */}
+          <SegmentedTabs
+            onChange={(key) => {
+              setTab(key as Tab);
+              setPage(1);
+            }}
+            options={[
+              { value: "overview", label: "Tổng quan doanh thu" },
+              { value: "orders", label: "Đơn hàng" },
+              { value: "withdrawals", label: "Yêu cầu rút" },
+              { value: "ledger", label: "Biến động số dư" },
+            ]}
+            value={tab}
+          />
           {tab !== "overview" && (
             <>
               <Button

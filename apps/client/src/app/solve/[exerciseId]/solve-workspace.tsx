@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -28,6 +28,7 @@ import {
   ResizeHandle,
   useWorkspace,
   WorkspaceProvider,
+  useCompactLayout,
 } from "@codementor/ui";
 import { CodeEditor, FORMATTABLE_LANGUAGES } from "@codementor/editor";
 import {
@@ -738,18 +739,6 @@ function SubmissionHistory({
   );
 }
 
-const compactWorkspaceQuery = "(max-width: 767px)";
-
-function subscribeCompactWorkspace(onChange: () => void) {
-  const media = window.matchMedia(compactWorkspaceQuery);
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
-}
-
-function getCompactWorkspace() {
-  return window.matchMedia(compactWorkspaceQuery).matches;
-}
-
 function WorkspaceBody({
   problem,
   backHref,
@@ -765,7 +754,7 @@ function WorkspaceBody({
 }) {
   const { panes, setActive, openTab, closeTab, maximized } = useWorkspace();
   const { mascotVisible } = useCodey();
-  const compact = useSyncExternalStore(subscribeCompactWorkspace, getCompactWorkspace, () => false);
+  const compact = useCompactLayout();
   const [mobilePane, setMobilePane] = useState<PaneId>("left");
   const aiVisible = panes.ai.tabs.length > 0;
   const visibleMobilePane = mobilePane === "ai" && !aiVisible ? "left" : mobilePane;

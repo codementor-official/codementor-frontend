@@ -170,16 +170,19 @@ export function ManagePage<TData>({
         action={
           // Nút xuất nằm ở ĐÂY chứ không phải ở từng màn: mọi màn quản trị đều dựng từ
           // component này, nên thêm một bảng mới là có sẵn nút xuất, không phải nhớ.
-          <div className="flex items-center gap-2">
+          // Dưới sm, hai nút phụ chỉ còn icon và cả cụm được xuống dòng: ba nút đủ chữ rộng
+          // hơn 390px, đẩy nút tạo mới ra ngoài mép phải.
+          <div className="flex flex-wrap items-center gap-2">
             {onRefresh && <RefreshButton onRefresh={onRefresh} />}
             <Button
+              aria-label="Xuất Excel"
               disabled={rows.length === 0}
               onClick={() => exportTableToCsv(table, exportFilename ?? slugify(title))}
               type="button"
               variant="outline"
             >
               <Download aria-hidden="true" className="size-4" />
-              Xuất Excel
+              <span className="hidden sm:inline">Xuất Excel</span>
             </Button>
             {action}
           </div>
@@ -285,7 +288,7 @@ export function RefreshButton({ onRefresh }: { onRefresh: () => void | Promise<u
   return (
     <Button aria-label="Làm mới" disabled={busy} onClick={() => void run()} type="button" variant="outline">
       <RefreshCw aria-hidden="true" className={`size-4 ${busy ? "animate-spin" : ""}`} />
-      {busy ? "Đang tải…" : "Làm mới"}
+      <span className="hidden sm:inline">{busy ? "Đang tải…" : "Làm mới"}</span>
     </Button>
   );
 }

@@ -9,8 +9,8 @@ export function BrandLogo({ size = 40, showName = false }: { size?: number; show
   return (
     <span aria-label="CodeMentor Lecturer" className="flex shrink-0 items-center gap-2.5" role="img">
       <span className="relative block shrink-0" style={{ height: size, width: size }}>
-        <Image alt="" className="dark:hidden" fill priority sizes={`${size}px`} src="/brand-mark.png" />
-        <Image alt="" className="hidden dark:block" fill priority sizes={`${size}px`} src="/brand-mark-dark.png" />
+        <Image alt="" className="dark:hidden" fill loading="eager" sizes={`${size}px`} src="/brand-mark.png" />
+        <Image alt="" className="hidden dark:block" fill loading="eager" sizes={`${size}px`} src="/brand-mark-dark.png" />
       </span>
       {showName && (
         <span className="font-extrabold leading-none tracking-tight" style={{ fontSize: Math.round(size * 0.6) }}>

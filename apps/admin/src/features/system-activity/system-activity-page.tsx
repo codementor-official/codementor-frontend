@@ -93,7 +93,7 @@ export function SystemActivityPage() {
       )}
 
       {data && (
-        <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-2">
+        <div className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2">
           <div className="xl:col-span-2">
             <ServicesCard services={data.services} />
           </div>

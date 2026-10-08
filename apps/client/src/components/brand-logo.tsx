@@ -12,12 +12,16 @@ const SIZES = {
   lg: { mark: 64, text: "text-3xl" },
 } as const;
 
-/** Square mark, transparent PNGs. CSS picks the theme variant so there is no flash before hydration. */
+/**
+ * Square mark, transparent PNGs. CSS picks the theme variant so there is no flash before
+ * hydration. `eager`, not `priority`: priority preloads BOTH variants and one of them is
+ * always hidden, so the browser warns about an unused preload on every page.
+ */
 function BrandMark({ size, priority }: { size: number; priority: boolean }) {
   return (
     <span className="relative block shrink-0" style={{ height: size, width: size }}>
-      <Image alt="" className="dark:hidden" fill priority={priority} sizes={`${size}px`} src="/brand-mark.png" />
-      <Image alt="" className="hidden dark:block" fill priority={priority} sizes={`${size}px`} src="/brand-mark-dark.png" />
+      <Image alt="" className="dark:hidden" fill loading={priority ? "eager" : "lazy"} sizes={`${size}px`} src="/brand-mark.png" />
+      <Image alt="" className="hidden dark:block" fill loading={priority ? "eager" : "lazy"} sizes={`${size}px`} src="/brand-mark-dark.png" />
     </span>
   );
 }

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Info, Save, Send, Tags, TriangleAlert, Undo2 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Group, Panel } from "react-resizable-panels";
 import {
   DndContext,
   KeyboardSensor,
@@ -23,11 +22,11 @@ import {
   Card,
   Modal,
   PageHeader,
-  ResizeHandle,
   StatusBadge,
   useToast,
   useUndoableDelete,
   TopicPicker,
+  StudioSplit,
 } from "@codementor/ui";
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
@@ -471,26 +470,33 @@ export default function RoadmapStudioPage() {
     >
       {tab === "courses" ? (
         <DndContext collisionDetection={collisionDetection} onDragEnd={onDragEnd} sensors={sensors}>
-          <Group orientation="horizontal" className="h-full">
-            <Panel id="picked" defaultSize="55%" minSize="25%" className="min-h-0">
-              <div className="h-full overflow-y-auto p-3">
-                <PickedCourses disabled={locked} onChange={setPicked} picked={picked} />
-              </div>
-            </Panel>
-
-            <ResizeHandle orientation="horizontal" />
-
-            <Panel id="library" defaultSize="45%" minSize="20%" className="min-h-0">
-              <div className="h-full overflow-y-auto p-3">
-                <CourseLibrary
-                  available={available}
-                  disabled={locked}
-                  onChange={setPicked}
-                  picked={picked}
-                />
-              </div>
-            </Panel>
-          </Group>
+          <StudioSplit
+            start={{
+              id: "picked",
+              defaultSize: "55%",
+              minSize: "25%",
+              content: (
+                <div className="h-full overflow-y-auto p-3">
+                  <PickedCourses disabled={locked} onChange={setPicked} picked={picked} />
+                </div>
+              ),
+            }}
+            end={{
+              id: "library",
+              defaultSize: "45%",
+              minSize: "20%",
+              content: (
+                <div className="h-full overflow-y-auto p-3">
+                  <CourseLibrary
+                    available={available}
+                    disabled={locked}
+                    onChange={setPicked}
+                    picked={picked}
+                  />
+                </div>
+              ),
+            }}
+          />
           <RoadmapDragOverlay available={available} picked={picked} />
         </DndContext>
       ) : (

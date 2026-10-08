@@ -285,7 +285,7 @@ export function CurriculumTree({ chapters, onChange, selection, onSelect, disabl
             items={chapters.map((chapter) => chapter.key)}
             strategy={verticalListSortingStrategy}
           >
-            <ul className="grid gap-2">
+            <ul className="grid grid-cols-[minmax(0,1fr)] gap-2">
               {chapters.map((chapter, index) => (
                 <SortableChapter
                   chapter={chapter}
