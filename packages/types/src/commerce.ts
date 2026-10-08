@@ -64,7 +64,13 @@ export interface CommerceOrder {
     discountVnd: number;
     finalAmountVnd: number;
     priceVersion: number;
-    promotion: { label: string; salePriceVnd: number; startsAt: string; endsAt: string; version: string } | null;
+    promotion: {
+      label: string;
+      salePriceVnd: number;
+      startsAt: string;
+      endsAt: string;
+      version: string;
+    } | null;
   } | null;
   id: string;
   buyer: { name: string; email: string } | null;
@@ -117,7 +123,11 @@ export interface CommerceJobStage {
   waiting: number;
   failed: number;
   error?: string;
-  items: { id: string; outcome: "completed" | "waiting" | "failed"; status?: string }[];
+  items: {
+    id: string;
+    outcome: "completed" | "waiting" | "failed";
+    status?: string;
+  }[];
 }
 export interface CommerceJobRun {
   runId: string;
@@ -128,7 +138,46 @@ export interface CommerceJobRun {
   stages: CommerceJobStage[];
   releasedAmountVnd: number;
   debtOffsetVnd: number;
-  remaining: { holding: number; refundBlocked: number; unverified: number; eligible: number } | null;
+  remaining: {
+    holding: number;
+    refundBlocked: number;
+    unverified: number;
+    eligible: number;
+  } | null;
+  orderReport?: CommerceJobOrderReport | null;
+}
+export interface CommerceJobOrder {
+  id: string;
+  courseTitle: string;
+  instructorName: string;
+  buyerName: string;
+  amountVnd: number;
+  instructorAmountVnd: number;
+  releasedAmountVnd: number;
+  debtOffsetVnd: number;
+  status: string;
+  incomeState: string;
+  reason:
+    | "released"
+    | "available"
+    | "refund"
+    | "verification"
+    | "holding"
+    | "eligible"
+    | "review"
+    | "not_paid";
+  holdUntil: string | null;
+  verifiedAt: string | null;
+  nextVerificationAt: string | null;
+  verificationDeferred: boolean;
+  encounteredError: boolean;
+}
+export interface CommerceJobOrderReport {
+  items: CommerceJobOrder[];
+  total: number;
+  page: number;
+  limit: number;
+  capturedAt: string;
 }
 export type PayoutMethod = "bank" | "momo" | "vnpay";
 export interface PayoutRecipient {
