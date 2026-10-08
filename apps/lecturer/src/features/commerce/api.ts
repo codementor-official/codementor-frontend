@@ -16,11 +16,13 @@ export const earningsApi = {
   analytics: (days: number, range?: RevenueDateRange | null) =>
     unwrap<RevenueReport>(
       `/commerce/wallet/analytics?${new URLSearchParams(range ? { from: range.from, to: range.to } : { days: String(days) })}`,
+      { cache: "no-store" },
     ),
-  wallet: () => unwrap<WalletSummary>("/commerce/wallet"),
+  wallet: () => unwrap<WalletSummary>("/commerce/wallet", { cache: "no-store" }),
   orders: (page: number, sort = "newest") =>
     unwrap<CommercePage<CommerceOrder>>(
       `/commerce/wallet/orders?${new URLSearchParams({ page: String(page), sort })}`,
+      { cache: "no-store" },
     ),
   courseOrders: (
     id: string,
@@ -31,14 +33,17 @@ export const earningsApi = {
   ) =>
     unwrap<CoursePurchasePage>(
       `/commerce/wallet/courses/${id}/orders?${new URLSearchParams({ page: String(page), sort, ...(status ? { status } : {}), ...(q ? { q } : {}) })}`,
+      { cache: "no-store" },
     ),
   ledger: (page: number, sort = "newest") =>
     unwrap<CommercePage<CommerceLedgerEntry>>(
       `/commerce/wallet/ledger?${new URLSearchParams({ page: String(page), sort })}`,
+      { cache: "no-store" },
     ),
   withdrawals: (page: number, sort = "newest") =>
     unwrap<CommercePage<CommerceWithdrawal>>(
       `/commerce/wallet/withdrawals?${new URLSearchParams({ page: String(page), sort })}`,
+      { cache: "no-store" },
     ),
   recipient: (data: PayoutRecipient) =>
     unwrap<PayoutRecipient>("/commerce/wallet/recipient", {

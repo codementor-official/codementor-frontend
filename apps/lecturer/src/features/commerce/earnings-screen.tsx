@@ -71,45 +71,82 @@ export function EarningsScreen() {
   const scopeKey = `${tab}-${page}-${sort}-${days}-${dateRange?.from ?? ""}-${dateRange?.to ?? ""}`;
   const [loadedScope, setLoadedScope] = useState("");
   const generation = useRef(0);
-  const load = useCallback(async () => {
-    const requestGeneration = ++generation.current;
-    setLoading(true);
-    if (tab === "overview") setReport(null);
-    try {
-      const [summary, result] = await Promise.all([
-        earningsApi.wallet(),
-        tab === "overview"
-          ? earningsApi.analytics(days, dateRange)
-          : tab === "orders"
-            ? earningsApi.orders(page, sort)
-            : tab === "withdrawals"
-              ? earningsApi.withdrawals(page, sort)
-              : earningsApi.ledger(page, sort),
-      ]);
-      if (requestGeneration !== generation.current) return;
-      setWallet(summary);
-      if (tab === "overview") setReport(result as RevenueReport);
-      if (tab === "orders") setOrders(result as CommercePage<CommerceOrder>);
-      if (tab === "withdrawals")
-        setWithdrawals(result as CommercePage<CommerceWithdrawal>);
-      if (tab === "ledger")
-        setLedger(result as CommercePage<CommerceLedgerEntry>);
-      setError("");
-    } catch (e) {
-      if (requestGeneration !== generation.current) return;
-      if (tab === "overview") setReport(null);
-      setError(apiErrorMessage(e));
-    } finally {
-      if (requestGeneration === generation.current) {
-        setLoading(false);
-        setLoadedScope(scopeKey);
+  const inFlight = useRef(0);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const load = useCallback(
+    async (quiet = false) => {
+      if (quiet && inFlight.current > 0) return;
+      inFlight.current++;
+      const requestGeneration = ++generation.current;
+      if (!quiet) {
+        setLoading(true);
+        if (tab === "overview") setReport(null);
       }
-    }
-  }, [tab, page, sort, days, dateRange, scopeKey]);
+      try {
+        const [summary, result] = await Promise.all([
+          earningsApi.wallet(),
+          tab === "overview"
+            ? earningsApi.analytics(days, dateRange)
+            : tab === "orders"
+              ? earningsApi.orders(page, sort)
+              : tab === "withdrawals"
+                ? earningsApi.withdrawals(page, sort)
+                : earningsApi.ledger(page, sort),
+        ]);
+        if (requestGeneration !== generation.current) return;
+        setWallet(summary);
+        if (tab === "overview") setReport(result as RevenueReport);
+        if (tab === "orders") {
+          const fresh = result as CommercePage<CommerceOrder>;
+          setOrders(fresh);
+          setDetail((previous) =>
+            previous?.type === "order"
+              ? {
+                  ...previous,
+                  item:
+                    fresh.items.find((item) => item.id === previous.item.id) ??
+                    previous.item,
+                }
+              : previous,
+          );
+        }
+        if (tab === "withdrawals")
+          setWithdrawals(result as CommercePage<CommerceWithdrawal>);
+        if (tab === "ledger")
+          setLedger(result as CommercePage<CommerceLedgerEntry>);
+        setError("");
+        setUpdatedAt(Date.now());
+      } catch (e) {
+        if (requestGeneration !== generation.current) return;
+        if (!quiet && tab === "overview") setReport(null);
+        setError(
+          quiet
+            ? `Chưa cập nhật được dữ liệu mới: ${apiErrorMessage(e)}`
+            : apiErrorMessage(e),
+        );
+      } finally {
+        inFlight.current--;
+        if (requestGeneration === generation.current) {
+          setLoading(false);
+          setLoadedScope(scopeKey);
+        }
+      }
+    },
+    [tab, page, sort, days, dateRange, scopeKey],
+  );
   useEffect(() => {
     void load();
+    const refresh = () => {
+      if (document.visibilityState === "visible") void load(true);
+    };
+    const timer = window.setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
     return () => {
       generation.current++;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [load]);
   const current =
@@ -198,6 +235,15 @@ export function EarningsScreen() {
           </div>
         }
       />
+      {updatedAt && (
+        <p className="text-xs text-muted-foreground">
+          Cập nhật lúc{" "}
+          {new Date(updatedAt).toLocaleTimeString("vi-VN", {
+            timeZone: "Asia/Ho_Chi_Minh",
+          })}{" "}
+          · Tự cập nhật mỗi 15 giây khi trang đang mở
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -293,6 +339,7 @@ export function EarningsScreen() {
         {tab === "overview" ? (
           <div className="p-4">
             <RevenueOverview
+              defaultView="all"
               report={report}
               days={days}
               onDaysChange={setDays}
@@ -416,10 +463,8 @@ export function EarningsScreen() {
                           Doanh thu:{" "}
                           {COMMERCE_INCOME_STATUS[o.incomeState] ??
                             o.incomeState}
-                          {o.availableAt &&
-                            o.incomeState === "pending" &&
-                            ` · hạn giữ ${holdingDeadline(o.availableAt)}`}
                         </p>
+                        <OrderHoldingHint order={o} />
                       </td>
                       <td className="p-3">
                         <Button
