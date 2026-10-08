@@ -720,7 +720,10 @@ export function CommerceScreen() {
             hoặc xuất CSV; nhật ký lưu các thay đổi thực tế.
           </HelpStep>
           <HelpStep number="7" title="Cấu hình thời gian giữ">
-            Vào Chính sách doanh thu để chọn từ 0 đến 90 ngày. Thời gian được
+            Vào Chính sách doanh thu để chọn Ngày hoặc Phút (tối đa 90 ngày).
+            Khi demo, chọn Phút và nhập 1 trước khi tạo đơn mới; thanh toán đã
+            xác minh và hết phút, chạy đối soát để mở số dư nếu đủ điều kiện.
+            Chính sách áp dụng toàn hệ thống, hãy khôi phục sau buổi demo. Thời gian được
             lưu trên đơn lúc tạo; mốc khả dụng tính từ lúc xác nhận thanh toán.
             Đổi chính sách không đổi đơn cũ, không bỏ qua xác minh/hoàn tiền và
             không lập tức mở toàn bộ số dư.

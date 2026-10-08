@@ -82,6 +82,7 @@ export interface CommerceOrder {
   createdAt: string;
   expiresAt: string;
   availableAt: string | null;
+  holdMinutes?: number;
   settledAt: string | null;
   feeAmount: number | null;
   feeSource: string;
@@ -101,6 +102,7 @@ export interface PurchaseDetail extends CommerceOrder {
 export interface CommercePolicy {
   instructorBps: number;
   holdDays: number;
+  holdMinutes?: number;
   minimumWithdrawal: number;
   approvalRequired: boolean;
 }
@@ -138,6 +140,12 @@ export interface WalletSummary {
   recipient: PayoutRecipient | null;
   policy: CommercePolicy;
   mode: string;
+  holding?: {
+    nextDeadlineAt: string | null;
+    awaitingRelease: number;
+    unverified: number;
+    refundBlocked: number;
+  };
 }
 export interface CommerceWithdrawal {
   id: string;

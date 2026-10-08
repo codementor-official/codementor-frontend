@@ -6,6 +6,7 @@ import { Clock3, ShieldCheck } from "lucide-react";
 import { vnd } from "./api";
 import { inputClassName } from "./form-style";
 import type { CommercePolicy } from "@codementor/types";
+import { formatHoldingPeriod } from "@codementor/utils";
 export function PolicyForm({
   initial,
   save,
@@ -13,11 +14,34 @@ export function PolicyForm({
   initial: CommercePolicy;
   save: (p: CommercePolicy) => Promise<unknown>;
 }) {
-  const [value, setValue] = useState(initial);
+  const initialMinutes = initial.holdMinutes ?? initial.holdDays * 1440;
+  const [value, setValue] = useState({
+    ...initial,
+    holdMinutes: initialMinutes,
+  });
   const [busy, setBusy] = useState(false);
-  const [holdInput, setHoldInput] = useState(String(initial.holdDays));
+  const [holdUnit, setHoldUnit] = useState<"days" | "minutes">(
+    initialMinutes % 1440 === 0 ? "days" : "minutes",
+  );
+  const [holdInput, setHoldInput] = useState(
+    String(
+      initialMinutes % 1440 === 0 ? initialMinutes / 1440 : initialMinutes,
+    ),
+  );
   const [confirmation, setConfirmation] = useState(false);
-  const validHold = /^\d+$/.test(holdInput) && Number(holdInput) <= 90;
+  const multiplier = holdUnit === "days" ? 1440 : 1;
+  const validHold =
+    /^\d+$/.test(holdInput) && Number(holdInput) * multiplier <= 129600;
+  function updateHold(input: string, unit: "days" | "minutes") {
+    setHoldInput(input);
+    setHoldUnit(unit);
+    const minutes = Number(input) * (unit === "days" ? 1440 : 1);
+    setValue({
+      ...value,
+      holdDays: Math.ceil(minutes / 1440),
+      holdMinutes: minutes,
+    });
+  }
   const toast = useToast();
   async function submit() {
     setBusy(true);
@@ -63,40 +87,76 @@ export function PolicyForm({
         </h3>
         <p className="mb-3 text-sm text-muted-foreground">
           Chính sách hiện tại:{" "}
-          <strong className="text-foreground">{initial.holdDays} ngày</strong>.
-          Bắt đầu tính từ khi đơn được xác nhận thanh toán.
+          <strong className="text-foreground">
+            {formatHoldingPeriod(initialMinutes)}
+          </strong>
+          . Bắt đầu tính từ khi đơn được xác nhận thanh toán.
         </p>
-        <label className="block text-sm">
-          Số ngày giữ cho đơn mới
-          <input
-            className={`${inputClassName} mt-1`}
-            type="number"
-            min={0}
-            max={90}
-            value={holdInput}
-            aria-invalid={!validHold}
-            onChange={(e) => {
-              setHoldInput(e.target.value);
-              setValue({ ...value, holdDays: Number(e.target.value) });
-            }}
-          />
-        </label>
+        <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
+          <label className="block text-sm">
+            Thời gian giữ cho đơn mới
+            <input
+              className={`${inputClassName} mt-1`}
+              type="number"
+              min={0}
+              max={129600 / multiplier}
+              step={1}
+              value={holdInput}
+              aria-invalid={!validHold}
+              onChange={(e) => {
+                updateHold(e.target.value, holdUnit);
+              }}
+            />
+          </label>
+          <label className="block text-sm">
+            Đơn vị thời gian
+            <select
+              className={`${inputClassName} mt-1`}
+              value={holdUnit}
+              onChange={(e) => {
+                const unit = e.target.value as "days" | "minutes";
+                // Preserve the duration where representable; do not silently round it.
+                updateHold(
+                  String(
+                    unit === "minutes"
+                      ? Number(holdInput) * 1440
+                      : Number(holdInput) / 1440,
+                  ),
+                  unit,
+                );
+              }}
+            >
+              <option value="days">Ngày</option>
+              <option value="minutes">Phút</option>
+            </select>
+          </label>
+        </div>
         {!validHold && (
           <p role="alert" className="mt-2 text-sm text-destructive">
-            Nhập số nguyên từ 0 đến 90 ngày.
+            Nhập số nguyên từ 0 đến{" "}
+            {holdUnit === "days" ? "90 ngày" : "129.600 phút"}.
           </p>
         )}
-        {validHold && value.holdDays === 0 && (
+        {validHold && value.holdMinutes === 0 && (
           <p className="mt-2 text-sm text-muted-foreground">
-            0 ngày: không chờ theo thời gian, nhưng vẫn phải xác minh thanh toán
-            và kiểm tra hoàn tiền trước khi mở số dư.
+            Không chờ theo thời gian, nhưng vẫn phải xác minh thanh toán và kiểm
+            tra hoàn tiền trước khi mở số dư.
           </p>
         )}
         <p className="mt-3 text-sm text-muted-foreground">
-          Sau {validHold ? value.holdDays : "…"} ngày, doanh thu chỉ chuyển sang
-          khả dụng khi lượt đối soát xác nhận đủ điều kiện. Đổi số ngày không mở
-          sớm hoặc tính lại các đơn cũ.
+          Sau {validHold ? formatHoldingPeriod(value.holdMinutes) : "…"}, doanh
+          thu chỉ chuyển sang khả dụng khi lượt đối soát xác nhận đủ điều kiện.
+          Đổi thời gian không mở sớm hoặc tính lại các đơn cũ.
         </p>
+        {validHold && value.holdMinutes > 0 && value.holdMinutes < 1440 && (
+          <p className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+            Thời gian ngắn phù hợp để trình diễn. Đây là chính sách toàn hệ
+            thống cho đơn mới, không phải chế độ giả lập: vẫn phải có thanh toán
+            được xác minh. Để demo 1 phút, lưu chính sách trước khi tạo đơn mới;
+            hết phút, Admin chạy đối soát hoặc chờ lượt tự động. Khôi phục thời
+            gian giữ phù hợp sau buổi demo.
+          </p>
+        )}
       </section>
       <label className="block text-sm">
         Rút tối thiểu (VND)
@@ -125,7 +185,8 @@ export function PolicyForm({
         disabled={
           busy ||
           !validHold ||
-          JSON.stringify(value) === JSON.stringify(initial) ||
+          JSON.stringify(value) ===
+            JSON.stringify({ ...initial, holdMinutes: initialMinutes }) ||
           !Number.isInteger(value.holdDays) ||
           value.holdDays < 0 ||
           value.holdDays > 90 ||
@@ -170,7 +231,7 @@ export function PolicyForm({
             {[
               [
                 "Thời gian giữ doanh thu",
-                `${initial.holdDays} ngày → ${value.holdDays} ngày`,
+                `${formatHoldingPeriod(initialMinutes)} → ${formatHoldingPeriod(value.holdMinutes)}`,
               ],
               [
                 "Tỷ lệ giảng viên",
