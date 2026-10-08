@@ -150,11 +150,10 @@ export function PolicyForm({
         </p>
         {validHold && value.holdMinutes > 0 && value.holdMinutes < 1440 && (
           <p className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-            Thời gian ngắn phù hợp để trình diễn. Đây là chính sách toàn hệ
-            thống cho đơn mới, không phải chế độ giả lập: vẫn phải có thanh toán
-            được xác minh. Để demo 1 phút, lưu chính sách trước khi tạo đơn mới;
-            hết phút, Admin chạy đối soát hoặc chờ lượt tự động. Khôi phục thời
-            gian giữ phù hợp sau buổi demo.
+            Để demo 1 phút, lưu chính sách trước khi tạo đơn mới. Sau khi thanh
+            toán được xác minh và hết thời gian giữ, chạy đối soát hoặc chờ lượt
+            tự động. Áp dụng toàn hệ thống cho đơn mới; khôi phục thời gian giữ
+            sau demo.
           </p>
         )}
       </section>
