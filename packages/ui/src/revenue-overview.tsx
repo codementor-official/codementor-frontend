@@ -39,6 +39,7 @@ export function RevenueOverview({
   onResetScope,
   summaryContent,
   renderOverview,
+  defaultView = "overview",
 }: {
   report: RevenueReport | null;
   days: number;
@@ -51,6 +52,7 @@ export function RevenueOverview({
   extraViews?: RevenueExtraView[];
   onResetScope?: () => void;
   summaryContent?: ReactNode;
+  defaultView?: "overview" | "all";
   renderOverview?: (context: {
     report: RevenueReport;
     metric: RevenueMetric;
@@ -60,7 +62,7 @@ export function RevenueOverview({
   }) => ReactNode;
 }) {
   const [metric, setMetric] = useState<RevenueMetric>("revenue");
-  const [view, setView] = useState("overview");
+  const [view, setView] = useState<string>(defaultView);
   const [periodKey, setPeriodKey] = useState(0);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [courseMetric, setCourseMetric] = useState<
@@ -78,7 +80,7 @@ export function RevenueOverview({
   const reset = () => {
     setMetric("revenue");
     setCourseMetric("revenue");
-    setView("overview");
+    setView(defaultView);
     setSelectedCourse("");
     setPeriodKey((key) => key + 1);
     onDateRangeChange(null);

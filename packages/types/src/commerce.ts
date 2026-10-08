@@ -83,6 +83,10 @@ export interface CommerceOrder {
   expiresAt: string;
   availableAt: string | null;
   holdMinutes?: number;
+  paymentVerified?: boolean;
+  nextVerificationAt?: string | null;
+  refundBlocked?: boolean;
+  holdExpired?: boolean | null;
   settledAt: string | null;
   feeAmount: number | null;
   feeSource: string;
@@ -142,6 +146,7 @@ export interface WalletSummary {
   mode: string;
   holding?: {
     nextDeadlineAt: string | null;
+    nextVerificationAt?: string | null;
     awaitingRelease: number;
     unverified: number;
     refundBlocked: number;

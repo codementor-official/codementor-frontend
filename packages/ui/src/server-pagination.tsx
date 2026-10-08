@@ -16,8 +16,7 @@ export function ServerPagination({
   onPageChange: (page: number) => void;
 }) {
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  if (pageCount <= 1) return null;
-  const first = (page - 1) * pageSize + 1;
+  const first = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const last = Math.min(total, page * pageSize);
 
   return (
