@@ -34,7 +34,16 @@ import {
 import { earningsApi, vnd } from "./api";
 import { WithdrawalForm } from "./withdrawal-form";
 import { LecturerRevenueBalances } from "./revenue-balances";
-import { downloadCsv, printDocument } from "@codementor/utils";
+import {
+  HoldingExplanation,
+  OrderHoldingHint,
+  holdingDeadline,
+} from "./holding-explanation";
+import {
+  downloadCsv,
+  printDocument,
+  formatHoldingPeriod,
+} from "@codementor/utils";
 type Tab = "overview" | "orders" | "withdrawals" | "ledger";
 type Detail =
   | { type: "order"; item: CommerceOrder }
@@ -209,10 +218,13 @@ export function EarningsScreen() {
           />
           <p className="text-sm text-muted-foreground">
             Chính sách hiện tại: bạn nhận {wallet.policy.instructorBps / 100}%
-            trên đơn mới; giữ doanh thu {wallet.policy.holdDays} ngày tính từ
-            khi xác nhận thanh toán. Hết thời gian giữ vẫn cần đối soát và đủ
-            điều kiện hoàn tiền trước khi mở số dư. Đơn cũ giữ cả tỷ lệ và thời
-            gian đã lưu; xem ngày dự kiến trong chi tiết đơn.
+            trên đơn mới; giữ doanh thu{" "}
+            {formatHoldingPeriod(
+              wallet.policy.holdMinutes ?? wallet.policy.holdDays * 1440,
+            )}{" "}
+            tính từ khi xác nhận thanh toán. Hết thời gian giữ vẫn cần đối soát
+            và đủ điều kiện hoàn tiền trước khi mở số dư. Đơn cũ giữ cả tỷ lệ và
+            thời gian đã lưu; xem ngày dự kiến trong chi tiết đơn.
           </p>
           {(wallet.balances.refund_held > 0 || wallet.balances.debt < 0) && (
             <Card className="p-4 text-sm">
@@ -225,6 +237,7 @@ export function EarningsScreen() {
           )}
         </>
       )}
+      {wallet && <HoldingExplanation wallet={wallet} />}
       <Card>
         <div
           className="flex flex-wrap gap-2 border-b border-border p-3"
@@ -404,7 +417,8 @@ export function EarningsScreen() {
                           {COMMERCE_INCOME_STATUS[o.incomeState] ??
                             o.incomeState}
                           {o.availableAt &&
-                            ` · dự kiến ${new Date(o.availableAt).toLocaleDateString("vi-VN")}`}
+                            o.incomeState === "pending" &&
+                            ` · hạn giữ ${holdingDeadline(o.availableAt)}`}
                         </p>
                       </td>
                       <td className="p-3">
@@ -603,13 +617,20 @@ function DetailView({ detail }: { detail: Detail }) {
             [
               "Dự kiến khả dụng",
               item.availableAt
-                ? new Date(item.availableAt).toLocaleString("vi-VN")
+                ? `${holdingDeadline(item.availableAt)} · đủ điều kiện sau đối soát`
                 : "Chưa xác định",
+            ],
+            [
+              "Thời gian giữ đã lưu",
+              item.holdMinutes != null
+                ? formatHoldingPeriod(item.holdMinutes)
+                : "Theo chính sách tại thời điểm tạo đơn",
             ],
             ["Mã đơn", item.id],
           ]}
           title="Chứng từ doanh thu khóa học"
         />
+        <OrderHoldingHint order={item} />
       </div>
     );
   }

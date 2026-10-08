@@ -1,5 +1,6 @@
 import type { WalletSummary } from "@codementor/types";
 import { vnd } from "./api";
+import { formatHoldingPeriod } from "@codementor/utils";
 
 export function LecturerRevenueBalances({
   wallet,
@@ -16,8 +17,11 @@ export function LecturerRevenueBalances({
         <h2 className="text-lg font-semibold">Số dư & khả năng rút</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Số dư sổ cái của toàn bộ lịch sử, không phải số dư ngân hàng hay doanh
-          thu trong kỳ. Đơn mới chờ {wallet.policy.holdDays} ngày và đủ điều
-          kiện đối soát; từng đơn cũ giữ chính sách đã lưu.
+          thu trong kỳ. Đơn mới chờ{" "}
+          {formatHoldingPeriod(
+            wallet.policy.holdMinutes ?? wallet.policy.holdDays * 1440,
+          )}{" "}
+          và đủ điều kiện đối soát; từng đơn cũ giữ chính sách đã lưu.
         </p>
       </div>
       <dl className="divide-y">
