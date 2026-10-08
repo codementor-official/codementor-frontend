@@ -1582,7 +1582,7 @@ function MiniTrend({ points }: { points: WorkspaceOverview["activityTrend"] }) {
       <div className="mt-5 flex flex-1 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border px-4 py-8 text-center">
         <Activity className="h-5 w-5 text-text-faint" />
         <p className="text-xs font-semibold text-navy">Chưa có hoạt động trong 4 tuần qua</p>
-        <p className="text-2xs text-text-faint">Nộp bài, mở tài liệu hay nhắn trong nhóm đều được tính.</p>
+        <p className="text-2xs text-text-faint">Hoạt động mới của thành viên sẽ hiện ở đây theo từng ngày.</p>
       </div>
     );
   }

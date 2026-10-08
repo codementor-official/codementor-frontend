@@ -96,9 +96,14 @@ function markPatchedFields(patch: LecterDraftPatch) {
         node.classList.remove("lecter-applied");
         void node.offsetWidth; // áp hai lần liên tiếp vào cùng ô thì hiệu ứng chạy lại từ đầu
         node.classList.add("lecter-applied");
-        node.addEventListener("animationend", () => node.classList.remove("lecter-applied"), {
-          once: true,
-        });
+        // Chỉ nghe animation của CHÍNH nó: `animationend` nổi lên từ con (menu, thanh tiến độ
+        // trong thẻ test case), và nghe lẫn thì vòng sáng bị gỡ trước khi chạy xong.
+        const done = (event: AnimationEvent) => {
+          if (event.target !== node) return;
+          node.classList.remove("lecter-applied");
+          node.removeEventListener("animationend", done);
+        };
+        node.addEventListener("animationend", done);
       }
     }),
   );
