@@ -17,7 +17,7 @@ export function ProgressBar({
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <div className="h-full rounded-full bg-primary" style={{ width: `${clamped}%` }} />
+        <div className="animate-progress-fill h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${clamped}%` }} />
       </div>
       <span className="text-xs font-semibold text-primary">{label ?? `Hoàn thành ${clamped}%`}</span>
     </div>

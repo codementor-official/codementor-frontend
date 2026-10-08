@@ -169,7 +169,18 @@ export function ExerciseBriefForm({
   slugLocked = false,
 }: Props) {
   const [previewStatement, setPreviewStatement] = useState(false);
-  const errors = exerciseBriefErrors(value, { slugLocked });
+  const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
+  const allErrors = exerciseBriefErrors(value, { slugLocked });
+  // Ô trống mà chưa ai chạm vào thì chưa báo "không được để trống": form mới mở ra đỏ sẵn
+  // trước khi người soạn kịp gõ chữ nào. Ô đã có chữ (gõ, nạp từ bài cũ, Lecter điền) thì
+  // báo ngay. Nút Lưu vẫn bị chặn bởi `exerciseBriefBlocker`, không phụ thuộc vào đây.
+  const errors = Object.fromEntries(
+    Object.entries(allErrors).filter(
+      ([key]) =>
+        touched.has(key) ||
+        String((value as unknown as Record<string, unknown>)[key] ?? "").trim() !== "",
+    ),
+  ) as typeof allErrors;
 
   const patch = (partial: Partial<ExerciseDraft>) =>
     onChange({ ...value, ...partial });
@@ -187,7 +198,14 @@ export function ExerciseBriefForm({
     onChange({ ...value, content: { ...value.content, ...partial } });
 
   return (
-    <fieldset className="grid gap-3" disabled={readOnly}>
+    <fieldset
+      className="grid gap-3"
+      disabled={readOnly}
+      onBlur={(event) => {
+        const id = event.target.id;
+        if (id && !touched.has(id)) setTouched(new Set(touched).add(id));
+      }}
+    >
       <Card className="p-4">
         <CardHeading
           hint="Tên bài, slug và các giới hạn chấm. Đây là phần học viên thấy trước khi mở bài."
@@ -323,7 +341,7 @@ export function ExerciseBriefForm({
         </div>
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4" id="studio-statement">
         <CardHeading
           action={
             <Button
@@ -1019,7 +1037,7 @@ export function ExerciseCodeForm({
 
   return (
     <fieldset className="grid gap-3" disabled={readOnly}>
-      <Card className="p-4">
+      <Card className="p-4" id="studio-io">
         <CardHeading
           hint={
             isFunction
@@ -1047,7 +1065,7 @@ export function ExerciseCodeForm({
         />
       )}
 
-      <Card className="p-4">
+      <Card className="p-4" id="studio-languages">
         <CardHeading
           hint={
             "Mỗi ngôn ngữ đã chọn phải có lời giải mẫu thì mới gửi duyệt được." +
@@ -1127,7 +1145,7 @@ export function ExerciseCodeForm({
         ))}
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4" id="studio-testcases">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold">
             <FlaskConical
@@ -1400,7 +1418,7 @@ export function ExerciseCodeForm({
         ))}
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-4" id="studio-grading">
         <CardHeading
           className="mb-3"
           hint="Quy tắc so sánh kết quả của học viên với đáp án. Chọn sai bộ so khớp là bài đúng vẫn bị chấm sai."

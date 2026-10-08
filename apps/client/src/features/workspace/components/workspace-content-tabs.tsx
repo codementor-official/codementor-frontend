@@ -50,6 +50,11 @@ const EMPTY_PAGE = <T,>(): WorkspaceContentPage<T> => ({
   total: 0,
   totalPages: 0,
 });
+const FILTER_COLS: Record<number, string> = {
+  4: "xl:grid-cols-4",
+  5: "xl:grid-cols-5",
+  6: "xl:grid-cols-6",
+};
 const inputClass =
   "rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy";
 
@@ -1042,8 +1047,10 @@ export function WorkspaceExercisesTab({
           </div>
         </Card>
       )}
+      {/* Số cột theo số ô lọc thật (ô tìm kiếm chiếm 2): cột cố định 4 làm ô cuối rớt một
+          mình xuống hàng thứ hai. */}
       <div
-        className={`grid gap-2 md:grid-cols-2 ${canEditAny ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}
+        className={`grid gap-2 md:grid-cols-2 ${FILTER_COLS[2 + 1 + (canEditAny ? 0 : 2) + (canEditAny || canDeleteAny ? 1 : 0)]}`}
       >
         <input
           className={`${inputClass} xl:col-span-2`}
@@ -1145,16 +1152,27 @@ export function WorkspaceExercisesTab({
       {data.items.length === 0 ? (
         <Empty icon={Plus} title="Chưa có bài tập" />
       ) : (
-        <div className="grid gap-3">
+        // Danh sách dày: một thẻ, các hàng ngăn bằng đường kẻ mảnh, không phải mười thẻ rời.
+        <Card className="divide-y divide-border-soft overflow-hidden">
           {data.items.map((ex) => (
-            <Card
+            <div
               key={ex.id}
-              className="flex cursor-pointer flex-wrap items-center gap-3 p-4 transition hover:border-primary/40"
+              role="button"
+              tabIndex={0}
+              aria-label={`Xem chi tiết ${ex.title}`}
+              className="flex cursor-pointer flex-wrap items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-bg"
               onClick={() => setDetailId(ex.id)}
+              onKeyDown={(event) => {
+                if (event.target !== event.currentTarget) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setDetailId(ex.id);
+                }
+              }}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold text-navy">{ex.title}</p>
+                  <p className="text-sm font-semibold text-navy">{ex.title}</p>
                   <span
                     className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${ex.isAssignedToMe ? "bg-primary/10 text-primary" : "bg-border-soft text-text-muted"}`}
                   >
@@ -1171,12 +1189,22 @@ export function WorkspaceExercisesTab({
                   )}
                   {(canEditAny || canDeleteAny) && <span className="rounded-full bg-border-soft px-2 py-0.5 text-2xs font-semibold text-text-muted">{ex.publicationStatus === "published" ? "Đang hiển thị" : "Đã ẩn"}</span>}
                 </div>
-                <p className="text-xs text-text-faint">
+                <p className="mt-0.5 text-xs text-text-faint">
                   {difficultyLabel(ex.difficulty)} · {ex.completedCount}/
                   {ex.assignedCount} hoàn thành ·{" "}
-                  {ex.dueAt
-                    ? `${isOverdue(ex.dueAt) && ex.myAssignment?.status !== "done" ? "Quá hạn " : "Hạn "}${formatDate(ex.dueAt)}`
-                    : "Không hạn"}
+                  {ex.dueAt ? (
+                    isOverdue(ex.dueAt) && ex.myAssignment?.status !== "done" ? (
+                      // Nhấn màu chỉ khi là việc CỦA người xem: bài công khai không giao cho họ
+                      // mà cũng tô cam thì cả danh sách thành một mảng cảnh báo vô nghĩa.
+                      <span className={ex.myAssignment ? "font-semibold text-primary" : undefined}>
+                        Quá hạn {formatDate(ex.dueAt)}
+                      </span>
+                    ) : (
+                      `Hạn ${formatDate(ex.dueAt)}`
+                    )
+                  ) : (
+                    "Không hạn"
+                  )}
                   {ex.myAssignment
                     ? ` · ${ex.myAssignment.submissionCount} lượt nộp`
                     : ""}
@@ -1254,9 +1282,9 @@ export function WorkspaceExercisesTab({
                   )}
                 </>
               )}
-            </Card>
+            </div>
           ))}
-        </div>
+        </Card>
       )}
       <Pagination
         page={page}

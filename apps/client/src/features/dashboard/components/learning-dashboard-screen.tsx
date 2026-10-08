@@ -63,14 +63,14 @@ export function LearningDashboardScreen() {
         <div className="space-y-5">
           <DashboardNextAction data={data} coach={coach.data} />
           <DashboardCoach dashboard={data} data={coach.data} isLoading={coach.isLoading} error={coach.error} reload={coach.reload} onDataChange={coach.replaceData} />
-          <div className="grid min-w-0 items-stretch gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.75fr)]">
+          <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.75fr)]">
             <DashboardTodayPlan items={today} />
             <DashboardPlanner data={data} onRetry={reload} />
           </div>
         </div>
         <div className="mt-6 space-y-6">
           <DashboardTrends data={data} onRetry={reload} />
-          <div className="grid items-stretch gap-6 xl:grid-cols-2">
+          <div className="grid items-start gap-6 xl:grid-cols-2">
             <ContinueLearning data={learning ?? null} onRetry={reload} excludeHref={primary.href} />
             <DashboardAssignments data={data} onRetry={reload} excludeId={primary.kind === 'assignment' ? primary.id : undefined} />
           </div>

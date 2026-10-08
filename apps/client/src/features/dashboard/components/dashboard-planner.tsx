@@ -32,7 +32,7 @@ export function DashboardPlanner({ data, onRetry }: { data: DashboardData; onRet
     {!preferences ? <div className="p-4"><DashboardUnavailable onRetry={onRetry} /></div> : <div className="flex h-full flex-col p-4">
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-text-faint"><Target className="h-3.5 w-3.5" /> Mục tiêu hiện tại</p>
+          <p className="flex items-center gap-1.5 text-xs text-text-muted"><Target className="h-3.5 w-3.5" /> Mục tiêu hiện tại</p>
           <p className="mt-1 truncate text-sm font-semibold text-navy">{preferences.learningGoal || 'Chưa đặt mục tiêu học tập'}</p>
           {preferences.careerGoal && <p className="mt-0.5 truncate text-xs text-text-muted">{preferences.careerGoal}</p>}
         </div>

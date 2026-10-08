@@ -116,6 +116,8 @@
   --duration-base: 180ms;
   --duration-theme: 220ms;
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Arrivals only (overlays, panels, fills): fast start, long settle. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-roboto-mono);
@@ -350,7 +352,74 @@ html {
   animation: notification-in var(--duration-normal, 240ms) var(--ease-standard);
 }
 
-/* Motion is decoration here — every one of these animations is safe to drop entirely. */
+/* State motion. Each one explains something that just changed; none plays on a static page.
+ * Arrivals decelerate (`--ease-out-expo`); the routine 120–180ms colour deltas keep
+ * `--ease-standard`. */
+
+/* A progress bar fills from zero when it mounts, so the number reads as an amount rather than
+ * a static stripe; later value changes slide via the width transition on the same element. */
+@keyframes progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@utility animate-progress-fill {
+  transform-origin: left;
+  animation: progress-fill 600ms var(--ease-out-expo);
+}
+
+/* Tab content swaps in place. A short rise ties the new panel to the tab that was pressed
+ * instead of the whole region blinking. */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@utility animate-panel-in {
+  animation: panel-in var(--duration-base) var(--ease-out-expo);
+}
+
+/* Loaders that are usually gone in a few hundred ms: stay invisible that long, so a fast
+ * check doesn't flash a spinner. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@utility animate-fade-in-late {
+  animation: fade-in var(--duration-base) var(--ease-standard) 400ms both;
+}
+
+/* The studio's authored moment: Lecter just wrote into the author's form. A ring settles onto
+ * exactly the fields it touched and fades, so the author knows what to re-read before saving.
+ * Outline, not box-shadow or background: cards and inputs keep their own surface throughout. */
+@keyframes lecter-applied {
+  from {
+    outline-color: var(--color-primary);
+    outline-offset: 8px;
+  }
+  25% {
+    outline-color: var(--color-primary);
+    outline-offset: 3px;
+  }
+  to {
+    outline-color: transparent;
+    outline-offset: 3px;
+  }
+}
+
+.lecter-applied {
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  animation: lecter-applied 1600ms var(--ease-out-expo);
+}
+
+/* Reduced motion drops movement, never meaning: the Lecter ring and the loader still fade
+ * (colour/opacity), only the travel is removed. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -361,16 +430,26 @@ html {
   .theme-transition *::after {
     transition: none !important;
   }
-  .animate-menu-in {
-    animation: none;
-  }
-  .animate-notification-in {
-    animation: none;
-  }
+  .animate-menu-in,
+  .animate-notification-in,
+  .animate-progress-fill,
+  .animate-panel-in,
   .mascot-sprite-idle {
     animation: none;
   }
+  @keyframes lecter-applied {
+    from {
+      outline-color: var(--color-primary);
+    }
+    60% {
+      outline-color: var(--color-primary);
+    }
+    to {
+      outline-color: transparent;
+    }
+  }
 }
+
 
 /* Component default: buttons/inputs/textareas are square-ish (radius-md), not pills.
  * Must live in `@layer base` — unlayered CSS outranks Tailwind's layered utilities in v4,

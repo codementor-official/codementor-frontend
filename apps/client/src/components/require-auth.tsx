@@ -34,7 +34,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   if (status === "authenticated") return <>{children}</>;
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center gap-2 text-sm text-text-muted">
+    <div className="animate-fade-in-late flex min-h-[60vh] items-center justify-center gap-2 text-sm text-text-muted">
       <Loader2 className="h-4 w-4 animate-spin" />
       {status === "loading" ? "Đang kiểm tra phiên đăng nhập..." : "Đang chuyển tới trang đăng nhập..."}
     </div>

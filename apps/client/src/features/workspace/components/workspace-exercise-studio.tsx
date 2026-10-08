@@ -53,6 +53,58 @@ const EMPTY_CONTENT: ExerciseContent = {
 
 type StudioTab = "content" | "assignment";
 
+/** Ô hoặc thẻ trên form mà mỗi khoá trong đề nghị của Lecter đổ vào (id DOM). */
+const PATCH_TARGETS: Record<string, string> = {
+  title: "title",
+  slug: "slug",
+  summary: "summary",
+  difficulty: "difficulty",
+  estimatedMinutes: "estimatedMinutes",
+  timeLimitMs: "timeLimitMs",
+  memoryLimitKb: "memoryLimitKb",
+  statement: "studio-statement",
+  constraints: "studio-statement",
+  hints: "studio-statement",
+  examples: "studio-statement",
+  ioMode: "studio-io",
+  signature: "studio-io",
+  languages: "studio-languages",
+  testCases: "studio-testcases",
+  evaluation: "studio-grading",
+};
+
+/**
+ * Khoảnh khắc chính của studio: agent vừa viết vào form của người soạn. Toast chỉ nói "đã
+ * đưa vào"; vòng sáng chỉ ra ĐÚNG những ô nó đã chạm, để người soạn biết cần đọc lại chỗ nào
+ * trước khi lưu — đúng nguyên tắc "AI đề xuất, con người quyết".
+ */
+function markPatchedFields(patch: LecterDraftPatch) {
+  const keys = [
+    ...Object.keys(patch),
+    ...Object.keys(patch.content ?? {}),
+    ...(patch.title ? ["slug"] : []),
+  ];
+  const ids = [...new Set(keys.map((key) => PATCH_TARGETS[key]).filter(Boolean))];
+  // Hai frame: patch có thể vừa chuyển từ tab Giao bài sang Nội dung, form còn chưa mount.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      const nodes = ids
+        .map((id) => document.getElementById(id))
+        .filter((node): node is HTMLElement => node !== null);
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      nodes[0]?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+      for (const node of nodes) {
+        node.classList.remove("lecter-applied");
+        void node.offsetWidth; // áp hai lần liên tiếp vào cùng ô thì hiệu ứng chạy lại từ đầu
+        node.classList.add("lecter-applied");
+        node.addEventListener("animationend", () => node.classList.remove("lecter-applied"), {
+          once: true,
+        });
+      }
+    }),
+  );
+}
+
 /**
  * Studio bài tập của Workspace — một TRANG, không phải hộp thoại.
  *
@@ -258,6 +310,7 @@ export function WorkspaceExerciseStudio({
     updateDraft(patch.title ? { ...next, slug: slugifyExercise(patch.title) } : next);
     setGeneratedByAi(true);
     setTab("content");
+    markPatchedFields(patch);
     toast.success("Đã đưa vào biểu mẫu. Bấm Lưu khi bạn thấy ổn.");
   };
 

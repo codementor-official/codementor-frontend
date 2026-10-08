@@ -78,8 +78,10 @@ export function EntityCard({
 
   const tileBlock = (
     <div
-      className={`relative flex shrink-0 items-center justify-center font-mono font-bold text-on-ink ${
-        coverImage ? "bg-border-soft" : tileVariantClasses[tileVariant]
+      // Không có ảnh bìa thì là một ô tint, không phải khối màu đặc: `bg-navy` đảo thành gần
+      // trắng trong dark mode và cả hàng thẻ thành dải trắng chói.
+      className={`relative flex shrink-0 items-center justify-center font-mono font-bold ${
+        coverImage ? "bg-border-soft" : "bg-primary-tint text-primary"
       } ${
         horizontal
           ? // Khung theo tỉ lệ ảnh, KHÔNG kéo cao bằng thẻ: `object-cover` trên một ô cao
@@ -124,7 +126,7 @@ export function EntityCard({
       {!horizontal &&
         (coverImage ? (
           <span
-            className={`absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full text-2xs ring-2 ring-surface ${tileVariantClasses[tileVariant]}`}
+            className={`absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full text-2xs text-on-ink ring-2 ring-surface ${tileVariantClasses[tileVariant]}`}
           >
             {tile}
           </span>
@@ -138,11 +140,6 @@ export function EntityCard({
     <div
       className={`flex min-w-0 flex-1 flex-col gap-2 ${horizontal ? "py-1" : "p-4"}`}
     >
-      {kind && (
-        <div className="flex items-center gap-1.5 text-2xs font-bold tracking-wide text-text-faint uppercase">
-          <kind.icon className="h-3 w-3" /> {kind.label}
-        </div>
-      )}
       <div className="flex items-start justify-between gap-2">
         <h3
           className={`font-semibold text-navy ${horizontal ? "text-base" : "text-sm"}`}
@@ -166,10 +163,18 @@ export function EntityCard({
           ))}
         </div>
       )}
-      {stats.length > 0 && (
-        <div className="flex items-center gap-3 text-xs text-text-faint">
+      {(kind || stats.length > 0) && (
+        // Loại nội dung đứng cùng hàng số liệu, không treo thành nhãn viết hoa trên tiêu đề.
+        // Từng mục `nowrap`: thẻ hẹp thì cả mục xuống dòng, không vỡ "2 thành / viên".
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-faint">
+          {kind && (
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <kind.icon aria-hidden="true" className="h-3 w-3" />
+              {kind.label}
+            </span>
+          )}
           {stats.map((s) => (
-            <span key={s.label || String(s.value)}>
+            <span key={s.label || String(s.value)} className="whitespace-nowrap">
               {s.value}
               {s.label ? ` ${s.label}` : ""}
             </span>
@@ -181,25 +186,28 @@ export function EntityCard({
           {note}
         </p>
       )}
-      {!horizontal && typeof progress === "number" && (
-        <ProgressBar value={progress} />
-      )}
-      {!horizontal && footer && (
-        <div className="mt-auto flex justify-between border-t border-border-soft pt-2.5 text-xs text-text-faint">
-          {footer}
-        </div>
-      )}
-      {!horizontal && cta && (
-        <Link
-          href={cta.href}
-          className="relative z-10 mt-auto rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-on-ink hover:bg-navy/90"
-        >
-          {cta.label}
-        </Link>
-      )}
-      {!horizontal && action && (
-        <div className="relative z-10 mt-auto pt-1">{action}</div>
-      )}
+      {!horizontal &&
+        (typeof progress === "number" || footer || cta || action) && (
+          // Một khối ghim đáy cho cả tiến độ, giá, CTA: ghim từng phần riêng thì thẻ có thanh
+          // tiến độ và thẻ có giá ở cùng hàng không còn kết thúc ở cùng một đường.
+          <div className="mt-auto flex flex-col gap-2.5 pt-1">
+            {typeof progress === "number" && <ProgressBar value={progress} />}
+            {footer && (
+              <div className="flex justify-between border-t border-border-soft pt-2.5 text-xs text-text-faint">
+                {footer}
+              </div>
+            )}
+            {cta && (
+              <Link
+                href={cta.href}
+                className="relative z-10 rounded-md bg-navy px-3.5 py-2 text-center text-xs font-semibold text-on-ink hover:bg-navy/90"
+              >
+                {cta.label}
+              </Link>
+            )}
+            {action && <div className="relative z-10">{action}</div>}
+          </div>
+        )}
     </div>
   );
 

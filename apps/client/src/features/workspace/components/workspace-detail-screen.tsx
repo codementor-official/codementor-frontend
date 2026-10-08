@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  CalendarDays,
   ClipboardCheck,
   ClipboardList,
   Crown,
@@ -31,7 +32,7 @@ import {
   X,
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Modal, Select, useToast } from "@codementor/ui";
+import { Modal, Select, StatStrip, useToast } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -481,7 +482,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
             className="h-12 w-12 shrink-0 rounded-lg object-cover"
           />
         ) : (
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-navy font-mono text-sm font-bold text-on-ink">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-tint font-mono text-sm font-bold text-primary">
             {initialsOf(detail.name)}
           </span>
         )}
@@ -547,6 +548,9 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         </nav>
       </div>
 
+      {/* Khoá theo tab: đổi tab thì khung này mount lại và chạy `panel-in` một lần. Các
+          tab vốn đã mount/unmount theo `activeTab`, nên không mất state nào thêm. */}
+      <div key={activeTab} className="animate-panel-in">
       {activeTab === "overview" && (
         <Overview detail={detail} overview={overview} />
       )}
@@ -585,6 +589,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           onArchive={() => setArchiving(true)}
         />
       )}
+      </div>
 
       <ConfirmDialog
         open={leaving}
@@ -756,7 +761,8 @@ function Overview({
         .overview(detail.slug, {
           activitySearch: activitySearch.trim() || undefined,
           activityPage,
-          activityLimit: 12,
+          // Vừa khít thẻ cao cố định: danh sách không cần thanh cuộn riêng khi đã có phân trang.
+          activityLimit: 6,
         })
         .then(setActivityOverview)
         .catch((error) =>
@@ -772,7 +778,9 @@ function Overview({
     <div className="flex min-w-0 flex-col gap-5 overflow-x-clip pb-6">
       <Card className="overflow-hidden">
         <div
-          className={`flex items-center justify-center bg-navy bg-no-repeat ${
+          className={`flex items-center justify-center bg-no-repeat ${
+            detail.coverUrl ? "bg-border-soft" : "bg-primary-tint"
+          } ${
             detail.coverHeight === "compact"
               ? "h-24 sm:h-28"
               : detail.coverHeight === "tall"
@@ -790,40 +798,24 @@ function Overview({
           }
         >
           {!detail.coverUrl && (
-            <span className="font-mono text-3xl font-bold text-on-ink">
+            <span className="font-mono text-3xl font-bold text-primary">
               {initialsOf(detail.name)}
             </span>
           )}
         </div>
         <div className="p-5">
-          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-lg font-bold text-navy">{detail.name}</h2>
-              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-text-muted">
-                {detail.description ?? "Nhóm chưa có mô tả."}
-              </p>
-            </div>
-            <Badge
-              tone={
-                detail.currentMembership.role === "owner" ? "brown" : "neutral"
-              }
-            >
-              {ROLE_LABEL[detail.currentMembership.role]}
-            </Badge>
-          </div>
-          <dl className="grid grid-cols-2 gap-4 border-t border-border-soft pt-4 lg:grid-cols-4">
+          {/* Tên nhóm và vai trò đã ở header ngay trên; thẻ này chỉ giữ phần header không có. */}
+          <p className="mb-4 max-w-[72ch] text-sm leading-relaxed text-text-muted">
+            {detail.description ?? "Nhóm chưa có mô tả."}
+          </p>
+          <dl className="grid grid-cols-2 gap-4 border-t border-border-soft pt-4 lg:grid-cols-3">
             <Meta
               icon={Target}
               label="Đang học"
               value={detail.topic ?? "Chưa phân loại"}
             />
             <Meta
-              icon={Users}
-              label="Thành viên"
-              value={`${detail.memberCount} người`}
-            />
-            <Meta
-              icon={Users}
+              icon={CalendarDays}
               label="Ngày tạo"
               value={formatDate(detail.createdAt)}
             />
@@ -855,32 +847,27 @@ function Overview({
           </dl>
         </div>
       </Card>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          icon={Users}
-          label="Thành viên"
-          value={detail.memberCount}
-          note="2 phó nhóm hỗ trợ quản lý"
-        />
-        <StatCard
-          icon={ClipboardList}
-          label="Bài tập"
-          value={overview?.exercises.total ?? 0}
-          note={`${overview?.exercises.open ?? 0} bài đang mở`}
-        />
-        <StatCard
-          icon={ClipboardCheck}
-          label="Bài đã hoàn thành"
-          value={overview?.assignments.completed ?? 0}
-          note={`${overview?.assignments.completionRate ?? 0}% toàn nhóm`}
-        />
-        <StatCard
-          icon={FileText}
-          label="Tài liệu"
-          value={overview?.documents.total ?? 0}
-          note={`${overview?.documents.published ?? 0} đã duyệt`}
-        />
-      </div>
+      {/* Một dải số, không phải bốn thẻ: ô "Thành viên" cũ còn ghi cứng "2 phó nhóm hỗ trợ
+          quản lý" cho mọi nhóm. Chỉ số nào cũng lấy từ overview. */}
+      <StatStrip
+        stats={[
+          { label: "Thành viên", value: detail.memberCount },
+          {
+            label: "Bài tập đang mở",
+            value: overview ? `${overview.exercises.open}/${overview.exercises.total}` : "–",
+          },
+          {
+            label: "Bài đã hoàn thành",
+            value: overview
+              ? `${overview.assignments.completed} · ${overview.assignments.completionRate}%`
+              : "–",
+          },
+          {
+            label: "Tài liệu đã duyệt",
+            value: overview ? `${overview.documents.published}/${overview.documents.total}` : "–",
+          },
+        ]}
+      />
       <div className="grid min-w-0 items-stretch gap-4 lg:grid-cols-2">
         <div className="grid min-w-0 content-start gap-4 lg:grid-rows-[420px_minmax(310px,auto)]">
           <Card className="flex min-h-[354px] min-w-0 flex-col overflow-hidden p-5 lg:h-full">
@@ -990,18 +977,18 @@ function Overview({
                 Đang tải hoạt động...
               </div>
             ) : activityOverview?.activities.length ? (
-              <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
+              <ul className="min-h-0 flex-1 space-y-3">
                 {activityOverview.activities.map((item) => (
-                  <li
-                    key={item.id}
-                    className="border-l-2 border-primary/30 pl-3 text-xs text-text-muted"
-                  >
-                    <span className="font-semibold text-navy">
-                      {item.actor ?? "Hệ thống"}
-                    </span>{" "}
-                    {item.action}
-                    <span className="mt-0.5 block text-text-faint">
-                      {formatDateTime(item.createdAt)}
+                  <li key={item.id} className="flex gap-2.5 text-xs text-text-muted">
+                    <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
+                    <span className="min-w-0">
+                      <span className="font-semibold text-navy">
+                        {item.actor ?? "Hệ thống"}
+                      </span>{" "}
+                      {item.action}
+                      <span className="mt-0.5 block text-text-faint">
+                        {formatDateTime(item.createdAt)}
+                      </span>
                     </span>
                   </li>
                 ))}
@@ -1589,6 +1576,16 @@ function DualTrend({
 
 function MiniTrend({ points }: { points: WorkspaceOverview["activityTrend"] }) {
   const max = Math.max(1, ...points.map((point) => point.value));
+  // Toàn số 0 thì cột tối thiểu 4% vẽ thành một hàng gạch phẳng, đọc như biểu đồ hỏng.
+  if (points.every((point) => point.value === 0)) {
+    return (
+      <div className="mt-5 flex flex-1 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border px-4 py-8 text-center">
+        <Activity className="h-5 w-5 text-text-faint" />
+        <p className="text-xs font-semibold text-navy">Chưa có hoạt động trong 4 tuần qua</p>
+        <p className="text-2xs text-text-faint">Nộp bài, mở tài liệu hay nhắn trong nhóm đều được tính.</p>
+      </div>
+    );
+  }
   return (
     <div className="mt-5 flex h-32 min-w-0 items-end gap-1 overflow-hidden px-2 pb-6">
       {points.map((point, index) => (
