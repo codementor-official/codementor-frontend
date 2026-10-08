@@ -195,131 +195,132 @@ export function ExerciseBriefForm({
           title="Thông tin chung"
         />
 
-        <Field
-          error={errors.title}
-          htmlFor="title"
-          label="Tiêu đề"
-        >
-          <input
-            className={inputClassName}
-            id="title"
-            onChange={(event) => patchTitle(event.target.value)}
-            value={value.title}
-          />
-        </Field>
-
-        <Field
-          hint={
-            slugLocked
-              ? "Đã công khai nên không đổi được — đường dẫn đã phát ra ngoài."
-              : "Phần định danh trong đường dẫn. Chỉ đổi được khi chưa công khai."
-          }
-          error={errors.slug}
-          htmlFor="slug"
-          label="Slug"
-        >
-          <input
-            className={inputClassName}
-            disabled={slugLocked}
-            id="slug"
-            onChange={(event) => patch({ slug: event.target.value })}
-            value={value.slug}
-          />
-        </Field>
-
-        <Field
-          error={errors.summary}
-          htmlFor="summary"
-          label="Tóm tắt"
-          hint="Một dòng hiện ở danh sách."
-        >
-          <input
-            className={inputClassName}
-            id="summary"
-            onChange={(event) => patch({ summary: event.target.value })}
-            value={value.summary}
-          />
-        </Field>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field htmlFor="difficulty" label="Độ khó">
-            <select
-              className={inputClassName}
-              id="difficulty"
-              onChange={(event) => patch({ difficulty: event.target.value })}
-              value={value.difficulty}
-            >
-              {DIFFICULTIES.map((option) => (
-                <option key={option} value={option}>
-                  {DIFFICULTY_LABELS[option]}
-                </option>
-              ))}
-            </select>
-          </Field>
-
+        <div className="grid gap-4">
           <Field
-            error={errors.estimatedMinutes}
-            htmlFor="estimatedMinutes"
-            label="Thời lượng ước tính (phút)"
+            error={errors.title}
+            htmlFor="title"
+            label="Tiêu đề"
           >
             <input
               className={inputClassName}
-              id="estimatedMinutes"
-              inputMode="numeric"
-              onChange={(event) =>
-                patch({ estimatedMinutes: event.target.value })
-              }
-              value={value.estimatedMinutes}
+              id="title"
+              onChange={(event) => patchTitle(event.target.value)}
+              value={value.title}
             />
           </Field>
 
           <Field
-            error={errors.timeLimitMs}
-            htmlFor="timeLimitMs"
-            hint="100–60000 ms"
-            label="Giới hạn thời gian chạy (ms)"
-          >
-            <input
-              className={inputClassName}
-              id="timeLimitMs"
-              inputMode="numeric"
-              onChange={(event) => patch({ timeLimitMs: event.target.value })}
-              value={value.timeLimitMs}
-            />
-          </Field>
-
-          <Field
-            error={errors.memoryLimitKb}
-            htmlFor="memoryLimitKb"
-            hint="1024–4194304 KB"
-            label="Giới hạn bộ nhớ (KB)"
-          >
-            <input
-              className={inputClassName}
-              id="memoryLimitKb"
-              inputMode="numeric"
-              onChange={(event) => patch({ memoryLimitKb: event.target.value })}
-              value={value.memoryLimitKb}
-            />
-          </Field>
-        </div>
-
-        {tagOptions && (
-          <TopicPicker
             hint={
-              onCreateTag
-                ? "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới."
-                : "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; chỉ chọn được chủ đề đã có."
+              slugLocked
+                ? "Đã công khai nên không đổi được — đường dẫn đã phát ra ngoài."
+                : "Phần định danh trong đường dẫn. Chỉ đổi được khi chưa công khai."
             }
-            max={MAX_TAGS}
-            onChange={(tagIds) => patch({ tagIds })}
-            onCreate={onCreateTag}
-            options={tagOptions}
-            readOnly={readOnly}
-            value={value.tagIds ?? []}
-          />
-        )}
+            error={errors.slug}
+            htmlFor="slug"
+            label="Slug"
+          >
+            <input
+              className={inputClassName}
+              disabled={slugLocked}
+              id="slug"
+              onChange={(event) => patch({ slug: event.target.value })}
+              value={value.slug}
+            />
+          </Field>
 
+          <Field
+            error={errors.summary}
+            htmlFor="summary"
+            label="Tóm tắt"
+            hint="Một dòng hiện ở danh sách."
+          >
+            <input
+              className={inputClassName}
+              id="summary"
+              onChange={(event) => patch({ summary: event.target.value })}
+              value={value.summary}
+            />
+          </Field>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field htmlFor="difficulty" label="Độ khó">
+              <select
+                className={inputClassName}
+                id="difficulty"
+                onChange={(event) => patch({ difficulty: event.target.value })}
+                value={value.difficulty}
+              >
+                {DIFFICULTIES.map((option) => (
+                  <option key={option} value={option}>
+                    {DIFFICULTY_LABELS[option]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field
+              error={errors.estimatedMinutes}
+              htmlFor="estimatedMinutes"
+              label="Thời lượng ước tính (phút)"
+            >
+              <input
+                className={inputClassName}
+                id="estimatedMinutes"
+                inputMode="numeric"
+                onChange={(event) =>
+                  patch({ estimatedMinutes: event.target.value })
+                }
+                value={value.estimatedMinutes}
+              />
+            </Field>
+
+            <Field
+              error={errors.timeLimitMs}
+              htmlFor="timeLimitMs"
+              hint="100–60000 ms"
+              label="Giới hạn thời gian chạy (ms)"
+            >
+              <input
+                className={inputClassName}
+                id="timeLimitMs"
+                inputMode="numeric"
+                onChange={(event) => patch({ timeLimitMs: event.target.value })}
+                value={value.timeLimitMs}
+              />
+            </Field>
+
+            <Field
+              error={errors.memoryLimitKb}
+              htmlFor="memoryLimitKb"
+              hint="1024–4194304 KB"
+              label="Giới hạn bộ nhớ (KB)"
+            >
+              <input
+                className={inputClassName}
+                id="memoryLimitKb"
+                inputMode="numeric"
+                onChange={(event) => patch({ memoryLimitKb: event.target.value })}
+                value={value.memoryLimitKb}
+              />
+            </Field>
+          </div>
+
+          {tagOptions && (
+            <TopicPicker
+              hint={
+                onCreateTag
+                  ? "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; tên chưa có sẽ được tạo mới."
+                  : "Dùng để gợi ý bài cùng chủ đề cho học viên. Gõ để tìm, Enter để thêm; chỉ chọn được chủ đề đã có."
+              }
+              max={MAX_TAGS}
+              onChange={(tagIds) => patch({ tagIds })}
+              onCreate={onCreateTag}
+              options={tagOptions}
+              readOnly={readOnly}
+              value={value.tagIds ?? []}
+            />
+          )}
+        </div>
       </Card>
 
       <Card className="p-4">
@@ -558,11 +559,11 @@ function SignatureCard({
       </Field>
 
       {parameters.length === 0 ? (
-        <p className="mb-4 rounded-lg border border-dashed px-4 py-4 text-center text-sm text-muted-foreground">
+        <p className="my-4 rounded-lg border border-dashed px-4 py-4 text-center text-sm text-muted-foreground">
           Chưa có tham số nào.
         </p>
       ) : (
-        <div className="mb-4 grid gap-2">
+        <div className="my-4 grid gap-2">
           {parameters.map((parameter, index) => (
             <div className="flex items-end gap-2" key={index}>
               <label className="min-w-0 flex-1 text-xs text-muted-foreground">

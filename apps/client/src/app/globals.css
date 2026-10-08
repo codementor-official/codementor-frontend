@@ -4,6 +4,7 @@
 @import "@codementor/ui/theme.css";
 @source "../../../../packages/ui/src";
 @source "../../../../packages/editor/src";
+@source "../../../../packages/solve/src";
 
 /* Class-based, not `prefers-color-scheme`: the theme picker offers an explicit
  * light/dark override, which a media query alone can't express. `useThemeStore`
@@ -45,6 +46,8 @@
   --color-sidebar-border: var(--color-border);
   --color-popover: var(--color-surface);
   --color-popover-foreground: var(--color-ink);
+  /* Focus border of @codementor/solve fields (`focus-visible:border-ring`). */
+  --color-ring: var(--color-text-faint);
 }
 
 @theme {
@@ -373,6 +376,16 @@ html {
  * Must live in `@layer base` — unlayered CSS outranks Tailwind's layered utilities in v4,
  * so leaving this unlayered silently killed every `rounded-full`/`rounded-lg` on a button. */
 @layer base {
+  /* Tailwind v4 defaults a bare `border` to currentColor. The shared packages (`Card` in
+   * @codementor/ui, every field in @codementor/solve) write bare `border` and rely on this
+   * default, like the two consoles already declare — without it they drew ink-black lines
+   * in light mode and white ones in dark. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
   button,
   input[type="text"],
   input[type="password"],

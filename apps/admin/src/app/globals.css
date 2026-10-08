@@ -4,6 +4,7 @@
 
 @source "../../../../packages/ui/src";
 @source "../../../../packages/editor/src";
+@source "../../../../packages/solve/src";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
