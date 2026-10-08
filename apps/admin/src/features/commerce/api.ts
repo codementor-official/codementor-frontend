@@ -8,6 +8,7 @@ import type {
   CommerceAudit,
   CommercePolicy,
   CommerceJobRun,
+  CommerceJobOrderReport,
   PurchaseDetail,
   CoursePromotionProduct,
   RevenueReport,
@@ -71,6 +72,17 @@ export const commerceAdminApi = {
       `audit?${new URLSearchParams({ page: String(page), sort })}`,
     ),
   policy: (r: Request) => get<CommercePolicy>(r, "policy"),
+  waitingOrders: async (r: Request, page: number) => {
+    const response = await r<ApiResponse<CommerceJobOrderReport>>(
+      `/commerce/admin/jobs/orders?page=${page}`,
+      { cache: "no-store" },
+    );
+    if (!response?.data || !Array.isArray(response.data.items))
+      throw new Error(
+        "Chưa đọc được lý do chờ của từng đơn. Không coi đây là danh sách trống.",
+      );
+    return response.data;
+  },
   // A named command prevents an accidental GET fallback. Never retry financial POSTs automatically.
   runJobs: async (r: Request) => {
     const response = await r<ApiResponse<CommerceJobRun>>(

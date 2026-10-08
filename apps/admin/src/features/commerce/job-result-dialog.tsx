@@ -8,6 +8,11 @@ import {
 } from "@codementor/types";
 import { downloadCsv } from "@codementor/utils";
 import { vnd } from "./api";
+import {
+  JobOrdersTable,
+  jobOrderExplanation,
+  jobTime,
+} from "./job-orders-table";
 
 const labels: Record<CommerceJobStage["name"], string> = {
   payments: "Xác minh thanh toán",
@@ -26,10 +31,12 @@ export function JobResultDialog({
   result,
   close,
   policy,
+  openOrder,
 }: {
   result: CommerceJobRun | null;
   close: () => void;
   policy: () => void;
+  openOrder: (id: string) => void;
 }) {
   if (!result) return null;
   const alreadyRunning = result.status === "already_running";
@@ -55,31 +62,63 @@ export function JobResultDialog({
             variant="outline"
             disabled={alreadyRunning}
             onClick={() =>
-              downloadCsv(
-                `doi-soat-${result.runId}.csv`,
-                [
-                  "Mã lượt",
-                  "Bắt đầu",
-                  "Kết thúc",
-                  "Tác vụ",
-                  "Được chọn",
-                  "Đã xác nhận",
-                  "Còn chờ",
-                  "Lỗi",
-                  "Thông báo",
-                ],
-                result.stages.map((s) => [
-                  result.runId,
-                  result.startedAt,
-                  result.finishedAt,
-                  labels[s.name],
-                  s.selected,
-                  s.completed,
-                  s.waiting,
-                  s.failed,
-                  s.error ?? "",
-                ]),
-              )
+              result.orderReport
+                ? downloadCsv(
+                    `don-doi-soat-${result.runId}.csv`,
+                    [
+                      "Mã lượt",
+                      "Mã đơn",
+                      "Khóa học",
+                      "Giảng viên",
+                      "Người mua",
+                      "Phần giảng viên",
+                      "Được mở trong lượt",
+                      "Bù khoản thu hồi",
+                      "Lý do / bước tiếp theo",
+                      "Hạn giữ",
+                      "Xác minh",
+                      "Tra soát sớm nhất",
+                    ],
+                    result.orderReport.items.map((order) => [
+                      result.runId,
+                      order.id,
+                      order.courseTitle,
+                      order.instructorName,
+                      order.buyerName,
+                      order.instructorAmountVnd,
+                      order.releasedAmountVnd,
+                      order.debtOffsetVnd,
+                      jobOrderExplanation(order),
+                      jobTime(order.holdUntil),
+                      jobTime(order.verifiedAt),
+                      jobTime(order.nextVerificationAt),
+                    ]),
+                  )
+                : downloadCsv(
+                    `doi-soat-${result.runId}.csv`,
+                    [
+                      "Mã lượt",
+                      "Bắt đầu",
+                      "Kết thúc",
+                      "Tác vụ",
+                      "Được chọn",
+                      "Đã xác nhận",
+                      "Còn chờ",
+                      "Lỗi",
+                      "Thông báo",
+                    ],
+                    result.stages.map((s) => [
+                      result.runId,
+                      result.startedAt,
+                      result.finishedAt,
+                      labels[s.name],
+                      s.selected,
+                      s.completed,
+                      s.waiting,
+                      s.failed,
+                      s.error ?? "",
+                    ]),
+                  )
             }
           >
             <Download className="size-4" /> Xuất kết quả
@@ -120,24 +159,19 @@ export function JobResultDialog({
             )}
           </section>
         )}
-        <dl className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border p-3">
-            <dt className="text-xs text-muted-foreground">
-              Doanh thu chuyển sang khả dụng
-            </dt>
-            <dd className="mt-1 text-lg font-semibold">
-              {vnd(result.releasedAmountVnd)}
-            </dd>
-          </div>
-          <div className="rounded-lg border p-3">
-            <dt className="text-xs text-muted-foreground">
-              Doanh thu dùng bù khoản cần thu hồi
-            </dt>
-            <dd className="mt-1 text-lg font-semibold">
-              {vnd(result.debtOffsetVnd)}
-            </dd>
-          </div>
-        </dl>
+        {!alreadyRunning &&
+          (result.orderReport ? (
+            <JobOrdersTable report={result.orderReport} openOrder={openOrder} />
+          ) : (
+            <p
+              role="status"
+              className="rounded-lg border p-3 text-muted-foreground"
+            >
+              Chưa đọc được chi tiết từng đơn của lượt này. Mở “Xem đơn đang
+              chờ” trên trang Giao dịch để xem trạng thái hiện tại; không cần
+              chạy đối soát lại chỉ để đọc báo cáo.
+            </p>
+          ))}
         {!alreadyRunning && (
           <details className="rounded-lg border p-3">
             <summary className="cursor-pointer font-medium">
@@ -193,10 +227,10 @@ export function JobResultDialog({
           </details>
         )}
         {!alreadyRunning && (
-          <section className="rounded-lg border p-4">
-            <h3 className="font-semibold">
-              Các khoản còn chờ & việc cần làm tiếp
-            </h3>
+          <details className="rounded-lg border p-4">
+            <summary className="cursor-pointer font-semibold">
+              Tổng hợp các khoản còn chờ & cách xử lý
+            </summary>
             {result.remaining ? (
               <dl className="mt-3 grid gap-3 sm:grid-cols-2">
                 {[
@@ -267,7 +301,7 @@ export function JobResultDialog({
               giữ lại; đơn hết hạn được đánh dấu riêng. Đối soát không rút ngắn
               thời gian giữ hoặc tự duyệt rút tiền.
             </p>
-          </section>
+          </details>
         )}
         {result.stages.some((s) => s.items.length > 0) && (
           <details className="rounded-lg border p-3">

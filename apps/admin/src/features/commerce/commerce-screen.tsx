@@ -31,12 +31,14 @@ import {
   type CommerceAudit,
   type CommercePolicy,
   type CommerceJobRun,
+  type CommerceJobOrderReport,
   type PurchaseDetail,
 } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { commerceAdminApi as api, vnd } from "./api";
 import { PolicyForm } from "./policy-form";
 import { JobResultDialog } from "./job-result-dialog";
+import { JobOrdersTable } from "./job-orders-table";
 import { OrderDialog } from "./order-dialog";
 import { ReconciliationSummary } from "./reconciliation-summary";
 import { downloadCsv, printDocument } from "@codementor/utils";
@@ -52,6 +54,11 @@ export function CommerceScreen() {
   const [runConfirmation, setRunConfirmation] = useState(false);
   const [lastRun, setLastRun] = useState<CommerceJobRun | null>(null);
   const [showRunResult, setShowRunResult] = useState(false);
+  const [showWaiting, setShowWaiting] = useState(false);
+  const [waitingReport, setWaitingReport] =
+    useState<CommerceJobOrderReport | null>(null);
+  const [waitingLoading, setWaitingLoading] = useState(false);
+  const [waitingError, setWaitingError] = useState("");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("newest");
   const [help, setHelp] = useState(false);
@@ -99,6 +106,24 @@ export function CommerceScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+  async function showWaitingOrders(page = 1) {
+    if (waitingLoading) return;
+    setShowWaiting(true);
+    setWaitingLoading(true);
+    setWaitingError("");
+    try {
+      setWaitingReport(await api.waitingOrders(request, page));
+    } catch (e) {
+      setWaitingError(apiErrorMessage(e));
+    } finally {
+      setWaitingLoading(false);
+    }
+  }
+  function openReportedOrder(id: string) {
+    setShowRunResult(false);
+    setShowWaiting(false);
+    void open(id);
+  }
   async function runJobs() {
     if (busy) return;
     setBusy(true);
@@ -270,6 +295,13 @@ export function CommerceScreen() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            disabled={waitingLoading || busy}
+            onClick={() => void showWaitingOrders()}
+          >
+            <Eye className="size-4" /> Xem đơn đang chờ
+          </Button>
           {lastRun && (
             <Button variant="outline" onClick={() => setShowRunResult(true)}>
               Kết quả lượt gần nhất
@@ -706,9 +738,11 @@ export function CommerceScreen() {
             Thanh toán thành công → doanh thu đang chờ → hết thời gian giữ của
             đơn và đủ điều kiện xác minh → số dư khả dụng. Bấm đối soát không
             rút ngắn thời gian giữ. Xem ngày dự kiến trong chi tiết đơn và chính
-            sách áp dụng; đơn cũ giữ tỷ lệ và thời gian đã lưu.
-            Thời gian giữ 1 phút không thay thế thời gian chờ tra soát VNPAY
-            (ít nhất 6 phút giữa các lượt của cùng giao dịch).
+            sách áp dụng; đơn cũ giữ tỷ lệ và thời gian đã lưu. Thời gian giữ 1
+            phút không thay thế thời gian chờ tra soát VNPAY (ít nhất 6 phút
+            giữa các lượt của cùng giao dịch). Mở “Xem đơn đang chờ” để biết
+            từng đơn chờ đến giờ nào, chờ xác minh hay bị chặn bởi hoàn tiền.
+            Đây là thao tác chỉ đọc, không chạy đối soát.
           </HelpStep>
           <HelpStep number="4" title="Các tác vụ đi kèm">
             Nút Đối soát ngay còn kiểm tra hoàn tiền đang chờ, đánh dấu đơn hết
@@ -717,20 +751,21 @@ export function CommerceScreen() {
             chạy.
           </HelpStep>
           <HelpStep number="5" title="Đọc báo cáo sau mỗi lượt">
-            Báo cáo tự mở và nêu rõ tiền thực sự chuyển sang khả dụng trong lượt này.
-            Nếu bằng 0, xem lý do còn chờ và hướng xử lý; đây không phải số dư hiện tại.
-            Chi tiết tác vụ cho biết số đã xử lý, còn chờ và lỗi; đã xử lý có thể
-            là kết quả thất bại, không đồng nghĩa đã thanh toán. Có thể mở lại Kết quả lượt gần nhất
-            hoặc xuất CSV; nhật ký lưu các thay đổi thực tế.
+            Báo cáo tự mở và nêu rõ tiền thực sự chuyển sang khả dụng trong lượt
+            này. Nếu bằng 0, xem lý do còn chờ và hướng xử lý; đây không phải số
+            dư hiện tại. Chi tiết tác vụ cho biết số đã xử lý, còn chờ và lỗi;
+            đã xử lý có thể là kết quả thất bại, không đồng nghĩa đã thanh toán.
+            Có thể mở lại Kết quả lượt gần nhất hoặc xuất CSV; nhật ký lưu các
+            thay đổi thực tế.
           </HelpStep>
           <HelpStep number="7" title="Cấu hình thời gian giữ">
             Vào Chính sách doanh thu để chọn Ngày hoặc Phút (tối đa 90 ngày).
             Khi demo, chọn Phút và nhập 1 trước khi tạo đơn mới; thanh toán đã
             xác minh và hết phút, chạy đối soát để mở số dư nếu đủ điều kiện.
-            Chính sách áp dụng toàn hệ thống, hãy khôi phục sau buổi demo. Thời gian được
-            lưu trên đơn lúc tạo; mốc khả dụng tính từ lúc xác nhận thanh toán.
-            Đổi chính sách không đổi đơn cũ, không bỏ qua xác minh/hoàn tiền và
-            không lập tức mở toàn bộ số dư.
+            Chính sách áp dụng toàn hệ thống, hãy khôi phục sau buổi demo. Thời
+            gian được lưu trên đơn lúc tạo; mốc khả dụng tính từ lúc xác nhận
+            thanh toán. Đổi chính sách không đổi đơn cũ, không bỏ qua xác
+            minh/hoàn tiền và không lập tức mở toàn bộ số dư.
           </HelpStep>
           <HelpStep number="6" title="Báo cáo & chứng từ">
             Mở Doanh thu hệ thống trên thanh điều hướng để xem toàn hệ thống
@@ -772,12 +807,56 @@ export function CommerceScreen() {
       <JobResultDialog
         result={showRunResult ? lastRun : null}
         close={() => setShowRunResult(false)}
+        openOrder={openReportedOrder}
         policy={() => {
           setShowRunResult(false);
           setTab("policy");
           setPage(1);
         }}
       />
+      <Modal
+        open={showWaiting}
+        onClose={() => setShowWaiting(false)}
+        title="Đơn đang chờ mở doanh thu"
+        width="lg"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              disabled={waitingLoading}
+              onClick={() => void showWaitingOrders(waitingReport?.page ?? 1)}
+            >
+              Làm mới danh sách
+            </Button>
+            <Button onClick={() => setShowWaiting(false)}>Đóng</Button>
+          </>
+        }
+      >
+        <div className="space-y-4 text-sm">
+          <p className="text-muted-foreground">
+            Đọc danh sách này không chạy đối soát, không gọi VNPAY và không thay
+            đổi số dư. Xem lý do và mốc thời gian của từng đơn trước khi quyết
+            định xử lý.
+          </p>
+          {waitingError ? (
+            <p role="alert" className="text-destructive">
+              {waitingError} Hãy thử làm mới danh sách; chưa xác định được kết
+              quả, không coi số đơn là 0.
+            </p>
+          ) : waitingLoading ? (
+            <p role="status">Đang đọc trạng thái từng đơn…</p>
+          ) : (
+            waitingReport && (
+              <JobOrdersTable
+                report={waitingReport}
+                openOrder={openReportedOrder}
+                disabled={busy}
+                onPageChange={(page) => void showWaitingOrders(page)}
+              />
+            )
+          )}
+        </div>
+      </Modal>
       <Modal
         open={!!recordDetail}
         onClose={() => setRecordDetail(null)}
