@@ -42,3 +42,24 @@ feedback, cancellation, validation and desktop/mobile/dark layouts were checked.
 Backend report computation is covered by isolated tests, not fabricated UI outcomes.
 These local checks do not certify a real provider reconciliation or payout;
 production deployment and health checks are verified separately.
+
+## Per-order explanations (2026-10-08)
+
+Admin has a separate **Xem đơn đang chờ** read-only dialog. It reads a server-paged
+list (20 orders/page) with course, buyer, lecturer, lecturer share, reason, hold
+deadline, verification date and next permitted gateway-query time. Each row opens
+the existing order detail. Narrow screens stack the row fields to avoid cutting
+off the explanation. Loading/error states are not interpreted as an empty list.
+
+The run-result dialog prioritizes these order explanations over technical totals.
+Its bounded snapshot contains up to 100 orders, touched orders first; UI paging is
+10 rows/page. Actual credits and debt offsets come from that run's committed
+releases, not from the snapshot's available status. Previously available income
+is explicitly identified as not credited again. CSV exports the bounded report;
+the read-only preview can browse the complete current waiting list.
+
+Verification: admin login, read-only preview and order-detail navigation checked
+on local browser against existing EC2 data, with local automatic commerce jobs
+disabled. Component checks cover release/debt, cooldown, legacy/empty/partial
+results and paging. Root lint/typecheck/build passed. No financial command,
+policy update, migration or real payout was sent to verify this UI.
