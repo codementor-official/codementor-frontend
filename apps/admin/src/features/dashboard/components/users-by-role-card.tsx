@@ -59,7 +59,7 @@ export function UsersByRoleCard({
                 stroke="var(--muted-foreground)"
                 tickLine={false}
                 type="category"
-                width={72}
+                width={84}
               />
               <Tooltip
                 contentStyle={{
@@ -72,7 +72,9 @@ export function UsersByRoleCard({
                 cursor={{ fill: "var(--muted)" }}
                 formatter={(value) => [Number(value).toLocaleString("vi-VN"), "Tài khoản"]}
               />
-              <Bar dataKey="value" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
+              {/* Thanh mảnh: ba thanh kéo dài theo khung cao gần 300px dày ~60px, thành ba khối
+                  mực đặc (khối trắng ở dark mode) lấn át cả thẻ. */}
+              <Bar barSize={20} dataKey="value" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -96,7 +96,8 @@ export function UserGrowthCard({
                 tickLine={false}
               />
               <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "var(--border)" }} />
-              <Area dataKey="total" fill="url(#totalUsersFill)" stroke="none" type="linear" />
+              {/* Chỉ là lớp tô dưới đường "Tổng cộng dồn": không có tên nên từng hiện "total : 0" trong tooltip. */}
+              <Area dataKey="total" fill="url(#totalUsersFill)" legendType="none" stroke="none" tooltipType="none" type="linear" />
               <Line
                 dataKey="newUsers"
                 dot={false}
