@@ -113,7 +113,9 @@ export function CommerceScreen() {
         toast.info("Một số tác vụ cần kiểm tra. Xem báo cáo kết quả.");
       else
         toast.success(
-          "Đã nhận báo cáo đối soát. Xem số liệu và giao dịch còn chờ.",
+          result.releasedAmountVnd > 0
+            ? `Đã mở ${vnd(result.releasedAmountVnd)} doanh thu khả dụng. Xem báo cáo kết quả.`
+            : "Không có doanh thu mới chuyển sang khả dụng trong lượt này. Xem lý do còn chờ trong báo cáo.",
         );
       await load();
     } catch (e) {
@@ -705,6 +707,8 @@ export function CommerceScreen() {
             đơn và đủ điều kiện xác minh → số dư khả dụng. Bấm đối soát không
             rút ngắn thời gian giữ. Xem ngày dự kiến trong chi tiết đơn và chính
             sách áp dụng; đơn cũ giữ tỷ lệ và thời gian đã lưu.
+            Thời gian giữ 1 phút không thay thế thời gian chờ tra soát VNPAY
+            (ít nhất 6 phút giữa các lượt của cùng giao dịch).
           </HelpStep>
           <HelpStep number="4" title="Các tác vụ đi kèm">
             Nút Đối soát ngay còn kiểm tra hoàn tiền đang chờ, đánh dấu đơn hết
@@ -713,10 +717,10 @@ export function CommerceScreen() {
             chạy.
           </HelpStep>
           <HelpStep number="5" title="Đọc báo cáo sau mỗi lượt">
-            Báo cáo tự mở sau khi máy chủ phản hồi: số được chọn, đã xác nhận,
-            còn chờ, lỗi và số tiền thực sự mở sang khả dụng. Đã xác nhận có thể
-            là kết quả thất bại, không đồng nghĩa đã thanh toán. Nếu số dư không
-            tăng, xem các lý do còn chờ. Có thể mở lại Kết quả lượt gần nhất
+            Báo cáo tự mở và nêu rõ tiền thực sự chuyển sang khả dụng trong lượt này.
+            Nếu bằng 0, xem lý do còn chờ và hướng xử lý; đây không phải số dư hiện tại.
+            Chi tiết tác vụ cho biết số đã xử lý, còn chờ và lỗi; đã xử lý có thể
+            là kết quả thất bại, không đồng nghĩa đã thanh toán. Có thể mở lại Kết quả lượt gần nhất
             hoặc xuất CSV; nhật ký lưu các thay đổi thực tế.
           </HelpStep>
           <HelpStep number="7" title="Cấu hình thời gian giữ">

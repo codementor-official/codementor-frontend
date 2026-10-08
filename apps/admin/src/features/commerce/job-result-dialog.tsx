@@ -17,7 +17,7 @@ const labels: Record<CommerceJobStage["name"], string> = {
   payouts: "Xử lý chi trả đã duyệt",
 };
 const outcomes = {
-  completed: "Đã xác nhận",
+  completed: "Đã xử lý",
   waiting: "Còn chờ",
   failed: "Cần kiểm tra",
 };
@@ -39,6 +39,7 @@ export function JobResultDialog({
     : result.status === "partial"
       ? "Đối soát hoàn tất một phần"
       : "Kết quả đối soát";
+  const income = result.stages.find((stage) => stage.name === "income");
   return (
     <Modal
       open
@@ -95,6 +96,30 @@ export function JobResultDialog({
               ? "Không có giao dịch đến lượt xử lý trong lần này. Số dư không bị thay đổi."
               : "Số liệu dưới đây là kết quả của lượt này, không phải toàn bộ lịch sử giao dịch."}
         </p>
+        {!alreadyRunning && (
+          <section className="rounded-lg border bg-muted/40 p-4">
+            <h3 className="font-semibold">
+              {result.releasedAmountVnd > 0
+                ? `Đã chuyển ${vnd(result.releasedAmountVnd)} sang số dư khả dụng`
+                : "Lượt này không tăng số dư khả dụng"}
+            </h3>
+            <p className="mt-2 text-muted-foreground">
+              {income?.completed
+                ? `${income.completed} đơn đã được mở doanh thu. `
+                : "Không có đơn mới được mở doanh thu trong lượt này. "}
+              {result.debtOffsetVnd > 0 &&
+                `${vnd(result.debtOffsetVnd)} được dùng bù khoản cần thu hồi, không cộng vào tiền có thể rút. `}
+              Đây là thay đổi của lượt vừa chạy, không phải số dư hiện tại; hệ
+              thống có thể đã mở doanh thu ở lượt tự động trước đó.
+            </p>
+            {result.status === "partial" && (
+              <p className="mt-2 text-destructive">
+                Một số tác vụ gặp lỗi. Các thay đổi thành công vẫn được ghi
+                nhận; xem chi tiết tác vụ bên dưới trước khi chạy lại.
+              </p>
+            )}
+          </section>
+        )}
         <dl className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border p-3">
             <dt className="text-xs text-muted-foreground">
@@ -114,58 +139,63 @@ export function JobResultDialog({
           </div>
         </dl>
         {!alreadyRunning && (
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-lg text-left text-sm">
-              <thead className="bg-muted text-xs text-muted-foreground">
-                <tr>
-                  {["Tác vụ", "Được chọn", "Đã xác nhận", "Còn chờ", "Lỗi"].map(
-                    (h) => (
-                      <th key={h} className="whitespace-nowrap p-3 font-medium">
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {result.stages.map((s) => (
-                  <tr key={s.name}>
-                    <td className="p-3 font-medium">
-                      {labels[s.name]}
-                      {s.error && (
-                        <p
-                          role="alert"
-                          className="mt-1 text-xs text-destructive"
+          <details className="rounded-lg border p-3">
+            <summary className="cursor-pointer font-medium">
+              Chi tiết 5 tác vụ trong lượt này
+            </summary>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full min-w-lg text-left text-sm">
+                <thead className="bg-muted text-xs text-muted-foreground">
+                  <tr>
+                    {["Tác vụ", "Đến lượt", "Đã xử lý", "Còn chờ", "Lỗi"].map(
+                      (h) => (
+                        <th
+                          key={h}
+                          className="whitespace-nowrap p-3 font-medium"
                         >
-                          {s.error}
-                        </p>
-                      )}
-                    </td>
-                    {[s.selected, s.completed, s.waiting, s.failed].map(
-                      (n, i) => (
-                        <td key={i} className="p-3 tabular-nums">
-                          {n}
-                        </td>
+                          {h}
+                        </th>
                       ),
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {!alreadyRunning && (
-          <p className="text-xs text-muted-foreground">
-            “Đã xác nhận” nghĩa là đã có kết quả cuối, kể cả thanh toán/hoàn
-            tiền/chi trả thất bại; không đồng nghĩa tất cả đã thành công. “Lỗi”
-            là thao tác hoặc đọc kết quả gặp sự cố. Mở doanh thu chỉ đếm giao
-            dịch thật sự chuyển trạng thái.
-          </p>
+                </thead>
+                <tbody className="divide-y">
+                  {result.stages.map((s) => (
+                    <tr key={s.name}>
+                      <td className="p-3 font-medium">
+                        {labels[s.name]}
+                        {s.error && (
+                          <p
+                            role="alert"
+                            className="mt-1 text-xs text-destructive"
+                          >
+                            {s.error}
+                          </p>
+                        )}
+                      </td>
+                      {[s.selected, s.completed, s.waiting, s.failed].map(
+                        (n, i) => (
+                          <td key={i} className="p-3 tabular-nums">
+                            {n}
+                          </td>
+                        ),
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Đã xử lý nghĩa là đã có kết quả cuối, có thể là thành công hoặc
+              thất bại. Mỗi tác vụ đếm riêng; một đơn có thể xuất hiện ở nhiều
+              tác vụ, không cộng các cột thành số đơn duy nhất.
+            </p>
+          </details>
         )}
         {!alreadyRunning && (
           <section className="rounded-lg border p-4">
             <h3 className="font-semibold">
-              Vì sao vẫn còn doanh thu đang chờ?
+              Các khoản còn chờ & việc cần làm tiếp
             </h3>
             {result.remaining ? (
               <dl className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -195,6 +225,41 @@ export function JobResultDialog({
                 Chưa đọc được thống kê còn chờ. Hãy làm mới dữ liệu; không coi
                 đây là 0 giao dịch.
               </p>
+            )}
+            {result.remaining && (
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                {result.remaining.holding > 0 && (
+                  <li>
+                    • Chưa hết hạn giữ: đợi mốc giờ đã lưu trên từng đơn. Đổi
+                    chính sách không rút ngắn hạn của đơn cũ.
+                  </li>
+                )}
+                {result.remaining.unverified > 0 && (
+                  <li>
+                    • Chưa xác minh: đợi lượt tra soát cổng thanh toán. VNPAY
+                    yêu cầu các lượt của cùng giao dịch cách nhau ít nhất 6
+                    phút, độc lập với thời gian giữ 1 phút.
+                  </li>
+                )}
+                {result.remaining.refundBlocked > 0 && (
+                  <li>
+                    • Có hoàn tiền: kiểm tra mục Hoàn tiền, chưa chuyển khoản
+                    đang bị chặn sang khả dụng.
+                  </li>
+                )}
+                {result.remaining.eligible > 0 && (
+                  <li>
+                    • Đủ điều kiện còn trong hàng đợi: đợi lượt tự động tiếp
+                    theo; nếu tác vụ mở doanh thu có lỗi, kiểm tra lỗi trước khi
+                    chạy lại.
+                  </li>
+                )}
+                <li>
+                  • Mở Doanh thu hệ thống → Số dư & nghĩa vụ để xem số dư hiện
+                  tại của từng giảng viên. Đối soát chỉ chuyển doanh thu đủ điều
+                  kiện, không tự duyệt yêu cầu rút mới.
+                </li>
+              </ul>
             )}
             <p className="mt-3 text-xs text-muted-foreground">
               Mỗi lượt xử lý tối đa 20 thanh toán, 20 hoàn tiền, 50 đơn mở doanh
