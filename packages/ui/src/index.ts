@@ -87,3 +87,4 @@ export type { Kpi } from "./kpi-strip";
 export { CharCount, Field, FieldError, fieldA11y, fieldErrorId } from "./field";
 export { ReasonField } from "./reason-field";
 export { useFieldErrors } from "./use-field-errors";
+export { MaskedAccount } from "./masked-account";

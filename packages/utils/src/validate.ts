@@ -288,3 +288,13 @@ export function slugify(title: string): string {
 export function retitleSlug(currentSlug: string, prevTitle: string, nextTitle: string): string {
   return currentSlug === slugify(prevTitle) ? slugify(nextTitle) : currentSlug;
 }
+
+/**
+ * Số tài khoản che cho chỗ chỉ nhận chuỗi (modal chi tiết, bản in): luôn đúng 4 dấu che rồi
+ * 4 số cuối, bất kể số dài bao nhiêu — độ dài thật cũng là thông tin không nên lộ. Trên giao
+ * diện dùng `MaskedAccount` ở `@codementor/ui` (chấm vẽ bằng CSS, đều và thẳng hàng).
+ */
+export function maskAccount(accountNumber: string | null | undefined): string {
+  const digits = (accountNumber ?? "").trim();
+  return digits ? `•••• ${digits.slice(-4)}` : "";
+}

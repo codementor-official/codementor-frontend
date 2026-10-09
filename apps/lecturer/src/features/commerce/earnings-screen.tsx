@@ -14,6 +14,7 @@ import {
   Button,
   Card,
   CourseCover,
+  MaskedAccount,
   Modal,
   PageHeader,
   RevenueOverview,
@@ -44,6 +45,7 @@ import {
   downloadCsv,
   printDocument,
   formatHoldingPeriod,
+  maskAccount,
 } from "@codementor/utils";
 type Tab = "overview" | "orders" | "withdrawals" | "ledger";
 type Detail =
@@ -484,9 +486,9 @@ export function EarningsScreen() {
                       <td className="p-3">{vnd(w.amount)}</td>
                       <td className="p-3">
                         {w.recipient.label}
-                        <p className="text-xs text-muted-foreground">
-                          {w.recipient.institutionCode} · ••••
-                          {w.recipient.accountNumber?.slice(-4)}
+                        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {w.recipient.institutionCode}
+                          <MaskedAccount accountNumber={w.recipient.accountNumber} />
                         </p>
                       </td>
                       <td className="p-3">
@@ -690,7 +692,7 @@ function DetailView({ detail }: { detail: Detail }) {
           ["Phương thức", item.recipient.method.toUpperCase()],
           [
             "Nơi nhận",
-            `${item.recipient.institutionCode} · ••••${item.recipient.accountNumber?.slice(-4)}`,
+            `${item.recipient.institutionCode} ${maskAccount(item.recipient.accountNumber)}`,
           ],
           ["Chủ tài khoản", item.recipient.accountName],
           ["Trạng thái", COMMERCE_STATUS[item.status] ?? item.status],
