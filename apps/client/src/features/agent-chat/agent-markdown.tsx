@@ -2,6 +2,10 @@
 
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
+// Màu token của `rehype-highlight`. Đi kèm component chứ không trông vào trang: trước đây chỉ
+// trang giải bài import theme này, nên ở Trợ lý AI code ra đủ class `.hljs-*` mà vẫn một màu.
+// Nền khối code là của `.rich-text pre` (globals.css), theme chỉ góp màu chữ.
+import "highlight.js/styles/github-dark.css";
 
 /**
  * Markdown của câu trả lời agent: cùng `.rich-text` với studio, có tô màu code.
