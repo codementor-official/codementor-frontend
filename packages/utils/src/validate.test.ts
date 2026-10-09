@@ -17,6 +17,7 @@ import {
   integer,
   isClean,
   length,
+  maskAccount,
   promotion,
   reason,
   search,
@@ -119,5 +120,11 @@ assert.notEqual(functionName("2sum"), undefined);
 assert.notEqual(functionName("two-sum"), undefined);
 assert.equal(functionName("class"), 'Tên hàm "class" trùng từ khoá của Python/JavaScript/Java');
 assert.equal(functionName("lambda"), 'Tên hàm "lambda" trùng từ khoá của Python/JavaScript/Java');
+
+// maskAccount — luôn 4 dấu che, không lộ độ dài số tài khoản.
+assert.equal(maskAccount("12312312321"), "•••• 2321");
+assert.equal(maskAccount(" 0912345678 "), "•••• 5678");
+assert.equal(maskAccount(""), "");
+assert.equal(maskAccount(undefined), "");
 
 console.log("validate.test.ts OK");

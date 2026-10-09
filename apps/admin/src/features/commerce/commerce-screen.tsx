@@ -47,6 +47,7 @@ import { OrderDialog } from "./order-dialog";
 import { ReconciliationSummary } from "./reconciliation-summary";
 import {
   downloadCsv,
+  maskAccount,
   printDocument,
   reason as reasonRule,
   search,
@@ -948,7 +949,7 @@ function AdminRecordDetail({ detail }: { detail: RecordDetail }) {
           ["Phương thức", item.recipient.method.toUpperCase()],
           [
             "Nơi nhận",
-            `${item.recipient.institutionCode} · ••••${item.recipient.accountNumber?.slice(-4)}`,
+            `${item.recipient.institutionCode} ${maskAccount(item.recipient.accountNumber)}`,
           ],
           ["Chủ tài khoản", item.recipient.accountName],
           ["Trạng thái", COMMERCE_STATUS[item.status] ?? item.status],
