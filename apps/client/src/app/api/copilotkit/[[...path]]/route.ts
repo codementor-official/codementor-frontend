@@ -61,6 +61,13 @@ const SURFACES = {
     run: () => "/ai/codey/run",
     history: null,
   },
+  /** Trợ lý AI tài liệu nhóm. Tự nạp lịch sử như Codey: ngoài messages nó còn cần
+   *  `grounding` và `documents`, thứ `MESSAGES_SNAPSHOT` không chở được. */
+  t: {
+    agentId: "tutor",
+    run: (id: string) => `/ai/tutor/workspace/${encodeURIComponent(id)}/run`,
+    history: null,
+  },
 } as const;
 
 type SurfaceKey = keyof typeof SURFACES;

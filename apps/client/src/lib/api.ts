@@ -11,10 +11,10 @@ import { apiBaseUrl } from "@/lib/env";
 import type {
   AiStatus,
   AiDocument,
-  AiTurn,
-  AiConversation,
-  AiConversationSummary,
   AiPage,
+  TutorDocument,
+  TutorSessionSummary,
+  TutorTurn,
 } from "@/features/ai-tutor/types";
 import type {
   LecterContentCheck,
@@ -189,31 +189,6 @@ export const api = {
       unwrap<Pick<AiDocument, "id" | "state" | "chunkCount" | "error">>(
         `/workspaces/${encodeURIComponent(slug)}/ai/documents/${id}/index`,
         { method: "POST" },
-      ),
-    conversations: (slug: string, page = 1) =>
-      unwrap<AiPage<AiConversationSummary>>(
-        `/workspaces/${encodeURIComponent(slug)}/ai/conversations${query({ page, limit: 10 })}`,
-        { cache: "no-store" },
-      ),
-    create: (slug: string, documentIds: string[]) =>
-      unwrap<AiConversation>(
-        `/workspaces/${encodeURIComponent(slug)}/ai/conversations`,
-        { method: "POST", body: { documentIds } },
-      ),
-    read: (slug: string, id: string) =>
-      unwrap<AiConversation>(
-        `/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}`,
-        { cache: "no-store" },
-      ),
-    remove: (slug: string, id: string) =>
-      unwrap<{ deleted: boolean }>(
-        `/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}`,
-        { method: "DELETE" },
-      ),
-    ask: (slug: string, id: string, question: string, requestId: string) =>
-      unwrap<AiTurn>(
-        `/workspaces/${encodeURIComponent(slug)}/ai/conversations/${id}/messages`,
-        { method: "POST", body: { question, requestId } },
       ),
   },
   me: () => unwrap<AccountProfile>("/me"),
@@ -1074,6 +1049,32 @@ export const api = {
       unwrap<void>(`/ai/codey/sessions/${encodeURIComponent(threadId)}`, {
         method: "DELETE",
       }),
+  },
+
+  /**
+   * Trợ lý AI tài liệu nhóm — ai-service, KHÔNG qua Nest. Cùng cách với `lecter` bên dưới: lượt
+   * chat là SSE qua `/api/copilotkit/t/<slug>`, còn lịch sử là REST thường.
+   */
+  tutor: {
+    sessions: (slug: string) =>
+      unwrap<{ items: TutorSessionSummary[] }>(
+        `/ai/tutor/workspace/${encodeURIComponent(slug)}/sessions`,
+        { cache: "no-store" },
+      ),
+    session: (slug: string, threadId: string) =>
+      unwrap<{
+        messages: Message[];
+        grounding?: Record<string, TutorTurn>;
+        documents?: TutorDocument[];
+      }>(
+        `/ai/tutor/workspace/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(threadId)}`,
+        { cache: "no-store" },
+      ),
+    removeSession: (slug: string, threadId: string) =>
+      unwrap<void>(
+        `/ai/tutor/workspace/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(threadId)}`,
+        { method: "DELETE" },
+      ),
   },
 
   lecter: {

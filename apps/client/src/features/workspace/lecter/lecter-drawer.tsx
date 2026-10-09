@@ -1,20 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { History, Plus, Sparkles, Trash2, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import rehypeHighlight from "rehype-highlight";
 import { SideDrawer, useToast } from "@codementor/ui";
 import type { ExerciseDraft } from "@codementor/solve";
-import {
-  CopilotChat,
-  CopilotKitProvider,
-  useAgent,
-  useCopilotKit,
-} from "@copilotkit/react-core/v2";
+import { CopilotChat, CopilotKitProvider, useAgent } from "@copilotkit/react-core/v2";
 import "@copilotkit/react-core/v2/styles.css";
 import { Button } from "@/components/ui/button";
-import { api, currentAccessToken } from "@/lib/api";
+import { AgentHeaderSync, useAgentHeaders } from "@/features/agent-chat/agent-headers";
+import { AgentMarkdown } from "@/features/agent-chat/agent-markdown";
+import { agentErrorMessage } from "@/features/agent-chat/run-error";
+import { api } from "@/lib/api";
 import { messageOf } from "../exercise-authoring";
 import { LecterApplyTool } from "./apply-tool";
 import { LecterComposer } from "./composer";
@@ -25,58 +21,6 @@ import type { LecterDraftPatch, LecterSessionSummary } from "./types";
 
 /** Cùng tên với `Capability.agent_id` ở ai-service và với `AGENT_ID` của route runtime. */
 const AGENT_ID = "lecter_workspace";
-
-/** Trễ tối đa giữa lúc token được gia hạn và lúc CopilotKit biết. */
-const TOKEN_SYNC_MS = 30_000;
-
-/**
- * `null` với phiên đăng nhập bằng mật khẩu — token của họ nằm trong cookie HttpOnly và tầng Node
- * `/api/copilotkit` gắn hộ. Gửi `"Bearer "` rỗng thì tầng đó tưởng trình duyệt đã có token và
- * chuyển tiếp một header hỏng, nên ở đây phải là "không gửi gì cả".
- */
-function bearer(): string | null {
-  const token = currentAccessToken();
-  return token ? `Bearer ${token}` : null;
-}
-
-/**
- * Giữ cho header `Authorization` của CopilotKit luôn là token hiện hành.
- *
- * `AuthProvider` giữ token trong `useRef` và cố tình không re-render khi token được gia hạn
- * (~5 phút một lần), còn CopilotKit thì trải phẳng prop `headers` MỘT LẦN rồi giữ bản sao — nên
- * getter hay hàm đặt trong prop đó đều vô dụng, và không có cầu nối này thì sau ~5 phút mọi lượt
- * trả 401.
- *
- * So sánh với `copilotkit.headers` chứ không với một ref cục bộ: `CopilotKitProvider` cũng gọi
- * `setHeaders(mergedHeaders)` trong effect CỦA CHÍNH NÓ, mà effect của cha chạy SAU effect của
- * con — mọi giá trị đặt ở đây lúc mount đều bị nó ghi đè. Đọc lại trạng thái thật của core khiến
- * vòng này tự chữa.
- */
-function AuthHeaderSync() {
-  const { copilotkit } = useCopilotKit();
-
-  useEffect(() => {
-    const apply = () => {
-      const value = bearer();
-      if (!value || copilotkit.headers?.Authorization === value) return;
-      copilotkit.setHeaders({ Authorization: value });
-    };
-    apply();
-    const timer = setInterval(apply, TOKEN_SYNC_MS);
-    return () => clearInterval(timer);
-  }, [copilotkit]);
-
-  return null;
-}
-
-/** Markdown của repo, không phải của CopilotKit: cùng `.rich-text` mà AI Tutor và studio dùng. */
-function Markdown({ content }: { content: string }) {
-  return (
-    <div className="rich-text break-words text-sm leading-7 [&_pre]:overflow-x-auto">
-      <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{content}</ReactMarkdown>
-    </div>
-  );
-}
 
 function Welcome() {
   return (
@@ -209,14 +153,14 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
           chatInputPlaceholder: "Nhờ Lecter soạn bài từ tài liệu đã duyệt…",
           chatDisclaimerText: "Lecter không lưu bài. Bạn tự bấm Lưu ở studio.",
         }}
-        messageView={{ assistantMessage: { markdownRenderer: Markdown } }}
+        messageView={{ assistantMessage: { markdownRenderer: AgentMarkdown } }}
         /* Slot, không phải prop: `inputValue`/`onInputChange`/`onSubmitMessage` truyền thẳng cho
            <CopilotChat> đều bị chính nó ghi đè. Xem `composer.tsx`. */
         input={LecterComposer}
         onError={(event) => {
           // Kiểu của prop này gộp cả `onError` của <div>, nên phải thu hẹp trước khi đọc.
           if (!("error" in event)) return;
-          toast.error(event.error.message || "Lượt này hỏng. Thử lại giúp mình.");
+          toast.error(agentErrorMessage(event.error));
         }}
         welcomeScreen={false}
       />
@@ -251,13 +195,9 @@ export function LecterDrawer({
   onApply: (patch: LecterDraftPatch) => void;
 }) {
   const toast = useToast();
-  // Header ban đầu của provider — xem `useCodeyHeaders`: không có nó thì `/info` lúc mount đi ra
-  // không token và phiên popup nhận 401. Memo theo chuỗi token để provider không reconnect.
-  const token = bearer();
-  const headers = useMemo<Record<string, string>>(
-    () => (token ? { Authorization: token } : ({} as Record<string, string>)),
-    [token],
-  );
+  // Header ban đầu của provider — xem `useAgentHeaders`: không có nó thì `/info` lúc mount đi ra
+  // không token và phiên popup nhận 401.
+  const headers = useAgentHeaders();
   const [threadId, setThreadId] = useState(() => crypto.randomUUID());
   const [sessions, setSessions] = useState<LecterSessionSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -333,7 +273,7 @@ export function LecterDrawer({
           >
             {/* Trước <ChatPanel>: effect của con chạy theo thứ tự khai báo, header phải có
                 trước lần connect đầu tiên. */}
-            <AuthHeaderSync />
+            <AgentHeaderSync />
             <LecterToolRenderers />
             <LecterApplyTool />
             <LecterReadDraftTool />

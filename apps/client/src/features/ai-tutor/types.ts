@@ -19,6 +19,8 @@ export interface AiDocument {
   chunkCount: number;
   error?: string;
 }
+/** Một đoạn tài liệu đã đưa cho model, mã `S1`, `S2`… theo từng lượt. Cũng là hình dạng của
+ *  một trích dẫn đã đối chiếu — ai-service dùng chung. */
 export interface AiCitation {
   sourceId: string;
   documentId: string;
@@ -26,28 +28,31 @@ export interface AiCitation {
   page: number | null;
   excerpt: string;
 }
-export interface AiTurn {
-  id: string;
-  question: string;
+/** Một lượt đã đối chiếu (`grounding[id tin nhắn người dùng]` ở ai-service). Cùng hình dạng
+ *  turn của `ai_conversations` cũ, nên hội thoại đã migrate vẽ y như hội thoại mới. */
+export interface TutorTurn {
   answer: string;
-  supplementalAnswer?: string;
-  citations: AiCitation[];
+  supplementalAnswer: string;
   insufficientEvidence: boolean;
+  citations: AiCitation[];
   createdAt: string;
 }
-export interface AiConversation {
+export interface TutorDocument {
   id: string;
   title: string;
-  documentIds: string[];
-  documents: { id: string; title: string }[];
-  turns: AiTurn[];
-  createdAt: string;
+}
+/** State AG-UI của agent `tutor`. Server là nguồn sự thật; trình duyệt chỉ gửi `documents`. */
+export interface TutorState {
+  documents?: TutorDocument[];
+  sources?: AiCitation[];
+  grounding?: Record<string, TutorTurn>;
+  step?: string;
+}
+export interface TutorSessionSummary {
+  id: string;
+  title: string;
   updatedAt: string;
 }
-export type AiConversationSummary = Pick<
-  AiConversation,
-  "id" | "title" | "documentIds" | "updatedAt"
->;
 export interface AiPage<T> {
   items: T[];
   page: number;

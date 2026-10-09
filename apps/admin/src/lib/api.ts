@@ -781,6 +781,7 @@ export type AiAgent =
   | "codey"
   | "lecter"
   | "lecter_workspace"
+  | "tutor"
   | "rag"
   | "rag_index"
   | "suggest"

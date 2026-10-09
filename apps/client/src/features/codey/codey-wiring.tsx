@@ -1,90 +1,37 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { z } from "zod";
 import { Code2, ListChecks } from "lucide-react";
-import { useAgentContext, useCopilotKit, useFrontendTool } from "@copilotkit/react-core/v2";
+import { useAgentContext, useFrontendTool } from "@copilotkit/react-core/v2";
 import { showValue } from "@codementor/solve";
 import type { Problem } from "@/data/sample-problem";
-import { currentAccessToken } from "@/lib/api";
+import { AgentHeaderSync, useAgentHeaders } from "@/features/agent-chat/agent-headers";
 import type { JudgeRunResult } from "@/types/judge";
 
-/** Trễ tối đa giữa lúc token được gia hạn và lúc CopilotKit biết. */
-const TOKEN_SYNC_MS = 30_000;
 /** Chỉ gửi vài case fail đầu: một bài fail cả 50 test sẽ nổ context, và case thứ tư trở đi
  *  không thêm thông tin gì mà học viên chưa thấy ở ba case trước. */
 const MAX_FAILING = 3;
 const FIELD_CHARS = 500;
 
 /**
- * `null` với phiên đăng nhập bằng mật khẩu — token của họ nằm trong cookie HttpOnly và tầng Node
- * `/api/copilotkit` gắn hộ. Gửi `"Bearer "` rỗng thì tầng đó tưởng trình duyệt đã có token và
- * chuyển tiếp một header hỏng, nên ở đây phải là "không gửi gì cả".
+ * Nhãn bài của lượt này, để danh sách lịch sử nói rõ hội thoại thuộc bài nào.
+ *
+ * Phải `encodeURIComponent`: header HTTP là latin-1 còn tên bài thì có dấu. Gửi thô là lỗi mã
+ * hoá ở tầng Node, và nó chỉ nổ với bài có dấu nên rất dễ lọt qua một vòng thử tiếng Anh.
  */
-function bearer(): string | null {
-  const token = currentAccessToken();
-  return token ? `Bearer ${token}` : null;
+function scopeLabel(exerciseTitle: string): Record<string, string> {
+  return { "x-agent-scope-label": encodeURIComponent(exerciseTitle) };
 }
 
-/**
- * Header ban đầu cho `<CopilotKitProvider headers>`.
- *
- * Bắt buộc, dù `CodeyHeaderSync` đã tồn tại: effect của provider chạy SAU effect của con, gọi
- * `setHeaders(prop headers)` rồi `connect()` ngay trong đó. Không truyền prop này thì lượt
- * `/info` đầu tiên đi ra với header rỗng — phiên popup (token trong tab, không có cookie) nhận
- * 401, và mọi lượt chạy trong 30 giây đầu cũng vậy, tới khi vòng sync kịp gắn lại.
- *
- * Memo theo CHUỖI token: đổi object mỗi lần render là provider chạy lại effect và reconnect.
- */
+/** Header ban đầu cho `<CopilotKitProvider headers>` — xem `useAgentHeaders`. */
 export function useCodeyHeaders(exerciseTitle: string): Record<string, string> {
-  const token = bearer();
-  return useMemo(
-    () => ({
-      ...(token ? { Authorization: token } : {}),
-      "x-agent-scope-label": encodeURIComponent(exerciseTitle),
-    }),
-    [token, exerciseTitle],
-  );
+  return useAgentHeaders(scopeLabel(exerciseTitle));
 }
 
-/**
- * Giữ header của CopilotKit đúng: token hiện hành, và tên bài để gắn nhãn hội thoại.
- *
- * `AuthProvider` giữ token trong `useRef` và cố tình không re-render khi token được gia hạn
- * (~5 phút một lần), còn CopilotKit thì trải phẳng prop `headers` MỘT LẦN rồi giữ bản sao — nên
- * getter hay hàm đặt trong prop đó đều vô dụng, và không có cầu nối này thì sau ~5 phút mọi lượt
- * trả 401.
- *
- * So sánh với `copilotkit.headers` chứ không với một ref cục bộ: `CopilotKitProvider` cũng gọi
- * `setHeaders(mergedHeaders)` trong effect CỦA CHÍNH NÓ, mà effect của cha chạy SAU effect của
- * con — mọi giá trị đặt ở đây lúc mount đều bị nó ghi đè. Đọc lại trạng thái thật của core khiến
- * vòng này tự chữa.
- *
- * Tiêu đề phải `encodeURIComponent`: header HTTP là latin-1 còn tên bài thì có dấu. Gửi thô là
- * lỗi mã hoá ở tầng Node, và nó chỉ nổ với bài có dấu nên rất dễ lọt qua một vòng thử tiếng Anh.
- */
+/** Token hiện hành và nhãn bài — xem `AgentHeaderSync`. */
 export function CodeyHeaderSync({ exerciseTitle }: { exerciseTitle: string }) {
-  const { copilotkit } = useCopilotKit();
-
-  useEffect(() => {
-    const label = encodeURIComponent(exerciseTitle);
-    const apply = () => {
-      const token = bearer();
-      const current = copilotkit.headers ?? {};
-      // Phiên mật khẩu không có token trong tab: vẫn phải gắn nhãn bài, chỉ là không có
-      // `Authorization` để gắn.
-      const next = { ...(token ? { Authorization: token } : {}), "x-agent-scope-label": label };
-      if (current.Authorization === next.Authorization && current["x-agent-scope-label"] === label) {
-        return;
-      }
-      copilotkit.setHeaders(next);
-    };
-    apply();
-    const timer = setInterval(apply, TOKEN_SYNC_MS);
-    return () => clearInterval(timer);
-  }, [copilotkit, exerciseTitle]);
-
-  return null;
+  return <AgentHeaderSync extra={scopeLabel(exerciseTitle)} />;
 }
 
 /**
