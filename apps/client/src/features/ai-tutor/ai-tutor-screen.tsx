@@ -26,7 +26,8 @@ import {
   WandSparkles,
   X,
 } from "lucide-react";
-import { ConfirmButton, Modal, Select, useToast } from "@codementor/ui";
+import { ConfirmButton, FieldError, fieldA11y, Modal, Select, useToast } from "@codementor/ui";
+import { length, search as searchRule } from "@codementor/utils";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -110,16 +111,20 @@ export function AiTutorScreen() {
 
 function TutorGroups() {
   const [q, setQ] = useState("");
+  // `ListWorkspacesQueryDto.q` ≤ 200. Quá trần thì báo lỗi và vẫn tìm theo 200 ký tự đầu —
+  // ponytail: cắt thay vì giữ kết quả cũ; đổi sang "giữ truy vấn hợp lệ gần nhất" nếu cần.
+  const qError = searchRule(q, 200);
+  const query = q.trim().slice(0, 200);
   const [page, setPage] = useState(1);
   const [chosen, setChosen] = useState<{ slug: string; name: string } | null>(
     null,
   );
   const [locked, setLocked] = useState(false);
   const groups = useAiResource(
-    `groups:${page}:${q}`,
+    `groups:${page}:${query}`,
     useCallback(
-      () => api.workspaces.list({ scope: "mine", page, limit: 20, q }),
-      [page, q],
+      () => api.workspaces.list({ scope: "mine", page, limit: 20, q: query }),
+      [page, query],
     ),
   );
   const options =
@@ -146,6 +151,7 @@ function TutorGroups() {
       <details className="text-xs text-text-muted">
         <summary className="cursor-pointer">Tìm nhóm khác</summary>
         <input
+          {...fieldA11y("tutor-group-search", qError)}
           aria-label="Tìm nhóm của bạn"
           className={`${field} mt-2`}
           placeholder="Tên nhóm học tập..."
@@ -155,6 +161,7 @@ function TutorGroups() {
             setPage(1);
           }}
         />
+        <FieldError className="mt-1 text-xs" error={qError} htmlFor="tutor-group-search" />
         {groups.data && (
           <Pager
             page={page}
@@ -203,11 +210,16 @@ function WorkspaceTutor({
 }) {
   const toast = useToast();
   const [q, setQ] = useState("");
+  // `AiPageQuery.q` ≤ 200 — cùng cách xử lý với ô tìm nhóm ở trên.
+  const qError = searchRule(q, 200);
+  const query = q.trim().slice(0, 200);
   const [page, setPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [conversation, setConversation] = useState<AiConversation | null>(null);
   const [input, setInput] = useState("");
+  // `AskAiDto.question` ≤ 4000. Không đếm ký tự ở ô hỏi — chỉ báo khi quá.
+  const inputError = length(input, "Câu hỏi", { max: 4000 });
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState("");
   const [pending, setPending] = useState("");
@@ -231,13 +243,13 @@ function WorkspaceTutor({
     ),
   );
   const documents = useAiResource(
-    `documents:${slug}:${page}:${q}`,
+    `documents:${slug}:${page}:${query}`,
     useCallback(
       () =>
         slug
-          ? api.ai.documents(slug, { page, limit: 6, q })
+          ? api.ai.documents(slug, { page, limit: 6, q: query })
           : Promise.resolve(emptyPage<AiDocument>()),
-      [slug, page, q],
+      [slug, page, query],
     ),
   );
   const history = useAiResource(
@@ -304,7 +316,7 @@ function WorkspaceTutor({
   }
   async function send() {
     const question = input.trim();
-    if (!question || !ready || disabled || !selectedCount) return;
+    if (!question || !ready || disabled || !selectedCount || inputError) return;
     setBusy(true);
     setChatError("");
     setPending(question);
@@ -575,16 +587,17 @@ function WorkspaceTutor({
             }}
             className="flex items-end gap-2"
           >
+            <div className="min-w-0 flex-1">
             <textarea
+              {...fieldA11y("ai-tutor-question", inputError)}
               ref={composer}
               aria-label="Câu hỏi cho trợ lý"
               value={input}
               rows={2}
-              maxLength={4000}
               disabled={disabled}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Bạn muốn hiểu gì trong tài liệu?"
-              className="min-w-0 flex-1 resize-none rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-navy placeholder:text-text-faint"
+              className="block w-full min-w-0 resize-none rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-navy placeholder:text-text-faint"
               onKeyDown={(event) => {
                 if (
                   event.key === "Enter" &&
@@ -596,9 +609,11 @@ function WorkspaceTutor({
                 }
               }}
             />
+            <FieldError className="mt-1 text-xs" error={inputError} htmlFor="ai-tutor-question" />
+            </div>
             <Button
               type="submit"
-              disabled={!ready || disabled || !selectedCount || !input.trim()}
+              disabled={!ready || disabled || !selectedCount || !input.trim() || Boolean(inputError)}
             >
               {busy ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -724,6 +739,7 @@ function WorkspaceTutor({
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-3 top-3 size-4 text-text-faint" />
                 <input
+                  {...fieldA11y("tutor-document-search", qError)}
                   aria-label="Tìm tài liệu đã duyệt"
                   className={`${field} pl-9`}
                   value={q}
@@ -734,6 +750,7 @@ function WorkspaceTutor({
                   placeholder="Tìm tài liệu..."
                 />
               </label>
+              <FieldError className="text-xs" error={qError} htmlFor="tutor-document-search" />
               <p className="text-xs text-text-muted">
                 Đã chọn {selectedCount}/8 · PDF, DOCX, PPTX, TXT, MD
               </p>

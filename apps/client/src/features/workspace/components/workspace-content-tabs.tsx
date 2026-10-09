@@ -21,7 +21,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { Select, useToast } from "@codementor/ui";
+import { CharCount, FieldError, fieldA11y, ReasonField, Select, useFieldErrors, useToast } from "@codementor/ui";
+import { integer, length, reason as reasonRule, search as searchRule, toNumber } from "@codementor/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -63,6 +64,8 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const [data, setData] = useState(EMPTY_PAGE<WorkspaceDocument>());
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
+  // `WorkspaceContentQueryDto.q` ≤ 200. Quá trần thì báo lỗi và không gọi API.
+  const qError = searchRule(q, 200);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -71,6 +74,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const [removeReason, setRemoveReason] = useState("");
   const [moderating, setModerating] = useState<{ document: WorkspaceDocument; status: string } | null>(null);
   const [moderationReason, setModerationReason] = useState("");
+  const [reasonAttempted, setReasonAttempted] = useState(false);
   const [editing, setEditing] = useState<WorkspaceDocument | null>(null);
   const [previewing, setPreviewing] = useState<WorkspaceDocument | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -94,7 +98,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
         await api.workspaces.documents(detail.slug, {
           page,
           limit: 12,
-          q: q || undefined,
+          q: q.trim() || undefined,
           status: status || undefined,
         }),
       );
@@ -109,9 +113,10 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
     }
   }, [detail.slug, page, q, status, canApprove, toast]);
   useEffect(() => {
+    if (qError) return;
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, qError]);
 
   const upload = async (file: File) => {
     setUploading(true);
@@ -154,15 +159,14 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   };
   const remove = async () => {
     if (!removing) return;
-    if (!removeReason.trim()) {
-      toast.error("Vui lòng nhập lý do xóa tài liệu");
-      return;
-    }
+    setReasonAttempted(true);
+    if (reasonRule(removeReason)) return;
     try {
       await api.workspaces.deleteDocument(detail.slug, removing.id, removeReason.trim());
       toast.success("Đã chuyển tài liệu vào mục đã xóa");
       setRemoving(null);
       setRemoveReason("");
+      setReasonAttempted(false);
       await load();
     } catch (e) {
       toast.error(messageOf(e));
@@ -190,6 +194,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
     if (["hidden", "rejected", "changes"].includes(next) && !reason?.trim()) {
       setModerating({ document: doc, status: next });
       setModerationReason("");
+      setReasonAttempted(false);
       return;
     }
     try {
@@ -199,6 +204,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
       });
       setModerating(null);
       setModerationReason("");
+      setReasonAttempted(false);
       await load();
     } catch (e) {
       toast.error(messageOf(e));
@@ -253,6 +259,8 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
       )}
       <div className="flex flex-wrap items-center gap-2">
         <input
+          {...fieldA11y("document-search", qError)}
+          aria-label="Tìm tài liệu"
           className={`${inputClass} min-w-56 flex-1`}
           placeholder="Tìm tài liệu..."
           value={q}
@@ -261,6 +269,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
             setPage(1);
           }}
         />
+        <FieldError className="w-full text-xs" error={qError} htmlFor="document-search" />
         {canViewUnpublished && (
           <Select
             label="Trạng thái"
@@ -456,26 +465,27 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
       )}
       <ConfirmDialog
         open={removing !== null}
-        onClose={() => { setRemoving(null); setRemoveReason(""); }}
+        onClose={() => { setRemoving(null); setRemoveReason(""); setReasonAttempted(false); }}
         onConfirm={() => void remove()}
         title="Chuyển tài liệu vào mục đã xóa?"
         confirmLabel="Xóa"
         message={`Tài liệu “${removing?.title ?? ""}” sẽ được ẩn khỏi danh sách. Tệp trên storage chỉ bị xóa khi xóa vĩnh viễn.`}
       >
-        <label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do xóa <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={removeReason} onChange={(event) => setRemoveReason(event.target.value)} placeholder="Nêu rõ lý do để chủ tài liệu nhận được thông báo…" className={`${inputClass} resize-none font-normal`} /></label>
+        <ReasonField autoFocus id="document-remove-reason" label="Lý do xóa" rows={3} value={removeReason} onChange={setRemoveReason} showError={reasonAttempted} placeholder="Nêu rõ lý do để chủ tài liệu nhận được thông báo…" className={`${inputClass} w-full resize-none font-normal`} />
       </ConfirmDialog>
       <ConfirmDialog
         open={moderating !== null}
-        onClose={() => { setModerating(null); setModerationReason(""); }}
+        onClose={() => { setModerating(null); setModerationReason(""); setReasonAttempted(false); }}
         onConfirm={() => {
-          if (!moderationReason.trim()) { toast.error("Vui lòng nhập lý do xử lý tài liệu"); return; }
-          if (moderating) void changeStatus(moderating.document, moderating.status, moderationReason);
+          setReasonAttempted(true);
+          if (reasonRule(moderationReason)) return;
+          if (moderating) void changeStatus(moderating.document, moderating.status, moderationReason.trim());
         }}
         title="Xác nhận xử lý tài liệu"
         confirmLabel="Xác nhận"
         message={`Hành động “${moderating ? statusLabel(moderating.status) : ""}” sẽ được thông báo cho chủ tài liệu.`}
       >
-        <label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={moderationReason} onChange={(event) => setModerationReason(event.target.value)} placeholder="Nêu rõ nội dung cần chỉnh sửa hoặc lý do không hiển thị…" className={`${inputClass} resize-none font-normal`} /></label>
+        <ReasonField autoFocus id="document-moderation-reason" rows={3} value={moderationReason} onChange={setModerationReason} showError={reasonAttempted} placeholder="Nêu rõ nội dung cần chỉnh sửa hoặc lý do không hiển thị…" className={`${inputClass} w-full resize-none font-normal`} />
       </ConfirmDialog>
       {reporting && (
         <DocumentReportDialog
@@ -503,12 +513,17 @@ function DocumentEditDialog({
   const [title, setTitle] = useState(document.title);
   const [topic, setTopic] = useState(document.topic ?? "");
   const [busy, setBusy] = useState(false);
+  // `UpdateWorkspaceDocumentDto`: tên 1–200, chủ đề ≤ 100.
+  const form = useFieldErrors(
+    { title, topic },
+    {
+      title: length(title, "Tên tài liệu", { min: 1, max: 200 }),
+      topic: length(topic, "Chủ đề", { max: 100 }),
+    },
+  );
   const save = async () => {
     const nextTitle = title.trim();
-    if (!nextTitle) {
-      toast.error("Tên tài liệu không được để trống");
-      return;
-    }
+    if (!form.validate()) return;
     setBusy(true);
     try {
       await api.workspaces.updateDocument(slug, document.id, {
@@ -552,28 +567,30 @@ function DocumentEditDialog({
           <label className="block text-xs font-medium text-text-muted">
             Tên tài liệu
             <input
+              {...fieldA11y("document-title", form.errors.title)}
               className={`${inputClass} mt-1 w-full`}
               value={title}
-              maxLength={200}
               onChange={(event) => setTitle(event.target.value)}
             />
+            <FieldError className="mt-1 font-normal" error={form.errors.title} htmlFor="document-title" />
           </label>
           <label className="block text-xs font-medium text-text-muted">
             Chủ đề
             <input
+              {...fieldA11y("document-topic", form.errors.topic)}
               className={`${inputClass} mt-1 w-full`}
               value={topic}
-              maxLength={100}
               onChange={(event) => setTopic(event.target.value)}
               placeholder="Ví dụ: Cây và đồ thị"
             />
+            <FieldError className="mt-1 font-normal" error={form.errors.topic} htmlFor="document-topic" />
           </label>
         </div>
         <footer className="flex shrink-0 justify-end gap-2 border-t border-border-soft bg-surface p-4">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             Hủy
           </Button>
-          <Button onClick={() => void save()} disabled={busy || !title.trim()}>
+          <Button onClick={() => void save()} disabled={busy}>
             {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             Lưu thay đổi
           </Button>
@@ -697,7 +714,10 @@ function DocumentReportDialog({
   const [category, setCategory] = useState("OTHER");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  // `ReportWorkspaceDocumentDto.note` không bắt buộc, ≤ 1000.
+  const form = useFieldErrors({ note }, { note: length(note, "Ghi chú", { max: 1000 }) });
   const submit = async () => {
+    if (!form.validate()) return;
     setBusy(true);
     try {
       await api.workspaces.reportDocument(slug, document.id, {
@@ -744,12 +764,16 @@ function DocumentReportDialog({
           <label className="block text-xs font-medium text-text-muted">
             Ghi chú (không bắt buộc)
             <textarea
+              {...fieldA11y("document-report-note", form.errors.note)}
               className={`${inputClass} mt-1 min-h-24 w-full resize-y`}
               value={note}
-              maxLength={1000}
               onChange={(event) => setNote(event.target.value)}
               placeholder="Mô tả ngắn để quản trị viên kiểm tra chính xác hơn..."
             />
+            <span className="mt-1 flex items-start justify-between gap-3 font-normal">
+              <FieldError error={form.errors.note} htmlFor="document-report-note" />
+              <span className="ml-auto"><CharCount value={note} max={1000} /></span>
+            </span>
           </label>
           <p className="text-xs text-text-faint">
             Vui lòng chỉ báo cáo nội dung thực sự vi phạm. Gửi lại cho cùng tài
@@ -795,6 +819,9 @@ export function WorkspaceExercisesTab({
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState<WorkspaceExercise | null>(null);
   const [removeReason, setRemoveReason] = useState("");
+  const [removeAttempted, setRemoveAttempted] = useState(false);
+  // `WorkspaceContentQueryDto.q` ≤ 200. Quá trần thì báo lỗi và không gọi API.
+  const qError = searchRule(q, 200);
   const [detailId, setDetailId] = useState<string | null>(() =>
     initialExerciseId && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(initialExerciseId)
       ? initialExerciseId : null,
@@ -820,7 +847,7 @@ export function WorkspaceExercisesTab({
       const main = await api.workspaces.workspaceExercises(detail.slug, {
         page,
         limit: 10,
-        q: q || undefined,
+        q: q.trim() || undefined,
         difficulty: difficulty || undefined,
         scope,
         status: exerciseStatus || undefined,
@@ -856,9 +883,10 @@ export function WorkspaceExercisesTab({
     }
   }, [detail.slug, page, q, difficulty, scope, exerciseStatus, canEditAny, canAssign, toast]);
   useEffect(() => {
+    if (qError) return;
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, qError]);
   useEffect(() => {
     if (canAssign)
       void api.exercises
@@ -887,14 +915,13 @@ export function WorkspaceExercisesTab({
   };
   const remove = async () => {
     if (!removing) return;
-    if (!removeReason.trim()) {
-      toast.error("Vui lòng nhập lý do gỡ bài tập");
-      return;
-    }
+    setRemoveAttempted(true);
+    if (reasonRule(removeReason)) return;
     try {
       await api.workspaces.deleteWorkspaceExercise(detail.slug, removing.id, removeReason.trim());
       setRemoving(null);
       setRemoveReason("");
+      setRemoveAttempted(false);
       toast.success("Đã chuyển bài tập vào mục đã xóa");
       await load();
     } catch (e) {
@@ -902,11 +929,12 @@ export function WorkspaceExercisesTab({
     }
   };
   const exportExercises = async () => {
+    if (qError) return;
     try {
       const response = await api.workspaces.workspaceExercises(detail.slug, {
         page: 1,
         limit: 100,
-        q: q || undefined,
+        q: q.trim() || undefined,
         difficulty: difficulty || undefined,
         scope,
         status: exerciseStatus || undefined,
@@ -1052,15 +1080,20 @@ export function WorkspaceExercisesTab({
       <div
         className={`grid gap-2 md:grid-cols-2 ${FILTER_COLS[2 + 1 + (canEditAny ? 0 : 2) + (canEditAny || canDeleteAny ? 1 : 0)]}`}
       >
-        <input
-          className={`${inputClass} xl:col-span-2`}
-          placeholder="Tìm bài tập..."
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setPage(1);
-          }}
-        />
+        <div className="grid gap-1 xl:col-span-2">
+          <input
+            {...fieldA11y("exercise-search", qError)}
+            aria-label="Tìm bài tập"
+            className={inputClass}
+            placeholder="Tìm bài tập..."
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(1);
+            }}
+          />
+          <FieldError className="text-xs" error={qError} htmlFor="exercise-search" />
+        </div>
         <Select
           label="Độ khó"
           className="w-full"
@@ -1309,37 +1342,43 @@ export function WorkspaceExercisesTab({
       )}
       <ConfirmDialog
         open={removing !== null}
-        onClose={() => { setRemoving(null); setRemoveReason(""); }}
+        onClose={() => { setRemoving(null); setRemoveReason(""); setRemoveAttempted(false); }}
         onConfirm={() => void remove()}
         title="Chuyển bài tập vào mục đã xóa?"
         confirmLabel="Gỡ"
         message={`Bài “${removing?.title ?? ""}” sẽ được ẩn khỏi thành viên và vẫn có thể khôi phục.`}
-      ><label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do gỡ bài <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={removeReason} onChange={(event) => setRemoveReason(event.target.value)} placeholder="Nêu rõ lý do để tác giả nhận được thông báo…" className={`${inputClass} resize-none font-normal`} /></label></ConfirmDialog>
+      ><ReasonField autoFocus id="exercise-remove-reason" label="Lý do gỡ bài" rows={3} value={removeReason} onChange={setRemoveReason} showError={removeAttempted} placeholder="Nêu rõ lý do để tác giả nhận được thông báo…" className={`${inputClass} w-full resize-none font-normal`} /></ConfirmDialog>
     </div>
   );
 }
 
 
 function Field({
+  id,
   label,
   value,
   onChange,
   placeholder,
+  error,
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  error?: string;
 }) {
   return (
     <label className="min-w-0 text-xs font-medium text-text-muted">
       {label}
       <input
+        {...fieldA11y(id, error)}
         className={`${inputClass} mt-1 block w-full`}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
+      <FieldError className="mt-1 font-normal" error={error} htmlFor={id} />
     </label>
   );
 }
@@ -1407,6 +1446,20 @@ function ExerciseDetailDialog({
   const [statement, setStatement] = useState("");
   const [assigned, setAssigned] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const needsHideReason = Boolean(data?.canPublish && publicationStatus === "hidden" && data.publicationStatus !== "hidden");
+  // `UpdateWorkspaceExerciseDto`: tiêu đề 1–200, tóm tắt ≤ 500, số lần 1–100 (trống = không giới hạn).
+  const form = useFieldErrors(
+    { title, summary, attemptLimit, publicationReason },
+    {
+      title: data?.canEdit ? length(title, "Tiêu đề", { min: 1, max: 200 }) : undefined,
+      summary: data?.canEdit ? length(summary, "Tóm tắt", { max: 500 }) : undefined,
+      attemptLimit: data?.canAssign ? integer(attemptLimit, "Số lần tối đa", { min: 1, max: 100 }) : undefined,
+      publicationReason: needsHideReason ? reasonRule(publicationReason, "Lý do ẩn bài") : undefined,
+    },
+  );
+  const { reset: resetForm } = form;
+  // `GET /assignments?q=` ≤ 200.
+  const assignmentSearchError = searchRule(assignmentSearch, 200);
   const selectedSubmission =
     submissions.find((item) => item.id === selectedSubmissionId) ??
     submissions[0];
@@ -1423,6 +1476,7 @@ function ExerciseDetailDialog({
       setPublicationStatus(next.publicationStatus);
       setPublicationReason("");
       setStatement(String(next.content?.statement ?? ""));
+      resetForm();
       setAssigned(
         next.assignedMemberIds ??
           next.assignments?.map((assignment) => assignment.memberId) ??
@@ -1434,11 +1488,12 @@ function ExerciseDetailDialog({
     } finally {
       setLoading(false);
     }
-  }, [slug, id, toast, onClose]);
+  }, [slug, id, toast, onClose, resetForm]);
   useEffect(() => {
     void loadDetail();
   }, [loadDetail]);
   const loadAssignments = useCallback(async () => {
+    if (assignmentSearchError) return;
     setAssignmentsLoading(true);
     try {
       setAssignments(
@@ -1454,7 +1509,7 @@ function ExerciseDetailDialog({
     } finally {
       setAssignmentsLoading(false);
     }
-  }, [assignmentPage, assignmentSearch, id, slug, toast]);
+  }, [assignmentPage, assignmentSearch, assignmentSearchError, id, slug, toast]);
   useEffect(() => {
     const timer = window.setTimeout(() => void loadAssignments(), 200);
     return () => window.clearTimeout(timer);
@@ -1512,17 +1567,14 @@ function ExerciseDetailDialog({
   };
   const save = async () => {
     if (!data) return;
-    if (data.canPublish && publicationStatus === "hidden" && data.publicationStatus !== "hidden" && !publicationReason.trim()) {
-      toast.error("Vui lòng nhập lý do ẩn bài tập");
-      return;
-    }
+    if (!form.validate()) return;
     setBusy(true);
     try {
       await api.workspaces.updateWorkspaceExercise(slug, id, {
         ...(data.canAssign
           ? {
               dueAt: dueAt ? new Date(dueAt).toISOString() : null,
-              attemptLimit: attemptLimit ? Number(attemptLimit) : null,
+              attemptLimit: attemptLimit.trim() ? toNumber(attemptLimit) : null,
               memberIds: assigned,
             }
           : {}),
@@ -1598,12 +1650,16 @@ function ExerciseDetailDialog({
                       {data.canEdit && (
                         <>
                           <Field
+                            id="workspace-exercise-title"
                             label="Tiêu đề"
                             value={title}
                             onChange={setTitle}
+                            error={form.errors.title}
                           />
                           <Field
+                            id="workspace-exercise-summary"
                             label="Tóm tắt"
+                            error={form.errors.summary}
                             value={summary}
                             onChange={setSummary}
                           />
@@ -1633,7 +1689,7 @@ function ExerciseDetailDialog({
                         </div>
                       )}
                     </div>
-                    {data.canPublish && publicationStatus === "hidden" && data.publicationStatus !== "hidden" && <label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do ẩn bài <span className="font-normal text-danger">Bắt buộc</span><textarea rows={3} maxLength={500} value={publicationReason} onChange={(event) => setPublicationReason(event.target.value)} placeholder="Lý do này sẽ được gửi cho tác giả bài tập…" className={`${inputClass} resize-none font-normal`} /></label>}
+                    {data.canPublish && publicationStatus === "hidden" && data.publicationStatus !== "hidden" && <ReasonField id="workspace-exercise-hide-reason" label="Lý do ẩn bài" rows={3} value={publicationReason} onChange={setPublicationReason} showError={Boolean(form.errors.publicationReason)} placeholder="Lý do này sẽ được gửi cho tác giả bài tập…" className={`${inputClass} w-full resize-none font-normal`} />}
                     {data.canEdit && (
                       <TextArea
                         label="Nội dung đề bài"
@@ -1656,13 +1712,14 @@ function ExerciseDetailDialog({
                           <label className="text-xs font-medium">
                             Số lần tối đa
                             <input
-                              type="number"
-                              min={1}
-                              max={100}
+                              {...fieldA11y("workspace-exercise-attempts", form.errors.attemptLimit)}
+                              inputMode="numeric"
+                              placeholder="Không giới hạn"
                               className={`mt-1 block w-28 ${inputClass}`}
                               value={attemptLimit}
                               onChange={(e) => setAttemptLimit(e.target.value)}
                             />
+                            <FieldError className="mt-1 max-w-56 font-normal" error={form.errors.attemptLimit} htmlFor="workspace-exercise-attempts" />
                           </label>
                         </div>
                         <WorkspaceMemberSelector
@@ -1717,6 +1774,8 @@ function ExerciseDetailDialog({
                   </div>
                   <div className="col-span-full flex flex-wrap items-center gap-2">
                     <input
+                      {...fieldA11y("assignment-search", assignmentSearchError)}
+                      aria-label="Tìm thành viên được giao"
                       className={`${inputClass} h-9 min-w-56 flex-1 py-1.5 text-xs`}
                       value={assignmentSearch}
                       onChange={(event) => {
@@ -1728,6 +1787,7 @@ function ExerciseDetailDialog({
                     <span className="text-xs text-text-faint">
                       {assignments.total} thành viên
                     </span>
+                    <FieldError className="w-full text-xs" error={assignmentSearchError} htmlFor="assignment-search" />
                   </div>
                   {assignmentsLoading ? (
                     <div className="min-w-0 lg:col-start-1 lg:row-start-3">
@@ -1956,6 +2016,8 @@ export function WorkspaceAssignmentsTab({
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
+  // `WorkspaceContentQueryDto.q` ≤ 200. Quá trần thì báo lỗi và không gọi API.
+  const qError = searchRule(q, 200);
   const canReview =
     detail.currentMembership.role === "owner" ||
     detail.currentMembership.permissions.review_submission;
@@ -1965,7 +2027,7 @@ export function WorkspaceAssignmentsTab({
         await api.workspaces.assignments(detail.slug, {
           page,
           limit: 12,
-          q: q || undefined,
+          q: q.trim() || undefined,
           status: status || undefined,
         }),
       );
@@ -1974,9 +2036,10 @@ export function WorkspaceAssignmentsTab({
     }
   }, [detail.slug, page, q, status, toast]);
   useEffect(() => {
+    if (qError) return;
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, qError]);
   const update = async (
     item: WorkspaceAssignment,
     body: { status?: string; reviewStatus?: string },
@@ -1989,11 +2052,12 @@ export function WorkspaceAssignmentsTab({
     }
   };
   const exportAssignments = async () => {
+    if (qError) return;
     try {
       const response = await api.workspaces.assignments(detail.slug, {
         page: 1,
         limit: 100,
-        q: q || undefined,
+        q: q.trim() || undefined,
         status: status || undefined,
       });
       downloadCsv(
@@ -2027,6 +2091,8 @@ export function WorkspaceAssignmentsTab({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <input
+          {...fieldA11y("assignment-tab-search", qError)}
+          aria-label="Tìm bài hoặc thành viên"
           className={`${inputClass} min-w-56 flex-1`}
           placeholder="Tìm bài hoặc thành viên..."
           value={q}
@@ -2035,6 +2101,7 @@ export function WorkspaceAssignmentsTab({
             setPage(1);
           }}
         />
+        <FieldError className="order-last w-full text-xs" error={qError} htmlFor="assignment-tab-search" />
         <Select
           label="Trạng thái"
           className="w-full sm:w-44"

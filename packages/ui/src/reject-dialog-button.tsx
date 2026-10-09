@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { Button } from "./button";
+import { reason as reasonRule } from "@codementor/utils";
 import { Modal } from "./modal";
+import { ReasonField } from "./reason-field";
 import { Select, type SelectOption } from "./select";
 
 /**
@@ -33,12 +35,15 @@ export function RejectDialogButton({
   const [running, setRunning] = useState(false);
   const [decision, setDecision] = useState(decisions[0]?.value ?? "");
   const [reason, setReason] = useState("");
+  const [attempted, setAttempted] = useState(false);
+  const fieldId = useId();
   const trimmed = reason.trim();
 
   const close = () => {
     if (running) return;
     setOpen(false);
     setReason("");
+    setAttempted(false);
     setDecision(decisions[0]?.value ?? "");
   };
 
@@ -55,13 +60,17 @@ export function RejectDialogButton({
               Huỷ
             </Button>
             <Button
-              disabled={running || trimmed.length === 0}
+              disabled={running}
               onClick={async () => {
+                // Không khoá nút theo lỗi: bấm thì lỗi hiện ra dưới ô, rồi dừng ở đó.
+                setAttempted(true);
+                if (reasonRule(reason)) return;
                 setRunning(true);
                 try {
                   await onConfirm(decision, trimmed);
                   setOpen(false);
                   setReason("");
+                  setAttempted(false);
                   setDecision(decisions[0]?.value ?? "");
                 } finally {
                   setRunning(false);
@@ -87,11 +96,12 @@ export function RejectDialogButton({
           options={decisions}
           value={decision}
         />
-        <textarea
+        <ReasonField
           autoFocus
-          className="min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          onChange={(event) => setReason(event.target.value)}
+          id={fieldId}
+          onChange={setReason}
           placeholder={placeholder}
+          showError={attempted}
           value={reason}
         />
       </Modal>

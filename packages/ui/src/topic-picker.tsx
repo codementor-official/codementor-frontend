@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Loader2, Plus, X } from "lucide-react";
+import { length, slugify } from "@codementor/utils";
 import { Button } from "./button";
 
 export interface TopicOption {
@@ -69,6 +70,15 @@ export function TopicPicker({
 
     if (!onCreate) {
       setError(`Chưa có chủ đề “${name}”.`);
+      return;
+    }
+
+    // Bản sao `CreateTagDto` (2–60 ký tự) và luật slug ≥ 2 ký tự chữ/số ở `TagController`.
+    const invalid =
+      length(name, "Tên chủ đề", { min: 2, max: 60 }) ??
+      (slugify(name).length < 2 ? "Tên chủ đề phải có ít nhất hai ký tự chữ hoặc số" : undefined);
+    if (invalid) {
+      setError(invalid);
       return;
     }
 
@@ -151,7 +161,7 @@ export function TopicPicker({
       </div>
 
       <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p>
-      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+      {error && <p className="mt-1 text-xs text-destructive" role="alert">{error}</p>}
     </div>
   );
 }

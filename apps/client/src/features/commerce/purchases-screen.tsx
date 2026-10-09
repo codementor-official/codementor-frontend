@@ -22,12 +22,12 @@ import {
   type CommerceOrder,
   type PurchaseDetail,
 } from "@codementor/types";
-import { CourseCover, Modal, ServerPagination, useToast } from "@codementor/ui";
+import { CourseCover, FieldError, fieldA11y, Modal, ServerPagination, useToast } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { commerceApi, vnd } from "./api";
-import { downloadCsv, printDocument } from "@codementor/utils";
+import { downloadCsv, printDocument, search as searchRule } from "@codementor/utils";
 
 function paymentLabel(provider: string): string {
   if (provider === "mock") return "Thanh toán trực tuyến";
@@ -52,6 +52,8 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
   const [sort, setSort] = useState("newest");
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  // `CommercePage.q` 1–100; trống = không lọc.
+  const searchError = searchRule(search, 100);
   const [list, setList] = useState<CommercePage<CommerceOrder> | null>(null);
   const [detail, setDetail] = useState<PurchaseDetail | null>(null);
   const [quickDetail, setQuickDetail] = useState<PurchaseDetail | null>(null);
@@ -240,9 +242,9 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_190px_190px]">
-              <form className="flex min-w-0 items-center gap-2 rounded-lg border border-border-soft bg-background px-3 focus-within:border-primary" onSubmit={(e) => { e.preventDefault(); setPage(1); setQuery(search.trim()); }}>
+              <form className="flex min-w-0 items-center gap-2 rounded-lg border border-border-soft bg-background px-3 focus-within:border-primary" onSubmit={(e) => { e.preventDefault(); if (searchError) return; setPage(1); setQuery(search.trim()); }}>
                 <Search className="size-4 text-text-muted" />
-                <input aria-label="Tìm khóa học" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên khóa học" className="min-w-0 flex-1 bg-transparent py-2.5 text-sm" />
+                <input {...fieldA11y("purchase-search", searchError)} aria-label="Tìm khóa học" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên khóa học" className="min-w-0 flex-1 bg-transparent py-2.5 text-sm" />
                 <button className="border-l border-border-soft py-1 pl-3 text-sm font-semibold text-primary hover:underline" type="submit">
                   Tìm
                 </button>
@@ -253,6 +255,7 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
               </select>
               <select aria-label="Sắp xếp đơn hàng" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className="rounded-lg border border-border-soft bg-transparent px-3 py-2 text-sm text-navy"><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option><option value="amount_high">Giá cao nhất</option><option value="amount_low">Giá thấp nhất</option></select>
             </div>
+            <FieldError className="mt-2" error={searchError} htmlFor="purchase-search" />
           </div>
           {list && (
           !list.items.length ? (

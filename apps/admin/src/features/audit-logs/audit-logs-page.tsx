@@ -9,7 +9,8 @@ import {
   ScrollText,
   ShieldCheck,
 } from "lucide-react";
-import { DetailMeta, DetailRow, DetailSection, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { DetailMeta, DetailRow, DetailSection, FieldError, fieldA11y, ManagePage, Select, StatusBadge } from "@codementor/ui";
+import { search as searchRule } from "@codementor/utils";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, useSummary } from "@codementor/ui";
 import { auditLogsApi, type AuditLogEntry } from "@/lib/api";
@@ -38,6 +39,8 @@ export function AuditLogsPage() {
   const [search, setSearch] = useState("");
   const [targetType, setTargetType] = useState("");
   const [targetId, setTargetId] = useState("");
+  // `ListAuditLogsQueryDto.targetId` ≤ 100. Quá trần thì báo lỗi và không gọi API.
+  const targetIdError = searchRule(targetId, 100);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const summary = useSummary(useCallback(() => auditLogsApi.summary(request), [request]));
@@ -62,9 +65,10 @@ export function AuditLogsPage() {
   }, [request, targetType, targetId]);
 
   useEffect(() => {
+    if (targetIdError) return;
     const timer = window.setTimeout(() => void load(), 300);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, targetIdError]);
 
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -140,12 +144,14 @@ export function AuditLogsPage() {
             value={targetType}
           />
           <input
+            {...fieldA11y("audit-target-id", targetIdError)}
             aria-label="Mã đối tượng"
             className="h-9 rounded-md border border-border bg-card px-2.5 text-xs font-semibold text-foreground focus:border-foreground"
             onChange={(event) => setTargetId(event.target.value)}
             placeholder="Mã đối tượng…"
             value={targetId}
           />
+          <FieldError className="w-full text-xs" error={targetIdError} htmlFor="audit-target-id" />
         </>
       }
       getRowId={(row) => row.id}

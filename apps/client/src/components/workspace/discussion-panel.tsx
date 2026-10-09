@@ -17,7 +17,8 @@ import {
   ThumbsUp,
   Trash2,
 } from "lucide-react";
-import { useToast } from "@codementor/ui";
+import { CharCount, FieldError, fieldA11y, useFieldErrors, useToast } from "@codementor/ui";
+import { length, search as searchRule } from "@codementor/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
@@ -64,6 +65,20 @@ export function DiscussionPanel({
     useState<ExerciseSolutionComment | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Cùng khoảng mà `ExerciseSolutionsController` kiểm (tiêu đề 3–160, giải thích 10–20000,
+  // code ≤ 30000, ngôn ngữ ≤ 40, bình luận 1–5000).
+  const solutionForm = useFieldErrors(
+    { title, explanation, code, language },
+    {
+      title: length(title, "Tiêu đề", { min: 3, max: 160 }),
+      explanation: length(explanation, "Giải thích", { min: 10, max: 20000 }),
+      code: length(code, "Code", { max: 30000 }),
+      language: length(language, "Ngôn ngữ", { max: 40 }),
+    },
+  );
+  const commentForm = useFieldErrors({ comment }, { comment: length(comment, "Bình luận", { min: 1, max: 5000 }) });
+  // Backend không đặt trần cho `q`; giữ 100 như ô tìm kiếm vốn có.
+  const searchError = searchRule(searchDraft, 100);
   const [error, setError] = useState<string | null>(null);
   const selected = data?.items.find((item) => item.id === selectedId) ?? null;
 
@@ -98,6 +113,7 @@ export function DiscussionPanel({
     setLanguage(editorLanguage);
     setError(null);
     setFormMode("new");
+    solutionForm.reset();
   }
 
   function openEdit(item: ExerciseSolution) {
@@ -107,6 +123,7 @@ export function DiscussionPanel({
     setLanguage(item.language ?? editorLanguage);
     setError(null);
     setFormMode("edit");
+    solutionForm.reset();
   }
 
   async function openDetail(item: ExerciseSolution) {
@@ -127,7 +144,7 @@ export function DiscussionPanel({
   }
 
   async function publish() {
-    if (!title.trim() || !explanation.trim()) return;
+    if (!solutionForm.validate()) return;
     setBusy(true);
     setError(null);
     try {
@@ -201,7 +218,7 @@ export function DiscussionPanel({
   }
 
   async function sendComment() {
-    if (!selected || !comment.trim()) return;
+    if (!selected || !commentForm.validate()) return;
     setBusy(true);
     try {
       await api.exercises.solutions.comment(
@@ -210,6 +227,7 @@ export function DiscussionPanel({
         comment.trim(),
       );
       setComment("");
+      commentForm.reset();
       setComments(
         await api.exercises.solutions.comments(exerciseId, selected.id),
       );
@@ -347,24 +365,29 @@ export function DiscussionPanel({
             <label className="block text-xs font-semibold text-navy">
               Tiêu đề
               <input
+                {...fieldA11y("solution-title", solutionForm.errors.title)}
                 aria-label="Tiêu đề lời giải"
-                maxLength={160}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ví dụ: Duyệt một lần, O(n)"
                 className="mt-1.5 w-full rounded-md border border-border bg-surface p-2 text-sm font-normal text-navy"
               />
+              <FieldError className="mt-1 font-normal" error={solutionForm.errors.title} htmlFor="solution-title" />
             </label>
             <label className="block text-xs font-semibold text-navy">
               Giải thích
               <textarea
+                {...fieldA11y("solution-explanation", solutionForm.errors.explanation)}
                 aria-label="Giải thích cách giải"
-                maxLength={20000}
                 value={explanation}
                 onChange={(e) => setExplanation(e.target.value)}
                 placeholder="Ý tưởng của bạn là gì? Vì sao đúng? Độ phức tạp ra sao?"
                 className="mt-1.5 min-h-36 w-full rounded-md border border-border bg-surface p-2 text-sm font-normal leading-6 text-navy"
               />
+              <span className="mt-1 flex items-start justify-between gap-3 font-normal">
+                <FieldError error={solutionForm.errors.explanation} htmlFor="solution-explanation" />
+                <span className="ml-auto"><CharCount value={explanation} max={20000} min={10} /></span>
+              </span>
             </label>
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-navy">
@@ -383,21 +406,23 @@ export function DiscussionPanel({
               </button>
             </div>
             <input
+              {...fieldA11y("solution-language", solutionForm.errors.language)}
               aria-label="Ngôn ngữ lập trình"
-              maxLength={40}
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               placeholder="Ngôn ngữ lập trình"
               className="w-full rounded-md border border-border bg-surface p-2 text-xs text-navy"
             />
+            <FieldError className="text-xs" error={solutionForm.errors.language} htmlFor="solution-language" />
             <textarea
+              {...fieldA11y("solution-code", solutionForm.errors.code)}
               aria-label="Mã nguồn"
-              maxLength={30000}
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="Dán code hoặc lấy từ editor bên phải (không bắt buộc)"
               className="min-h-40 w-full rounded-md border border-border bg-surface p-2 font-mono text-xs leading-5 text-navy"
             />
+            <FieldError className="text-xs" error={solutionForm.errors.code} htmlFor="solution-code" />
             <div className="flex justify-end gap-2">
               <button
                 type="button"
@@ -408,11 +433,7 @@ export function DiscussionPanel({
               </button>
               <button
                 type="button"
-                disabled={
-                  busy ||
-                  title.trim().length < 3 ||
-                  explanation.trim().length < 10
-                }
+                disabled={busy}
                 onClick={() => void publish()}
                 className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-on-ink disabled:opacity-50"
               >
@@ -535,8 +556,8 @@ export function DiscussionPanel({
               )}
               <div className="mt-3 flex gap-2">
                 <textarea
+                  {...fieldA11y("solution-comment", commentForm.errors.comment)}
                   aria-label="Viết bình luận"
-                  maxLength={5000}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Hỏi về ý tưởng hoặc góp ý cho lời giải..."
@@ -544,13 +565,17 @@ export function DiscussionPanel({
                 />
                 <button
                   type="button"
-                  disabled={busy || !comment.trim()}
+                  disabled={busy}
                   onClick={() => void sendComment()}
                   aria-label="Gửi bình luận"
                   className="self-end rounded-md bg-primary p-2 text-on-ink disabled:opacity-50"
                 >
                   <Send size={15} />
                 </button>
+              </div>
+              <div className="mt-1 flex items-start justify-between gap-3">
+                <FieldError className="text-xs" error={commentForm.errors.comment} htmlFor="solution-comment" />
+                <span className="ml-auto"><CharCount value={comment} max={5000} /></span>
               </div>
             </section>
           </article>
@@ -560,6 +585,7 @@ export function DiscussionPanel({
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
+                  if (searchError) return;
                   setLoading(true);
                   setPage(1);
                   setSearch(searchDraft.trim());
@@ -568,8 +594,8 @@ export function DiscussionPanel({
               >
                 <Search size={14} className="shrink-0 text-text-muted" />
                 <input
+                  {...fieldA11y("solution-search", searchError)}
                   aria-label="Tìm lời giải"
-                  maxLength={100}
                   value={searchDraft}
                   onChange={(e) => setSearchDraft(e.target.value)}
                   placeholder="Tìm ý tưởng, lời giải..."
@@ -582,6 +608,7 @@ export function DiscussionPanel({
                   Tìm
                 </button>
               </form>
+              <FieldError className="order-last w-full text-xs" error={searchError} htmlFor="solution-search" />
               <select
                 aria-label="Lọc ngôn ngữ lời giải"
                 value={languageFilter}

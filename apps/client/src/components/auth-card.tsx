@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Lock, Mail, UserRound } from "lucide-react";
 import { resetPasswordUrl } from "@codementor/auth";
-import { Input } from "@codementor/ui";
+import { FieldError, fieldA11y, Input, useFieldErrors } from "@codementor/ui";
+import { email, length, required } from "@codementor/utils";
 import { BrandLogo } from "@/components/brand-logo";
 import { FacebookIcon, GoogleIcon } from "@/components/provider-icons";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,28 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending>(null);
 
+  // Họ tên 1–120 và email theo luật `User`/`Email` ở core-service; mật khẩu ≥ 8 như route
+  // `/api/auth/register`. Đăng nhập chỉ cần không để trống — sai thì Keycloak trả lời.
+  const form = useFieldErrors(
+    { displayName, username, password, confirmPassword },
+    {
+      displayName: isSignup ? length(displayName, "Họ và tên", { min: 1, max: 120 }) : undefined,
+      username: isSignup ? email(username) : required(username, "Email hoặc tên đăng nhập"),
+      password: !password
+        ? "Mật khẩu không được để trống"
+        : isSignup && password.length < 8
+          ? "Mật khẩu tối thiểu 8 ký tự"
+          : undefined,
+      confirmPassword: !isSignup
+        ? undefined
+        : !confirmPassword
+          ? "Nhập lại mật khẩu"
+          : confirmPassword !== password
+            ? "Mật khẩu xác nhận không khớp"
+            : undefined,
+    },
+  );
+
   useEffect(() => {
     if (status !== "authenticated") return;
     // `next` do RequireAuth đặt khi nó chặn một trang. Chỉ nhận đường dẫn nội bộ bắt đầu
@@ -58,15 +81,12 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
 
     // Kiểm ngay tại chỗ: gửi lên rồi mới biết hai ô mật khẩu lệch nhau là một vòng
     // request thừa, và tài khoản có thể đã được tạo với mật khẩu người dùng gõ nhầm.
-    if (isSignup && password !== confirmPassword) {
-      setFormError("Mật khẩu xác nhận không khớp.");
-      return;
-    }
+    if (!form.validate()) return;
 
     setPending("credentials");
     try {
       if (isSignup) {
-        await signUpWithPassword({ displayName, email: username, password });
+        await signUpWithPassword({ displayName: displayName.trim(), email: username.trim(), password });
       } else {
         await signInWithPassword(username, password);
       }
@@ -118,24 +138,24 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           </p>
         )}
 
-        <form className="flex flex-col gap-3" onSubmit={onSubmit}>
+        <form className="flex flex-col gap-3" noValidate onSubmit={onSubmit}>
           {isSignup && (
             <div>
               <label className="mb-1.5 block text-xs font-medium text-text-muted" htmlFor="displayName">
                 Họ và tên
               </label>
               <Input
+                {...fieldA11y("displayName", form.errors.displayName)}
                 autoComplete="name"
                 autoFocus
                 icon={<UserRound />}
-                id="displayName"
                 name="displayName"
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder="Nguyễn Văn A"
-                required
                 type="text"
                 value={displayName}
               />
+              <FieldError className="mt-1.5" error={form.errors.displayName} htmlFor="displayName" />
             </div>
           )}
 
@@ -144,17 +164,17 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               {isSignup ? "Email" : "Email / Tên đăng nhập"}
             </label>
             <Input
+              {...fieldA11y("username", form.errors.username)}
               autoComplete={isSignup ? "email" : "username"}
               autoFocus={!isSignup}
               icon={<Mail />}
-              id="username"
               name="username"
               onChange={(event) => setUsername(event.target.value)}
               placeholder="codementor@gmail.com"
-              required
               type={isSignup ? "email" : "text"}
               value={username}
             />
+            <FieldError className="mt-1.5" error={form.errors.username} htmlFor="username" />
           </div>
 
           <div>
@@ -162,14 +182,12 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               Mật khẩu
             </label>
             <Input
+              {...fieldA11y("password", form.errors.password)}
               autoComplete={isSignup ? "new-password" : "current-password"}
               icon={<Lock />}
-              id="password"
-              minLength={isSignup ? 8 : undefined}
               name="password"
               onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
-              required
               rightSlot={
                 <button
                   aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
@@ -183,6 +201,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               type={showPassword ? "text" : "password"}
               value={password}
             />
+            <FieldError className="mt-1.5" error={form.errors.password} htmlFor="password" />
           </div>
 
           {isSignup && (
@@ -194,16 +213,16 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                 Xác nhận mật khẩu
               </label>
               <Input
+                {...fieldA11y("confirmPassword", form.errors.confirmPassword)}
                 autoComplete="new-password"
                 icon={<Lock />}
-                id="confirmPassword"
                 name="confirmPassword"
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="••••••••"
-                required
                 type={showPassword ? "text" : "password"}
                 value={confirmPassword}
               />
+              <FieldError className="mt-1.5" error={form.errors.confirmPassword} htmlFor="confirmPassword" />
             </div>
           )}
 

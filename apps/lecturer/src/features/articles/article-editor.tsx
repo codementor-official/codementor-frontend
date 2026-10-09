@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { RichTextEditor } from "@codementor/editor";
+import { CharCount } from "@codementor/ui";
 import {
   integer,
   isClean,
@@ -178,6 +179,7 @@ export function ArticleEditor({
       </Field>
 
       <Field
+        counter={{ value: draft.excerpt, max: 500 }}
         error={errors.excerpt}
         hint="Bắt buộc mới đăng được. Câu này cũng chính là nội dung thông báo gửi tới người học."
         label="Tóm tắt"
@@ -266,6 +268,7 @@ export function ArticleEditor({
       </Field>
 
       <Field
+        counter={{ value: draft.takeaway, max: 500 }}
         error={errors.takeaway}
         label="Điểm rút ra"
       >
@@ -331,11 +334,14 @@ function Field({
   label,
   hint,
   error,
+  counter,
   children,
 }: {
   label: string;
   hint?: string;
   error?: string;
+  /** Bộ đếm ký tự — chỉ cho textarea văn xuôi, xem `CharCount`. */
+  counter?: { value: string; max: number };
   children: React.ReactNode;
 }) {
   return (
@@ -343,10 +349,17 @@ function Field({
       <label className="mb-1.5 block text-sm font-medium">{label}</label>
       {hint && <p className="mb-1.5 text-xs text-muted-foreground">{hint}</p>}
       {children}
-      {error && (
-        <p className="mt-1.5 text-sm text-destructive" role="alert">
-          {error}
-        </p>
+      {(error || counter) && (
+        <div className="mt-1.5 flex items-start justify-between gap-3">
+          {error ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : (
+            <span />
+          )}
+          {counter && <CharCount {...counter} />}
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiClientError } from "@codementor/api-client";
 import { Button } from "@codementor/ui";
@@ -33,6 +33,7 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     reset,
@@ -41,6 +42,7 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
     resolver: zodResolver(profileFormSchema),
     defaultValues: toFormValues(profile),
   });
+  const bio = useWatch({ control, name: "bio" }) ?? "";
 
   const onSubmit = async (values: ProfileFormValues) => {
     setSaved(false);
@@ -78,7 +80,7 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
         <input className={inputClassName} id="handle" placeholder="giasi" {...register("handle")} />
       </Field>
 
-      <Field error={errors.bio?.message} htmlFor="bio" label="Giới thiệu" wide>
+      <Field counter={{ value: bio, max: 2000 }} error={errors.bio?.message} htmlFor="bio" label="Giới thiệu" wide>
         <textarea className={textareaClassName} id="bio" {...register("bio")} />
       </Field>
 

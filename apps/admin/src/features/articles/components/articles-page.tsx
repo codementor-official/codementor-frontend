@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ManagePage, Modal, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast } from "@codementor/ui";
+import { Button, FieldError, fieldA11y, ManagePage, Modal, ReasonButton, RejectDialogButton, Select, StatusBadge, useFieldErrors, useToast } from "@codementor/ui";
+import { length } from "@codementor/utils";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
@@ -67,6 +68,8 @@ export function ArticlesPage() {
   const summary = useSummary(useCallback(() => articlesApi.summary(request), [request]));
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  // `CreateArticleDto.title` 1–200.
+  const titleForm = useFieldErrors({ newTitle }, { newTitle: length(newTitle, "Tiêu đề", { min: 1, max: 200 }) });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -160,7 +163,7 @@ export function ArticlesPage() {
     <>
       <ManagePage
         action={
-          <Button onClick={() => setCreating(true)} type="button">
+          <Button onClick={() => { setCreating(true); titleForm.reset(); }} type="button">
             <Plus aria-hidden="true" className="size-4" />
             Bài viết mới
           </Button>
@@ -283,24 +286,21 @@ export function ArticlesPage() {
           Tiêu đề
         </label>
         <input
+          {...fieldA11y("title", titleForm.errors.newTitle)}
           className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          id="title"
           onChange={(event) => setNewTitle(event.target.value)}
           placeholder="5 kỹ thuật giúp bạn học Spring Boot hiệu quả hơn"
           value={newTitle}
         />
-        {newTitle.trim().length > 200 && (
-          <p className="mt-1.5 text-sm text-destructive" role="alert">
-            Tiêu đề tối đa 200 ký tự
-          </p>
-        )}
+        <FieldError className="mt-1.5" error={titleForm.errors.newTitle} htmlFor="title" />
         <div className="mt-5 flex justify-end gap-2">
           <Button onClick={() => setCreating(false)} type="button" variant="ghost">
             Huỷ
           </Button>
           <Button
-            disabled={busy || newTitle.trim().length === 0 || newTitle.trim().length > 200}
+            disabled={busy}
             onClick={() =>
+              titleForm.validate() &&
               void act(async () => {
                 await articlesApi.create(request, { title: newTitle.trim() });
                 setNewTitle("");

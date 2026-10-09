@@ -84,3 +84,6 @@ export { RevenueBreakdownChart } from "./revenue/revenue-breakdown-chart";
 export type { RevenueSegment } from "./revenue/revenue-breakdown-chart";
 export { countOf, KpiStrip, useSummary } from "./kpi-strip";
 export type { Kpi } from "./kpi-strip";
+export { CharCount, Field, FieldError, fieldA11y, fieldErrorId } from "./field";
+export { ReasonField } from "./reason-field";
+export { useFieldErrors } from "./use-field-errors";

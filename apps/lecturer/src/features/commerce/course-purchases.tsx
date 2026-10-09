@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Button, Card, Modal, ServerPagination } from "@codementor/ui";
+import { Button, Card, FieldError, fieldA11y, Modal, ServerPagination } from "@codementor/ui";
+import { search as searchRule } from "@codementor/utils";
 import {
   COMMERCE_INCOME_STATUS,
   COMMERCE_STATUS,
@@ -24,6 +25,8 @@ export function CoursePurchases({ courseId }: { courseId: string }) {
   const [sort, setSort] = useState("newest");
   const [detail, setDetail] = useState<CommerceOrder | null>(null);
   const [search, setSearch] = useState("");
+  // `CommercePage.q` nhận 1–100 ký tự; trống = không lọc.
+  const searchError = searchRule(search, 100);
   const [query, setQuery] = useState("");
   const [data, setData] = useState<CoursePurchasePage | null>(null);
   const [error, setError] = useState("");
@@ -121,11 +124,13 @@ export function CoursePurchases({ courseId }: { courseId: string }) {
             className="flex items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
+              if (searchError) return;
               setPage(1);
               setQuery(search.trim());
             }}
           >
             <input
+              {...fieldA11y("purchase-search", searchError)}
               aria-label="Tìm học viên"
               className="min-w-56 rounded-md border border-border bg-transparent px-3 py-2 text-sm"
               placeholder="Tên hoặc email học viên"
@@ -136,6 +141,7 @@ export function CoursePurchases({ courseId }: { courseId: string }) {
               Tìm
             </Button>
           </form>
+          <FieldError className="w-full" error={searchError} htmlFor="purchase-search" />
           <select
             aria-label="Lọc giao dịch"
             className="rounded-md border border-border bg-transparent px-3 py-2 text-sm"

@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import { Button, Card, Select, TopicPicker } from "@codementor/ui";
+import { Button, Card, Field, FieldError as FieldErrorText, fieldA11y, Select, TopicPicker } from "@codementor/ui";
 import { CodeEditor } from "@codementor/editor";
 import {
   DIFFICULTIES,
@@ -44,6 +44,7 @@ import {
   type TypeIR,
 } from "./types";
 import {
+  functionName as functionNameRule,
   integer,
   isClean,
   retitleSlug,
@@ -522,6 +523,15 @@ function SignatureCard({
   onChange: (next: FunctionSignature) => void;
 }) {
   const parameters = signature.parameters ?? [];
+  // Cùng luật `validateFunctionMode` ở exercise-service — backend chỉ chặn lúc gửi duyệt,
+  // form báo ngay khi gõ.
+  const functionNameError = functionNameRule(signature.functionName ?? "");
+  const parameterError = (name: string, index: number) =>
+    !name.trim()
+      ? "Tên tham số không được để trống"
+      : parameters.findIndex((other) => other.name.trim() === name.trim()) !== index
+        ? "Tên tham số bị trùng"
+        : undefined;
 
   const patchParameter = (
     index: number,
@@ -561,13 +571,14 @@ function SignatureCard({
         </Button>
       </div>
       <Field
+        error={functionNameError}
         htmlFor="functionName"
         hint="snake_case. Hệ thống tự đổi sang camelCase cho JavaScript, TypeScript, Java, Go và PHP."
         label="Tên hàm"
       >
         <input
+          {...fieldA11y("functionName", functionNameError)}
           className={`${inputClassName} font-mono`}
-          id="functionName"
           onChange={(event) =>
             onChange({ ...signature, functionName: event.target.value })
           }
@@ -583,56 +594,64 @@ function SignatureCard({
       ) : (
         <div className="my-4 grid gap-2">
           {parameters.map((parameter, index) => (
-            <div className="flex items-end gap-2" key={index}>
-              <label className="min-w-0 flex-1 text-xs text-muted-foreground">
-                Tên
-                <input
-                  className={`${inputClassName} mt-1.5 font-mono`}
-                  onChange={(event) =>
-                    patchParameter(index, { name: event.target.value })
-                  }
-                  value={parameter.name}
-                />
-              </label>
-              <label className="min-w-0 flex-1 text-xs text-muted-foreground">
-                Kiểu
-                <select
-                  className={`${inputClassName} mt-1.5`}
-                  onChange={(event) =>
-                    patchParameter(index, {
-                      type: TYPE_OPTIONS.find(
-                        (option) => option.value === event.target.value,
-                      )!.ir,
+            <div key={index}>
+              <div className="flex items-end gap-2">
+                <label className="min-w-0 flex-1 text-xs text-muted-foreground">
+                  Tên
+                  <input
+                    {...fieldA11y(`parameter-${index}`, parameterError(parameter.name, index))}
+                    className={`${inputClassName} mt-1.5 font-mono`}
+                    onChange={(event) =>
+                      patchParameter(index, { name: event.target.value })
+                    }
+                    value={parameter.name}
+                  />
+                </label>
+                <label className="min-w-0 flex-1 text-xs text-muted-foreground">
+                  Kiểu
+                  <select
+                    className={`${inputClassName} mt-1.5`}
+                    onChange={(event) =>
+                      patchParameter(index, {
+                        type: TYPE_OPTIONS.find(
+                          (option) => option.value === event.target.value,
+                        )!.ir,
+                      })
+                    }
+                    value={typeKey(parameter.type)}
+                  >
+                    {TYPE_OPTIONS.filter((option) => option.value !== "void").map(
+                      (option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+                <Button
+                  aria-label={`Xoá tham số ${parameter.name}`}
+                  className="shrink-0"
+                  onClick={() =>
+                    onChange({
+                      ...signature,
+                      parameters: parameters.filter(
+                        (_, position) => position !== index,
+                      ),
                     })
                   }
-                  value={typeKey(parameter.type)}
+                  size="sm"
+                  type="button"
+                  variant="danger"
                 >
-                  {TYPE_OPTIONS.filter((option) => option.value !== "void").map(
-                    (option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
-              <Button
-                aria-label={`Xoá tham số ${parameter.name}`}
-                className="shrink-0"
-                onClick={() =>
-                  onChange({
-                    ...signature,
-                    parameters: parameters.filter(
-                      (_, position) => position !== index,
-                    ),
-                  })
-                }
-                size="sm"
-                type="button"
-                variant="danger"
-              >
-                <X className="size-3.5" />
-              </Button>
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+              <FieldErrorText
+                className="mt-1 text-xs"
+                error={parameterError(parameter.name, index)}
+                htmlFor={`parameter-${index}`}
+              />
             </div>
           ))}
         </div>
@@ -1490,40 +1509,6 @@ function defaultValueFor(type: TypeIR | undefined): unknown {
     default:
       return null;
   }
-}
-
-function Field({
-  label,
-  htmlFor,
-  hint,
-  error,
-  wide,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  hint?: string;
-  error?: string;
-  wide?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div className={wide ? "sm:col-span-2" : undefined}>
-      <label
-        className="mb-1.5 flex items-center gap-1.5 text-sm font-medium"
-        htmlFor={htmlFor}
-      >
-        {label}
-        {hint && <InfoHint text={hint} />}
-      </label>
-      {children}
-      {error && (
-        <p className="mt-1.5 text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
-  );
 }
 
 const inputClassName =

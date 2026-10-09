@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Flag, Loader2 } from "lucide-react";
-import { Modal, useToast } from "@codementor/ui";
+import { CharCount, FieldError, fieldA11y, Modal, useFieldErrors, useToast } from "@codementor/ui";
+import { length } from "@codementor/utils";
 import { api } from "@/lib/api";
 import type { ReportCategory, ReportTarget } from "@/features/account/types";
 
@@ -31,11 +32,14 @@ export function ReportButton({
   const [category, setCategory] = useState<ReportCategory>("INAPPROPRIATE");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // `CreateContentReportDto.note` không bắt buộc, ≤ 1000.
+  const form = useFieldErrors({ note }, { note: length(note, "Mô tả thêm", { max: 1000 }) });
 
   const submit = async () => {
+    if (!form.validate()) return;
     setSubmitting(true);
     try {
-      await api.account.submitReport({ targetType, targetId, targetRef, category, note });
+      await api.account.submitReport({ targetType, targetId, targetRef, category, note: note.trim() });
       setOpen(false);
       setNote("");
       toast.success("Báo cáo đã được gửi và đang chờ xử lý.");
@@ -107,14 +111,17 @@ export function ReportButton({
           <label className="block space-y-1.5 text-sm font-semibold text-navy">
             Mô tả thêm (không bắt buộc)
             <textarea
+              {...fieldA11y(`report-note-${targetId}`, form.errors.note)}
               value={note}
-              maxLength={1000}
               rows={4}
               onChange={(event) => setNote(event.target.value)}
               placeholder="Nêu ngắn gọn vấn đề để việc kiểm duyệt chính xác hơn…"
               className="w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm font-normal focus:border-primary"
             />
-            <span className="block text-right text-xs font-normal text-text-faint">{note.length}/1000</span>
+            <span className="flex items-start justify-between gap-3 font-normal">
+              <FieldError error={form.errors.note} htmlFor={`report-note-${targetId}`} />
+              <span className="ml-auto"><CharCount value={note} max={1000} /></span>
+            </span>
           </label>
         </div>
       </Modal>

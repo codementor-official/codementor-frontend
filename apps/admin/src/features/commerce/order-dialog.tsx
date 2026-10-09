@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
-import { Button, Modal } from "@codementor/ui";
+import { Button, Modal, ReasonField } from "@codementor/ui";
 import { Download, Printer } from "lucide-react";
 import { inputClassName } from "./form-style";
 import { COMMERCE_INCOME_STATUS, COMMERCE_STATUS, type PurchaseDetail } from "@codementor/types";
 import { vnd } from "./api";
-import { downloadCsv, printDocument } from "@codementor/utils";
+import { downloadCsv, printDocument, reason as reasonRule } from "@codementor/utils";
 export function OrderDialog({
   order,
   close,
@@ -18,6 +18,7 @@ export function OrderDialog({
   busy: boolean;
 }) {
   const [reason, setReason] = useState("");
+  const [reasonAttempted, setReasonAttempted] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const rows: Array<[string, string]> = [["Mã đơn", order.id], ["Khóa học", order.courseTitle], ...[
             ["Người mua", `${order.buyer?.name ?? "Học viên"}${order.buyer?.email ? ` · ${order.buyer.email}` : ""}`],
@@ -112,15 +113,13 @@ export function OrderDialog({
                 Chưa hỗ trợ hoàn một phần. Thu hồi quyền của giao dịch sau khi
                 xác nhận thành công; không xóa quyền độc lập.
               </p>
-              <label className="block">
-                Lý do
-                <textarea
-                  className={`${inputClassName} mt-1 min-h-20`}
-                  maxLength={500}
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </label>
+              <ReasonField
+                className={`${inputClassName} min-h-20`}
+                id="refund-reason"
+                onChange={setReason}
+                showError={reasonAttempted}
+                value={reason}
+              />
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -131,10 +130,14 @@ export function OrderDialog({
               </label>
               <Button
                 variant="danger"
-                disabled={busy || !confirm || reason.trim().length < 5}
-                onClick={() =>
-                  void command(`orders/${order.id}/refund`, { reason })
-                }
+                disabled={busy || !confirm}
+                onClick={() => {
+                  setReasonAttempted(true);
+                  if (reasonRule(reason)) return;
+                  void command(`orders/${order.id}/refund`, {
+                    reason: reason.trim(),
+                  });
+                }}
               >
                 Xác nhận hoàn tiền
               </Button>

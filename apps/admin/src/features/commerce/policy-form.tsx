@@ -1,12 +1,25 @@
 "use client";
 import { apiErrorMessage } from "@codementor/api-client";
 import { useState } from "react";
-import { Button, Card, Modal, useToast } from "@codementor/ui";
+import {
+  Button,
+  Card,
+  Field,
+  fieldA11y,
+  Modal,
+  useFieldErrors,
+  useToast,
+} from "@codementor/ui";
 import { Clock3, ShieldCheck } from "lucide-react";
 import { vnd } from "./api";
 import { inputClassName } from "./form-style";
 import type { CommercePolicy } from "@codementor/types";
-import { formatHoldingPeriod } from "@codementor/utils";
+import {
+  decimal,
+  formatHoldingPeriod,
+  integer,
+  toNumber,
+} from "@codementor/utils";
 export function PolicyForm({
   initial,
   save,
@@ -15,11 +28,9 @@ export function PolicyForm({
   save: (p: CommercePolicy) => Promise<unknown>;
 }) {
   const initialMinutes = initial.holdMinutes ?? initial.holdDays * 1440;
-  const [value, setValue] = useState({
-    ...initial,
-    holdMinutes: initialMinutes,
-  });
-  const [busy, setBusy] = useState(false);
+  // Ô số giữ CHUỖI (xem `integer` ở @codementor/utils): ép `Number("")` về 0 là thứ sinh ra
+  // "012" khi gõ tiếp vào ô vừa xoá. Chỉ đổi sang số ở `value` bên dưới, sau khi đã hợp lệ.
+  const [percent, setPercent] = useState(String(initial.instructorBps / 100));
   const [holdUnit, setHoldUnit] = useState<"days" | "minutes">(
     initialMinutes % 1440 === 0 ? "days" : "minutes",
   );
@@ -28,19 +39,64 @@ export function PolicyForm({
       initialMinutes % 1440 === 0 ? initialMinutes / 1440 : initialMinutes,
     ),
   );
+  const [minimum, setMinimum] = useState(String(initial.minimumWithdrawal));
+  const [approvalRequired, setApprovalRequired] = useState(
+    initial.approvalRequired,
+  );
+  const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
   const multiplier = holdUnit === "days" ? 1440 : 1;
-  const validHold =
-    /^\d+$/.test(holdInput) && Number(holdInput) * multiplier <= 129600;
-  function updateHold(input: string, unit: "days" | "minutes") {
-    setHoldInput(input);
+  // Bản sao `PolicyDto`: instructorBps 0–10000 (= 0–100% với 2 chữ số thập phân),
+  // holdMinutes 0–129600 (= 90 ngày), minimumWithdrawal 1.000–1.000.000.000.
+  const holdError = integer(holdInput, "Thời gian giữ", {
+    min: 0,
+    max: 129600 / multiplier,
+    optional: false,
+  });
+  const validHold = holdError === undefined;
+  const form = useFieldErrors(
+    { percent, hold: holdInput, minimum },
+    {
+      percent: decimal(percent, "Tỷ lệ giảng viên hưởng", {
+        min: 0,
+        max: 100,
+        scale: 2,
+        optional: false,
+      }),
+      hold: holdError,
+      minimum: integer(minimum, "Mức rút tối thiểu", {
+        min: 1000,
+        max: 1_000_000_000,
+        optional: false,
+      }),
+    },
+  );
+  const holdMinutes = toNumber(holdInput) * multiplier;
+  const value: CommercePolicy = {
+    instructorBps: Math.round(toNumber(percent) * 100),
+    holdDays: Math.ceil(holdMinutes / 1440),
+    holdMinutes,
+    minimumWithdrawal: toNumber(minimum),
+    approvalRequired,
+  };
+  const unchanged =
+    form.valid &&
+    value.instructorBps === initial.instructorBps &&
+    holdMinutes === initialMinutes &&
+    value.minimumWithdrawal === initial.minimumWithdrawal &&
+    approvalRequired === initial.approvalRequired;
+  function changeUnit(unit: "days" | "minutes") {
+    // Giữ nguyên độ dài thời gian khi biểu diễn được; ô đang sai thì giữ nguyên chữ đã gõ.
+    if (validHold) {
+      setHoldInput(
+        String(
+          unit === "minutes"
+            ? toNumber(holdInput) * 1440
+            : toNumber(holdInput) / 1440,
+        ),
+      );
+    }
     setHoldUnit(unit);
-    const minutes = Number(input) * (unit === "days" ? 1440 : 1);
-    setValue({
-      ...value,
-      holdDays: Math.ceil(minutes / 1440),
-      holdMinutes: minutes,
-    });
   }
   const toast = useToast();
   async function submit() {
@@ -64,23 +120,20 @@ export function PolicyForm({
         Đơn đã tạo giữ nguyên giá, tỷ lệ và thời gian giữ đã lưu. Phí cổng do
         CodeMentor chịu, không tự giả định mức phí.
       </p>
-      <label className="block text-sm">
-        Giảng viên hưởng (%)
+      <Field
+        description="Từ 0 đến 100%, tối đa 2 chữ số thập phân."
+        error={form.errors.percent}
+        htmlFor="policy-percent"
+        label="Giảng viên hưởng (%)"
+      >
         <input
-          className={`${inputClassName} mt-1`}
-          type="number"
-          min={0}
-          max={100}
-          step={0.01}
-          value={value.instructorBps / 100}
-          onChange={(e) =>
-            setValue({
-              ...value,
-              instructorBps: Math.round(Number(e.target.value) * 100),
-            })
-          }
+          {...fieldA11y("policy-percent", form.errors.percent)}
+          className={inputClassName}
+          inputMode="decimal"
+          value={percent}
+          onChange={(e) => setPercent(e.target.value)}
         />
-      </label>
+      </Field>
       <section className="rounded-lg border bg-muted/30 p-4">
         <h3 className="mb-2 flex items-center gap-2 font-semibold">
           <Clock3 className="size-4 text-primary" /> Thời gian giữ doanh thu
@@ -93,62 +146,46 @@ export function PolicyForm({
           . Bắt đầu tính từ khi đơn được xác nhận thanh toán.
         </p>
         <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
-          <label className="block text-sm">
-            Thời gian giữ cho đơn mới
+          <Field
+            description={`Số nguyên từ 0 đến ${holdUnit === "days" ? "90 ngày" : "129.600 phút"}.`}
+            error={form.errors.hold}
+            htmlFor="policy-hold"
+            label="Thời gian giữ cho đơn mới"
+          >
             <input
-              className={`${inputClassName} mt-1`}
-              type="number"
-              min={0}
-              max={129600 / multiplier}
-              step={1}
+              {...fieldA11y("policy-hold", form.errors.hold)}
+              className={inputClassName}
+              inputMode="numeric"
               value={holdInput}
-              aria-invalid={!validHold}
-              onChange={(e) => {
-                updateHold(e.target.value, holdUnit);
-              }}
+              onChange={(e) => setHoldInput(e.target.value)}
             />
-          </label>
-          <label className="block text-sm">
-            Đơn vị thời gian
+          </Field>
+          <Field htmlFor="policy-hold-unit" label="Đơn vị thời gian">
             <select
-              className={`${inputClassName} mt-1`}
+              id="policy-hold-unit"
+              className={inputClassName}
               value={holdUnit}
-              onChange={(e) => {
-                const unit = e.target.value as "days" | "minutes";
-                // Preserve the duration where representable; do not silently round it.
-                updateHold(
-                  String(
-                    unit === "minutes"
-                      ? Number(holdInput) * 1440
-                      : Number(holdInput) / 1440,
-                  ),
-                  unit,
-                );
-              }}
+              onChange={(e) =>
+                changeUnit(e.target.value as "days" | "minutes")
+              }
             >
               <option value="days">Ngày</option>
               <option value="minutes">Phút</option>
             </select>
-          </label>
+          </Field>
         </div>
-        {!validHold && (
-          <p role="alert" className="mt-2 text-sm text-destructive">
-            Nhập số nguyên từ 0 đến{" "}
-            {holdUnit === "days" ? "90 ngày" : "129.600 phút"}.
-          </p>
-        )}
-        {validHold && value.holdMinutes === 0 && (
+        {validHold && holdMinutes === 0 && (
           <p className="mt-2 text-sm text-muted-foreground">
             Không chờ theo thời gian, nhưng vẫn phải xác minh thanh toán và kiểm
             tra hoàn tiền trước khi mở số dư.
           </p>
         )}
         <p className="mt-3 text-sm text-muted-foreground">
-          Sau {validHold ? formatHoldingPeriod(value.holdMinutes) : "…"}, doanh
+          Sau {validHold ? formatHoldingPeriod(holdMinutes) : "…"}, doanh
           thu chỉ chuyển sang khả dụng khi lượt đối soát xác nhận đủ điều kiện.
           Đổi thời gian không mở sớm hoặc tính lại các đơn cũ.
         </p>
-        {validHold && value.holdMinutes > 0 && value.holdMinutes < 1440 && (
+        {validHold && holdMinutes > 0 && holdMinutes < 1440 && (
           <p className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
             Để demo 1 phút, lưu chính sách trước khi tạo đơn mới. Sau khi thanh
             toán được xác minh và hết thời gian giữ, chạy đối soát hoặc chờ lượt
@@ -157,45 +194,35 @@ export function PolicyForm({
           </p>
         )}
       </section>
-      <label className="block text-sm">
-        Rút tối thiểu (VND)
+      <Field
+        description="Từ 1.000 ₫ đến 1.000.000.000 ₫."
+        error={form.errors.minimum}
+        htmlFor="policy-minimum"
+        label="Rút tối thiểu (VND)"
+      >
         <input
-          className={`${inputClassName} mt-1`}
-          type="number"
-          min={1000}
-          max={1000000000}
-          value={value.minimumWithdrawal}
-          onChange={(e) =>
-            setValue({ ...value, minimumWithdrawal: Number(e.target.value) })
-          }
+          {...fieldA11y("policy-minimum", form.errors.minimum)}
+          className={inputClassName}
+          inputMode="numeric"
+          value={minimum}
+          onChange={(e) => setMinimum(e.target.value)}
         />
-      </label>
+      </Field>
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={value.approvalRequired}
-          onChange={(e) =>
-            setValue({ ...value, approvalRequired: e.target.checked })
-          }
+          checked={approvalRequired}
+          onChange={(e) => setApprovalRequired(e.target.checked)}
         />
         Yêu cầu admin duyệt rút tiền
       </label>
       <Button
-        disabled={
-          busy ||
-          !validHold ||
-          JSON.stringify(value) ===
-            JSON.stringify({ ...initial, holdMinutes: initialMinutes }) ||
-          !Number.isInteger(value.holdDays) ||
-          value.holdDays < 0 ||
-          value.holdDays > 90 ||
-          value.instructorBps < 0 ||
-          value.instructorBps > 10000 ||
-          !Number.isInteger(value.minimumWithdrawal) ||
-          value.minimumWithdrawal < 1000 ||
-          value.minimumWithdrawal > 1000000000
-        }
-        onClick={() => setConfirmation(true)}
+        // Chỉ khoá khi đang lưu hoặc chưa đổi gì. Ô sai thì bấm vẫn được: lỗi hiện ra dưới
+        // ô và form dừng ở đó, thay vì một nút xám không nói vì sao.
+        disabled={busy || unchanged}
+        onClick={() => {
+          if (form.validate()) setConfirmation(true);
+        }}
       >
         {busy ? "Đang lưu…" : "Lưu chính sách"}
       </Button>
@@ -230,7 +257,7 @@ export function PolicyForm({
             {[
               [
                 "Thời gian giữ doanh thu",
-                `${formatHoldingPeriod(initialMinutes)} → ${formatHoldingPeriod(value.holdMinutes)}`,
+                `${formatHoldingPeriod(initialMinutes)} → ${formatHoldingPeriod(holdMinutes)}`,
               ],
               [
                 "Tỷ lệ giảng viên",

@@ -1,7 +1,9 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useId, useState } from "react";
 import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { search as searchRule } from "@codementor/utils";
+import { FieldError, fieldA11y } from "./field";
 
 export function FilterBar({
   searchValue,
@@ -12,6 +14,7 @@ export function FilterBar({
   onClearFilters,
   sheetTitle = "Bộ lọc",
   className = "",
+  searchMaxLength = 200,
 }: {
   searchValue: string;
   onSearchChange: (value: string) => void;
@@ -21,7 +24,15 @@ export function FilterBar({
   onClearFilters?: () => void;
   sheetTitle?: string;
   className?: string;
+  /** Trần `q` của endpoint phía sau — mặc định 200 như `PageQuery` ở backend. */
+  searchMaxLength?: number;
 }) {
+  // Từ khoá quá trần được giữ TẠI ĐÂY (để người dùng thấy và sửa) chứ không đẩy lên trang:
+  // trang vẫn lọc theo từ khoá hợp lệ gần nhất, nên không bao giờ gọi API với `q` sai.
+  const [overflow, setOverflow] = useState<string | null>(null);
+  const shown = overflow ?? searchValue;
+  const searchError = searchRule(shown, searchMaxLength);
+  const searchId = useId();
   // Open as soon as a filter is set, so a filter that is doing something is never hidden.
   const [open, setOpen] = useState(false);
   const expanded = open || activeFilterCount > 0;
@@ -34,8 +45,18 @@ export function FilterBar({
       <div className="flex items-center gap-2 rounded-md border border-border bg-card py-1.5 pr-2 pl-3 focus-within:border-foreground">
         <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
         <input
-          value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
+          {...fieldA11y(searchId, searchError)}
+          aria-label={searchPlaceholder}
+          value={shown}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (searchRule(value, searchMaxLength)) {
+              setOverflow(value);
+            } else {
+              setOverflow(null);
+              onSearchChange(value);
+            }
+          }}
           placeholder={searchPlaceholder}
           className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
@@ -67,6 +88,8 @@ export function FilterBar({
           </button>
         )}
       </div>
+
+      <FieldError className="mt-1.5" error={searchError} htmlFor={searchId} />
 
       {/* Inline, in the page flow — never a popover or a bottom sheet. An overlay covered
         * the results the filters were meant to narrow, on both desktop and mobile. */}
