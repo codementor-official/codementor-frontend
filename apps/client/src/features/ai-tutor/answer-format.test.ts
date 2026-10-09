@@ -37,4 +37,10 @@ assert.deepEqual(splitAnswer(`${QUOTES}\n> LIFO [S1]\n<<<GIA`), {
 // Chưa tới phần giải thích.
 assert.equal(splitAnswer(`${QUOTES}\n`).explanation, "");
 
+// Dấu mốc gõ thiếu một dấu vẫn tách đúng (đo được trên bộ đánh giá).
+assert.deepEqual(splitAnswer("<<<TRICH_DAN>>\n> LIFO [S1]\n<<< GIAI_THICH >>\nGiải thích."), {
+  quotes: [{ sourceId: "S1", quote: "LIFO" }],
+  explanation: "Giải thích.",
+});
+
 console.log("answer-format: ok");

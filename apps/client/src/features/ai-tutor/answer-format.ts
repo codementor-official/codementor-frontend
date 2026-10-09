@@ -10,6 +10,9 @@ export const QUOTES = "<<<TRICH_DAN>>>";
 export const EXPLAIN = "<<<GIAI_THICH>>>";
 
 const TRAILING_SOURCE = /\[(S\d+)\]\s*$/;
+/** Dấu mốc gõ thiếu/thừa (`<<<TRICH_DAN>>`, `<<< GIAI_THICH >>>`) — cùng luật với server. */
+const LOOSE_QUOTES = /<{2,3}\s*TRICH[ _]?DAN\s*>{1,3}/g;
+const LOOSE_EXPLAIN = /<{2,3}\s*GIAI[ _]?THICH\s*>{1,3}/g;
 const WRAPPING_QUOTES = /^["'“”‘’«»]+|["'“”‘’«»]+$/g;
 /** Đuôi một dấu mốc còn đang chảy dở ("<<<GIA"), không được hiện ra như chữ. */
 const PARTIAL_MARKER = /<{1,3}[A-Z_]*>{0,2}$/;
@@ -21,7 +24,11 @@ export interface StreamingAnswer {
 }
 
 export function splitAnswer(raw: string): StreamingAnswer {
-  const text = raw.replace(/\r\n/g, "\n").replace(PARTIAL_MARKER, "");
+  const text = raw
+    .replace(/\r\n/g, "\n")
+    .replace(LOOSE_QUOTES, QUOTES)
+    .replace(LOOSE_EXPLAIN, EXPLAIN)
+    .replace(PARTIAL_MARKER, "");
   if (!text.includes(QUOTES) && !text.includes(EXPLAIN)) {
     return { quotes: [], explanation: text.trim() };
   }
