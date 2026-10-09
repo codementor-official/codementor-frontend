@@ -42,6 +42,8 @@ export interface ManagePageProps<TData> {
   search: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
+  /** Trần `q` của endpoint, chuyển thẳng cho `FilterBar`. Mặc định 200. */
+  searchMaxLength?: number;
   /** Selects and toggles for the advanced filter popover. */
   filters?: ReactNode;
   activeFilterCount?: number;
@@ -130,6 +132,7 @@ export function ManagePage<TData>({
   search,
   onSearchChange,
   searchPlaceholder,
+  searchMaxLength,
   filters,
   activeFilterCount,
   onClearFilters,
@@ -209,6 +212,7 @@ export function ManagePage<TData>({
                 onClearFilters={onClearFilters}
                 onSearchChange={onSearchChange}
                 searchPlaceholder={searchPlaceholder}
+                searchMaxLength={searchMaxLength}
                 searchValue={search}
               />
             </div>

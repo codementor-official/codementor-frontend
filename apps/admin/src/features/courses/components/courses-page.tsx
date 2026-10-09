@@ -25,6 +25,7 @@ import { coursesApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
+import { UpdatedRangeFilter, updatedRangeError } from "@/features/shared/updated-range-filter";
 
 const STATUS_OPTIONS = ["pending_review", "changes_requested", "rejected", "published", "archived"] as const;
 
@@ -48,7 +49,9 @@ export function CoursesPage() {
   const [busy, setBusy] = useState(false);
   const summary = useSummary(useCallback(() => coursesApi.summary(request), [request]));
 
+  const rangeError = updatedRangeError(updatedFrom, updatedTo);
   const load = useCallback(async () => {
+    if (rangeError) return;
     setLoading(true);
     setError(null);
     try {
@@ -67,7 +70,7 @@ export function CoursesPage() {
     } finally {
       setLoading(false);
     }
-  }, [request, search, status, level, authorId, updatedFrom, updatedTo]);
+  }, [request, search, status, level, authorId, updatedFrom, updatedTo, rangeError]);
 
   useEffect(() => {
     const timer = setTimeout(() => void load(), 300);
@@ -220,20 +223,7 @@ export function CoursesPage() {
             value={level}
           />
           <LecturerFilter onChange={setAuthorId} options={lecturers} value={authorId} />
-          <input
-            aria-label="Cập nhật từ ngày"
-            className="h-9 rounded-md border border-border bg-card px-2.5 text-xs font-semibold text-foreground focus:border-foreground"
-            onChange={(event) => setUpdatedFrom(event.target.value)}
-            type="date"
-            value={updatedFrom}
-          />
-          <input
-            aria-label="Cập nhật đến ngày"
-            className="h-9 rounded-md border border-border bg-card px-2.5 text-xs font-semibold text-foreground focus:border-foreground"
-            onChange={(event) => setUpdatedTo(event.target.value)}
-            type="date"
-            value={updatedTo}
-          />
+          <UpdatedRangeFilter from={updatedFrom} onFromChange={setUpdatedFrom} onToChange={setUpdatedTo} to={updatedTo} />
         </>
       }
       getRowId={(row) => row.id}

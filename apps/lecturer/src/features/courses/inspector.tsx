@@ -19,6 +19,7 @@ import {
   integer,
   lessonDurationError,
   looksPlayable,
+  maxLength,
   minimumLessonMinutes,
   resolveVideo,
   text,
@@ -27,7 +28,7 @@ import {
 } from "@codementor/utils";
 import { Button, InfoHint, Select, StatusBadge, useToast } from "@codementor/ui";
 import { ListPager, ListSearch, usePagedList } from "@/components/page/paged-list";
-import { Field, inputClassName, textareaClassName } from "@/components/form/field";
+import { Field, fieldA11y, inputClassName, textareaClassName } from "@/components/form/field";
 import {
   LESSON_TYPE_LABELS,
   SELECTABLE_LESSON_TYPES,
@@ -207,13 +208,14 @@ export function Inspector({
             </Field>
 
             <Field
-              error={chapter.description.trim().length > 2000 ? "Mô tả tối đa 2000 ký tự" : undefined}
+              counter={{ value: chapter.description, max: 2000 }}
+              error={maxLength(chapter.description, 2000, "Mô tả")}
               htmlFor="chapter-description"
               label="Mô tả"
             >
               <textarea
+                {...fieldA11y("chapter-description", maxLength(chapter.description, 2000, "Mô tả"))}
                 className={textareaClassName}
-                id="chapter-description"
                 onChange={(event) => patchChapter({ description: event.target.value })}
                 value={chapter.description}
               />

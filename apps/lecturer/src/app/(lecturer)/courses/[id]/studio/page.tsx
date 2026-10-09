@@ -22,7 +22,7 @@ import {
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
-import { Field, inputClassName, textareaClassName } from "@/components/form/field";
+import { Field, fieldA11y, inputClassName, textareaClassName } from "@/components/form/field";
 import { CoverImageField } from "@/components/form/cover-image-field";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
@@ -620,11 +620,11 @@ export default function CourseStudioPage() {
               />
             </Field>
 
-            <Field error={metaErrors.description}
+            <Field counter={{ value: meta.description, max: 5000 }} error={metaErrors.description}
               htmlFor="description" hint="Bắt buộc có để gửi duyệt." label="Mô tả">
               <textarea
+                {...fieldA11y("description", metaErrors.description)}
                 className={textareaClassName}
-                id="description"
                 onChange={(event) => patchMeta({ description: event.target.value })}
                 value={meta.description}
               />
@@ -642,11 +642,11 @@ export default function CourseStudioPage() {
               value={meta.coverImageUrl}
             />
 
-            <Field error={metaErrors.prerequisiteNote}
+            <Field counter={{ value: meta.prerequisiteNote, max: 1000 }} error={metaErrors.prerequisiteNote}
               htmlFor="prerequisiteNote" label="Ghi chú điều kiện tiên quyết">
               <textarea
+                {...fieldA11y("prerequisiteNote", metaErrors.prerequisiteNote)}
                 className={textareaClassName}
-                id="prerequisiteNote"
                 onChange={(event) => patchMeta({ prerequisiteNote: event.target.value })}
                 value={meta.prerequisiteNote}
               />

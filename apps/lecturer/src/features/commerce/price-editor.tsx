@@ -1,7 +1,8 @@
 "use client";
 import { apiErrorMessage } from "@codementor/api-client";
 import { useEffect, useState } from "react";
-import { Button, Card, CoursePrice, useToast } from "@codementor/ui";
+import { Button, Card, CoursePrice, Field, fieldA11y, useFieldErrors, useToast } from "@codementor/ui";
+import { integer, promotion as promotionRule, toNumber } from "@codementor/utils";
 import type { CourseOffer, CoursePromotionRequest } from "@codementor/types";
 import { inputClassName } from "@/components/form/field";
 import { earningsApi, vnd } from "./api";
@@ -18,6 +19,14 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const toast = useToast();
+  // Bản sao `PriceDto` (0–1.000.000.000) và luật khuyến mãi dùng chung với Admin.
+  const priceForm = useFieldErrors({ price }, { price: integer(price, "Giá", { min: 0, max: 1_000_000_000, optional: false }) });
+  const promoForm = useFieldErrors(
+    { label, salePrice, startsAt, endsAt },
+    promotionRule({ label, startsAt, endsAt, salePrice, listPrice: offer ? (offer.pendingPriceVnd ?? offer.listPriceVnd) : undefined }),
+  );
+  const { reset: resetPrice } = priceForm;
+  const { reset: resetPromo } = promoForm;
   useEffect(() => {
     let active = true;
     void Promise.all([earningsApi.offer(id), earningsApi.promotions()])
@@ -37,6 +46,9 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
           setStartsAt(local(request?.action === "upsert" ? request.startsAt : o.promotion?.startsAt) || local(now.toISOString()));
           setEndsAt(local(request?.action === "upsert" ? request.endsAt : o.promotion?.endsAt) || local(twoWeeksLater.toISOString()));
           setActive(request?.action === "upsert" ? Boolean(request.isActive) : (o.promotion?.isActive ?? true));
+          // Giá trị vừa nạp là mốc "chưa sửa" — không tô đỏ thứ người dùng chưa đụng tới.
+          resetPrice();
+          resetPromo();
         }
       })
       .catch(() => {
@@ -45,7 +57,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, resetPrice, resetPromo]);
   useEffect(() => {
     let active = true;
     const refresh = () => {
@@ -54,6 +66,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
         setOffer(next);
         setSaved(next.pendingPriceVnd ?? next.listPriceVnd);
         setPrice(String(next.pendingPriceVnd ?? next.listPriceVnd));
+        resetPrice();
       }).catch(() => undefined);
     };
     window.addEventListener("focus", refresh);
@@ -61,18 +74,19 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
       active = false;
       window.removeEventListener("focus", refresh);
     };
-  }, [id]);
+  }, [id, resetPrice]);
   async function save() {
     setBusy(true);
     setError("");
     try {
-      const result = await earningsApi.price(id, Number(price));
+      const result = await earningsApi.price(id, toNumber(price));
       const next = await earningsApi.offer(id);
       const products = await earningsApi.promotions();
       setPromotionRequest(products.find((item) => item.courseId === id)?.promotionRequest ?? null);
       setOffer(next);
       setSaved(next.pendingPriceVnd ?? next.listPriceVnd);
       setPrice(String(next.pendingPriceVnd ?? next.listPriceVnd));
+      resetPrice();
       toast.success(result.requiresReview
         ? "Đã lưu giá đề xuất. Hãy gửi duyệt lại khóa học để Admin phê duyệt."
         : "Đã cập nhật giá khóa học.");
@@ -87,7 +101,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
     setError("");
     try {
       await earningsApi.promotion(id, {
-        salePriceVnd: Number(salePrice),
+        salePriceVnd: toNumber(salePrice),
         label: label.trim(),
         startsAt: new Date(startsAt).toISOString(),
         endsAt: new Date(endsAt).toISOString(),
@@ -131,19 +145,16 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
         Nhập 0 để phát hành miễn phí; giá lớn hơn 0 là mức học viên thanh toán
         một lần để mở toàn bộ khóa học.
       </p>
-      <label className="block text-sm text-foreground">
-        Giá (VND)
+      <Field error={priceForm.errors.price} htmlFor="course-price" label="Giá (VND)">
         <input
-          className={`${inputClassName} mt-1`}
-          type="number"
-          min={0}
-          max={1000000000}
-          step={1000}
+          {...fieldA11y("course-price", priceForm.errors.price)}
+          className={inputClassName}
+          inputMode="numeric"
           value={price}
           disabled={busy || saved === null || locked}
           onChange={(e) => setPrice(e.target.value)}
         />
-      </label>
+      </Field>
       <p className="text-xs text-muted-foreground">
         {saved === null || offer === null
           ? "Đang tải…"
@@ -166,17 +177,11 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
       )}
       <Button
         type="button"
-        disabled={
-          busy ||
-          saved === null ||
-          price === "" ||
-          !Number.isInteger(Number(price)) ||
-          Number(price) < 0 ||
-          Number(price) > 1000000000 ||
-          Number(price) === saved ||
-          locked
-        }
-        onClick={() => void save()}
+        // Không khoá theo lỗi — bấm thì lỗi hiện dưới ô. Chỉ khoá khi chưa đổi gì.
+        disabled={busy || saved === null || locked || (priceForm.valid && toNumber(price) === saved)}
+        onClick={() => {
+          if (priceForm.validate()) void save();
+        }}
       >
         {busy ? "Đang lưu…" : "Lưu giá"}
       </Button>
@@ -194,18 +199,17 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
           {promotionRequest?.status === "rejected" && <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"><p className="font-semibold text-destructive">Đề xuất cần chỉnh sửa</p><p className="mt-1 text-xs text-muted-foreground">{promotionRequest.reviewReason || "Admin chưa phê duyệt đề xuất này."}</p></div>}
           {offer?.promotion && promotionRequest?.status !== "pending" && promotionRequest?.status !== "rejected" && <div className="rounded-lg border border-success/40 bg-success/5 p-3 text-sm"><p className="font-semibold text-success">Khuyến mãi đã được duyệt</p><p className="mt-1 text-xs text-muted-foreground">Ưu đãi đang theo lịch đã duyệt. Mọi chỉnh sửa hoặc yêu cầu gỡ sẽ được gửi lại cho Admin.</p></div>}
           <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-            <label className="text-sm">Tên chương trình<input className={`${inputClassName} mt-1`} maxLength={60} value={label} onChange={(event) => setLabel(event.target.value)} /></label>
-            <label className="text-sm">Giá ưu đãi (VND)<input className={`${inputClassName} mt-1`} type="number" min={1000} step={1000} value={salePrice} onChange={(event) => setSalePrice(event.target.value)} /></label>
+            <Field error={promoForm.errors.label} htmlFor="promo-label" label="Tên chương trình" description="Từ 2 đến 60 ký tự."><input {...fieldA11y("promo-label", promoForm.errors.label)} className={inputClassName} value={label} onChange={(event) => setLabel(event.target.value)} /></Field>
+            <Field error={promoForm.errors.salePrice} htmlFor="promo-price" label="Giá ưu đãi (VND)" description={`Từ 1.000 ₫ và thấp hơn giá ${offer.pendingPriceVnd !== null ? "đề xuất" : "niêm yết"}.`}><input {...fieldA11y("promo-price", promoForm.errors.salePrice)} className={inputClassName} inputMode="numeric" value={salePrice} onChange={(event) => setSalePrice(event.target.value)} /></Field>
             <div className="flex flex-wrap items-center gap-2 sm:col-span-2"><span className="text-xs text-muted-foreground">Giảm nhanh:</span>{[10, 20, 25, 30, 50].map((percent) => <button key={percent} type="button" onClick={() => applyDiscount(percent)} className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold hover:border-primary hover:text-primary">-{percent}%</button>)}</div>
-            <label className="text-sm">Bắt đầu<input className={`${inputClassName} mt-1`} type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></label>
-            <label className="text-sm">Kết thúc<input className={`${inputClassName} mt-1`} type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></label>
+            <Field error={promoForm.errors.startsAt} htmlFor="promo-starts" label="Bắt đầu"><input {...fieldA11y("promo-starts", promoForm.errors.startsAt)} className={inputClassName} type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></Field>
+            <Field error={promoForm.errors.endsAt} htmlFor="promo-ends" label="Kết thúc"><input {...fieldA11y("promo-ends", promoForm.errors.endsAt)} className={inputClassName} type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></Field>
           </div>
           <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm"><input className="mt-0.5" type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /><span><strong className="block">Cho phép áp dụng khuyến mãi</strong><span className="mt-0.5 block text-xs text-muted-foreground">Tắt để tạm dừng nhưng vẫn giữ tên, giá và lịch áp dụng.</span></span></label>
           <div className="flex flex-wrap gap-2 pb-1">
-            <Button type="button" disabled={busy || locked || !label.trim() || !startsAt || !endsAt || !Number.isInteger(Number(salePrice)) || Number(salePrice) < 1000 || Number(salePrice) >= (offer.pendingPriceVnd ?? offer.listPriceVnd)} onClick={() => void savePromotion()}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
+            <Button type="button" disabled={busy || locked} onClick={() => { if (promoForm.validate()) void savePromotion(); }}>{busy ? "Đang gửi…" : promotionRequest?.status === "pending" ? "Cập nhật đề xuất" : offer?.promotion ? "Gửi thay đổi để duyệt" : "Gửi Admin duyệt"}</Button>
             {(offer?.promotion || promotionRequest?.status === "pending") && <Button type="button" variant="outline" disabled={busy || locked} onClick={() => void removePromotion()}>{offer?.promotion ? "Gửi yêu cầu gỡ" : "Hủy đề xuất"}</Button>}
           </div>
-          {salePrice && Number(salePrice) >= (offer.pendingPriceVnd ?? offer.listPriceVnd) && <p className="text-xs text-destructive">Giá ưu đãi phải thấp hơn giá {offer.pendingPriceVnd !== null ? "đề xuất" : "niêm yết"}.</p>}
         </section>
       )}
     </Card>

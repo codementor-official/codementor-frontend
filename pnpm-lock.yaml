@@ -513,6 +513,9 @@ importers:
       '@codementor/types':
         specifier: workspace:*
         version: link:../types
+      '@codementor/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)

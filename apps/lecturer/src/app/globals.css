@@ -132,3 +132,9 @@
     display: none;
   }
 }
+
+/* Ô sai (`fieldA11y` đặt `aria-invalid`) viền đỏ — cố ý KHÔNG nằm trong layer nào để thắng
+ * utility `border-border` của ô; lỗi phải thấy được ngay cả khi ô không có focus. */
+[aria-invalid="true"] {
+  border-color: var(--destructive);
+}

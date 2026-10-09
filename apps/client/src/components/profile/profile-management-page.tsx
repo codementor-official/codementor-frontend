@@ -11,7 +11,8 @@ import { useAuth } from "@/providers/auth-provider";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Modal, SegmentedTabs, useToast } from "@codementor/ui";
+import { CharCount, FieldError, fieldA11y, Input, Modal, SegmentedTabs, useFieldErrors, useToast } from "@codementor/ui";
+import { githubHandle, handle, length, url } from "@codementor/utils";
 
 type AccountTab = "profile" | "settings" | "personalization";
 const EMPTY_STATS: UserLearningStats = { xp: 0, solvedCount: 0, currentStreakDays: 0, longestStreakDays: 0, lastSolvedOn: null };
@@ -198,7 +199,16 @@ function ProfilePanel() {
 
   useEffect(() => () => { if (avatarPreview) URL.revokeObjectURL(avatarPreview); }, [avatarPreview]);
   const dirty = useMemo(() => JSON.stringify(profile) !== JSON.stringify(draft) || avatarFile !== null, [avatarFile, draft, profile]);
-  const valid = Boolean(draft?.displayName.trim()) && (!draft?.websiteUrl || /^https?:\/\//i.test(draft.websiteUrl));
+  // Cùng luật `User.updateProfile`/`Handle` ở core-service — và cùng bộ luật với hồ sơ bên
+  // Lecturer, vì cả hai gọi chung `PATCH /me`.
+  const profileValues = { displayName: draft?.displayName ?? "", handle: draft?.handle ?? "", bio: draft?.bio ?? "", websiteUrl: draft?.websiteUrl ?? "", githubHandle: draft?.githubHandle ?? "" };
+  const form = useFieldErrors(profileValues, {
+    displayName: length(profileValues.displayName, "Họ và tên", { min: 1, max: 120 }),
+    handle: handle(profileValues.handle, "Username"),
+    bio: length(profileValues.bio, "Giới thiệu", { max: 2000 }),
+    websiteUrl: url(profileValues.websiteUrl, "Website"),
+    githubHandle: githubHandle(profileValues.githubHandle),
+  });
   function update<K extends keyof AccountProfile>(key: K, value: AccountProfile[K]) { setDraft((current) => current ? { ...current, [key]: value } : current); }
 
   function chooseAvatar(file: File | undefined) {
@@ -210,7 +220,7 @@ function ProfilePanel() {
   }
 
   async function save() {
-    if (!draft || !dirty || !valid) return;
+    if (!draft || !dirty || !form.validate()) return;
     setSaving(true); setError(null);
     try {
       let avatarUrl = draft.avatarUrl;
@@ -221,7 +231,7 @@ function ProfilePanel() {
         avatarUrl = target.publicUrl;
       }
       const updated = await api.account.updateProfile({
-        displayName: draft.displayName.trim(), handle: cleanOptional(draft.handle ?? ""), bio: cleanOptional(draft.bio ?? ""), avatarUrl,
+        displayName: draft.displayName.trim(), handle: cleanOptional((draft.handle ?? "").toLowerCase()), bio: cleanOptional(draft.bio ?? ""), avatarUrl,
         websiteUrl: cleanOptional(draft.websiteUrl ?? ""), githubHandle: cleanOptional(draft.githubHandle ?? ""), locale: draft.locale, timezone: draft.timezone,
       });
       setProfile(updated); setDraft(updated); setAvatarFile(null);
@@ -259,7 +269,7 @@ function ProfilePanel() {
               </div>
             </div>
             <p className="mt-4 text-xs leading-relaxed text-text-muted">{profile?.bio || "Chưa có phần giới thiệu."}</p>
-            <Button className="mt-4 w-full" variant="outline" onClick={() => { setDraft(profile); setEditing(true); }}><Pencil className="h-4 w-4" /> Chỉnh sửa hồ sơ</Button>
+            <Button className="mt-4 w-full" variant="outline" onClick={() => { setDraft(profile); setEditing(true); form.reset(); }}><Pencil className="h-4 w-4" /> Chỉnh sửa hồ sơ</Button>
             <div className="mt-5 space-y-3 border-t border-border-soft pt-4 text-xs text-text-muted">
               <span className="flex items-center gap-2"><Mail className="h-4 w-4 shrink-0" /><span className="truncate">{profile?.email}</span></span>
               {profile?.websiteUrl && <span className="flex items-center gap-2"><Globe2 className="h-4 w-4 shrink-0" /><span className="truncate">{profile.websiteUrl.replace(/^https?:\/\//, "")}</span></span>}
@@ -325,7 +335,7 @@ function ProfilePanel() {
         </div>
       </div>
 
-      <Modal open={editing} onClose={cancel} title="Chỉnh sửa hồ sơ" description="Thông tin này được hiển thị trong CodeMentor và các Workspace bạn tham gia." width="lg" footer={<><Button variant="outline" disabled={saving} onClick={cancel}>Hủy</Button><Button disabled={!dirty || !valid || saving} onClick={() => void save()}><Save className="h-4 w-4" /> {saving ? avatarFile ? "Đang tải ảnh…" : "Đang lưu…" : "Lưu hồ sơ"}</Button></>}>
+      <Modal open={editing} onClose={cancel} title="Chỉnh sửa hồ sơ" description="Thông tin này được hiển thị trong CodeMentor và các Workspace bạn tham gia." width="lg" footer={<><Button variant="outline" disabled={saving} onClick={cancel}>Hủy</Button><Button disabled={!dirty || saving} onClick={() => void save()}><Save className="h-4 w-4" /> {saving ? avatarFile ? "Đang tải ảnh…" : "Đang lưu…" : "Lưu hồ sơ"}</Button></>}>
         {error && <div role="alert" className="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
         <div className="mb-6 flex items-center gap-4 rounded-lg bg-bg p-4">
           <div className="relative h-20 w-20 shrink-0">
@@ -336,12 +346,12 @@ function ProfilePanel() {
           <div><p className="text-sm font-bold text-navy">Ảnh đại diện</p><p className="mt-1 text-xs text-text-muted">PNG, JPEG hoặc WebP, tối đa 5 MB.</p></div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="text-xs font-semibold text-text-muted">Họ và tên<Input className="mt-1.5" value={draft.displayName} maxLength={120} onChange={(event) => update("displayName", event.target.value)} /></label>
-          <label className="text-xs font-semibold text-text-muted">Username<div className="relative mt-1.5"><AtSign className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input className="pl-9" value={draft.handle ?? ""} maxLength={30} onChange={(event) => update("handle", event.target.value)} /></div></label>
+          <label className="text-xs font-semibold text-text-muted">Họ và tên<Input {...fieldA11y("profile-name", form.errors.displayName)} className="mt-1.5" value={draft.displayName} onChange={(event) => update("displayName", event.target.value)} /><FieldError className="mt-1 font-normal" error={form.errors.displayName} htmlFor="profile-name" /></label>
+          <label className="text-xs font-semibold text-text-muted">Username<div className="relative mt-1.5"><AtSign className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input {...fieldA11y("profile-handle", form.errors.handle)} className="pl-9" value={draft.handle ?? ""} onChange={(event) => update("handle", event.target.value)} /></div><FieldError className="mt-1 font-normal" error={form.errors.handle} htmlFor="profile-handle" /></label>
           <label className="text-xs font-semibold text-text-muted sm:col-span-2">Email<div className="relative mt-1.5"><Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input className="bg-bg pl-9" value={draft.email} disabled /></div></label>
-          <label className="text-xs font-semibold text-text-muted sm:col-span-2">Giới thiệu<textarea className="mt-1.5 min-h-28 w-full resize-y rounded-md border border-border bg-surface p-3 text-sm text-navy focus:border-primary focus:outline-none" value={draft.bio ?? ""} maxLength={2000} onChange={(event) => update("bio", event.target.value)} /><span className="mt-1 block text-right text-2xs text-text-faint">{draft.bio?.length ?? 0}/2000</span></label>
-          <label className="text-xs font-semibold text-text-muted">Website<div className="relative mt-1.5"><Globe2 className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input className="pl-9" placeholder="https://example.com" value={draft.websiteUrl ?? ""} onChange={(event) => update("websiteUrl", event.target.value)} /></div>{draft.websiteUrl && !/^https?:\/\//i.test(draft.websiteUrl) && <span className="mt-1 block text-2xs text-danger">URL phải bắt đầu bằng http:// hoặc https://</span>}</label>
-          <label className="text-xs font-semibold text-text-muted">GitHub<div className="relative mt-1.5"><GitBranch className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input className="pl-9" placeholder="username" value={draft.githubHandle ?? ""} maxLength={39} onChange={(event) => update("githubHandle", event.target.value)} /></div></label>
+          <label className="text-xs font-semibold text-text-muted sm:col-span-2">Giới thiệu<textarea {...fieldA11y("profile-bio", form.errors.bio)} className="mt-1.5 min-h-28 w-full resize-y rounded-md border border-border bg-surface p-3 text-sm text-navy focus:border-primary focus:outline-none" value={draft.bio ?? ""} onChange={(event) => update("bio", event.target.value)} /><span className="mt-1 flex items-start justify-between gap-3 font-normal"><FieldError error={form.errors.bio} htmlFor="profile-bio" /><span className="ml-auto"><CharCount value={draft.bio ?? ""} max={2000} /></span></span></label>
+          <label className="text-xs font-semibold text-text-muted">Website<div className="relative mt-1.5"><Globe2 className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input {...fieldA11y("profile-website", form.errors.websiteUrl)} className="pl-9" placeholder="https://example.com" value={draft.websiteUrl ?? ""} onChange={(event) => update("websiteUrl", event.target.value)} /></div><FieldError className="mt-1 font-normal" error={form.errors.websiteUrl} htmlFor="profile-website" /></label>
+          <label className="text-xs font-semibold text-text-muted">GitHub<div className="relative mt-1.5"><GitBranch className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-faint" /><Input {...fieldA11y("profile-github", form.errors.githubHandle)} className="pl-9" placeholder="username" value={draft.githubHandle ?? ""} onChange={(event) => update("githubHandle", event.target.value)} /></div><FieldError className="mt-1 font-normal" error={form.errors.githubHandle} htmlFor="profile-github" /></label>
           <label className="text-xs font-semibold text-text-muted">Ngôn ngữ<select value={draft.locale} onChange={(event) => update("locale", event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-navy"><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label>
           <label className="text-xs font-semibold text-text-muted">Múi giờ<select value={draft.timezone} onChange={(event) => update("timezone", event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-navy"><option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh</option><option value="Asia/Bangkok">Asia/Bangkok</option><option value="UTC">UTC</option></select></label>
         </div>

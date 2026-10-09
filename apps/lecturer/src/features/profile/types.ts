@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { User } from "@codementor/types";
+import { githubHandle, handle, url } from "@codementor/utils";
 
 /** What GET /api/v1/me returns. Extends the shared User with the editable fields. */
 export interface UserProfile extends User {
@@ -24,20 +25,13 @@ export const TIMEZONES = ["Asia/Ho_Chi_Minh", "Asia/Bangkok", "UTC"] as const;
  */
 export const profileFormSchema = z.object({
   displayName: z.string().trim().min(1, "Không được để trống").max(120, "Tối đa 120 ký tự"),
-  handle: z
-    .string()
-    .trim()
-    .regex(
-      /^(|[a-z0-9](?:[a-z0-9_-]{1,28}[a-z0-9]))$/,
-      "3–30 ký tự, chỉ chữ thường, số, gạch ngang hoặc gạch dưới",
-    ),
+  // Handle/GitHub/URL dùng chung luật với hồ sơ bên Client (`@codementor/utils`), vì cả hai
+  // cùng gọi `PATCH /me`. Handle được hạ chữ thường như `Handle.create` ở backend.
+  handle: z.string().trim().superRefine(refineWith(handle)),
   bio: z.string().trim().max(2000, "Tối đa 2000 ký tự"),
-  websiteUrl: z.string().trim().refine(isBlankOrHttpUrl, "Phải bắt đầu bằng http:// hoặc https://"),
-  avatarUrl: z.string().trim().refine(isBlankOrHttpUrl, "Phải bắt đầu bằng http:// hoặc https://"),
-  githubHandle: z
-    .string()
-    .trim()
-    .regex(/^(|[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?)$/, "Tên GitHub không hợp lệ"),
+  websiteUrl: z.string().trim().superRefine(refineWith((value) => url(value, "Website"))),
+  avatarUrl: z.string().trim().superRefine(refineWith((value) => url(value, "Ảnh đại diện"))),
+  githubHandle: z.string().trim().superRefine(refineWith(githubHandle)),
   locale: z.enum(LOCALES),
   timezone: z.enum(TIMEZONES),
 });
@@ -56,14 +50,12 @@ export interface UpdateProfileInput {
   timezone?: string;
 }
 
-function isBlankOrHttpUrl(value: string): boolean {
-  if (value === "") return true;
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
+/** Dùng một luật của `@codementor/utils` (trả câu lỗi hoặc `undefined`) trong zod. */
+function refineWith(rule: (value: string) => string | undefined) {
+  return (value: string, context: z.RefinementCtx) => {
+    const message = rule(value);
+    if (message) context.addIssue({ code: "custom", message });
+  };
 }
 
 export function toFormValues(profile: UserProfile): ProfileFormValues {
@@ -88,7 +80,7 @@ export function toFormValues(profile: UserProfile): ProfileFormValues {
 export function toUpdateInput(values: ProfileFormValues): UpdateProfileInput {
   return {
     displayName: values.displayName,
-    handle: values.handle || null,
+    handle: values.handle.toLowerCase() || null,
     bio: values.bio || null,
     websiteUrl: values.websiteUrl || null,
     avatarUrl: values.avatarUrl || null,

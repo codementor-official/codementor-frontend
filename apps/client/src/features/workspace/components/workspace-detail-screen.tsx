@@ -32,7 +32,8 @@ import {
   X,
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { Modal, Select, StatStrip, useToast } from "@codementor/ui";
+import { CharCount, FieldError, fieldA11y, Modal, ReasonField, Select, StatStrip, useFieldErrors, useToast } from "@codementor/ui";
+import { dateRange, length, reason as reasonRule, search as searchRule } from "@codementor/utils";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -209,6 +210,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const [archiving, setArchiving] = useState(false);
   const [removing, setRemoving] = useState<WorkspaceMember | null>(null);
   const [removalReason, setRemovalReason] = useState("");
+  const [removalAttempted, setRemovalAttempted] = useState(false);
   const [membershipRemoved, setMembershipRemoved] = useState(false);
   const [memberRevision, setMemberRevision] = useState(0);
   const [joinRequestCount, setJoinRequestCount] = useState(0);
@@ -384,7 +386,8 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
 
   const remove = async () => {
     if (!removing) return;
-    if (!removalReason.trim()) { toast.error("Vui lòng nhập lý do xóa thành viên"); return; }
+    setRemovalAttempted(true);
+    if (reasonRule(removalReason)) return;
     setPending(true);
     try {
       await api.workspaces.removeMember(slug, removing.id, removalReason.trim());
@@ -610,7 +613,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       />
       <ConfirmDialog
         open={removing !== null}
-        onClose={() => { setRemoving(null); setRemovalReason(""); }}
+        onClose={() => { setRemoving(null); setRemovalReason(""); setRemovalAttempted(false); }}
         onConfirm={() => void remove()}
         title="Xóa thành viên khỏi nhóm?"
         confirmLabel="Xóa khỏi nhóm"
@@ -621,7 +624,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
             chỉ có thể quay lại khi có mã mời mới.
           </>
         }
-      ><label className="grid gap-1.5 text-xs font-semibold text-navy">Lý do xóa khỏi nhóm <span className="font-normal text-danger">Bắt buộc</span><textarea autoFocus rows={3} maxLength={500} value={removalReason} onChange={(event) => setRemovalReason(event.target.value)} placeholder="Lý do này sẽ được gửi cho thành viên…" className="resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm font-normal text-navy" /></label></ConfirmDialog>
+      ><ReasonField autoFocus id="member-removal-reason" label="Lý do xóa khỏi nhóm" rows={3} value={removalReason} onChange={setRemovalReason} showError={removalAttempted} placeholder="Lý do này sẽ được gửi cho thành viên…" className="w-full resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm font-normal text-navy" /></ConfirmDialog>
     </div>
   );
 }
@@ -730,10 +733,13 @@ function Overview({
   const toast = useToast();
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [activitySearch, setActivitySearch] = useState("");
+  // `WorkspaceOverviewQueryDto.activitySearch` ≤ 200. Quá trần thì báo lỗi và không gọi API.
+  const activitySearchError = searchRule(activitySearch, 200);
   const [activityPage, setActivityPage] = useState(1);
   const [activityOverview, setActivityOverview] = useState(overview);
   const [activityLoading, setActivityLoading] = useState(false);
   const exportActivities = async () => {
+    if (activitySearchError) return;
     try {
       const result = await api.workspaces.overview(detail.slug, {
         activitySearch: activitySearch.trim() || undefined,
@@ -754,7 +760,7 @@ function Overview({
     }
   };
   useEffect(() => {
-    if (!overview) return;
+    if (!overview || activitySearchError) return;
     const timer = window.setTimeout(() => {
       setActivityLoading(true);
       void api.workspaces
@@ -771,7 +777,7 @@ function Overview({
         .finally(() => setActivityLoading(false));
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [activityPage, activitySearch, detail.slug, overview, toast]);
+  }, [activityPage, activitySearch, activitySearchError, detail.slug, overview, toast]);
   const ranked = [...(overview?.members ?? [])].sort((a, b) => b.xp - a.xp);
   const leaderboard = ranked.slice(0, showLeaderboard ? 10 : 5);
   return (
@@ -953,6 +959,7 @@ function Overview({
               <label className="relative min-w-48 flex-1 sm:max-w-64">
                 <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-text-faint" />
                 <input
+                  {...fieldA11y("activity-search", activitySearchError)}
                   value={activitySearch}
                   onChange={(event) => {
                     setActivitySearch(event.target.value);
@@ -962,6 +969,7 @@ function Overview({
                   className="w-full rounded-md border border-border bg-surface py-1.5 pl-8 pr-3 text-xs text-navy"
                 />
               </label>
+              <FieldError className="w-full text-xs" error={activitySearchError} htmlFor="activity-search" />
               <Button
                 type="button"
                 size="sm"
@@ -1818,6 +1826,9 @@ function Members({
   const [submissionStatus, setSubmissionStatus] = useState("");
   const [joinedFrom, setJoinedFrom] = useState("");
   const [joinedTo, setJoinedTo] = useState("");
+  // `ListMembersQueryDto.search` ≤ 200; khoảng ngày tham gia từ ≤ đến.
+  const memberSearchError = searchRule(search, 200);
+  const joinedRangeError = dateRange(joinedFrom, joinedTo, { label: "Ngày tham gia đến" });
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<WorkspaceMember | null>(null);
   const [membershipView, setMembershipView] = useState<
@@ -1825,6 +1836,7 @@ function Members({
   >("current");
 
   const load = useCallback(async () => {
+    if (memberSearchError || joinedRangeError) return;
     setLoading(true);
     try {
       const response = await api.workspaces.members(slug, {
@@ -1854,7 +1866,9 @@ function Members({
   }, [
     activityLevel,
     joinedFrom,
+    joinedRangeError,
     joinedTo,
+    memberSearchError,
     page,
     progress,
     role,
@@ -1878,6 +1892,7 @@ function Members({
     viewerRole === "owner" || viewerPermissions.remove_member;
   const canViewPrivate = viewerRole !== "member" && data.canViewPrivate;
   const exportMembers = async () => {
+    if (memberSearchError || joinedRangeError) return;
     try {
       const response = await api.workspaces.members(slug, {
         page: 1,
@@ -1991,12 +2006,17 @@ function Members({
             </div>
           </div>
           <div className="grid items-end gap-3 border-b border-border-soft bg-bg/60 p-4 md:grid-cols-2 xl:grid-cols-4">
-            <input
-              className="h-9 rounded-md border border-border bg-surface px-3 py-0 text-sm text-navy xl:col-span-2"
-              placeholder="Tìm theo tên hoặc email..."
-              value={search}
-              onChange={(event) => changeFilter(setSearch, event.target.value)}
-            />
+            <div className="grid gap-1 xl:col-span-2">
+              <input
+                {...fieldA11y("member-search", memberSearchError)}
+                aria-label="Tìm thành viên theo tên hoặc email"
+                className="h-9 rounded-md border border-border bg-surface px-3 py-0 text-sm text-navy"
+                placeholder="Tìm theo tên hoặc email..."
+                value={search}
+                onChange={(event) => changeFilter(setSearch, event.target.value)}
+              />
+              <FieldError className="text-xs" error={memberSearchError} htmlFor="member-search" />
+            </div>
             <Select
               label="Vai trò"
               className="w-full"
@@ -2059,6 +2079,7 @@ function Members({
             <label className="grid gap-1 text-xs font-medium text-text-muted">
               <span>Tham gia đến</span>
               <input
+                {...fieldA11y("member-joined-to", joinedRangeError)}
                 type="date"
                 value={joinedTo}
                 onChange={(event) =>
@@ -2066,6 +2087,7 @@ function Members({
                 }
                 className="h-9 rounded-md border border-border bg-surface px-3 py-0 text-sm text-navy"
               />
+              <FieldError className="text-xs font-normal" error={joinedRangeError} htmlFor="member-joined-to" />
             </label>
           </div>
           <div className="relative min-h-[520px] md:min-h-[670px]">
@@ -2510,6 +2532,15 @@ function SettingsPanel({
   const [name, setName] = useState(detail.name);
   const [description, setDescription] = useState(detail.description ?? "");
   const [topic, setTopic] = useState(detail.topic ?? "");
+  // `UpdateWorkspaceDto`: tên 1–120, mô tả ≤ 2000, chủ đề ≤ 100.
+  const infoForm = useFieldErrors(
+    { name, description, topic },
+    {
+      name: length(name, "Tên nhóm", { min: 1, max: 120 }),
+      description: length(description, "Mô tả", { max: 2000 }),
+      topic: length(topic, "Chủ đề", { max: 100 }),
+    },
+  );
   const [privacy, setPrivacy] = useState(detail.privacy);
   const [joinPolicy, setJoinPolicy] = useState<
     "open" | "approval" | "invite_only"
@@ -2544,12 +2575,13 @@ function SettingsPanel({
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!infoForm.validate()) return;
     setPending(true);
     try {
       const updated = await api.workspaces.update(detail.slug, {
-        name,
-        description,
-        topic,
+        name: name.trim(),
+        description: description.trim(),
+        topic: topic.trim(),
         privacy,
         joinPolicy,
         coverPosition,
@@ -2635,35 +2667,40 @@ function SettingsPanel({
             <Settings className="h-4 w-4 text-text-faint" />
             <h2 className="text-sm font-bold text-navy">Thông tin nhóm</h2>
           </div>
-          <form onSubmit={save} className="space-y-3">
+          <form noValidate onSubmit={save} className="space-y-3">
             <label className="block text-xs font-medium text-text-muted">
               Tên nhóm
               <input
+                {...fieldA11y("workspace-name", infoForm.errors.name)}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                required
-                maxLength={120}
                 className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
               />
+              <FieldError className="mt-1 font-normal" error={infoForm.errors.name} htmlFor="workspace-name" />
             </label>
             <label className="block text-xs font-medium text-text-muted">
               Mô tả
               <textarea
+                {...fieldA11y("workspace-description", infoForm.errors.description)}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 rows={4}
-                maxLength={2000}
                 className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
               />
+              <span className="mt-1 flex items-start justify-between gap-3 font-normal">
+                <FieldError error={infoForm.errors.description} htmlFor="workspace-description" />
+                <span className="ml-auto"><CharCount value={description} max={2000} /></span>
+              </span>
             </label>
             <label className="block text-xs font-medium text-text-muted">
               Chủ đề
               <input
+                {...fieldA11y("workspace-topic", infoForm.errors.topic)}
                 value={topic}
                 onChange={(event) => setTopic(event.target.value)}
-                maxLength={100}
                 className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
               />
+              <FieldError className="mt-1 font-normal" error={infoForm.errors.topic} htmlFor="workspace-topic" />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-xs font-medium text-text-muted">

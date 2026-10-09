@@ -26,13 +26,17 @@ import {
   DetailRow,
   DetailSection,
   DrawerDetail,
+  FieldError,
+  fieldA11y,
   ManagePage,
   Modal,
   ReasonButton,
   Select,
   StatusBadge,
   buttonClassName,
+  useFieldErrors,
 } from "@codementor/ui";
+import { length } from "@codementor/utils";
 import { PageBody } from "@/components/page/page-body";
 import { api } from "@/lib/api";
 import {
@@ -77,6 +81,8 @@ function ArticlesPageContent() {
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  // `CreateArticleDto.title` 1–200.
+  const titleForm = useFieldErrors({ newTitle }, { newTitle: length(newTitle, "Tiêu đề", { min: 1, max: 200 }) });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,6 +120,7 @@ function ArticlesPageContent() {
   };
 
   const createArticle = async () => {
+    if (!titleForm.validate()) return;
     setBusy(true);
     setError(null);
     try {
@@ -178,7 +185,7 @@ function ArticlesPageContent() {
     <PageBody>
       <ManagePage
         action={
-          <Button onClick={() => setCreating(true)} type="button">
+          <Button onClick={() => { setCreating(true); titleForm.reset(); }} type="button">
             <Plus aria-hidden="true" className="size-4" />
             Bài viết mới
           </Button>
@@ -238,18 +245,19 @@ function ArticlesPageContent() {
           Tiêu đề
         </label>
         <input
+          {...fieldA11y("new-title", titleForm.errors.newTitle)}
           className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          id="new-title"
           onChange={(event) => setNewTitle(event.target.value)}
           placeholder="5 kỹ thuật giúp bạn học Spring Boot hiệu quả hơn"
           value={newTitle}
         />
+        <FieldError className="mt-1.5" error={titleForm.errors.newTitle} htmlFor="new-title" />
         <div className="mt-5 flex justify-end gap-2">
           <Button onClick={() => setCreating(false)} type="button" variant="ghost">
             <X aria-hidden="true" className="size-4" /> Huỷ
           </Button>
           <Button
-            disabled={busy || newTitle.trim().length === 0}
+            disabled={busy}
             onClick={() => void createArticle()}
             type="button"
           >

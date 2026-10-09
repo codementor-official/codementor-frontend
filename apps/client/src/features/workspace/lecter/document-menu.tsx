@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FileText, Loader2, Plus } from "lucide-react";
-import { useToast } from "@codementor/ui";
+import { FieldError, fieldA11y, useToast } from "@codementor/ui";
+import { search as searchRule } from "@codementor/utils";
 import { Pagination } from "@/components/ui/pagination";
 import { api } from "@/lib/api";
 import { messageOf } from "../exercise-authoring";
@@ -42,6 +43,8 @@ export function LecterDocumentMenu({
   const toast = useToast();
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [query, setQuery] = useState("");
+  // `WorkspaceContentQueryDto.q` ≤ 200. Quá trần thì báo lỗi và không gọi API.
+  const queryError = searchRule(query, 200);
   const [page, setPage] = useState(1);
   const [documents, setDocuments] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
@@ -68,10 +71,10 @@ export function LecterDocumentMenu({
 
   // Gõ tới đâu tìm tới đó, chờ 200ms cho khỏi bắn một request mỗi ký tự.
   useEffect(() => {
-    if (!open) return;
+    if (!open || queryError) return;
     const timer = window.setTimeout(() => void load(), 200);
     return () => window.clearTimeout(timer);
-  }, [open, load]);
+  }, [open, load, queryError]);
 
   useEffect(() => {
     if (!open) return;
@@ -120,6 +123,7 @@ export function LecterDocumentMenu({
               <label className="min-w-0 flex-1">
                 <span className="sr-only">Tìm tài liệu đã duyệt</span>
                 <input
+                  {...fieldA11y("lecter-document-search", queryError)}
                   autoFocus
                   value={query}
                   onChange={(event) => {
@@ -132,6 +136,7 @@ export function LecterDocumentMenu({
               </label>
               <span className="shrink-0 text-xs text-text-faint">{selected.length} đã chọn</span>
             </div>
+            <FieldError className="px-1 pb-2 text-xs" error={queryError} htmlFor="lecter-document-search" />
 
             <div className="max-h-64 overflow-y-auto">
               {loading ? (

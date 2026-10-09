@@ -20,6 +20,9 @@ import {
   ServerPagination,
   useToast,
   SegmentedTabs,
+  ReasonField,
+  FieldError,
+  fieldA11y,
 } from "@codementor/ui";
 import { inputClassName } from "./form-style";
 import {
@@ -42,7 +45,12 @@ import { JobResultDialog } from "./job-result-dialog";
 import { JobOrdersTable } from "./job-orders-table";
 import { OrderDialog } from "./order-dialog";
 import { ReconciliationSummary } from "./reconciliation-summary";
-import { downloadCsv, printDocument } from "@codementor/utils";
+import {
+  downloadCsv,
+  printDocument,
+  reason as reasonRule,
+  search,
+} from "@codementor/utils";
 type Tab = "orders" | "withdrawals" | "ledger" | "audit" | "policy";
 type RecordDetail =
   | { type: "withdrawal"; item: CommerceWithdrawal }
@@ -67,6 +75,8 @@ export function CommerceScreen() {
   const [orderStatus, setOrderStatus] = useState("");
   const [orderSearch, setOrderSearch] = useState("");
   const [orderQuery, setOrderQuery] = useState("");
+  // `CommercePage.q` nhận 1–100 ký tự; trống = không lọc.
+  const orderSearchError = search(orderSearch, 100);
   const [orders, setOrders] = useState<CommercePage<CommerceOrder> | null>(
     null,
   );
@@ -82,6 +92,7 @@ export function CommerceScreen() {
     approve: boolean;
   } | null>(null);
   const [reason, setReason] = useState("");
+  const [reasonAttempted, setReasonAttempted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -384,12 +395,14 @@ export function CommerceScreen() {
             className="flex items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
+              if (orderSearchError) return;
               setPage(1);
               setOrderQuery(orderSearch.trim());
             }}
           >
             <input
               aria-label="Tìm đơn hàng"
+              {...fieldA11y("order-search", orderSearchError)}
               className="min-w-64 rounded-md border border-border bg-transparent px-3 py-2 text-sm"
               placeholder="Tên học viên, email hoặc khóa học"
               value={orderSearch}
@@ -399,6 +412,7 @@ export function CommerceScreen() {
               Tìm
             </Button>
           </form>
+          <FieldError className="w-full" error={orderSearchError} htmlFor="order-search" />
           <select
             aria-label="Lọc trạng thái đơn"
             className="rounded-md border border-border bg-transparent px-3 py-2 text-sm"
@@ -600,6 +614,7 @@ export function CommerceScreen() {
                                     onClick={() => {
                                       setDecision({ id: w.id, approve });
                                       setReason("");
+                                      setReasonAttempted(false);
                                     }}
                                   >
                                     {approve ? "Duyệt" : "Từ chối"}
@@ -872,24 +887,24 @@ export function CommerceScreen() {
               ? "Yêu cầu sẽ chuyển sang hàng đợi chi trả. Trạng thái chỉ hoàn tất khi hệ thống xác nhận kết quả."
               : "Tiền đang giữ sẽ được trả về số dư khả dụng đúng một lần."}
           </p>
-          <label className="block text-sm">
-            Ghi chú / lý do
-            <textarea
-              className={`${inputClassName} mt-1 min-h-20`}
-              value={reason}
-              maxLength={500}
-              onChange={(e) => setReason(e.target.value)}
-            />
-          </label>
+          <ReasonField
+            className={`${inputClassName} min-h-20`}
+            id="withdrawal-decision-reason"
+            label="Ghi chú / lý do"
+            onChange={setReason}
+            showError={reasonAttempted}
+            value={reason}
+          />
           <Button
-            disabled={busy || reason.trim().length < 5}
-            onClick={() =>
-              decision &&
+            disabled={busy}
+            onClick={() => {
+              setReasonAttempted(true);
+              if (!decision || reasonRule(reason)) return;
               void command(`withdrawals/${decision.id}/decide`, {
                 approve: decision.approve,
-                reason,
-              })
-            }
+                reason: reason.trim(),
+              });
+            }}
           >
             Xác nhận
           </Button>

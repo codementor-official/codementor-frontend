@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, Modal } from "@codementor/ui";
+import { Button, Field, fieldA11y, Modal, useFieldErrors } from "@codementor/ui";
+import { email as emailRule, length } from "@codementor/utils";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { usersApi, type KeycloakRole } from "@/lib/api";
 
@@ -41,6 +42,20 @@ export function CreateUserModal({
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
 
+  // `CreateUserDto`: email (luật `Email` ở domain), họ tên 1–120, mật khẩu ≥ 12.
+  const form = useFieldErrors(
+    { email, displayName, password },
+    {
+      email: emailRule(email),
+      displayName: length(displayName, "Họ và tên", { min: 1, max: 120 }),
+      password: !password
+        ? "Mật khẩu không được để trống"
+        : password.length < MIN_PASSWORD
+          ? `Mật khẩu tối thiểu ${MIN_PASSWORD} ký tự (còn thiếu ${MIN_PASSWORD - password.length})`
+          : undefined,
+    },
+  );
+
   const reset = () => {
     setEmail("");
     setDisplayName("");
@@ -48,16 +63,11 @@ export function CreateUserModal({
     setPassword("");
     setError(null);
     setCreated(null);
+    form.reset();
   };
 
-  const passwordTooShort = password.length > 0 && password.length < MIN_PASSWORD;
-  const canSubmit =
-    email.trim().length > 0 &&
-    displayName.trim().length > 0 &&
-    password.length >= MIN_PASSWORD &&
-    !busy;
-
   const submit = async () => {
+    if (!form.validate()) return;
     setBusy(true);
     setError(null);
     try {
@@ -121,11 +131,11 @@ export function CreateUserModal({
             </p>
           )}
 
-          <Field htmlFor="new-user-email" label="Email">
+          <Field error={form.errors.email} htmlFor="new-user-email" label="Email">
             <input
+              {...fieldA11y("new-user-email", form.errors.email)}
               autoComplete="off"
               className={inputClass}
-              id="new-user-email"
               onChange={(event) => setEmail(event.target.value)}
               placeholder="giangvien@codementor.dev"
               type="email"
@@ -133,10 +143,10 @@ export function CreateUserModal({
             />
           </Field>
 
-          <Field htmlFor="new-user-name" label="Họ và tên">
+          <Field error={form.errors.displayName} htmlFor="new-user-name" label="Họ và tên">
             <input
+              {...fieldA11y("new-user-name", form.errors.displayName)}
               className={inputClass}
-              id="new-user-name"
               onChange={(event) => setDisplayName(event.target.value)}
               placeholder="Nguyễn Văn A"
               value={displayName}
@@ -159,23 +169,19 @@ export function CreateUserModal({
           </Field>
 
           <Field
-            hint={`Trao tay cho người dùng — hệ thống không gửi email. Tối thiểu ${MIN_PASSWORD} ký tự.`}
+            description={`Trao tay cho người dùng — hệ thống không gửi email. Tối thiểu ${MIN_PASSWORD} ký tự.`}
+            error={form.errors.password}
             htmlFor="new-user-password"
             label="Mật khẩu"
           >
             <input
+              {...fieldA11y("new-user-password", form.errors.password)}
               autoComplete="new-password"
               className={inputClass}
-              id="new-user-password"
               onChange={(event) => setPassword(event.target.value)}
               type="password"
               value={password}
             />
-            {passwordTooShort && (
-              <p className="mt-1 text-xs text-destructive">
-                Còn thiếu {MIN_PASSWORD - password.length} ký tự.
-              </p>
-            )}
           </Field>
 
           <div className="flex justify-end gap-2">
@@ -189,7 +195,7 @@ export function CreateUserModal({
             >
               Huỷ
             </Button>
-            <Button disabled={!canSubmit} onClick={() => void submit()} type="button">
+            <Button disabled={busy} onClick={() => void submit()} type="button">
               Tạo tài khoản
             </Button>
           </div>
@@ -201,28 +207,6 @@ export function CreateUserModal({
 
 const inputClass =
   "w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring";
-
-function Field({
-  label,
-  hint,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  htmlFor: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium" htmlFor={htmlFor}>
-        {label}
-      </label>
-      {hint && <p className="mb-1.5 text-xs text-muted-foreground">{hint}</p>}
-      {children}
-    </div>
-  );
-}
 
 function describe(cause: unknown): string {
   if (cause instanceof ApiClientError) {

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { Button } from "./button";
+import { reason as reasonRule } from "@codementor/utils";
 import { Modal } from "./modal";
+import { ReasonField } from "./reason-field";
 
 /**
  * Nút cho thao tác cần một lý do trước khi chạy: gỡ nội dung đang công khai, ví dụ. Cùng
@@ -33,12 +35,15 @@ export function ReasonButton({
   const [open, setOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [reason, setReason] = useState("");
+  const [attempted, setAttempted] = useState(false);
+  const fieldId = useId();
   const trimmed = reason.trim();
 
   const close = () => {
     if (running) return;
     setOpen(false);
     setReason("");
+    setAttempted(false);
   };
 
   return (
@@ -54,13 +59,17 @@ export function ReasonButton({
               Huỷ
             </Button>
             <Button
-              disabled={running || trimmed.length === 0}
+              disabled={running}
               onClick={async () => {
+                // Không khoá nút theo lỗi: bấm thì lỗi hiện ra dưới ô, rồi dừng ở đó.
+                setAttempted(true);
+                if (reasonRule(reason)) return;
                 setRunning(true);
                 try {
                   await onConfirm(trimmed);
                   setOpen(false);
                   setReason("");
+                  setAttempted(false);
                 } finally {
                   setRunning(false);
                 }
@@ -78,11 +87,12 @@ export function ReasonButton({
         width="sm"
       >
         <p className="mb-3 text-sm text-muted-foreground">{description}</p>
-        <textarea
+        <ReasonField
           autoFocus
-          className="min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:border-ring"
-          onChange={(event) => setReason(event.target.value)}
+          id={fieldId}
+          onChange={setReason}
           placeholder={placeholder}
+          showError={attempted}
           value={reason}
         />
       </Modal>

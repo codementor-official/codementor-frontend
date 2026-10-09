@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Check,
   ChevronUp,
@@ -17,7 +17,8 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
-import { Modal } from "@codementor/ui";
+import { FieldError, fieldA11y, Modal } from "@codementor/ui";
+import { length } from "@codementor/utils";
 import { BrandLogo } from "@/components/brand-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -324,6 +325,7 @@ function MessageRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.content ?? "");
+  const draftError = length(draft, "Tin nhắn", { max: 4000 });
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const canDelete = !message.deletedAt && (mine || moderator);
   const canEdit = mine && !message.deletedAt && !isAttachmentMessage(message.content ?? "");
@@ -359,15 +361,17 @@ function MessageRow({
           ) : editing ? (
             <div className="w-[min(520px,65vw)]">
               <textarea
+                {...fieldA11y(`message-edit-${message.id}`, draftError)}
+                aria-label="Sửa tin nhắn"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 rows={3}
-                maxLength={4000}
                 className="w-full resize-y rounded-md border border-border bg-surface p-2 text-sm text-navy focus:border-primary"
               />
+              <FieldError className="text-xs" error={draftError} htmlFor={`message-edit-${message.id}`} />
               <div className="mt-2 flex justify-end gap-2">
                 <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Hủy</Button>
-                <Button size="sm" onClick={() => void save()} disabled={!draft.trim()}>
+                <Button size="sm" onClick={() => void save()} disabled={!draft.trim() || Boolean(draftError)}>
                   <Check className="h-3.5 w-3.5" /> Lưu
                 </Button>
               </div>
@@ -430,28 +434,38 @@ function Composer({
   onAttach?: (file: File) => void;
   attaching?: boolean;
 }) {
+  const id = useId();
+  // `CreateWorkspaceMessageDto.content` ≤ 4000. Không đếm ký tự ở ô chat — chỉ báo khi quá.
+  const error = length(value, "Tin nhắn", { max: 4000 });
+  const submit = () => {
+    if (!error) onSubmit();
+  };
   return (
     <div className={`${onAttach ? "grid grid-cols-[2.5rem_minmax(0,1fr)_auto]" : "flex"} relative z-10 min-w-0 shrink-0 items-end gap-2 border-t border-border bg-surface ${compact ? "p-2.5" : "px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pt-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"}`}>
       {onAttach && <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border text-text-muted hover:border-primary hover:text-primary" aria-label="Đính kèm file hoặc hình ảnh" title="Đính kèm file hoặc hình ảnh">{attaching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}<input type="file" className="sr-only" disabled={attaching || sending} accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv,.zip" onChange={(event) => { const file = event.target.files?.[0]; if (file) onAttach(file); event.target.value = ""; }} /></label>}
-      <textarea
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            onSubmit();
-          }
-        }}
-        rows={compact ? 1 : 2}
-        maxLength={4000}
-        placeholder={placeholder}
-        className="min-h-10 min-w-0 w-full flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-navy placeholder:text-text-faint focus:border-primary"
-      />
+      <div className="min-w-0 flex-1">
+        <textarea
+          {...fieldA11y(id, error)}
+          aria-label="Tin nhắn"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              submit();
+            }
+          }}
+          rows={compact ? 1 : 2}
+          placeholder={placeholder}
+          className="block min-h-10 min-w-0 w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-navy placeholder:text-text-faint focus:border-primary"
+        />
+        <FieldError className="mt-1 text-xs" error={error} htmlFor={id} />
+      </div>
       <Button
         size={compact ? "sm" : "md"}
         className="shrink-0"
-        onClick={onSubmit}
-        disabled={sending || !value.trim()}
+        onClick={submit}
+        disabled={sending || !value.trim() || Boolean(error)}
         aria-label="Gửi tin nhắn"
       >
         {sending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

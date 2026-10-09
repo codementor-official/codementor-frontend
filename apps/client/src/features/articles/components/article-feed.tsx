@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BadgeCheck, Loader2, Newspaper, Search, X } from "lucide-react";
+import { FieldError, fieldA11y } from "@codementor/ui";
+import { search as searchRule } from "@codementor/utils";
 import { api } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import type { ArticleSummary } from "@/types/catalogue";
@@ -27,6 +29,8 @@ export function ArticleFeed() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  // `PageQuery.q` ≤ 200. Quá trần thì báo lỗi và giữ kết quả của truy vấn hợp lệ trước đó.
+  const searchError = searchRule(search, 200);
   const [page, setPage] = useState(1);
   const [cursors, setCursors] = useState<Array<string | undefined>>([undefined]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -68,9 +72,10 @@ export function ArticleFeed() {
   // Hoãn 300ms: gõ "websocket" mà gọi ngay từng phím là chín request, và request về sau
   // có thể tới trước request trước nó rồi ghi đè kết quả bằng danh sách của tiền tố cũ.
   useEffect(() => {
+    if (searchError) return;
     const timer = setTimeout(() => setQuery(search.trim()), 300);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, searchError]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -114,6 +119,7 @@ export function ArticleFeed() {
               className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-faint"
             />
             <input
+              {...fieldA11y("article-search", searchError)}
               aria-label="Tìm bài viết"
               className="h-11 w-full rounded-lg border border-border bg-surface pr-10 pl-10 text-sm text-navy transition-colors placeholder:text-text-faint focus-visible:border-primary"
               onChange={(event) => {
@@ -140,6 +146,7 @@ export function ArticleFeed() {
               </button>
             )}
           </div>
+          <FieldError className="-mt-3 mb-5" error={searchError} htmlFor="article-search" />
           {error !== null && (
             <p className="rounded-lg border border-danger/40 bg-danger-tint px-4 py-3 text-sm text-danger" role="alert">
               {error}

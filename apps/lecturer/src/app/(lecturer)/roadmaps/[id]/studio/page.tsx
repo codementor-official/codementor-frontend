@@ -32,7 +32,7 @@ import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
-import { Field, inputClassName, textareaClassName } from "@/components/form/field";
+import { Field, fieldA11y, inputClassName, textareaClassName } from "@/components/form/field";
 import { CoverImageField } from "@/components/form/cover-image-field";
 import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import { SortableOverlay } from "@/components/sortable";
@@ -548,11 +548,11 @@ export default function RoadmapStudioPage() {
             />
           </Field>
 
-          <Field error={errors.description}
+          <Field counter={{ value: draft.description, max: 5000 }} error={errors.description}
             htmlFor="description" hint="Bắt buộc có thì mới gửi duyệt được." label="Mô tả">
             <textarea
+              {...fieldA11y("description", errors.description)}
               className={textareaClassName}
-              id="description"
               onChange={(event) => patch({ description: event.target.value })}
               value={draft.description}
             />
@@ -570,11 +570,11 @@ export default function RoadmapStudioPage() {
             value={draft.coverImageUrl}
           />
 
-          <Field error={errors.prerequisiteNote}
+          <Field counter={{ value: draft.prerequisiteNote, max: 1000 }} error={errors.prerequisiteNote}
             htmlFor="prerequisiteNote" label="Ghi chú điều kiện tiên quyết">
             <textarea
+              {...fieldA11y("prerequisiteNote", errors.prerequisiteNote)}
               className={textareaClassName}
-              id="prerequisiteNote"
               onChange={(event) => patch({ prerequisiteNote: event.target.value })}
               value={draft.prerequisiteNote}
             />

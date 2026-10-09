@@ -10,12 +10,16 @@ import {
   Card,
   CourseCover,
   CoursePrice,
+  Field,
+  fieldA11y,
   Modal,
   PageHeader,
   StatStrip,
   ServerPagination,
+  useFieldErrors,
   useToast,
 } from "@codementor/ui";
+import { promotion as promotionRule, toNumber } from "@codementor/utils";
 import { inputClassName } from "@/components/form/field";
 import { earningsApi } from "./api";
 
@@ -85,9 +89,15 @@ export function LecturerPromotionScreen() {
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [label, setLabel] = useState("Ưu đãi khóa học");
-  const [discount, setDiscount] = useState(20);
+  // Chuỗi, không phải số: ô trống không được tự thành 0 rồi sinh "020".
+  const [discount, setDiscount] = useState("20");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
+  // Cùng luật khuyến mãi với Admin (`BatchPromotionDto` + kết thúc sau bắt đầu).
+  const form = useFieldErrors(
+    { label, discount, startsAt, endsAt },
+    promotionRule({ label, startsAt, endsAt, discount }),
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -129,10 +139,11 @@ export function LecturerPromotionScreen() {
     const end = new Date(now.getTime() + 14 * 86_400_000);
     setSelected([]);
     setLabel("Ưu đãi khóa học");
-    setDiscount(20);
+    setDiscount("20");
     setStartsAt(localDate(now));
     setEndsAt(localDate(end));
     setOpen(true);
+    form.reset();
   }
 
   async function submit() {
@@ -140,7 +151,7 @@ export function LecturerPromotionScreen() {
     try {
       const result = await earningsApi.batchPromotion({
         courseIds: selected,
-        discountPercent: discount,
+        discountPercent: toNumber(discount),
         label: label.trim(),
         startsAt: new Date(startsAt).toISOString(),
         endsAt: new Date(endsAt).toISOString(),
@@ -305,7 +316,7 @@ export function LecturerPromotionScreen() {
         footer={
           <>
             <Button variant="outline" disabled={busy} onClick={() => setOpen(false)}>Hủy</Button>
-            <Button disabled={busy || !selected.length || !label.trim() || !startsAt || !endsAt || discount < 1 || discount > 99} onClick={() => void submit()}>
+            <Button disabled={busy || !selected.length} onClick={() => { if (form.validate()) void submit(); }}>
               {busy ? "Đang gửi…" : `Gửi ${selected.length} khóa học để duyệt`}
             </Button>
           </>
@@ -313,11 +324,11 @@ export function LecturerPromotionScreen() {
       >
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm sm:col-span-2">Tên chương trình<input className={`${inputClassName} mt-1`} maxLength={60} value={label} onChange={(event) => setLabel(event.target.value)} /></label>
-            <label className="text-sm">Mức giảm (%)<input className={`${inputClassName} mt-1`} type="number" min={1} max={99} value={discount} onChange={(event) => setDiscount(Number(event.target.value))} /></label>
-            <div className="flex flex-wrap items-end gap-2">{[10, 20, 25, 30, 50].map((value) => <button key={value} type="button" className={discount === value ? "rounded-full border border-primary bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary" : "rounded-full border border-border px-2.5 py-1 text-xs font-semibold hover:border-primary hover:text-primary"} onClick={() => setDiscount(value)}>-{value}%</button>)}</div>
-            <label className="text-sm">Bắt đầu<input className={`${inputClassName} mt-1`} type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></label>
-            <label className="text-sm">Kết thúc<input className={`${inputClassName} mt-1`} type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></label>
+            <Field wide error={form.errors.label} htmlFor="batch-label" label="Tên chương trình" description="Từ 2 đến 60 ký tự."><input {...fieldA11y("batch-label", form.errors.label)} className={inputClassName} value={label} onChange={(event) => setLabel(event.target.value)} /></Field>
+            <Field error={form.errors.discount} htmlFor="batch-discount" label="Mức giảm (%)" description="Số nguyên từ 1 đến 99."><input {...fieldA11y("batch-discount", form.errors.discount)} className={inputClassName} inputMode="numeric" value={discount} onChange={(event) => setDiscount(event.target.value)} /></Field>
+            <div className="flex flex-wrap items-end gap-2">{[10, 20, 25, 30, 50].map((value) => <button key={value} type="button" className={discount === String(value) ? "rounded-full border border-primary bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary" : "rounded-full border border-border px-2.5 py-1 text-xs font-semibold hover:border-primary hover:text-primary"} onClick={() => setDiscount(String(value))}>-{value}%</button>)}</div>
+            <Field error={form.errors.startsAt} htmlFor="batch-starts" label="Bắt đầu"><input {...fieldA11y("batch-starts", form.errors.startsAt)} className={inputClassName} type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></Field>
+            <Field error={form.errors.endsAt} htmlFor="batch-ends" label="Kết thúc"><input {...fieldA11y("batch-ends", form.errors.endsAt)} className={inputClassName} type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></Field>
           </div>
           <div className="max-h-80 divide-y divide-border overflow-y-auto rounded-xl border border-border">
             {candidates.map((item) => {
@@ -327,7 +338,7 @@ export function LecturerPromotionScreen() {
                   <input type="checkbox" checked={checked} onChange={() => setSelected((current) => checked ? current.filter((id) => id !== item.courseId) : [...current, item.courseId])} />
                   <CourseCover src={item.coverImageUrl} title={item.title} className="h-12 w-20" />
                   <span className="min-w-0 flex-1"><strong className="block truncate text-sm">{item.title}</strong><span className="text-xs text-muted-foreground">{item.promotion ? "Sẽ cập nhật ưu đãi hiện tại" : "Chưa có khuyến mãi"}</span></span>
-                  <CoursePrice className="text-sm" priceVnd={discountedPrice(item.listPriceVnd, discount)} listPriceVnd={item.listPriceVnd} />
+                  <CoursePrice className="text-sm" priceVnd={discountedPrice(item.listPriceVnd, form.errors.discount ? 0 : toNumber(discount) || 0)} listPriceVnd={item.listPriceVnd} />
                 </label>
               );
             })}

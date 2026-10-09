@@ -162,6 +162,8 @@ export default function SavedPage() {
           setPage(1);
         }}
         searchPlaceholder="Tìm theo tên, mô tả hoặc tác giả..."
+        // `BookmarkQueryDto.q` ≤ 160.
+        searchMaxLength={160}
         activeFilterCount={(type === "all" ? 0 : 1) + (sort === "newest" ? 0 : 1)}
         controls={
           <Select
