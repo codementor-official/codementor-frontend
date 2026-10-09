@@ -293,8 +293,8 @@ export function CommerceScreen() {
       />
       <ReconciliationSummary refreshing={loading || busy} />
       <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <div className="flex max-w-3xl gap-3">
-          <span className="rounded-lg bg-primary/10 p-2 text-primary">
+        <div className="flex max-w-3xl items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <ShieldCheck className="size-5" />
           </span>
           <div>

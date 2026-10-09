@@ -234,7 +234,7 @@ export function PromotionManager() {
         </div>
         <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">{counts.paid} khóa học trả phí · {counts.pending} chờ duyệt · {counts.active} đang áp dụng · {counts.scheduled} sắp diễn ra · {counts.inactive} tạm dừng hoặc đã kết thúc</p>
       </Card>
-      <Card className="grid gap-3 p-4 md:grid-cols-[minmax(240px,1fr)_190px_190px_180px]">
+      <Card className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_190px_190px_180px]">
         <label className="relative"><Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" /><input aria-label="Tìm khóa học khuyến mãi" className="w-full rounded-lg border border-border bg-background py-2 pr-3 pl-9 text-sm" placeholder="Tìm khóa học hoặc giảng viên" value={query} onChange={(event) => { setPage(1); setQuery(event.target.value); }} /></label>
         <select aria-label="Lọc khoảng giá" className={inputClassName} value={priceFilter} onChange={(event) => { setPage(1); setPriceFilter(event.target.value); }}><option value="all">Mọi mức giá</option><option value="free">Miễn phí</option><option value="under_100">Dưới 100.000 ₫</option><option value="100_200">100.000 ₫ – 200.000 ₫</option><option value="over_200">Trên 200.000 ₫</option></select>
         <select aria-label="Lọc trạng thái khuyến mãi" className={inputClassName} value={promotionFilter} onChange={(event) => { setPage(1); setPromotionFilter(event.target.value); }}><option value="all">Mọi khuyến mãi</option><option value="pending">Chờ Admin duyệt</option><option value="none">Chưa có ưu đãi</option><option value="active">Đang áp dụng</option><option value="scheduled">Sắp diễn ra</option><option value="paused">Đang tạm dừng</option><option value="ended">Đã kết thúc</option><option value="rejected">Đã từ chối</option></select>
@@ -246,7 +246,7 @@ export function PromotionManager() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] text-left text-sm">
               <thead className="border-b border-border bg-muted/60 text-xs text-muted-foreground">
-                <tr><th className="px-4 py-3 font-medium">Khóa học</th><th className="px-4 py-3 font-medium">Giảng viên</th><th className="px-4 py-3 font-medium">Giá hiện tại</th><th className="px-4 py-3 font-medium">Chương trình</th><th className="px-4 py-3 font-medium">Trạng thái</th><th className="px-4 py-3 text-right font-medium">Thao tác</th></tr>
+                <tr><th className="px-4 py-3 font-medium">Khóa học</th><th className="px-4 py-3 font-medium">Giảng viên</th><th className="px-4 py-3 font-medium">Giá hiện tại</th><th className="px-4 py-3 font-medium">Chương trình</th><th className="px-4 py-3 font-medium whitespace-nowrap">Trạng thái</th><th className="px-4 py-3 text-right font-medium whitespace-nowrap">Thao tác</th></tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {pagedItems.map((item) => {
@@ -254,11 +254,11 @@ export function PromotionManager() {
                   return (
                     <tr key={item.courseId} className="align-middle hover:bg-muted/30">
                       <td className="px-4 py-3"><div className="flex min-w-64 items-center gap-3"><CourseCover src={item.coverImageUrl} title={item.title} className="h-14 w-24 shrink-0" /><div className="min-w-0"><p className="truncate font-semibold">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.status}</p></div></div></td>
-                      <td className="px-4 py-3 text-muted-foreground">{item.authorName ?? "Chưa có giảng viên"}</td>
-                      <td className="px-4 py-3"><CoursePrice className="text-sm" priceVnd={item.priceVnd} listPriceVnd={item.listPriceVnd} /></td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{item.authorName ?? "Chưa có giảng viên"}</td>
+                      <td className="px-4 py-3 whitespace-nowrap"><CoursePrice className="text-sm" priceVnd={item.priceVnd} listPriceVnd={item.listPriceVnd} /></td>
                       <td className="max-w-64 px-4 py-3"><p className="truncate font-medium">{item.promotionRequest?.status === "pending" ? item.promotionRequest.label : item.promotion?.label ?? "—"}</p>{item.promotion?.endsAt && <p className="mt-1 text-xs text-muted-foreground">Đến {new Date(item.promotion.endsAt).toLocaleString("vi-VN")}</p>}{item.promotionRequest?.status === "rejected" && item.promotionRequest.reviewReason && <p className="mt-1 line-clamp-1 text-xs text-destructive">{item.promotionRequest.reviewReason}</p>}</td>
-                      <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${state === "active" || state === "pending" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{promotionStateLabel[state]}</span></td>
-                      <td className="px-4 py-3"><div className="flex justify-end gap-2">{state === "pending" && <Button onClick={() => review(item)}>Duyệt</Button>}{state === "pending" && item.promotion && <Button variant="outline" onClick={() => edit(item)}>Hiện tại</Button>}{state !== "pending" && <Button disabled={(item.pendingPriceVnd ?? item.listPriceVnd) === 0} variant={item.promotion ? "outline" : "default"} onClick={() => edit(item)}>{(item.pendingPriceVnd ?? item.listPriceVnd) === 0 ? "Miễn phí" : item.promotion ? "Quản lý" : "Thêm ưu đãi"}</Button>}</div></td>
+                      <td className="px-4 py-3 whitespace-nowrap"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${state === "active" || state === "pending" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{promotionStateLabel[state]}</span></td>
+                      <td className="px-4 py-3 whitespace-nowrap"><div className="flex justify-end gap-2">{state === "pending" && <Button onClick={() => review(item)}>Duyệt</Button>}{state === "pending" && item.promotion && <Button variant="outline" onClick={() => edit(item)}>Hiện tại</Button>}{state !== "pending" && <Button disabled={(item.pendingPriceVnd ?? item.listPriceVnd) === 0} variant={item.promotion ? "outline" : "default"} onClick={() => edit(item)}>{(item.pendingPriceVnd ?? item.listPriceVnd) === 0 ? "Miễn phí" : item.promotion ? "Quản lý" : "Thêm ưu đãi"}</Button>}</div></td>
                     </tr>
                   );
                 })}

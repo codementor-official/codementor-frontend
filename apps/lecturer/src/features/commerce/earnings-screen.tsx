@@ -314,7 +314,7 @@ export function EarningsScreen() {
               </Button>
               <select
                 aria-label="Sắp xếp dữ liệu"
-                className="rounded-lg border bg-background px-3 text-sm"
+                className="h-9 min-w-40 rounded-lg border bg-background px-3 text-sm transition-colors focus-visible:border-ring"
                 value={sort}
                 onChange={(event) => {
                   setSort(event.target.value);
@@ -409,7 +409,7 @@ export function EarningsScreen() {
                           "Chi tiết",
                         ]
                   ).map((h) => (
-                    <th className="p-3 font-medium" key={h}>
+                    <th className="whitespace-nowrap p-3 font-medium" key={h}>
                       {h}
                     </th>
                   ))}
@@ -459,7 +459,7 @@ export function EarningsScreen() {
                         </p>
                         <OrderHoldingHint order={o} />
                       </td>
-                      <td className="p-3">
+                      <td className="whitespace-nowrap p-3">
                         <Button
                           variant="outline"
                           onClick={() => setDetail({ type: "order", item: o })}
@@ -474,7 +474,10 @@ export function EarningsScreen() {
                     <tr key={w.id}>
                       <td className="p-3">
                         <p>{new Date(w.createdAt).toLocaleString("vi-VN")}</p>
-                        <p className="max-w-48 break-all text-xs text-muted-foreground">
+                        <p
+                          className="max-w-48 truncate text-xs text-muted-foreground tabular-nums"
+                          title={w.id}
+                        >
                           {w.id}
                         </p>
                       </td>
@@ -492,7 +495,7 @@ export function EarningsScreen() {
                           {w.reason}
                         </p>
                       </td>
-                      <td className="p-3">
+                      <td className="whitespace-nowrap p-3">
                         <Button
                           variant="outline"
                           onClick={() =>
@@ -520,10 +523,13 @@ export function EarningsScreen() {
                         {e.amount > 0 ? "+" : ""}
                         {vnd(e.amount)}
                       </td>
-                      <td className="max-w-48 break-all p-3 text-xs text-muted-foreground">
+                      <td
+                        className="max-w-48 truncate p-3 text-xs text-muted-foreground tabular-nums"
+                        title={e.orderId ?? e.withdrawalId ?? undefined}
+                      >
                         {e.orderId ?? e.withdrawalId}
                       </td>
-                      <td className="p-3">
+                      <td className="whitespace-nowrap p-3">
                         <Button
                           variant="outline"
                           onClick={() => setDetail({ type: "ledger", item: e })}
