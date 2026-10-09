@@ -13,6 +13,9 @@ const LOGOS: Record<string, string> = {
   VPB: "https://cdn.vietqr.io/img/VPB.png",
   TPB: "https://cdn.vietqr.io/img/TPB.png",
   STB: "https://cdn.vietqr.io/img/STB.png",
+  // Ví: file cục bộ do scripts/convert-payment-logos.sh sinh ra.
+  momo: "/payments/momo.webp",
+  vnpay: "/payments/vnpay.webp",
 };
 
 export function BankLogo({ code, fallback }: { code: string; fallback: string }) {

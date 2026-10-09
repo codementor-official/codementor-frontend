@@ -54,6 +54,9 @@
    * `ink-fixed` never flips: a modal scrim is dark in both themes on purpose. */
   --text-2xs: 0.6875rem;
   --color-ink-fixed: #18181b;
+  /* Chữ/icon trên ô màu thương hiệu (ô "Ngân hàng" xanh ở màn rút tiền): trắng ở cả hai
+   * theme. Thiếu token này thì `text-on-ink-fixed` không sinh CSS và icon lấy màu chữ thường. */
+  --color-on-ink-fixed: #ffffff;
 }
 
 /* PHẢI nằm trong `@layer base`. Ở Tailwind v4, CSS không thuộc layer nào sẽ THẮNG mọi
