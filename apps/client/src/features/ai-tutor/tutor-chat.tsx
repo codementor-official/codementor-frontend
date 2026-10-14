@@ -323,7 +323,7 @@ function LiveAnswer({ text, step, sources }: { text: string; step: string; sourc
           <div className="space-y-2 opacity-70">
             <p className="text-xs font-semibold text-text-muted">Trích dẫn · đang đối chiếu với tài liệu</p>
             {quotes.map((item, index) => (
-              <blockquote key={index} className="border-l-2 border-border pl-3 text-sm leading-7 text-text">
+              <blockquote key={index} className="whitespace-pre-wrap border-l-2 border-border pl-3 text-sm leading-7 text-text">
                 {item.quote}
                 {item.sourceId ? ` [${item.sourceId}]` : ""}
               </blockquote>

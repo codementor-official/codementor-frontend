@@ -41,9 +41,10 @@ export function splitAnswer(raw: string): StreamingAnswer {
     .map((block) =>
       block
         .split("\n")
-        .map((line) => line.trim().replace(/^>\s?/, ""))
-        .filter(Boolean)
-        .join(" ")
+        // Giữ xuống dòng và thụt lề sau `>` — trích một đoạn code phải còn là code.
+        .map((line) => (line.trimStart().startsWith(">") ? line.trim().replace(/^>[ \t]?/, "") : line.trim()).trimEnd())
+        .filter((line) => line.trim())
+        .join("\n")
         .trim(),
     )
     .filter(Boolean)

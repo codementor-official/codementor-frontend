@@ -20,7 +20,7 @@ assert.deepEqual(
   splitAnswer(`${QUOTES}\n> "Stack dùng\n> LIFO." [S1]\n\n> Queue dùng FIFO. [S2]\n\n> đang viết${EXPLAIN}\nGiải thích.`),
   {
     quotes: [
-      { sourceId: "S1", quote: "Stack dùng LIFO." },
+      { sourceId: "S1", quote: "Stack dùng\nLIFO." },
       { sourceId: "S2", quote: "Queue dùng FIFO." },
       { sourceId: null, quote: "đang viết" },
     ],
@@ -44,3 +44,8 @@ assert.deepEqual(splitAnswer("<<<TRICH_DAN>>\n> LIFO [S1]\n<<< GIAI_THICH >>\nGi
 });
 
 console.log("answer-format: ok");
+
+// Trích một đoạn code: giữ xuống dòng và thụt lề.
+assert.deepEqual(splitAnswer(`${QUOTES}\n> \`\`\`python\n> def f(n):\n>     return n\n> \`\`\`\n> [S1]`).quotes, [
+  { sourceId: "S1", quote: "```python\ndef f(n):\n    return n\n```" },
+]);
