@@ -220,6 +220,7 @@ function TutorWorkspace({
   const [page, setPage] = useState(1);
   const [input, setInput] = useState("");
   const composer = useRef<HTMLTextAreaElement>(null);
+  const [pending, setPending] = useState(false);
   const status = useAiResource(
     `status:${slug}`,
     useCallback(
@@ -236,6 +237,8 @@ function TutorWorkspace({
           : Promise.resolve(emptyPage<AiDocument>()),
       [slug, page, query],
     ),
+    // Đang có tài liệu được index thì làm mới nhãn tới khi xong; không thì không poll.
+    pending ? 2000 : 0,
   );
   const ready = Boolean(status.data?.configured);
   const busy = tutor.running || tutor.opening;
@@ -247,6 +250,15 @@ function TutorWorkspace({
     return () => setLocked(false);
   }, [busy, setLocked]);
 
+  const preparing = Boolean(
+    documents.data?.items.some(
+      (doc) => doc.state === "queued" || doc.state === "processing",
+    ),
+  );
+  // `poll` của `documents` phụ thuộc chính dữ liệu của nó: giữ cờ trong state, chỉnh ngay lúc
+  // render (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
+  if (preparing !== pending) setPending(preparing);
+
   // Lượt vừa xong thì tài liệu vừa được chuẩn bị: làm mới nhãn "Sẵn sàng hỏi đáp".
   const refreshDocuments = documents.refresh;
   const wasRunning = useRef(false);
@@ -255,6 +267,15 @@ function TutorWorkspace({
     wasRunning.current = tutor.running;
   }, [tutor.running, refreshDocuments]);
 
+  function choose(doc: AiDocument, on: boolean) {
+    tutor.toggleDocument({ id: doc.id, title: doc.title }, on);
+    // Index ngay khi chọn: tài liệu được chuẩn bị trong lúc người dùng gõ câu hỏi, nên lượt hỏi
+    // đầu thường không phải chờ. Lượt index vẫn trừ hạn mức như khi hỏi, chỉ sớm hơn.
+    if (on && doc.state === "not_indexed")
+      api.ai
+        .index(slug, doc.id)
+        .then(refreshDocuments, (cause) => toast.error(aiError(cause)));
+  }
   function suggest(prompt: string) {
     setInput(prompt);
     composer.current?.focus();
@@ -456,10 +477,7 @@ function TutorWorkspace({
                             (!isSelected(doc.id) && selectedCount >= MAX_DOCUMENTS)
                           }
                           onChange={(event) =>
-                            tutor.toggleDocument(
-                              { id: doc.id, title: doc.title },
-                              event.target.checked,
-                            )
+                            choose(doc, event.target.checked)
                           }
                         />
                         <span className="min-w-0">
