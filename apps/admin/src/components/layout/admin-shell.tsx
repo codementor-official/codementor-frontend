@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import { AdminTopbar } from "@/components/layout/admin-topbar";
 import { ModerationQueueProvider } from "@/features/moderation/queue-provider";
@@ -38,7 +38,10 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopbar onMobileMenu={() => setMobileOpen(true)} />
-        <main className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+          {/* useUrlState (useSearchParams) on list screens needs a boundary above it. */}
+          <Suspense fallback={null}>{children}</Suspense>
+        </main>
       </div>
     </div>
     </ModerationQueueProvider>

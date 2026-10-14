@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, FieldError, fieldA11y, ManagePage, Modal, ReasonButton, RejectDialogButton, Select, StatusBadge, useFieldErrors, useToast } from "@codementor/ui";
+import { Button, FieldError, fieldA11y, ManagePage, Modal, ReasonButton, RejectDialogButton, Select, StatusBadge, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
 import { length } from "@codementor/utils";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
@@ -60,8 +60,8 @@ export function ArticlesPage() {
   const request = useAdminApi();
   const toast = useToast();
   const [rows, setRows] = useState<AdminArticle[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [search, setSearch] = useUrlState("q", "");
+  const [status, setStatus] = useUrlState("status", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

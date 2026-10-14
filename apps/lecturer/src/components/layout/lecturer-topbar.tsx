@@ -53,7 +53,7 @@ export function LecturerTopbar({ onMobileMenu }: { onMobileMenu: () => void }) {
           </button>
         </>
       }
-      breadcrumb={<Breadcrumb items={breadcrumbFor(pathname, breadcrumbTitles)} />}
+      breadcrumb={<Breadcrumb items={breadcrumbFor(pathname, breadcrumbTitles)} appName="CodeMentor Lecturer" />}
       onMobileMenu={onMobileMenu}
     />
   );

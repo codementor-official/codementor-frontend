@@ -28,7 +28,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Topbar />
         <EmailVerificationBanner />
         <AppContent>
-          <RequireAuth>{children}</RequireAuth>
+          <RequireAuth>
+            {/* useUrlState (useSearchParams) on list screens needs a boundary above it. */}
+            <Suspense fallback={null}>{children}</Suspense>
+          </RequireAuth>
         </AppContent>
       </div>
       <OnboardingModal />

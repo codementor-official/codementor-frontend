@@ -19,6 +19,7 @@ import {
   type Table as TanstackTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsUpDown, Inbox } from "lucide-react";
+import { useUrlState } from "./use-url-state";
 
 /** Ticks the header/row checkboxes. Native input so keyboard + indeterminate come free. */
 export function TableCheckbox({
@@ -233,16 +234,28 @@ export function useDataTable<TData>({
   /** Cột nào ẩn khỏi bảng, theo id. Cột ẩn vẫn nằm trong file xuất CSV — chỗ dùng là
    * những trường dài (email, id) làm chật bảng nhưng lại cần khi mở bằng Excel. */
   columnVisibility?: Record<string, boolean>;
-  /** Rows per page. */
+  /** Rows per page. Controlled: pass the fitted value, don't call `table.setPageSize`. */
   pageSize?: number;
 }) {
+  // Trang hiện tại nằm trên URL (`?page=`) để mở một dòng rồi bấm Back vẫn về đúng trang.
+  // Số dòng mỗi trang thì không: nó đo theo màn hình (`useFittedPageSize`) và được truyền
+  // vào thẳng — gọi `table.setPageSize` sẽ khiến TanStack tự dời pageIndex, làm lệch trang
+  // vừa khôi phục.
+  const [page, setPage] = useUrlState("page", 1);
+  const lastIndex = Math.max(0, Math.ceil(data.length / pageSize) - 1);
+  // Chưa có dữ liệu (đang tải) thì chưa kẹp, nếu không trang khôi phục luôn bị kéo về 1.
+  const pageIndex = data.length ? Math.min(page - 1, lastIndex) : page - 1;
   return useReactTable({
     data,
     columns,
     initialState: {
       sorting: initialSorting,
       columnVisibility,
-      pagination: { pageIndex: 0, pageSize },
+    },
+    state: { pagination: { pageIndex, pageSize } },
+    onPaginationChange: (updater) => {
+      const next = typeof updater === "function" ? updater({ pageIndex, pageSize }) : updater;
+      setPage(next.pageIndex + 1);
     },
     getRowId,
     enableRowSelection: true,

@@ -22,6 +22,7 @@ import {
   buttonClassName,
   useToast,
   useUndoableDelete,
+  useUrlState,
 } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
 import { api } from "@/lib/api";
@@ -56,11 +57,11 @@ function RoadmapsPageContent() {
   const openId = useSearchParams().get("open");
 
   const toast = useToast();
-  const [tab, setTab] = useState<Tab>("mine");
+  const [tab, setTab] = useUrlState<Tab>("tab", "mine");
   const [rows, setRows] = useState<RoadmapListItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [field, setField] = useState("");
-  const [status, setStatus] = useState("");
+  const [search, setSearch] = useUrlState("q", "");
+  const [field, setField] = useUrlState("field", "");
+  const [status, setStatus] = useUrlState("status", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

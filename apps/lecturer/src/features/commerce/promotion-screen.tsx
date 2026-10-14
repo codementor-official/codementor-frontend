@@ -18,6 +18,7 @@ import {
   ServerPagination,
   useFieldErrors,
   useToast,
+  useUrlState,
 } from "@codementor/ui";
 import { promotion as promotionRule, toNumber } from "@codementor/utils";
 import { inputClassName } from "@/components/form/field";
@@ -81,10 +82,10 @@ export function LecturerPromotionScreen() {
   const [items, setItems] = useState<CoursePromotionProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
-  const [sort, setSort] = useState("title");
-  const [page, setPage] = useState(1);
+  const [query, setQuery] = useUrlState("q", "");
+  const [filter, setFilter] = useUrlState("filter", "all");
+  const [sort, setSort] = useUrlState("sort", "title");
+  const [page, setPage] = useUrlState("page", 1);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);

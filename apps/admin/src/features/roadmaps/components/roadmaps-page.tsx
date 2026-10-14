@@ -24,7 +24,7 @@ import {
   LEVELS,
   LEVEL_LABELS,
 } from "@codementor/types";
-import { Button, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
+import { Button, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
@@ -43,14 +43,14 @@ export function RoadmapsPage() {
   const lecturers = useLecturerOptions();
 
   const [rows, setRows] = useState<AdminRoadmapListItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [field, setField] = useState("");
-  const [level, setLevel] = useState("");
-  const [authorId, setAuthorId] = useState("");
-  const [updatedFrom, setUpdatedFrom] = useState("");
-  const [updatedTo, setUpdatedTo] = useState("");
-  const [view, setView] = useState<ViewMode>("table");
+  const [search, setSearch] = useUrlState("q", "");
+  const [status, setStatus] = useUrlState("status", "");
+  const [field, setField] = useUrlState("field", "");
+  const [level, setLevel] = useUrlState("level", "");
+  const [authorId, setAuthorId] = useUrlState("author", "");
+  const [updatedFrom, setUpdatedFrom] = useUrlState("from", "");
+  const [updatedTo, setUpdatedTo] = useUrlState("to", "");
+  const [view, setView] = useUrlState<ViewMode>("view", "table");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

@@ -32,7 +32,7 @@ import {
   X,
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
-import { CharCount, FieldError, fieldA11y, Modal, ReasonField, Select, StatStrip, useFieldErrors, useToast } from "@codementor/ui";
+import { CharCount, FieldError, fieldA11y, Modal, ReasonField, Select, StatStrip, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
 import { dateRange, length, reason as reasonRule, search as searchRule } from "@codementor/utils";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
@@ -1143,10 +1143,10 @@ function Progress({
   slug: string;
   overview: WorkspaceOverview | null;
 }) {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [sort, setSort] = useState("progress");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useUrlState("pQ", "");
+  const [status, setStatus] = useUrlState("pStatus", "");
+  const [sort, setSort] = useUrlState("pSort", "progress");
+  const [page, setPage] = useUrlState("pPage", 1);
   const [selected, setSelected] = useState<WorkspaceMember | null>(null);
   if (!overview)
     return (
@@ -1818,14 +1818,14 @@ function Members({
     canManage: false,
     canViewPrivate: false,
   });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [role, setRole] = useState("");
-  const [progress, setProgress] = useState("");
-  const [activityLevel, setActivityLevel] = useState("");
-  const [submissionStatus, setSubmissionStatus] = useState("");
-  const [joinedFrom, setJoinedFrom] = useState("");
-  const [joinedTo, setJoinedTo] = useState("");
+  const [page, setPage] = useUrlState("mPage", 1);
+  const [search, setSearch] = useUrlState("mQ", "");
+  const [role, setRole] = useUrlState("mRole", "");
+  const [progress, setProgress] = useUrlState("mProgress", "");
+  const [activityLevel, setActivityLevel] = useUrlState("mActivity", "");
+  const [submissionStatus, setSubmissionStatus] = useUrlState("mSubmission", "");
+  const [joinedFrom, setJoinedFrom] = useUrlState("mFrom", "");
+  const [joinedTo, setJoinedTo] = useUrlState("mTo", "");
   // `ListMembersQueryDto.search` ≤ 200; khoảng ngày tham gia từ ≤ đến.
   const memberSearchError = searchRule(search, 200);
   const joinedRangeError = dateRange(joinedFrom, joinedTo, { label: "Ngày tham gia đến" });
@@ -1873,6 +1873,7 @@ function Members({
     progress,
     role,
     search,
+    setPage,
     slug,
     submissionStatus,
     toast,

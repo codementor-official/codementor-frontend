@@ -22,7 +22,7 @@ import {
   type CommerceOrder,
   type PurchaseDetail,
 } from "@codementor/types";
-import { CourseCover, FieldError, fieldA11y, Modal, ServerPagination, useToast } from "@codementor/ui";
+import { CourseCover, FieldError, fieldA11y, Modal, ServerPagination, useToast, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,11 +47,11 @@ function orderCode(id: string): string {
 }
 
 export function PurchasesScreen({ orderId }: { orderId?: string }) {
-  const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("");
-  const [sort, setSort] = useState("newest");
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
+  const [page, setPage] = useUrlState("page", 1);
+  const [status, setStatus] = useUrlState("status", "");
+  const [sort, setSort] = useUrlState("sort", "newest");
+  const [query, setQuery] = useUrlState("q", "");
+  const [search, setSearch] = useState(query);
   // `CommercePage.q` 1–100; trống = không lọc.
   const searchError = searchRule(search, 100);
   const [list, setList] = useState<CommercePage<CommerceOrder> | null>(null);

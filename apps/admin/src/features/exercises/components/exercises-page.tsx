@@ -18,7 +18,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { DIFFICULTIES, DIFFICULTY_LABELS, STATUS_LABELS, STATUS_TONES } from "@codementor/solve";
-import { Button, ConfirmButton, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode } from "@codementor/ui";
+import { Button, ConfirmButton, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
@@ -37,13 +37,13 @@ export function ExercisesPage() {
   const lecturers = useLecturerOptions();
 
   const [rows, setRows] = useState<AdminExerciseListItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [difficulty, setDifficulty] = useState("");
-  const [authorId, setAuthorId] = useState("");
-  const [updatedFrom, setUpdatedFrom] = useState("");
-  const [updatedTo, setUpdatedTo] = useState("");
-  const [view, setView] = useState<ViewMode>("table");
+  const [search, setSearch] = useUrlState("q", "");
+  const [status, setStatus] = useUrlState("status", "");
+  const [difficulty, setDifficulty] = useUrlState("difficulty", "");
+  const [authorId, setAuthorId] = useUrlState("author", "");
+  const [updatedFrom, setUpdatedFrom] = useUrlState("from", "");
+  const [updatedTo, setUpdatedTo] = useUrlState("to", "");
+  const [view, setView] = useUrlState<ViewMode>("view", "table");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

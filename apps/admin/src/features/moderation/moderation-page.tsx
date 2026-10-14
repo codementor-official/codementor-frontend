@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Archive, BadgePercent, CheckCheck, ShieldCheck, Undo2, XCircle } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Button, ConfirmButton, CourseCover, formatVndPrice, ManagePage, RejectDialogButton, Select, StatusBadge } from "@codementor/ui";
+import { Button, ConfirmButton, CourseCover, formatVndPrice, ManagePage, RejectDialogButton, Select, StatusBadge, useUrlState } from "@codementor/ui";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, type ContentStatus, type CoursePromotionProduct } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi } from "@/lib/api";
@@ -37,8 +37,8 @@ export function ModerationPage() {
   const { pendingTotal, refreshPending } = useModerationQueue();
 
   const [tray, setTray] = useState<ModerationTray>("pending");
-  const [kind, setKind] = useState<ContentKind | "">("");
-  const [search, setSearch] = useState("");
+  const [kind, setKind] = useUrlState<ContentKind | "">("kind", "");
+  const [search, setSearch] = useUrlState("q", "");
   const [onlyStale, setOnlyStale] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

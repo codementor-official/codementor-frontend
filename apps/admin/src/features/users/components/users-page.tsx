@@ -14,7 +14,7 @@ import {
   Users,
   UserX,
 } from "lucide-react";
-import { Button, ManagePage, Select, StatusBadge, useToast } from "@codementor/ui";
+import { Button, ManagePage, Select, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { CreateUserModal } from "@/features/users/components/create-user-modal";
 import { UserDetailDrawer } from "@/features/users/components/user-detail-drawer";
@@ -52,9 +52,9 @@ export function UsersPage() {
   const request = useAdminApi();
   const toast = useToast();
   const [rows, setRows] = useState<AdminUser[]>([]);
-  const [search, setSearch] = useState("");
-  const [role, setRole] = useState("");
-  const [status, setStatus] = useState("");
+  const [search, setSearch] = useUrlState("q", "");
+  const [role, setRole] = useUrlState("role", "");
+  const [status, setStatus] = useUrlState("status", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

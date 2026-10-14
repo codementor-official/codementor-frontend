@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Clock3, Code2, FileCode2, Target } from "lucide-react";
-import { FilterBar, Select, StatStrip } from "@codementor/ui";
+import { FilterBar, Select, StatStrip, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { StreakCard } from "@/components/streak-card";
 import { Card } from "@/components/ui/card";
@@ -81,15 +81,18 @@ function ExerciseRow({ item, number }: { item: ExerciseSummary; number: number }
 }
 
 export default function PracticePage() {
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
-  const [kind, setKind] = useState("all");
-  const [difficulty, setDifficulty] = useState("all");
-  const [progress, setProgress] = useState("all");
-  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [query, setQuery] = useUrlState("q", "");
+  const [search, setSearch] = useState(query);
+  const [kind, setKind] = useUrlState("kind", "all");
+  const [difficulty, setDifficulty] = useUrlState("difficulty", "all");
+  const [progress, setProgress] = useUrlState("progress", "all");
+  const [topicsParam, setTopicsParam] = useUrlState("topics", "");
+  const selectedTopicIds = useMemo(() => (topicsParam ? topicsParam.split(",") : []), [topicsParam]);
+  const setSelectedTopicIds = useCallback((ids: string[]) => setTopicsParam(ids.join(",")), [setTopicsParam]);
   const [topics, setTopics] = useState<ExerciseTopicSummary[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
   const [topicsError, setTopicsError] = useState<string | null>(null);
+  // Phân trang bằng cursor: không khôi phục số trang được khi chưa có cursor các trang trước.
   const [page, setPage] = useState(1);
   const [cursors, setCursors] = useState<Array<string | undefined>>([undefined]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -110,7 +113,7 @@ export default function PracticePage() {
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(search.trim()), 350);
     return () => window.clearTimeout(timer);
-  }, [search]);
+  }, [search, setQuery]);
 
   const load = useCallback(async () => {
     const sequence = ++requestSequence.current;
@@ -175,7 +178,7 @@ export default function PracticePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [setSelectedTopicIds]);
 
   const streakDays = useMemo(() => {
     const counts = new Map((calendar?.days ?? []).map((day) => [day.date, day.count]));

@@ -35,6 +35,7 @@ import {
   StatusBadge,
   buttonClassName,
   useFieldErrors,
+  useUrlState,
 } from "@codementor/ui";
 import { length } from "@codementor/utils";
 import { PageBody } from "@/components/page/page-body";
@@ -74,8 +75,8 @@ function ArticlesPageContent() {
   // của đúng bài viết đó thay vì chỉ về danh sách trống trơn.
   const openId = useSearchParams().get("open");
   const [rows, setRows] = useState<ArticleListItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [search, setSearch] = useUrlState("q", "");
+  const [status, setStatus] = useUrlState("status", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

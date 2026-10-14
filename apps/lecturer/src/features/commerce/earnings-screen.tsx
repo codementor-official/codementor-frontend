@@ -21,6 +21,7 @@ import {
   SegmentedTabs,
   ServerPagination,
   StatStrip,
+  useUrlState,
 } from "@codementor/ui";
 import {
   COMMERCE_INCOME_STATUS,
@@ -54,12 +55,12 @@ type Detail =
   | { type: "ledger"; item: CommerceLedgerEntry };
 export function EarningsScreen() {
   const [wallet, setWallet] = useState<WalletSummary | null>(null);
-  const [tab, setTab] = useState<Tab>("overview");
-  const [days, setDays] = useState(30);
+  const [tab, setTab] = useUrlState<Tab>("tab", "overview");
+  const [days, setDays] = useUrlState("days", 30);
   const [dateRange, setDateRange] = useState<RevenueDateRange | null>(null);
   const [report, setReport] = useState<RevenueReport | null>(null);
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState("newest");
+  const [page, setPage] = useUrlState("page", 1);
+  const [sort, setSort] = useUrlState("sort", "newest");
   const [detail, setDetail] = useState<Detail | null>(null);
   const [help, setHelp] = useState(false);
   const [orders, setOrders] = useState<CommercePage<CommerceOrder> | null>(
@@ -252,63 +253,100 @@ export function EarningsScreen() {
           {error}
         </p>
       )}
-      {wallet && tab !== "overview" && (
+      {/* Thanh tab đứng trên mọi nội dung: trước đây số dư, giải thích và form rút tiền
+          nằm phía trên nó và đổi theo tab, nên mỗi lần bấm tab thanh tab tự nhảy xuống. */}
+      <SegmentedTabs
+        onChange={(key) => {
+          setTab(key as Tab);
+          setPage(1);
+        }}
+        options={[
+          { value: "overview", label: "Tổng quan doanh thu" },
+          { value: "orders", label: "Đơn hàng" },
+          { value: "withdrawals", label: "Yêu cầu rút" },
+          { value: "ledger", label: "Biến động số dư" },
+        ]}
+        value={tab}
+      />
+      {tab === "overview" ? (
+        // Không bọc Card: RevenueOverview đã tự có khung, bọc thêm thành card lồng card.
+        <RevenueOverview
+          defaultView="overview"
+          report={report}
+          days={days}
+          onDaysChange={setDays}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          loading={loading || loadedScope !== scopeKey}
+          extraViews={[
+            {
+              id: "balances",
+              label: "Số dư & khả năng rút",
+              content: <LecturerRevenueBalances wallet={wallet} />,
+            },
+          ]}
+          onExport={() =>
+            report &&
+            downloadCsv(
+              "bao-cao-doanh-thu.csv",
+              [
+                "Ngày (giờ Việt Nam)",
+                "Số đơn đã thanh toán",
+                "Giá trị đơn",
+                "Doanh thu giảng viên trước phí",
+                "Hoàn tiền của đơn trong kỳ",
+              ],
+              report.daily.map((d) => [
+                d.date,
+                d.orders,
+                d.gross,
+                d.revenue,
+                d.refunded,
+              ]),
+            )
+          }
+        />
+      ) : (
         <>
-          <StatStrip
-            stats={[
-              ["pending", "Doanh thu đang chờ"],
-              ["available", "Sẵn sàng rút"],
-              ["reserved", "Đang xử lý rút"],
-              ["paid", "Đã chi trả"],
-            ].map(([key, label]) => ({
-              label,
-              value: vnd(wallet.balances[key] ?? 0),
-            }))}
-          />
-          <p className="text-sm text-muted-foreground">
-            Chính sách hiện tại: bạn nhận {wallet.policy.instructorBps / 100}%
-            trên đơn mới; giữ doanh thu{" "}
-            {formatHoldingPeriod(
-              wallet.policy.holdMinutes ?? wallet.policy.holdDays * 1440,
-            )}{" "}
-            tính từ khi xác nhận thanh toán. Hết thời gian giữ vẫn cần đối soát
-            và đủ điều kiện hoàn tiền trước khi mở số dư. Đơn cũ giữ cả tỷ lệ và
-            thời gian đã lưu; xem ngày dự kiến trong chi tiết đơn.
-          </p>
-          {(wallet.balances.refund_held > 0 || wallet.balances.debt < 0) && (
-            <Card className="p-4 text-sm">
-              Giữ để hoàn tiền: {vnd(wallet.balances.refund_held)} · Cần bù trừ
-              từ thu nhập sau: {vnd(-wallet.balances.debt)}
-            </Card>
-          )}
-          {tab === "withdrawals" && (
-            <WithdrawalForm wallet={wallet} refresh={load} />
-          )}
-        </>
-      )}
-      {wallet && <HoldingExplanation wallet={wallet} />}
-      <Card>
-        <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
-          {/* Cùng kiểu tab với mọi màn khác: bốn nút đặc/viền rời nhau trước đây đọc như bốn
-              hành động chứ không phải bốn góc nhìn của một dữ liệu. */}
-          <SegmentedTabs
-            onChange={(key) => {
-              setTab(key as Tab);
-              setPage(1);
-            }}
-            options={[
-              { value: "overview", label: "Tổng quan doanh thu" },
-              { value: "orders", label: "Đơn hàng" },
-              { value: "withdrawals", label: "Yêu cầu rút" },
-              { value: "ledger", label: "Biến động số dư" },
-            ]}
-            value={tab}
-          />
-          {tab !== "overview" && (
+          {wallet && (
             <>
+              <StatStrip
+                stats={[
+                  ["pending", "Doanh thu đang chờ"],
+                  ["available", "Sẵn sàng rút"],
+                  ["reserved", "Đang xử lý rút"],
+                  ["paid", "Đã chi trả"],
+                ].map(([key, label]) => ({
+                  label,
+                  value: vnd(wallet.balances[key] ?? 0),
+                }))}
+              />
+              <p className="text-sm text-muted-foreground">
+                Chính sách hiện tại: bạn nhận {wallet.policy.instructorBps / 100}%
+                trên đơn mới; giữ doanh thu{" "}
+                {formatHoldingPeriod(
+                  wallet.policy.holdMinutes ?? wallet.policy.holdDays * 1440,
+                )}{" "}
+                tính từ khi xác nhận thanh toán. Hết thời gian giữ vẫn cần đối soát
+                và đủ điều kiện hoàn tiền trước khi mở số dư. Đơn cũ giữ cả tỷ lệ và
+                thời gian đã lưu; xem ngày dự kiến trong chi tiết đơn.
+              </p>
+              {(wallet.balances.refund_held > 0 || wallet.balances.debt < 0) && (
+                <Card className="p-4 text-sm">
+                  Giữ để hoàn tiền: {vnd(wallet.balances.refund_held)} · Cần bù trừ
+                  từ thu nhập sau: {vnd(-wallet.balances.debt)}
+                </Card>
+              )}
+              <HoldingExplanation wallet={wallet} />
+              {tab === "withdrawals" && (
+                <WithdrawalForm wallet={wallet} refresh={load} />
+              )}
+            </>
+          )}
+          <Card>
+            <div className="flex flex-wrap items-center justify-end gap-2 border-b border-border p-3">
               <Button
                 variant="outline"
-                className="ml-auto"
                 disabled={!current?.items.length}
                 onClick={exportCurrent}
               >
@@ -328,49 +366,8 @@ export function EarningsScreen() {
                 <option value="amount_high">Số tiền cao nhất</option>
                 <option value="amount_low">Số tiền thấp nhất</option>
               </select>
-            </>
-          )}
-        </div>
-        {tab === "overview" ? (
-          <div className="p-4">
-            <RevenueOverview
-              defaultView="all"
-              report={report}
-              days={days}
-              onDaysChange={setDays}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-              loading={loading || loadedScope !== scopeKey}
-              extraViews={[
-                {
-                  id: "balances",
-                  label: "Số dư & khả năng rút",
-                  content: <LecturerRevenueBalances wallet={wallet} />,
-                },
-              ]}
-              onExport={() =>
-                report &&
-                downloadCsv(
-                  "bao-cao-doanh-thu.csv",
-                  [
-                    "Ngày (giờ Việt Nam)",
-                    "Số đơn đã thanh toán",
-                    "Giá trị đơn",
-                    "Doanh thu giảng viên trước phí",
-                    "Hoàn tiền của đơn trong kỳ",
-                  ],
-                  report.daily.map((d) => [
-                    d.date,
-                    d.orders,
-                    d.gross,
-                    d.revenue,
-                    d.refunded,
-                  ]),
-                )
-              }
-            />
-          </div>
-        ) : loading ? (
+            </div>
+        {loading ? (
           <p
             className="p-8 text-center text-sm text-muted-foreground"
             role="status"
@@ -545,16 +542,16 @@ export function EarningsScreen() {
             </table>
           </div>
         )}
-        {tab !== "overview" && (
-          <ServerPagination
+        <ServerPagination
             page={page}
             total={current?.total ?? 0}
             pageSize={current?.limit ?? 20}
             disabled={loading}
             onPageChange={setPage}
           />
-        )}
-      </Card>
+          </Card>
+        </>
+      )}
       <Modal
         open={help}
         onClose={() => setHelp(false)}

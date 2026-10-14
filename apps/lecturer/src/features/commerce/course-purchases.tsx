@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Button, Card, FieldError, fieldA11y, Modal, ServerPagination } from "@codementor/ui";
+import { Button, Card, FieldError, fieldA11y, Modal, ServerPagination, useUrlState } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import {
   COMMERCE_INCOME_STATUS,
@@ -20,14 +20,14 @@ import { Download, Eye, Printer } from "lucide-react";
 import { earningsApi, vnd } from "./api";
 
 export function CoursePurchases({ courseId }: { courseId: string }) {
-  const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("");
-  const [sort, setSort] = useState("newest");
+  const [page, setPage] = useUrlState("buyerPage", 1);
+  const [status, setStatus] = useUrlState("buyerStatus", "");
+  const [sort, setSort] = useUrlState("buyerSort", "newest");
   const [detail, setDetail] = useState<CommerceOrder | null>(null);
-  const [search, setSearch] = useState("");
+  const [query, setQuery] = useUrlState("buyerQ", "");
+  const [search, setSearch] = useState(query);
   // `CommercePage.q` nhận 1–100 ký tự; trống = không lọc.
   const searchError = searchRule(search, 100);
-  const [query, setQuery] = useState("");
   const [data, setData] = useState<CoursePurchasePage | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { Flag } from "lucide-react";
-import { ManagePage, RejectDialogButton, Select, StatusBadge, useToast } from "@codementor/ui";
+import { ManagePage, RejectDialogButton, Select, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import {
   reportsApi,
@@ -23,10 +23,10 @@ export function ReportsPage() {
   const request = useAdminApi();
   const toast = useToast();
   const [rows, setRows] = useState<AdminContentReport[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<ReportStatus | "">("PENDING");
-  const [targetType, setTargetType] = useState<ReportTargetType | "">("");
-  const [category, setCategory] = useState<ReportCategory | "">("");
+  const [search, setSearch] = useUrlState("q", "");
+  const [status, setStatus] = useUrlState<ReportStatus | "">("status", "PENDING");
+  const [targetType, setTargetType] = useUrlState<ReportTargetType | "">("target", "");
+  const [category, setCategory] = useUrlState<ReportCategory | "">("category", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -62,7 +62,7 @@ export function AdminTopbar({ onMobileMenu }: { onMobileMenu: () => void }) {
           </button>
         </>
       }
-      breadcrumb={<Breadcrumb items={breadcrumbFor(pathname)} />}
+      breadcrumb={<Breadcrumb items={breadcrumbFor(pathname)} appName="CodeMentor Admin" />}
       onMobileMenu={onMobileMenu}
     />
   );

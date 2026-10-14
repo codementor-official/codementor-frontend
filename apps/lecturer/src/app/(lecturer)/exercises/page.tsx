@@ -35,6 +35,7 @@ import {
   buttonClassName,
   useToast,
   useUndoableDelete,
+  useUrlState,
 } from "@codementor/ui";
 import { ApiClientError } from "@codementor/api-client";
 import ReactMarkdown from "react-markdown";
@@ -73,11 +74,11 @@ function ExercisesPageContent() {
   const openId = useSearchParams().get("open");
 
   const toast = useToast();
-  const [tab, setTab] = useState<Tab>("mine");
+  const [tab, setTab] = useUrlState<Tab>("tab", "mine");
   const [rows, setRows] = useState<ExerciseListItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [difficulty, setDifficulty] = useState("");
-  const [status, setStatus] = useState("");
+  const [search, setSearch] = useUrlState("q", "");
+  const [difficulty, setDifficulty] = useUrlState("difficulty", "");
+  const [status, setStatus] = useUrlState("status", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);

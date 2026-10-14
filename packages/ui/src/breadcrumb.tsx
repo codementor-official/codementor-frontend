@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 
 export interface BreadcrumbItem {
@@ -17,10 +20,24 @@ export interface BreadcrumbItem {
 export function Breadcrumb({
   items,
   className = "",
+  appName,
 }: {
   items: BreadcrumbItem[];
   className?: string;
+  /** Set to also name the browser tab "<current page> · <appName>" — every tab used to
+   *  read just the app name, so tabs and history were indistinguishable. */
+  appName?: string;
 }) {
+  const current = items.at(-1)?.label;
+  useEffect(() => {
+    if (!appName) return;
+    document.title = current ? `${current} · ${appName}` : appName;
+    // Leaving the shell (solve screen, login) must not keep the last page's name.
+    return () => {
+      document.title = appName;
+    };
+  }, [appName, current]);
+
   if (items.length === 0) return null;
 
   return (

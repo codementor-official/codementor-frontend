@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { BookOpen } from "lucide-react";
-import { FilterBar, Select, SegmentedTabs, StatStrip } from "@codementor/ui";
+import { FilterBar, Select, SegmentedTabs, StatStrip, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { CourseCard } from "@/components/course-card";
 import { RecommendedCourses } from "@/components/recommendation/recommended";
@@ -32,17 +32,19 @@ const PAGE_SIZE = 8;
 
 export default function CoursesPage() {
   const { status: authStatus } = useAuth();
-  const [tab, setTab] = useState<"all" | "mine">("all");
-  const [search, setSearch] = useState("");
-  const [level, setLevel] = useState("all");
-  const [priceRange, setPriceRange] = useState("all");
-  const [promotion, setPromotion] = useState("all");
-  const [sort, setSort] = useState("recommended");
-  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [tab, setTab] = useUrlState<"all" | "mine">("tab", "all");
+  const [search, setSearch] = useUrlState("q", "");
+  const [level, setLevel] = useUrlState("level", "all");
+  const [priceRange, setPriceRange] = useUrlState("price", "all");
+  const [promotion, setPromotion] = useUrlState("promotion", "all");
+  const [sort, setSort] = useUrlState("sort", "recommended");
+  const [topicsParam, setTopicsParam] = useUrlState("topics", "");
+  const selectedTopicIds = useMemo(() => (topicsParam ? topicsParam.split(",") : []), [topicsParam]);
+  const setSelectedTopicIds = useCallback((ids: string[]) => setTopicsParam(ids.join(",")), [setTopicsParam]);
   const [topics, setTopics] = useState<CatalogueTopicSummary[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
   const [topicsError, setTopicsError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useUrlState("page", 1);
 
   const mine = useMyCourses(authStatus === "authenticated");
 

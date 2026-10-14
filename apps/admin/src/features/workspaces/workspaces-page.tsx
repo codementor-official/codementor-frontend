@@ -15,6 +15,7 @@ import {
   Select,
   StatusBadge,
   useToast,
+  useUrlState,
 } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip } from "@codementor/ui";
@@ -31,9 +32,9 @@ export function WorkspacesPage() {
   const toast = useToast();
   const [rows, setRows] = useState<AdminWorkspace[]>([]);
   const [summary, setSummary] = useState<AdminWorkspaceSummary | null>(null);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("active");
-  const [privacy, setPrivacy] = useState("");
+  const [search, setSearch] = useUrlState("q", "");
+  const [status, setStatus] = useUrlState("status", "active");
+  const [privacy, setPrivacy] = useUrlState("privacy", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

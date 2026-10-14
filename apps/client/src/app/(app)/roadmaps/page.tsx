@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Map as MapIcon } from "lucide-react";
-import { FilterBar, Select, StatStrip } from "@codementor/ui";
+import { FilterBar, Select, StatStrip, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { EntityCard } from "@/components/entity-card";
 import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
@@ -45,14 +45,16 @@ function courseChips(detail: RoadmapDetail | undefined): string[] {
 }
 
 export default function RoadmapsPage() {
-  const [search, setSearch] = useState("");
-  const [field, setField] = useState("all");
-  const [level, setLevel] = useState("all");
-  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [search, setSearch] = useUrlState("q", "");
+  const [field, setField] = useUrlState("field", "all");
+  const [level, setLevel] = useUrlState("level", "all");
+  const [topicsParam, setTopicsParam] = useUrlState("topics", "");
+  const selectedTopicIds = useMemo(() => (topicsParam ? topicsParam.split(",") : []), [topicsParam]);
+  const setSelectedTopicIds = useCallback((ids: string[]) => setTopicsParam(ids.join(",")), [setTopicsParam]);
   const [topics, setTopics] = useState<CatalogueTopicSummary[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
   const [topicsError, setTopicsError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useUrlState("page", 1);
 
   const { items, isLoading, error } = useCatalogue<RoadmapSummary>(() =>
     api.roadmaps.catalogue({ limit: MAX_PAGE_SIZE }),

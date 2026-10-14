@@ -17,7 +17,7 @@ import {
   SearchX,
   Trash2,
 } from "lucide-react";
-import { FilterBar, SegmentedTabs, Select, useToast } from "@codementor/ui";
+import { FilterBar, SegmentedTabs, Select, useToast, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -61,12 +61,12 @@ const savedDate = new Intl.DateTimeFormat("vi-VN", {
 
 export default function SavedPage() {
   const toast = useToast();
-  const [type, setType] = useState<ContentFilter>("all");
-  const [sort, setSort] = useState<BookmarkSort>("newest");
-  const [view, setView] = useState<ViewMode>("table");
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [type, setType] = useUrlState<ContentFilter>("type", "all");
+  const [sort, setSort] = useUrlState<BookmarkSort>("sort", "newest");
+  const [view, setView] = useUrlState<ViewMode>("view", "table");
+  const [debouncedSearch, setDebouncedSearch] = useUrlState("q", "");
+  const [search, setSearch] = useState(debouncedSearch);
+  const [page, setPage] = useUrlState("page", 1);
   const [pageCount, setPageCount] = useState(1);
   const [total, setTotal] = useState(0);
   const [items, setItems] = useState<UserBookmark[]>([]);
@@ -78,7 +78,7 @@ export default function SavedPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => window.clearTimeout(timer);
-  }, [search]);
+  }, [search, setDebouncedSearch]);
 
   const load = useCallback(async () => {
     const version = ++requestVersion.current;

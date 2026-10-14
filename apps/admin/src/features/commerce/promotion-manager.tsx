@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
 import type { CoursePromotionProduct } from "@codementor/types";
-import { Button, Card, CourseCover, CoursePrice, Field, fieldA11y, Modal, ReasonField, ServerPagination, useFieldErrors, useToast } from "@codementor/ui";
+import { Button, Card, CourseCover, CoursePrice, Field, fieldA11y, Modal, ReasonField, ServerPagination, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
 import { promotion as promotionRule, reason as reasonRule, toNumber } from "@codementor/utils";
 import { Layers3, Search, Sparkles } from "lucide-react";
 import { useAdminApi } from "@/features/auth/admin-api";
@@ -50,11 +50,11 @@ export function PromotionManager() {
   const [selected, setSelected] = useState<CoursePromotionProduct | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [reviewReason, setReviewReason] = useState("");
-  const [query, setQuery] = useState("");
-  const [priceFilter, setPriceFilter] = useState("all");
-  const [promotionFilter, setPromotionFilter] = useState("all");
-  const [sort, setSort] = useState("title");
-  const [page, setPage] = useState(1);
+  const [query, setQuery] = useUrlState("q", "");
+  const [priceFilter, setPriceFilter] = useUrlState("price", "all");
+  const [promotionFilter, setPromotionFilter] = useUrlState("promotion", "all");
+  const [sort, setSort] = useUrlState("sort", "title");
+  const [page, setPage] = useUrlState("promoPage", 1);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");

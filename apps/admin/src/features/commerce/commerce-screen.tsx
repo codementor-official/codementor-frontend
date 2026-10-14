@@ -23,6 +23,7 @@ import {
   ReasonField,
   FieldError,
   fieldA11y,
+  useUrlState,
 } from "@codementor/ui";
 import { inputClassName } from "./form-style";
 import {
@@ -60,7 +61,7 @@ type RecordDetail =
 export function CommerceScreen() {
   const request = useAdminApi();
   const toast = useToast();
-  const [tab, setTab] = useState<Tab>("orders");
+  const [tab, setTab] = useUrlState<Tab>("tab", "orders");
   const [runConfirmation, setRunConfirmation] = useState(false);
   const [lastRun, setLastRun] = useState<CommerceJobRun | null>(null);
   const [showRunResult, setShowRunResult] = useState(false);
@@ -69,13 +70,13 @@ export function CommerceScreen() {
     useState<CommerceJobOrderReport | null>(null);
   const [waitingLoading, setWaitingLoading] = useState(false);
   const [waitingError, setWaitingError] = useState("");
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState("newest");
+  const [page, setPage] = useUrlState("txPage", 1);
+  const [sort, setSort] = useUrlState("sort", "newest");
   const [help, setHelp] = useState(false);
   const [recordDetail, setRecordDetail] = useState<RecordDetail | null>(null);
-  const [orderStatus, setOrderStatus] = useState("");
-  const [orderSearch, setOrderSearch] = useState("");
-  const [orderQuery, setOrderQuery] = useState("");
+  const [orderStatus, setOrderStatus] = useUrlState("orderStatus", "");
+  const [orderQuery, setOrderQuery] = useUrlState("q", "");
+  const [orderSearch, setOrderSearch] = useState(orderQuery);
   // `CommercePage.q` nhận 1–100 ký tự; trống = không lọc.
   const orderSearchError = search(orderSearch, 100);
   const [orders, setOrders] = useState<CommercePage<CommerceOrder> | null>(

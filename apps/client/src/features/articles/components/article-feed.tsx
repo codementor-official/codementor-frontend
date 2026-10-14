@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BadgeCheck, Loader2, Newspaper, Search, X } from "lucide-react";
-import { FieldError, fieldA11y } from "@codementor/ui";
+import { FieldError, fieldA11y, useUrlState } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import { api } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/study-group/study-group-stats";
@@ -27,10 +27,11 @@ export function ArticleFeed() {
   const [items, setItems] = useState<ArticleSummary[]>([]);
   const [tags, setTags] = useState<{ name: string; count: number }[]>([]);
   const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useUrlState("q", "");
+  const [search, setSearch] = useState(query);
   // `PageQuery.q` ≤ 200. Quá trần thì báo lỗi và giữ kết quả của truy vấn hợp lệ trước đó.
   const searchError = searchRule(search, 200);
+  // Phân trang bằng cursor: không khôi phục số trang được khi chưa có cursor các trang trước.
   const [page, setPage] = useState(1);
   const [cursors, setCursors] = useState<Array<string | undefined>>([undefined]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export function ArticleFeed() {
     if (searchError) return;
     const timer = setTimeout(() => setQuery(search.trim()), 300);
     return () => clearTimeout(timer);
-  }, [search, searchError]);
+  }, [search, searchError, setQuery]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);

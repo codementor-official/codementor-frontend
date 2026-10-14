@@ -160,12 +160,17 @@ export function ManagePage<TData>({
     }
   }, [selectedId, selected]);
 
-  const table = useDataTable({ data: rows, columns, getRowId, initialSorting, columnVisibility });
-
   // Bảng cao đúng phần màn hình còn lại thay vì cứng 10 dòng — xem `useFittedPageSize`.
   const tableRef = useRef<HTMLDivElement>(null);
   const fittedPageSize = useFittedPageSize(tableRef);
-  useEffect(() => table.setPageSize(fittedPageSize), [table, fittedPageSize]);
+  const table = useDataTable({
+    data: rows,
+    columns,
+    getRowId,
+    initialSorting,
+    columnVisibility,
+    pageSize: fittedPageSize,
+  });
 
   return (
     <>

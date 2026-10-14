@@ -13,6 +13,7 @@ import {
   ManagePage,
   Select,
   StatusBadge,
+  useUrlState,
 } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
 import { api } from "@/lib/api";
@@ -50,8 +51,8 @@ function describe(cause: unknown): string {
  */
 export function DocumentsPage() {
   const [rows, setRows] = useState<AiDocument[]>([]);
-  const [search, setSearch] = useState("");
-  const [state, setState] = useState("");
+  const [search, setSearch] = useUrlState("q", "");
+  const [state, setState] = useUrlState("state", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

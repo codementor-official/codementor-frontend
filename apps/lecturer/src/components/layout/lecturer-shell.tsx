@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { LecturerSidebar } from "@/components/layout/lecturer-sidebar";
 import { LecturerTopbar } from "@/components/layout/lecturer-topbar";
 
@@ -41,7 +41,10 @@ export function LecturerShell({ children }: Readonly<{ children: ReactNode }>) {
         <LecturerTopbar onMobileMenu={() => setMobileOpen(true)} />
         {/* No padding here: a split-pane screen needs to reach the edges. Pages that want
             breathing room wrap themselves in <PageBody>. */}
-        <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
+        <main className="min-h-0 flex-1 overflow-hidden">
+          {/* useUrlState (useSearchParams) on list screens needs a boundary above it. */}
+          <Suspense fallback={null}>{children}</Suspense>
+        </main>
       </div>
     </div>
   );

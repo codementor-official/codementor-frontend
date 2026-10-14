@@ -11,7 +11,7 @@ export function AppBreadcrumb() {
   const pathname = usePathname();
   const titles = useBreadcrumbTitleStore((state) => state.titles);
 
-  return <Breadcrumb items={breadcrumbFor(pathname, titles)} className="flex-1" />;
+  return <Breadcrumb items={breadcrumbFor(pathname, titles)} className="flex-1" appName="CodeMentor" />;
 }
 
 /**

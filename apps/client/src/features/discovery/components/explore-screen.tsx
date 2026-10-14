@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { BookOpen, Compass, Dumbbell, FileText, LayoutGrid, Map, Users, type LucideIcon } from "lucide-react";
-import { FilterBar, Select } from "@codementor/ui";
+import { FilterBar, Select, useUrlState } from "@codementor/ui";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
 import { CourseCard } from "@/components/course-card";
 import { EntityCard } from "@/components/entity-card";
@@ -45,8 +45,8 @@ function initials(value: string) {
 export function ExploreScreen({ initialQuery = "" }: { initialQuery?: string }) {
   const [search, setSearch] = useState(initialQuery);
   const [debouncedSearch, setDebouncedSearch] = useState(initialQuery.trim());
-  const [category, setCategory] = useState<Category>("all");
-  const [difficulty, setDifficulty] = useState<Difficulty>("all");
+  const [category, setCategory] = useUrlState<Category>("category", "all");
+  const [difficulty, setDifficulty] = useUrlState<Difficulty>("difficulty", "all");
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [roadmaps, setRoadmaps] = useState<RoadmapSummary[]>([]);
   const [exercises, setExercises] = useState<ExerciseSummary[]>([]);

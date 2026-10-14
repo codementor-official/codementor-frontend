@@ -18,7 +18,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { FilterBar, Select } from "@codementor/ui";
+import { FilterBar, Select, useUrlState } from "@codementor/ui";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
 import { CourseCard } from "@/components/course-card";
 import { PageHeader } from "@/components/page-header";
@@ -102,8 +102,8 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
   const requestSequence = useRef(0);
   const [search, setSearch] = useState(initialQuery);
   const [debouncedSearch, setDebouncedSearch] = useState(initialQuery.trim());
-  const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
-  const [category, setCategory] = useState<Category>("all");
+  const [difficulty, setDifficulty] = useUrlState<DifficultyFilter>("difficulty", "all");
+  const [category, setCategory] = useUrlState<Category>("category", "all");
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
   const [exercises, setExercises] = useState<ExerciseSummary[]>([]);

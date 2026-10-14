@@ -21,7 +21,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { CharCount, FieldError, fieldA11y, ReasonField, Select, useFieldErrors, useToast } from "@codementor/ui";
+import { CharCount, FieldError, fieldA11y, ReasonField, Select, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
 import { integer, length, reason as reasonRule, search as searchRule, toNumber } from "@codementor/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -62,11 +62,11 @@ const inputClass =
 export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const toast = useToast();
   const [data, setData] = useState(EMPTY_PAGE<WorkspaceDocument>());
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
+  const [page, setPage] = useUrlState("dPage", 1);
+  const [q, setQ] = useUrlState("dQ", "");
   // `WorkspaceContentQueryDto.q` ≤ 200. Quá trần thì báo lỗi và không gọi API.
   const qError = searchRule(q, 200);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useUrlState("dStatus", "");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -807,11 +807,11 @@ export function WorkspaceExercisesTab({
   const toast = useToast();
   const [data, setData] = useState(EMPTY_PAGE<WorkspaceExercise>());
   const [bank, setBank] = useState<ExerciseSummary[]>([]);
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
-  const [difficulty, setDifficulty] = useState("");
-  const [scope, setScope] = useState<"all" | "assigned" | "public">("all");
-  const [exerciseStatus, setExerciseStatus] = useState("");
+  const [page, setPage] = useUrlState("ePage", 1);
+  const [q, setQ] = useUrlState("eQ", "");
+  const [difficulty, setDifficulty] = useUrlState("eDifficulty", "");
+  const [scope, setScope] = useUrlState<"all" | "assigned" | "public">("eScope", "all");
+  const [exerciseStatus, setExerciseStatus] = useUrlState("eStatus", "");
   const [selected, setSelected] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [assignmentOpen, setAssignmentOpen] = useState(false);
@@ -2013,9 +2013,9 @@ export function WorkspaceAssignmentsTab({
 }) {
   const toast = useToast();
   const [data, setData] = useState(EMPTY_PAGE<WorkspaceAssignment>());
-  const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState("");
+  const [page, setPage] = useUrlState("aPage", 1);
+  const [q, setQ] = useUrlState("aQ", "");
+  const [status, setStatus] = useUrlState("aStatus", "");
   // `WorkspaceContentQueryDto.q` ≤ 200. Quá trần thì báo lỗi và không gọi API.
   const qError = searchRule(q, 200);
   const canReview =
