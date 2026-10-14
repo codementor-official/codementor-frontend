@@ -32,7 +32,9 @@ export default function CallbackPage() {
 
     manager
       .signinRedirectCallback()
-      .then(() => router.replace("/dashboard"))
+      // Về /login: khi provider đã có hồ sơ, AuthCard chuyển tới bảng điều khiển đúng vai
+      // trò (`postLoginTarget`), cùng một luật với đăng nhập bằng mật khẩu.
+      .then(() => router.replace("/login"))
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : "Đăng nhập thất bại");
       });

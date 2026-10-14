@@ -11,7 +11,8 @@ import { BrandLogo } from "@/components/brand-logo";
 import { FacebookIcon, GoogleIcon } from "@/components/provider-icons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { keycloakConfig } from "@/lib/env";
+import { keycloakConfig, roleHomes } from "@/lib/env";
+import { postLoginTarget } from "@/lib/navigation/post-login";
 import { useAuth } from "@/providers/auth-provider";
 
 /**
@@ -29,7 +30,7 @@ import { useAuth } from "@/providers/auth-provider";
 type Pending = "credentials" | "google" | "facebook" | null;
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
-  const { status, error, signInWithPassword, signUpWithPassword, signInWithPopup, cancelPopupSignIn } = useAuth();
+  const { status, user, error, signInWithPassword, signUpWithPassword, signInWithPopup, cancelPopupSignIn } = useAuth();
   const router = useRouter();
   const isSignup = mode === "signup";
 
@@ -64,14 +65,14 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   );
 
   useEffect(() => {
-    if (status !== "authenticated") return;
-    // `next` do RequireAuth đặt khi nó chặn một trang. Chỉ nhận đường dẫn nội bộ bắt đầu
-    // bằng một dấu "/": "//evil.com" là URL tuyệt đối với trình duyệt, nên nếu chỉ kiểm
-    // ký tự đầu thì trang đăng nhập trở thành bàn đạp chuyển hướng ra ngoài.
+    if (status !== "authenticated" || !user) return;
+    // `next` do RequireAuth đặt khi nó chặn một trang; không có thì về bảng điều khiển của
+    // đúng vai trò. Luật lọc `next` và bảng vai trò → trang nằm ở `postLoginTarget`.
     const next = new URLSearchParams(window.location.search).get("next");
-    const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
-    router.replace(safe);
-  }, [status, router]);
+    const target = postLoginTarget(user.role, next, roleHomes);
+    if (target.kind === "external") window.location.assign(target.href);
+    else router.replace(target.href);
+  }, [status, user, router]);
 
   const busy = pending !== null || status === "loading";
 

@@ -26,3 +26,12 @@ export const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localh
  * lâu, không phải request/response để mà cần rate limit hay retry của gateway.
  */
 export const realtimeUrl = process.env.NEXT_PUBLIC_REALTIME_URL ?? "http://localhost:3009";
+
+/**
+ * App Giảng viên và Admin, để Client đưa người dùng tới đúng bảng điều khiển sau khi đăng
+ * nhập. Để trống thì mọi vai trò ở lại `/dashboard` của Client.
+ */
+export const roleHomes = {
+  lecturerAppUrl: process.env.NEXT_PUBLIC_LECTURER_APP_URL || undefined,
+  adminAppUrl: process.env.NEXT_PUBLIC_ADMIN_APP_URL || undefined,
+};
