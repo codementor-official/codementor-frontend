@@ -1,11 +1,22 @@
 /**
  * Self-check cho cổng xem video. Kho này chưa có test runner nào, nên chạy thẳng:
  *
- *   pnpm --filter @codementor/client exec tsx src/lib/video-progress.test.ts
+ *   pnpm test video-progress
  *
  * Cùng quy ước với `lesson-unlock.test.ts` — chuyển sang runner nào cũng giữ nguyên assert.
  */
 import assert from "node:assert/strict";
+// Import tĩnh là đủ: module chỉ đọc `window` khi hàm được gọi, không phải lúc nạp. (Top-level
+// `await import` không chạy được khi package biên dịch sang CommonJS, như ở `pnpm test`.)
+import {
+  accumulateWatched,
+  hasWatchedEnough,
+  isResumable,
+  watchedRatio,
+  readVideoProgress,
+  writeVideoProgress,
+  type VideoProgress,
+} from "./video-progress";
 
 // Kho lưu trữ giả, dựng TRƯỚC khi nạp module — module đọc `window` ngay lúc gọi hàm nên
 // chỉ cần nó tồn tại trước lần gọi đầu tiên.
@@ -18,15 +29,6 @@ const store = new Map<string, string>();
   },
 };
 
-const {
-  accumulateWatched,
-  hasWatchedEnough,
-  isResumable,
-  watchedRatio,
-  readVideoProgress,
-  writeVideoProgress,
-} = await import("./video-progress");
-type VideoProgress = import("./video-progress").VideoProgress;
 
 const progress = (overrides: Partial<VideoProgress> = {}): VideoProgress => ({
   positionSeconds: 0,

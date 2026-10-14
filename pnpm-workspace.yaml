@@ -6,6 +6,8 @@ allowBuilds:
   # Telemetry postinstall của Scarf, kéo theo @copilotkit/react-core. Không chạy: nó chỉ
   # gửi số liệu cài đặt về nhà, và bản build không cần nó.
   '@scarf/scarf': false
+  # Dùng bởi tsx (`pnpm test`). Postinstall chỉ kiểm tra binary nền tảng của esbuild.
+  esbuild: true
   sharp: true
   unrs-resolver: true
 

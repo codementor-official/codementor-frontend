@@ -10,7 +10,8 @@
     "dev:admin": "pnpm --filter @codementor/admin dev",
     "build": "turbo run build",
     "lint": "eslint .",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "test": "node scripts/run-tests.mjs"
   },
   "devDependencies": {
     "@codementor/eslint-config": "workspace:*",
@@ -20,6 +21,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "next": "16.2.12",
+    "tsx": "^4.23.15",
     "turbo": "^2.5.8",
     "typescript": "^5"
   }

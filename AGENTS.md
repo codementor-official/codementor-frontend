@@ -158,8 +158,8 @@ at build time, so a page that only fails during static generation passes typeche
 Check the exit code directly — `pnpm build | tail` reports the **pipe's** status, not the build's,
 so a red build reads as green.
 
-There is no test runner. Eleven `*.test.ts` files exist — plain `node:assert` self-checks, each
-with its own run command in its header comment — but they need `tsx` to resolve the extensionless
-imports, and `tsx` is not a dependency of this repo. **They do not currently run.** Either add
-`tsx` and a `test` script, or treat them as documentation of the invariant until someone does;
-what you must not do is cite them as passing.
+`pnpm test` runs every `*.test.ts` in the workspace (`scripts/run-tests.mjs`): plain
+`node:assert` self-checks executed with `tsx`, each from its own package so the `@/*` alias resolves.
+`pnpm test <fragment>` runs only the files whose path contains the fragment. A test file ends by
+printing one `…: ok` line; a thrown assertion fails the run. Top-level `await` is not available
+(packages compile to CommonJS) — wrap async checks in an async IIFE.
