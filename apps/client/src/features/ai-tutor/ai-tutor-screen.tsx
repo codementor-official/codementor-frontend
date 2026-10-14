@@ -238,7 +238,7 @@ function TutorWorkspace({
       [slug, page, query],
     ),
     // Đang có tài liệu được index thì làm mới nhãn tới khi xong; không thì không poll.
-    pending ? 2000 : 0,
+    pending ? 1000 : 0,
   );
   const ready = Boolean(status.data?.configured);
   const busy = tutor.running || tutor.opening;
@@ -404,8 +404,8 @@ function TutorWorkspace({
             Tài liệu học cùng AI
           </h2>
           <p className="mb-4 mt-1 text-xs leading-relaxed text-text-muted">
-            Chọn nguồn đã được duyệt trong nhóm. Tài liệu được tự động chuẩn bị
-            khi bạn gửi câu hỏi, và đổi được giữa hội thoại.
+            Chọn nguồn đã được duyệt trong nhóm. Tài liệu được chuẩn bị ngay khi
+            bạn chọn, và đổi được giữa hội thoại.
           </p>
           {picker}
           {!!slug && (
