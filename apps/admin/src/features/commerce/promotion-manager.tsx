@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
-import type { CoursePromotionProduct } from "@codementor/types";
+import { CONTENT_STATUS_LABELS, type CoursePromotionProduct } from "@codementor/types";
 import { Button, Card, CourseCover, CoursePrice, Field, fieldA11y, Modal, ReasonField, ServerPagination, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
 import { promotion as promotionRule, reason as reasonRule, toNumber } from "@codementor/utils";
 import { Layers3, Search, Sparkles } from "lucide-react";
@@ -255,7 +255,7 @@ export function PromotionManager() {
                   const state = promotionState(item);
                   return (
                     <tr key={item.courseId} className="align-middle hover:bg-muted/30">
-                      <td className="px-4 py-3"><div className="flex min-w-64 items-center gap-3"><CourseCover src={item.coverImageUrl} title={item.title} className="h-14 w-24 shrink-0" /><div className="min-w-0"><p className="truncate font-semibold">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.status}</p></div></div></td>
+                      <td className="px-4 py-3"><div className="flex min-w-64 items-center gap-3"><CourseCover src={item.coverImageUrl} title={item.title} className="h-14 w-24 shrink-0" /><div className="min-w-0"><p className="truncate font-semibold">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{CONTENT_STATUS_LABELS[item.status as keyof typeof CONTENT_STATUS_LABELS] ?? item.status}</p></div></div></td>
                       <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{item.authorName ?? "Chưa có giảng viên"}</td>
                       <td className="px-4 py-3 whitespace-nowrap"><CoursePrice className="text-sm" priceVnd={item.priceVnd} listPriceVnd={item.listPriceVnd} /></td>
                       <td className="max-w-64 px-4 py-3"><p className="truncate font-medium">{item.promotionRequest?.status === "pending" ? item.promotionRequest.label : item.promotion?.label ?? "—"}</p>{item.promotion?.endsAt && <p className="mt-1 text-xs text-muted-foreground">Đến {new Date(item.promotion.endsAt).toLocaleString("vi-VN")}</p>}{item.promotionRequest?.status === "rejected" && item.promotionRequest.reviewReason && <p className="mt-1 line-clamp-1 text-xs text-destructive">{item.promotionRequest.reviewReason}</p>}</td>

@@ -59,10 +59,12 @@ export function StudioShell({
             {backLabel}
           </Link>
 
-          <div className="min-w-0 flex-1">
+          {/* Tối thiểu 14rem (hoặc cả hàng trên màn hẹp): thiếu chỗ thì thanh tab xuống hàng,
+              không bóp tên thành "…" và cắt badge trạng thái như ở studio lộ trình trên điện thoại. */}
+          <div className="min-w-[min(100%,14rem)] flex-1">
             <div className="flex min-w-0 items-center gap-2">
               <h1 className="truncate text-sm font-semibold">{title}</h1>
-              {status}
+              <span className="shrink-0">{status}</span>
             </div>
             <p className="truncate text-xs text-muted-foreground">
               {slug}

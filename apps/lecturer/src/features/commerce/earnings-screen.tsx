@@ -388,14 +388,14 @@ export function EarningsScreen() {
                 {tab === "orders" &&
                   orders?.items.map((o) => (
                     <tr key={o.id}>
-                      <td className="max-w-xs break-words p-3">
+                      <td className="max-w-xs min-w-60 break-words p-3">
                         <div className="flex items-center gap-3">
                           <CourseCover
                             src={o.courseCoverImageUrl}
                             title={o.courseTitle}
-                            className="size-11"
+                            className="size-11 shrink-0"
                           />
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-medium">{o.courseTitle}</p>
                             <p className="text-xs text-muted-foreground">
                               {new Date(o.createdAt).toLocaleDateString(

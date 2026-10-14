@@ -435,7 +435,7 @@ export function CommerceScreen() {
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] table-fixed text-left text-sm">
+              <table className="w-full min-w-[880px] table-fixed text-left text-sm">
                 <thead className="bg-muted text-xs text-muted-foreground">
                   <tr>
                     {(tab === "orders"
@@ -470,8 +470,10 @@ export function CommerceScreen() {
                               "Chi tiết",
                               "Xem",
                             ]
-                    ).map((h) => (
-                      <th className="p-3 font-medium" key={h}>
+                    ).map((h, index) => (
+                      // `table-fixed` chia đều cột; cột khóa học của tab Đơn hàng cần rộng hơn,
+                      // nếu không ngày giờ và mã đơn bị bẻ giữa chừng ("9/10/202 / 6 · #26c").
+                      <th className={`p-3 font-medium ${tab === "orders" && index === 0 ? "w-60" : ""}`} key={h}>
                         {h}
                       </th>
                     ))}
@@ -481,16 +483,16 @@ export function CommerceScreen() {
                   {tab === "orders" &&
                     orders?.items.map((o) => (
                       <tr key={o.id}>
-                        <td className="max-w-xs p-3">
+                        <td className="p-3">
                           <div className="flex items-center gap-3">
                             <CourseCover
                               src={o.courseCoverImageUrl}
                               title={o.courseTitle}
-                              className="size-11"
+                              className="size-11 shrink-0"
                             />
-                            <div>
+                            <div className="min-w-0">
                               <p className="font-medium">{o.courseTitle}</p>
-                              <p className="break-all text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground">
                                 {new Date(o.createdAt).toLocaleString("vi-VN")}{" "}
                                 · #{o.id.slice(0, 8)}
                               </p>
@@ -501,7 +503,8 @@ export function CommerceScreen() {
                           <p className="font-medium">
                             {o.buyer?.name ?? "Học viên"}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          {/* Email không có chỗ ngắt tự nhiên; trong bảng table-fixed nó tràn sang cột bên. */}
+                          <p className="break-all text-xs text-muted-foreground">
                             {o.buyer?.email}
                           </p>
                         </td>

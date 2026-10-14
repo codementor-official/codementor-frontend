@@ -151,7 +151,9 @@ export function DataTable<TData>({
                   <th
                     key={header.id}
                     style={{ width: header.getSize() === 150 ? undefined : header.getSize() }}
-                    className="px-3 py-2.5 text-left text-2xs font-bold tracking-wide text-muted-foreground uppercase"
+                    // Tiêu đề một dòng: bảng đã cuộn ngang trong khung riêng, bẻ "HOẠT ĐỘNG GẦN NHẤT" thành
+                    // ba dòng chỉ làm hàng tiêu đề cao gấp ba trên điện thoại.
+                    className="px-3 py-2.5 text-left text-2xs font-bold tracking-wide whitespace-nowrap text-muted-foreground uppercase"
                   >
                     {header.isPlaceholder ? null : sortable ? (
                       <button

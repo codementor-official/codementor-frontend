@@ -20,10 +20,10 @@ export function SegmentedTabs({
   return (
     <div
       role="tablist"
-      // `max-w-full` + cuộn ngang thay vì để các nút co lại: bốn tab trên màn điện thoại
-      // bị bóp tới mức nhãn xuống dòng giữa từ ("Thông\ntin"), khó đọc hơn hẳn so với
-      // việc vuốt ngang. `shrink-0` ở từng nút bên dưới là nửa còn lại của cách này.
-      className={`inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-md border border-border bg-card p-1 ${className}`}
+      // Hết chỗ thì cả NÚT xuống hàng, không cuộn ngang (AGENTS.md, luật 4): cuộn ngang
+      // giấu mất tab cuối trên điện thoại ("Yêu cầu r…" ở trang Doanh thu). `shrink-0` +
+      // `whitespace-nowrap` ở từng nút giữ nhãn không bị bẻ giữa từ ("Thông\ntin").
+      className={`inline-flex max-w-full flex-wrap items-center gap-1 rounded-md border border-border bg-card p-1 ${className}`}
     >
       {options.map((opt) => {
         const active = opt.value === value;
