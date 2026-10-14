@@ -67,8 +67,11 @@ function PlatformCards({ settings }: { settings: PlatformSettings }) {
           value={`Video ${settings.storage.maxUploadMb.video} MB · Tài liệu ${settings.storage.maxUploadMb.document} MB · Ảnh ${settings.storage.maxUploadMb.image} MB`}
         />
       </SettingsCard>
-      <SettingsCard title="Email (SES)">
+      <SettingsCard title={settings.email.provider === "smtp" ? "Email (SMTP)" : "Email (SES)"}>
         <Row label="Gửi email" value={settings.email.enabled ? "Đang bật" : "Đang tắt"} />
+        {settings.email.provider === "smtp" && (
+          <Row label="Thông tin SMTP" value={settings.email.smtpConfigured ? "Đã cấu hình" : "Thiếu host/tài khoản/mật khẩu"} />
+        )}
         <Row label="Người gửi" value={settings.email.fromEmail ? `${settings.email.fromName ?? ""} <${settings.email.fromEmail}>` : null} />
         <Row label="Chu kỳ quét nhắc" value={`${settings.email.reminderPollSeconds} giây`} />
         <Row label="Nhắc khi bỏ học" value={`sau ${settings.email.learningInactivityDays} ngày`} />

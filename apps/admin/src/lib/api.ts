@@ -861,6 +861,10 @@ export interface PlatformSettings {
   };
   email: {
     enabled: boolean;
+    /** Thiếu ở backend cũ (khi đó luôn là SES). */
+    provider?: "ses" | "smtp";
+    /** Chỉ với SMTP: đã đủ host/user/mật khẩu chưa. Mật khẩu không bao giờ rời backend. */
+    smtpConfigured?: boolean | null;
     fromEmail: string | null;
     fromName: string | null;
     reminderPollSeconds: number;
