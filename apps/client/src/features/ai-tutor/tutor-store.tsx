@@ -152,7 +152,8 @@ function TutorRuntime({ slug, children }: { slug: string; children: ReactNode })
 function TutorStore({ slug, children }: { slug: string; children: ReactNode }) {
   const [threadId, setThreadId] = useState(() => crypto.randomUUID());
   const [sessions, setSessions] = useState<TutorSessionSummary[]>([]);
-  const [loadingSessions, setLoadingSessions] = useState(false);
+  // Store dựng lại theo từng nhóm (`key` ở màn hình), nên lần tải đầu luôn đang diễn ra.
+  const [loadingSessions, setLoadingSessions] = useState(true);
   const [selected, setSelected] = useState<TutorDocument[]>([]);
   const [grounding, setGrounding] = useState<Record<string, TutorTurn>>({});
   const [error, setError] = useState("");
@@ -205,7 +206,6 @@ function TutorStore({ slug, children }: { slug: string; children: ReactNode }) {
   }, [copilotkit]);
 
   const loadSessions = useCallback(() => {
-    setLoadingSessions(true);
     api.tutor
       .sessions(slug)
       .then((page) => setSessions(page.items))
