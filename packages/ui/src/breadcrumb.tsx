@@ -31,9 +31,18 @@ export function Breadcrumb({
   const current = items.at(-1)?.label;
   useEffect(() => {
     if (!appName) return;
-    document.title = current ? `${current} · ${appName}` : appName;
+    const desired = current ? `${current} · ${appName}` : appName;
+    const apply = () => {
+      if (document.title !== desired) document.title = desired;
+    };
+    apply();
+    // On a hard load Next writes the layout's metadata <title> after this effect has run,
+    // so the tab fell back to the bare app name. Re-apply whenever the head changes.
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { childList: true, subtree: true, characterData: true });
     // Leaving the shell (solve screen, login) must not keep the last page's name.
     return () => {
+      observer.disconnect();
       document.title = appName;
     };
   }, [appName, current]);
