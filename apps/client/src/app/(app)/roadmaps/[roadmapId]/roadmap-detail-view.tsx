@@ -14,6 +14,7 @@ import { ReportButton } from "@/features/reports/report-button";
 import { CourseCard } from "@/components/course-card";
 import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
+import { commerceApi } from "@/features/commerce/api";
 import type { CourseDetail, RoadmapDetail, RoadmapProgress } from "@/types/catalogue";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -62,7 +63,23 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
   useEffect(() => {
     if (!roadmap) return;
     let cancelled = false;
-    Promise.allSettled(roadmap.courses.map((course) => api.courses.detail(course.courseId))).then(
+    // Giá không nằm trong `GET /courses/:id` — lấy từ offer như trang chi tiết khóa học.
+    // Offer lỗi thì vẫn vẽ thẻ, chỉ thiếu giá.
+    const withOffer = (id: string) =>
+      Promise.all([api.courses.detail(id), commerceApi.offer(id).catch(() => null)]).then(
+        ([detail, offer]): CourseDetail =>
+          offer
+            ? {
+                ...detail,
+                priceVnd: offer.priceVnd,
+                listPriceVnd: offer.listPriceVnd,
+                discountPercent: offer.discountPercent,
+                promotion: offer.promotion,
+                owned: offer.owned,
+              }
+            : detail,
+      );
+    Promise.allSettled(roadmap.courses.map((course) => withOffer(course.courseId))).then(
       (results) => {
         if (cancelled) return;
         const byId = new Map<string, CourseDetail>();

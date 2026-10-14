@@ -69,7 +69,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     // bằng một dấu "/": "//evil.com" là URL tuyệt đối với trình duyệt, nên nếu chỉ kiểm
     // ký tự đầu thì trang đăng nhập trở thành bàn đạp chuyển hướng ra ngoài.
     const next = new URLSearchParams(window.location.search).get("next");
-    const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : "/practice";
+    const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
     router.replace(safe);
   }, [status, router]);
 

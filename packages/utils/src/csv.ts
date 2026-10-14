@@ -21,5 +21,6 @@ export function downloadCsv(
   anchor.href = url;
   anchor.download = filename;
   anchor.click();
-  URL.revokeObjectURL(url);
+  // Thu hồi ngay thì trình duyệt có thể đọc blob đã mất và tải về tệp rỗng.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

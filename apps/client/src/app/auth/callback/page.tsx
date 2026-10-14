@@ -32,7 +32,7 @@ export default function CallbackPage() {
 
     manager
       .signinRedirectCallback()
-      .then(() => router.replace("/practice"))
+      .then(() => router.replace("/dashboard"))
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : "Đăng nhập thất bại");
       });
