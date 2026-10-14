@@ -270,7 +270,7 @@ function TutorWorkspace({
   function choose(doc: AiDocument, on: boolean) {
     tutor.toggleDocument({ id: doc.id, title: doc.title }, on);
     // Index ngay khi chọn: tài liệu được chuẩn bị trong lúc người dùng gõ câu hỏi, nên lượt hỏi
-    // đầu thường không phải chờ. Lượt index vẫn trừ hạn mức như khi hỏi, chỉ sớm hơn.
+    // đầu thường không phải chờ. Index không trừ hạn mức, nên tick rồi bỏ tick không tốn gì.
     if (on && doc.state === "not_indexed")
       api.ai
         .index(slug, doc.id)
