@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { CharCount, FieldError, fieldA11y, Modal, ReasonField, Select, StatStrip, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
-import { dateRange, length, reason as reasonRule, search as searchRule } from "@codementor/utils";
+import { collectAllPages, csvDateTime, dateRange, length, reason as reasonRule, search as searchRule } from "@codementor/utils";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -741,18 +741,23 @@ function Overview({
   const exportActivities = async () => {
     if (activitySearchError) return;
     try {
-      const result = await api.workspaces.overview(detail.slug, {
-        activitySearch: activitySearch.trim() || undefined,
-        activityPage: 1,
-        activityLimit: 50,
-      });
+      // Mọi trang hoạt động (trước đây chỉ 50 dòng đầu); thời gian kèm năm, dạng bảng tính hiểu.
+      const result = await collectAllPages((page) =>
+        api.workspaces
+          .overview(detail.slug, {
+            activitySearch: activitySearch.trim() || undefined,
+            activityPage: page,
+            activityLimit: 50,
+          })
+          .then((data) => ({ items: data.activities, total: data.activityPagination.total, limit: 50 })),
+      );
       downloadCsv(
         `workspace-activity-${todayForFile()}.csv`,
         ["Thành viên", "Hoạt động", "Thời gian"],
-        result.activities.map((item) => [
+        result.items.map((item) => [
           item.actor ?? "Hệ thống",
           item.action,
-          formatDateTime(item.createdAt),
+          csvDateTime(item.createdAt),
         ]),
       );
     } catch (error) {
@@ -1215,7 +1220,7 @@ function Progress({
         member.submissionCount,
         member.xp,
         member.lastActiveAt
-          ? formatDateTime(member.lastActiveAt)
+          ? csvDateTime(member.lastActiveAt)
           : "Chưa hoạt động",
       ]),
     );
@@ -1895,8 +1900,8 @@ function Members({
   const exportMembers = async () => {
     if (memberSearchError || joinedRangeError) return;
     try {
-      const response = await api.workspaces.members(slug, {
-        page: 1,
+      const response = await collectAllPages((page) => api.workspaces.members(slug, {
+        page,
         limit: 100,
         search: search.trim() || undefined,
         role: (role || undefined) as WorkspaceRole | undefined,
@@ -1908,7 +1913,7 @@ function Members({
           "not_submitted" | "submitted" | "passed" | undefined,
         joinedFrom: joinedFrom || undefined,
         joinedTo: joinedTo || undefined,
-      });
+      }));
       downloadCsv(
         `workspace-members-${todayForFile()}.csv`,
         [
@@ -1926,7 +1931,7 @@ function Members({
             member.user.displayName,
             canViewPrivate ? (stats?.email ?? "") : "",
             ROLE_LABEL[member.role],
-            formatDate(member.joinedAt),
+            csvDateTime(member.joinedAt),
             stats?.completionRate ?? 0,
             stats?.submissionCount ?? 0,
             stats?.xp ?? 0,

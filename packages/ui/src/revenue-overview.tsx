@@ -5,6 +5,7 @@ import { COMMERCE_STATUS } from "@codementor/types";
 import { Download, RotateCcw } from "lucide-react";
 import { Button } from "./button";
 import { Modal } from "./modal";
+import { useToast } from "./toast";
 import { RevenueSummary } from "./revenue/revenue-summary";
 import { RevenuePeriodPicker } from "./revenue/revenue-period-picker";
 import { RevenueTrendChart } from "./revenue/revenue-trend-chart";
@@ -46,7 +47,8 @@ export function RevenueOverview({
   onDaysChange: (days: number) => void;
   dateRange: RevenueDateRange | null;
   onDateRangeChange: (range: RevenueDateRange | null) => void;
-  onExport: () => void;
+  /** Tạo tệp báo cáo (Excel). Có thể bất đồng bộ — nút hiện trạng thái và báo lỗi bằng toast. */
+  onExport: () => void | Promise<void>;
   loading: boolean;
   scopeControl?: ReactNode;
   extraViews?: RevenueExtraView[];
@@ -61,6 +63,18 @@ export function RevenueOverview({
     onCourseSelect: (id: string) => void;
   }) => ReactNode;
 }) {
+  const toast = useToast();
+  const [exporting, setExporting] = useState(false);
+  const runExport = async () => {
+    setExporting(true);
+    try {
+      await onExport();
+    } catch (error) {
+      toast.error(`Không tạo được tệp báo cáo: ${error instanceof Error ? error.message : "lỗi không xác định"}`);
+    } finally {
+      setExporting(false);
+    }
+  };
   const [metric, setMetric] = useState<RevenueMetric>("revenue");
   const [view, setView] = useState<string>(defaultView);
   const [periodKey, setPeriodKey] = useState(0);
@@ -139,11 +153,11 @@ export function RevenueOverview({
             </Button>
             <Button
               variant="outline"
-              disabled={loading || !report}
-              onClick={onExport}
+              disabled={loading || !report || exporting}
+              onClick={() => void runExport()}
             >
               <Download className="size-4" />
-              Xuất báo cáo CSV
+              {exporting ? "Đang tạo tệp…" : "Xuất báo cáo Excel"}
             </Button>
           </div>
         </div>

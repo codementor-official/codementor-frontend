@@ -64,10 +64,10 @@ export function ReportsPage() {
   };
 
   const columns = useMemo<ColumnDef<AdminContentReport, unknown>[]>(() => [
-    { accessorKey: "targetRef", header: "Nội dung", cell: ({ row }) => <div className="min-w-0"><p className="truncate font-medium">{row.original.targetRef ?? row.original.targetId}</p><p className="text-xs text-muted-foreground">{TARGET[row.original.targetType]}</p></div> },
-    { accessorKey: "category", header: "Lý do", cell: ({ row }) => CATEGORY[row.original.category] },
+    { accessorKey: "targetRef", header: "Nội dung", cell: ({ row }) => <div className="min-w-0"><p className="truncate font-medium">{row.original.targetRef ?? row.original.targetId}</p><p className="text-xs text-muted-foreground">{TARGET[row.original.targetType]}</p></div>, meta: { exportValue: (row) => `${row.targetRef ?? row.targetId} (${TARGET[row.targetType] ?? row.targetType})` } },
+    { accessorKey: "category", header: "Lý do", cell: ({ row }) => CATEGORY[row.original.category], meta: { exportValue: (row) => CATEGORY[row.category] ?? row.category } },
     { accessorKey: "reporterName", header: "Người báo cáo", cell: ({ row }) => <div><p>{row.original.reporterName}</p><p className="text-xs text-muted-foreground">{row.original.reporterEmail}</p></div> },
-    { accessorKey: "status", header: "Trạng thái", cell: ({ row }) => <StatusBadge tone={row.original.status === "PENDING" ? "warning" : row.original.status === "RESOLVED" ? "success" : "neutral"}>{STATUS[row.original.status]}</StatusBadge> },
+    { accessorKey: "status", header: "Trạng thái", cell: ({ row }) => <StatusBadge tone={row.original.status === "PENDING" ? "warning" : row.original.status === "RESOLVED" ? "success" : "neutral"}>{STATUS[row.original.status]}</StatusBadge>, meta: { exportValue: (row) => STATUS[row.status] ?? row.status } },
     { accessorKey: "createdAt", header: "Gửi lúc", cell: ({ row }) => dateTime.format(new Date(row.original.createdAt)) },
   ], []);
 

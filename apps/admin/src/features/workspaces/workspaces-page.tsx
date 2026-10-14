@@ -107,7 +107,7 @@ export function WorkspacesPage() {
         ),
       },
       { accessorKey: "memberCount", header: "Thành viên" },
-      { accessorKey: "privacy", header: "Quyền riêng tư", cell: ({ row }) => PRIVACY[row.original.privacy] },
+      { accessorKey: "privacy", header: "Quyền riêng tư", cell: ({ row }) => PRIVACY[row.original.privacy], meta: { exportValue: (row) => PRIVACY[row.privacy] ?? row.privacy } },
       {
         accessorKey: "status",
         header: "Trạng thái",
@@ -116,6 +116,7 @@ export function WorkspacesPage() {
             {STATUS[row.original.status]}
           </StatusBadge>
         ),
+        meta: { exportValue: (row) => STATUS[row.status] ?? row.status },
       },
       {
         id: "lastActivityAt",

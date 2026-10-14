@@ -102,6 +102,7 @@ export function AuditLogsPage() {
         accessorKey: "targetType",
         header: "Đối tượng",
         cell: ({ row }) => TARGET[row.original.targetType as keyof typeof TARGET] ?? row.original.targetType,
+        meta: { exportValue: (row) => TARGET[row.targetType as keyof typeof TARGET] ?? row.targetType },
       },
     ],
     [],

@@ -19,6 +19,7 @@ import { useAdminApi } from "@/features/auth/admin-api";
 import { CreateUserModal } from "@/features/users/components/create-user-modal";
 import { UserDetailDrawer } from "@/features/users/components/user-detail-drawer";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
+import { csvDateTime } from "@codementor/utils";
 import {
   usersApi,
   KEYCLOAK_ROLE_OF,
@@ -132,7 +133,7 @@ export function UsersPage() {
         ),
         meta: {
           exportValue: (row) =>
-            row.lastActiveAt ? dateTimeFormat.format(new Date(row.lastActiveAt)) : "",
+            row.lastActiveAt ? csvDateTime(row.lastActiveAt) : "",
         },
       },
       {
@@ -143,7 +144,7 @@ export function UsersPage() {
             {dateFormat.format(new Date(row.original.createdAt))}
           </span>
         ),
-        meta: { exportValue: (row) => dateFormat.format(new Date(row.createdAt)) },
+        meta: { exportValue: (row) => csvDateTime(row.createdAt) },
       },
     ],
     [],

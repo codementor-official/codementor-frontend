@@ -24,6 +24,11 @@ import {
   FieldError,
   fieldA11y,
   useUrlState,
+  auditCsv,
+  ledgerCsv,
+  ordersCsv,
+  withdrawalsCsv,
+  type CsvTable,
 } from "@codementor/ui";
 import { inputClassName } from "./form-style";
 import {
@@ -47,6 +52,7 @@ import { JobOrdersTable } from "./job-orders-table";
 import { OrderDialog } from "./order-dialog";
 import { ReconciliationSummary } from "./reconciliation-summary";
 import {
+  collectAllPages,
   downloadCsv,
   maskAccount,
   printDocument,
@@ -199,78 +205,37 @@ export function CommerceScreen() {
           : tab === "audit"
             ? audit
             : null;
-  function exportCurrent() {
-    if (tab === "orders")
-      downloadCsv(
-        "giao-dich-khoa-hoc.csv",
-        [
-          "Mã đơn",
-          "Khóa học",
-          "Người mua",
-          "Email",
-          "Ngày",
-          "Giá bán",
-          "Doanh thu giảng viên",
-          "Doanh thu hệ thống",
-          "Trạng thái",
-        ],
-        (orders?.items ?? []).map((o) => [
-          o.id,
-          o.courseTitle,
-          o.buyer?.name ?? "Học viên",
-          o.buyer?.email ?? "",
-          new Date(o.createdAt).toLocaleString("vi-VN"),
-          o.amount,
-          o.instructorAmount,
-          o.platformAmount,
-          COMMERCE_STATUS[o.status] ?? o.status,
-        ]),
-      );
-    if (tab === "withdrawals")
-      downloadCsv(
-        "yeu-cau-rut-tien.csv",
-        [
-          "Mã yêu cầu",
-          "Ngày",
-          "Số tiền",
-          "Phương thức",
-          "Người nhận",
-          "Tài khoản",
-          "Trạng thái",
-        ],
-        (withdrawals?.items ?? []).map((w) => [
-          w.id,
-          new Date(w.createdAt).toLocaleString("vi-VN"),
-          w.amount,
-          w.recipient.method.toUpperCase(),
-          w.recipient.accountName,
-          `${w.recipient.institutionCode} · ****${w.recipient.accountNumber?.slice(-4)}`,
-          COMMERCE_STATUS[w.status] ?? w.status,
-        ]),
-      );
-    if (tab === "ledger")
-      downloadCsv(
-        "bien-dong-so-du.csv",
-        ["Ngày", "Sự kiện", "Tài khoản", "Biến động", "Mã tham chiếu"],
-        (ledger?.items ?? []).map((e) => [
-          new Date(e.createdAt).toLocaleString("vi-VN"),
-          e.event.split(":")[0],
-          COMMERCE_STATUS[e.account] ?? e.account,
-          e.amount,
-          e.orderId ?? e.withdrawalId ?? "",
-        ]),
-      );
-    if (tab === "audit")
-      downloadCsv(
-        "nhat-ky-giao-dich.csv",
-        ["Thời điểm", "Thao tác", "Đối tượng", "Chi tiết"],
-        (audit?.items ?? []).map((e) => [
-          new Date(e.createdAt).toLocaleString("vi-VN"),
-          e.action,
-          e.entityId,
-          JSON.stringify(e.details),
-        ]),
-      );
+  const [exporting, setExporting] = useState(false);
+  /** Mọi trang của tab đang xem, đúng bộ lọc trạng thái/tìm kiếm/sắp xếp đang áp dụng. */
+  async function exportAll() {
+    if (tab === "policy" || exporting) return;
+    setExporting(true);
+    try {
+      let table: CsvTable;
+      let truncated: boolean;
+      if (tab === "orders") {
+        const all = await collectAllPages((p) => api.orders(request, p, orderStatus, orderQuery, sort));
+        [table, truncated] = [ordersCsv(all.items, "admin"), all.truncated];
+      } else if (tab === "withdrawals") {
+        const all = await collectAllPages((p) => api.withdrawals(request, p, sort));
+        [table, truncated] = [withdrawalsCsv(all.items), all.truncated];
+      } else if (tab === "ledger") {
+        const all = await collectAllPages((p) => api.ledger(request, p, sort));
+        [table, truncated] = [ledgerCsv(all.items), all.truncated];
+      } else {
+        const all = await collectAllPages((p) => api.audit(request, p, sort));
+        [table, truncated] = [auditCsv(all.items), all.truncated];
+      }
+      const name = { orders: "giao-dich-khoa-hoc", withdrawals: "yeu-cau-rut-tien", ledger: "bien-dong-so-du", audit: "nhat-ky-giao-dich" }[tab];
+      downloadCsv(`${name}_${new Date().toISOString().slice(0, 10)}.csv`, table.headers, table.rows);
+      const count = table.rows.length.toLocaleString("vi-VN");
+      if (truncated) toast.info(`Đã xuất ${count} dòng đầu tiên — giới hạn mỗi lần xuất.`);
+      else toast.success(`Đã xuất ${count} dòng.`);
+    } catch (e) {
+      toast.error(`Xuất CSV thất bại: ${apiErrorMessage(e)}`);
+    } finally {
+      setExporting(false);
+    }
   }
   return (
     <div className="min-w-0 space-y-4">
@@ -359,10 +324,10 @@ export function CommerceScreen() {
           <Button
             className="ml-auto"
             variant="outline"
-            disabled={!current?.items.length}
-            onClick={exportCurrent}
+            disabled={!current?.items.length || exporting}
+            onClick={() => void exportAll()}
           >
-            <Download className="size-4" /> Xuất CSV trang này
+            <Download className="size-4" /> {exporting ? "Đang xuất…" : "Xuất CSV"}
           </Button>
         )}
         {tab !== "policy" && (

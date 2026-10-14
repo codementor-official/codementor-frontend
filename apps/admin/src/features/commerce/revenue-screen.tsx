@@ -7,9 +7,9 @@ import type {
   RevenueInstructor,
   RevenueReport,
 } from "@codementor/types";
-import { Button, Modal, PageHeader, RevenueOverview } from "@codementor/ui";
+import { Button, Modal, PageHeader, RevenueOverview, downloadRevenueReportXlsx } from "@codementor/ui";
 import { ChartNoAxesCombined, CircleHelp, RefreshCw } from "lucide-react";
-import { downloadCsv, printDocument } from "@codementor/utils";
+import { printDocument } from "@codementor/utils";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { commerceAdminApi as api, vnd } from "./api";
 import { InstructorSelector } from "./revenue/instructor-selector";
@@ -160,26 +160,12 @@ export function RevenueScreen() {
           },
         ]}
         onExport={() =>
-          report &&
-          downloadCsv(
-            "bao-cao-doanh-thu-he-thong.csv",
-            [
-              "Phạm vi",
-              "Ngày",
-              "Số đơn",
-              "Tiền học viên thanh toán",
-              "Phần CodeMentor trước phí",
-              "Hoàn tiền",
-            ],
-            report.daily.map((d) => [
-              selected?.email ?? "Toàn hệ thống",
-              d.date,
-              d.orders,
-              d.gross,
-              d.revenue,
-              d.refunded,
-            ]),
-          )
+          report
+            ? downloadRevenueReportXlsx("bao-cao-doanh-thu-he-thong", report, {
+                scopeLabel: selected ? `${selected.name} <${selected.email}>` : "Toàn hệ thống",
+                instructors: scopedInstructors,
+              })
+            : undefined
         }
       />
       <Link
@@ -223,7 +209,7 @@ export function RevenueScreen() {
             doanh thu và không tự chi trả tiền.
           </p>
           <p>
-            <strong>5. Xuất & tra cứu:</strong> CSV báo cáo xuất toàn kỳ; bảng
+            <strong>5. Xuất & tra cứu:</strong> Excel báo cáo xuất toàn kỳ, mỗi phần một sheet; bảng
             chi tiết có tìm kiếm, sắp xếp và phân trang. Báo cáo không phải hóa
             đơn thuế.
           </p>

@@ -27,6 +27,9 @@ import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
 import { UpdatedRangeFilter, updatedRangeError } from "@/features/shared/updated-range-filter";
 
+/** `ExerciseKind` của exercise-service. */
+const KIND_LABELS: Record<string, string> = { code: "Bài code", theory: "Lý thuyết", quiz: "Trắc nghiệm" };
+
 const STATUS_OPTIONS = ["pending_review", "changes_requested", "rejected", "published", "archived"] as const;
 
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
@@ -119,7 +122,12 @@ export function ExercisesPage() {
         cell: ({ row }) => DIFFICULTY_LABELS[row.original.difficulty as keyof typeof DIFFICULTY_LABELS] ?? row.original.difficulty,
       },
       { accessorKey: "authorName", header: "Tác giả", cell: ({ row }) => row.original.authorName ?? "—" },
-      { accessorKey: "kind", header: "Dạng" },
+      {
+        accessorKey: "kind",
+        header: "Dạng",
+        cell: ({ row }) => KIND_LABELS[row.original.kind] ?? row.original.kind,
+        meta: { exportValue: (row) => KIND_LABELS[row.kind] ?? row.kind },
+      },
       {
         accessorKey: "updatedAt",
         header: "Cập nhật",

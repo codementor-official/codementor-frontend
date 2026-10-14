@@ -122,6 +122,8 @@ export function CoursesPage() {
         id: "content",
         header: "Nội dung",
         cell: ({ row }) => `${row.original.totalChapters} chương · ${row.original.totalLessons} bài`,
+        // Cột không có accessor nên `getValue` rỗng — tệp xuất phải có cùng chữ với bảng.
+        meta: { exportValue: (row) => `${row.totalChapters} chương · ${row.totalLessons} bài` },
       },
       {
         accessorKey: "updatedAt",

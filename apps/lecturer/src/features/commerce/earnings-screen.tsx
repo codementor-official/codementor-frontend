@@ -21,7 +21,13 @@ import {
   SegmentedTabs,
   ServerPagination,
   StatStrip,
+  ledgerCsv,
+  ordersCsv,
+  downloadRevenueReportXlsx,
+  useToast,
   useUrlState,
+  withdrawalsCsv,
+  type CsvTable,
 } from "@codementor/ui";
 import {
   COMMERCE_INCOME_STATUS,
@@ -43,6 +49,7 @@ import {
   holdingDeadline,
 } from "./holding-explanation";
 import {
+  collectAllPages,
   downloadCsv,
   printDocument,
   formatHoldingPeriod,
@@ -54,6 +61,7 @@ type Detail =
   | { type: "withdrawal"; item: CommerceWithdrawal }
   | { type: "ledger"; item: CommerceLedgerEntry };
 export function EarningsScreen() {
+  const toast = useToast();
   const [wallet, setWallet] = useState<WalletSummary | null>(null);
   const [tab, setTab] = useUrlState<Tab>("tab", "overview");
   const [days, setDays] = useUrlState("days", 30);
@@ -161,63 +169,40 @@ export function EarningsScreen() {
         : tab === "ledger"
           ? ledger
           : null;
-  function exportCurrent() {
-    if (tab === "orders") {
-      downloadCsv(
-        "doanh-thu-khoa-hoc.csv",
-        [
-          "Khóa học",
-          "Học viên",
-          "Email",
-          "Ngày",
-          "Giá bán",
-          "Doanh thu",
-          "Trạng thái",
-        ],
-        (orders?.items ?? []).map((o) => [
-          o.courseTitle,
-          o.buyer?.name ?? "Học viên",
-          o.buyer?.email ?? "",
-          new Date(o.createdAt).toLocaleString("vi-VN"),
-          o.amount,
-          o.instructorAmount,
-          COMMERCE_STATUS[o.status] ?? o.status,
-        ]),
-      );
-    } else if (tab === "withdrawals") {
-      downloadCsv(
-        "yeu-cau-rut-tien.csv",
-        [
-          "Mã yêu cầu",
-          "Ngày",
-          "Số tiền",
-          "Phương thức",
-          "Tài khoản nhận",
-          "Trạng thái",
-        ],
-        (withdrawals?.items ?? []).map((w) => [
-          w.id,
-          new Date(w.createdAt).toLocaleString("vi-VN"),
-          w.amount,
-          w.recipient.method.toUpperCase(),
-          `${w.recipient.institutionCode} · ****${w.recipient.accountNumber?.slice(-4)}`,
-          COMMERCE_STATUS[w.status] ?? w.status,
-        ]),
-      );
-    } else {
-      downloadCsv(
-        "bien-dong-so-du.csv",
-        ["Ngày", "Sự kiện", "Loại số dư", "Biến động", "Mã tham chiếu"],
-        (ledger?.items ?? []).map((e) => [
-          new Date(e.createdAt).toLocaleString("vi-VN"),
-          e.event.split(":")[0],
-          COMMERCE_STATUS[e.account] ?? e.account,
-          e.amount,
-          e.orderId ?? e.withdrawalId ?? "",
-        ]),
-      );
+  const [exporting, setExporting] = useState(false);
+  /**
+   * Xuất MỌI trang của tab đang xem theo thứ tự sắp xếp đang chọn — không chỉ 20 dòng của
+   * trang hiện tại. Cùng bộ dựng bảng với Admin (`@codementor/ui`), nên hai bên cùng cột.
+   */
+  async function exportAll() {
+    if (tab === "overview" || exporting) return;
+    setExporting(true);
+    try {
+      const date = new Date().toISOString().slice(0, 10);
+      let table: CsvTable;
+      let truncated: boolean;
+      if (tab === "orders") {
+        const all = await collectAllPages((p) => earningsApi.orders(p, sort));
+        [table, truncated] = [ordersCsv(all.items, "lecturer"), all.truncated];
+      } else if (tab === "withdrawals") {
+        const all = await collectAllPages((p) => earningsApi.withdrawals(p, sort));
+        [table, truncated] = [withdrawalsCsv(all.items), all.truncated];
+      } else {
+        const all = await collectAllPages((p) => earningsApi.ledger(p, sort));
+        [table, truncated] = [ledgerCsv(all.items), all.truncated];
+      }
+      const name = { orders: "don-hang", withdrawals: "yeu-cau-rut-tien", ledger: "bien-dong-so-du" }[tab];
+      downloadCsv(`${name}_${date}.csv`, table.headers, table.rows);
+      const count = table.rows.length.toLocaleString("vi-VN");
+      if (truncated) toast.info(`Đã xuất ${count} dòng đầu tiên — giới hạn mỗi lần xuất.`);
+      else toast.success(`Đã xuất ${count} dòng.`);
+    } catch (e) {
+      toast.error(`Xuất CSV thất bại: ${apiErrorMessage(e)}`);
+    } finally {
+      setExporting(false);
     }
   }
+
   return (
     <div className="min-w-0 space-y-5">
       <PageHeader
@@ -286,24 +271,9 @@ export function EarningsScreen() {
             },
           ]}
           onExport={() =>
-            report &&
-            downloadCsv(
-              "bao-cao-doanh-thu.csv",
-              [
-                "Ngày (giờ Việt Nam)",
-                "Số đơn đã thanh toán",
-                "Giá trị đơn",
-                "Doanh thu giảng viên trước phí",
-                "Hoàn tiền của đơn trong kỳ",
-              ],
-              report.daily.map((d) => [
-                d.date,
-                d.orders,
-                d.gross,
-                d.revenue,
-                d.refunded,
-              ]),
-            )
+            report
+              ? downloadRevenueReportXlsx("bao-cao-doanh-thu", report, { scopeLabel: "Các khóa học của bạn" })
+              : undefined
           }
         />
       ) : (
@@ -347,10 +317,10 @@ export function EarningsScreen() {
             <div className="flex flex-wrap items-center justify-end gap-2 border-b border-border p-3">
               <Button
                 variant="outline"
-                disabled={!current?.items.length}
-                onClick={exportCurrent}
+                disabled={!current?.items.length || exporting}
+                onClick={() => void exportAll()}
               >
-                <Download className="size-4" /> Xuất CSV trang này
+                <Download className="size-4" /> {exporting ? "Đang xuất…" : "Xuất CSV"}
               </Button>
               <select
                 aria-label="Sắp xếp dữ liệu"
@@ -576,8 +546,9 @@ export function EarningsScreen() {
             đã nhận tiền. Theo dõi trạng thái và lý do trong Chi tiết.
           </Guide>
           <Guide number="4" title="Xuất và đối chiếu">
-            CSV ở Tổng quan xuất số liệu toàn kỳ đã chọn (7/30/90 ngày hoặc
-            khoảng ngày tùy ý); CSV trong bảng lịch sử chỉ xuất trang đang xem.
+            Excel ở Tổng quan xuất báo cáo toàn kỳ đã chọn (7/30/90 ngày hoặc
+            khoảng ngày tùy ý), mỗi phần một sheet: tổng quan, theo ngày, theo
+            khóa học, trạng thái đơn. CSV trong bảng lịch sử xuất mọi trang theo thứ tự đang sắp xếp.
             Mở Chi tiết để in/lưu PDF chứng từ; chứng từ giao dịch không thay
             thế hóa đơn thuế.
           </Guide>

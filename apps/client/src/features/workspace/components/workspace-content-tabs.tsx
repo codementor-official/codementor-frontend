@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { CharCount, FieldError, fieldA11y, ReasonField, Select, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
-import { integer, length, reason as reasonRule, search as searchRule, toNumber } from "@codementor/utils";
+import { collectAllPages, csvDateTime, integer, length, reason as reasonRule, search as searchRule, toNumber } from "@codementor/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -931,14 +931,15 @@ export function WorkspaceExercisesTab({
   const exportExercises = async () => {
     if (qError) return;
     try {
-      const response = await api.workspaces.workspaceExercises(detail.slug, {
-        page: 1,
+      // Mọi trang theo bộ lọc đang chọn — trước đây chỉ 100 dòng đầu, phần còn lại mất lặng lẽ.
+      const response = await collectAllPages((page) => api.workspaces.workspaceExercises(detail.slug, {
+        page,
         limit: 100,
         q: q.trim() || undefined,
         difficulty: difficulty || undefined,
         scope,
         status: exerciseStatus || undefined,
-      });
+      }));
       downloadCsv(
         `workspace-exercises-${todayForFile()}.csv`,
         [
@@ -951,9 +952,9 @@ export function WorkspaceExercisesTab({
         response.items.map((item) => [
           item.title,
           difficultyLabel(item.difficulty),
-          item.publicationStatus,
+          item.publicationStatus === "published" ? "Đang hiển thị" : "Đã ẩn",
           item.assignedCount,
-          item.dueAt ? formatDate(item.dueAt) : "Không giới hạn",
+          item.dueAt ? csvDateTime(item.dueAt) : "Không giới hạn",
         ]),
       );
     } catch (error) {
@@ -1561,7 +1562,7 @@ function ExerciseDetailDialog({
         submission.memoryKb ?? "",
         submission.language,
         submission.isLate ? "Có" : "Không",
-        formatDate(submission.submittedAt),
+        csvDateTime(submission.submittedAt),
       ]),
     );
   };
@@ -2054,12 +2055,12 @@ export function WorkspaceAssignmentsTab({
   const exportAssignments = async () => {
     if (qError) return;
     try {
-      const response = await api.workspaces.assignments(detail.slug, {
-        page: 1,
+      const response = await collectAllPages((page) => api.workspaces.assignments(detail.slug, {
+        page,
         limit: 100,
         q: q.trim() || undefined,
         status: status || undefined,
-      });
+      }));
       downloadCsv(
         `workspace-assignments-${todayForFile()}.csv`,
         [
@@ -2080,7 +2081,7 @@ export function WorkspaceAssignmentsTab({
           item.latestVerdict ? verdictLabel(item.latestVerdict) : "Chưa nộp",
           item.latestScore ?? "",
           item.latestIsLate ? "Có" : "Không",
-          formatDate(item.updatedAt),
+          csvDateTime(item.updatedAt),
         ]),
       );
     } catch (error) {

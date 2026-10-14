@@ -27,7 +27,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { commerceApi, vnd } from "./api";
-import { downloadCsv, printDocument, search as searchRule } from "@codementor/utils";
+import { collectAllPages, csvDateTime, downloadCsv, printDocument, search as searchRule } from "@codementor/utils";
 
 function paymentLabel(provider: string): string {
   if (provider === "mock") return "Thanh toán trực tuyến";
@@ -61,6 +61,32 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  // Mọi trang theo bộ lọc đang chọn, không chỉ trang đang xem; ngày giờ dạng bảng tính hiểu.
+  async function exportAll() {
+    setBusy(true);
+    try {
+      const all = await collectAllPages((p) => commerceApi.orders(p, status, query, sort));
+      downloadCsv(
+        `don-hang-khoa-hoc-${new Date().toISOString().slice(0, 10)}.csv`,
+        ["Mã đơn", "Khóa học", "Thời điểm đặt", "Thời điểm thanh toán", "Giá niêm yết (VND)", "Giảm giá (VND)", "Số tiền thanh toán (VND)", "Trạng thái"],
+        all.items.map((order) => [
+          order.id,
+          order.courseTitle,
+          csvDateTime(order.createdAt),
+          csvDateTime(order.settledAt),
+          order.pricingSnapshot?.originalPriceVnd ?? order.amount,
+          order.pricingSnapshot?.discountVnd ?? 0,
+          order.amount,
+          COMMERCE_STATUS[order.status] ?? order.status,
+        ]),
+      );
+      toast.success(`Đã xuất ${all.items.length.toLocaleString("vi-VN")} đơn hàng.`);
+    } catch (e) {
+      toast.error(`Xuất CSV thất bại: ${apiErrorMessage(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
   const load = useCallback(async () => {
     try {
       if (orderId) setDetail(await commerceApi.detail(orderId));
@@ -231,14 +257,10 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
               <Button
                 className="shrink-0 whitespace-nowrap"
                 variant="outline"
-                disabled={!list?.items.length}
-                onClick={() => list && downloadCsv(
-                  `don-hang-khoa-hoc-${new Date().toISOString().slice(0, 10)}.csv`,
-                  ["Mã đơn", "Khóa học", "Ngày mua", "Số tiền", "Trạng thái"],
-                  list.items.map((order) => [order.id, order.courseTitle, new Date(order.createdAt).toLocaleString("vi-VN"), order.amount, COMMERCE_STATUS[order.status] ?? order.status]),
-                )}
+                disabled={!list?.items.length || busy}
+                onClick={() => void exportAll()}
               >
-                <Download className="size-4" /> Xuất CSV trang này
+                <Download className="size-4" /> Xuất CSV
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_190px_190px]">

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Button, Card, FieldError, fieldA11y, Modal, ServerPagination, useUrlState } from "@codementor/ui";
+import { Button, Card, FieldError, fieldA11y, Modal, ServerPagination, ordersCsv, useToast, useUrlState } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import {
   COMMERCE_INCOME_STATUS,
@@ -11,6 +11,7 @@ import {
   type CoursePurchasePage,
 } from "@codementor/types";
 import {
+  collectAllPages,
   downloadCsv,
   printDocument,
   formatHoldingPeriod,
@@ -47,6 +48,25 @@ export function CoursePurchases({ courseId }: { courseId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+  const toast = useToast();
+  const [exporting, setExporting] = useState(false);
+  // Mọi trang theo đúng bộ lọc trạng thái/tìm kiếm/sắp xếp đang áp dụng, không chỉ trang này.
+  async function exportAll() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const all = await collectAllPages((p) => earningsApi.courseOrders(courseId, p, status, query, sort));
+      const table = ordersCsv(all.items, "lecturer");
+      downloadCsv(`hoc-vien-da-mua_${new Date().toISOString().slice(0, 10)}.csv`, table.headers, table.rows);
+      const count = table.rows.length.toLocaleString("vi-VN");
+      if (all.truncated) toast.info(`Đã xuất ${count} dòng đầu tiên — giới hạn mỗi lần xuất.`);
+      else toast.success(`Đã xuất ${count} giao dịch.`);
+    } catch (cause) {
+      toast.error(`Xuất CSV thất bại: ${apiErrorMessage(cause)}`);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <>
@@ -63,30 +83,10 @@ export function CoursePurchases({ courseId }: { courseId: string }) {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              disabled={!data?.items.length}
-              onClick={() =>
-                downloadCsv(
-                  "hoc-vien-da-mua.csv",
-                  [
-                    "Học viên",
-                    "Email",
-                    "Ngày mua",
-                    "Giá khóa học",
-                    "Doanh thu giảng viên",
-                    "Trạng thái",
-                  ],
-                  (data?.items ?? []).map((o) => [
-                    o.buyer?.name ?? "Học viên",
-                    o.buyer?.email ?? "",
-                    new Date(o.createdAt).toLocaleString("vi-VN"),
-                    o.amount,
-                    o.instructorAmount,
-                    COMMERCE_STATUS[o.status] ?? o.status,
-                  ]),
-                )
-              }
+              disabled={!data?.items.length || exporting}
+              onClick={() => void exportAll()}
             >
-              <Download className="size-4" /> Xuất CSV trang này
+              <Download className="size-4" /> {exporting ? "Đang xuất…" : "Xuất CSV"}
             </Button>
             <Button
               variant="outline"
