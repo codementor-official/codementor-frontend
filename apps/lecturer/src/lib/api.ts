@@ -103,6 +103,12 @@ export const api = {
   me: () => unwrap<UserProfile>("/me"),
   updateProfile: (input: UpdateProfileInput) =>
     unwrap<UserProfile>("/me", { method: "PATCH", body: { ...input } }),
+  /** URL ký sẵn để PUT ảnh đại diện thẳng lên S3; cùng endpoint với hồ sơ bên Client. */
+  avatarUploadUrl: (body: { filename: string; contentType: string; sizeBytes: number }) =>
+    unwrap<{ uploadUrl: string; headers: Record<string, string>; publicUrl: string }>(
+      "/me/avatar/upload-url",
+      { method: "POST", body },
+    ),
 
   exercises: {
     /** Kho bài chung: chỉ bài public đã công khai, mọi tác giả. */

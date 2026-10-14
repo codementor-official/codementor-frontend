@@ -63,6 +63,26 @@ export default function ProfilePage() {
             />
           </section>
 
+          <div className="flex flex-col gap-4">
+          <aside className="rounded-lg border border-border bg-card p-4">
+            <h2 className="mb-3 text-sm font-semibold">Tài khoản</h2>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Email</dt>
+                <dd className="min-w-0 truncate font-medium" title={profile.email}>{profile.email}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Xác thực email</dt>
+                <dd className={profile.emailVerified ? "font-medium text-success" : "font-medium text-warning"}>
+                  {profile.emailVerified ? "Đã xác thực" : "Chưa xác thực"}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Vai trò</dt>
+                <dd className="font-medium">{profile.role === "admin" ? "Quản trị viên" : "Giảng viên"}</dd>
+              </div>
+            </dl>
+          </aside>
           <aside className="rounded-lg border border-border bg-card p-4">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <KeyRound aria-hidden="true" className="size-4 text-primary" /> Đăng nhập & bảo mật
@@ -80,6 +100,7 @@ export default function ProfilePage() {
               .
             </p>
           </aside>
+          </div>
         </div>
       )}
     </PageBody>
