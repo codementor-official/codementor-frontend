@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, Map as MapIcon } from "lucide-react";
-import { StatStrip } from "@codementor/ui";
+import { StatStrip, formatVndPrice } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { CourseCard } from "@/components/course-card";
 import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { commerceApi } from "@/features/commerce/api";
+import { summarizeRoadmapPricing } from "@/lib/catalogue/roadmap-pricing";
 import type { CourseDetail, RoadmapDetail, RoadmapProgress } from "@/types/catalogue";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -118,6 +119,19 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
   // rendering it wrong would teach the wrong sequence, so sort rather than assume.
   const courses = [...roadmap.courses].sort((a, b) => a.position - b.position);
   const progressByCourse = new Map(progress?.courses.map((course) => [course.courseId, course]));
+  // Học phí: API tính sẵn tổng của lộ trình; backend cũ chưa có trường đó thì cộng từ giá
+  // từng khóa đã tải — chỉ khi ĐỦ mọi khóa, cộng thiếu một khóa là con số sai.
+  const loadedAll = courses.length > 0 && courses.every((course) => courseDetails.has(course.courseId));
+  const pricing = roadmap.pricing ?? (loadedAll
+    ? summarizeRoadmapPricing(courses.map((course) => courseDetails.get(course.courseId)!))
+    : null);
+  // Phần người xem còn phải trả: bỏ các khóa đã mua. Chỉ nói khi khác tổng.
+  const remainingVnd = loadedAll
+    ? courses.reduce((sum, course) => {
+        const detail = courseDetails.get(course.courseId)!;
+        return sum + (detail.owned ? 0 : (detail.priceVnd ?? 0));
+      }, 0)
+    : null;
 
   async function startRoadmap() {
     setEnrolling(true);
@@ -165,6 +179,14 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
           { label: "Trình độ", value: LEVEL_LABEL[roadmap.level] ?? roadmap.level },
           { label: "Khóa học", value: courses.length },
           { label: "Giờ học", value: roadmap.estimatedHours ?? "—" },
+          ...(pricing
+            ? [{
+                label: "Học phí",
+                value: remainingVnd !== null && remainingVnd !== pricing.totalVnd
+                  ? `${formatVndPrice(pricing.totalVnd)} · bạn còn ${formatVndPrice(remainingVnd)}`
+                  : formatVndPrice(pricing.totalVnd),
+              }]
+            : []),
         ]}
       />
 
@@ -226,7 +248,8 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                               ? "completed"
                               : undefined
                         }
-                        progressPercent={courseProgress?.progressPercent}
+                        // Chưa bắt đầu lộ trình thì không có tiến độ để nói, 0% chỉ là nhiễu.
+                        progressPercent={progress?.enrollment ? courseProgress?.progressPercent : undefined}
                         owned={detail?.owned}
                         href={available ? `/courses/${course.courseId}` : null}
                       />

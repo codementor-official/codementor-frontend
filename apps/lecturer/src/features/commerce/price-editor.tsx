@@ -2,7 +2,7 @@
 import { apiErrorMessage } from "@codementor/api-client";
 import { useEffect, useState } from "react";
 import { Button, Card, CoursePrice, Field, fieldA11y, useFieldErrors, useToast } from "@codementor/ui";
-import { integer, promotion as promotionRule, toNumber } from "@codementor/utils";
+import { coursePrice, promotion as promotionRule, toNumber } from "@codementor/utils";
 import type { CourseOffer, CoursePromotionRequest } from "@codementor/types";
 import { inputClassName } from "@/components/form/field";
 import { earningsApi, vnd } from "./api";
@@ -19,8 +19,8 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const toast = useToast();
-  // Bản sao `PriceDto` (0–1.000.000.000) và luật khuyến mãi dùng chung với Admin.
-  const priceForm = useFieldErrors({ price }, { price: integer(price, "Giá", { min: 0, max: 1_000_000_000, optional: false }) });
+  // Bản sao `PriceDto` + `listPriceViolation` (0 hoặc 5.000–999.999.999) và luật khuyến mãi dùng chung với Admin.
+  const priceForm = useFieldErrors({ price }, { price: coursePrice(price) });
   const promoForm = useFieldErrors(
     { label, salePrice, startsAt, endsAt },
     promotionRule({ label, startsAt, endsAt, salePrice, listPrice: offer ? (offer.pendingPriceVnd ?? offer.listPriceVnd) : undefined }),
@@ -135,7 +135,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
   }
   function applyDiscount(percent: number) {
     if (!saved) return;
-    setSalePrice(String(Math.max(1_000, Math.floor(saved * (100 - percent) / 100_000) * 1_000)));
+    setSalePrice(String(Math.max(5_000, Math.floor(saved * (100 - percent) / 100_000) * 1_000)));
   }
   return (
     <Card className="min-w-0 overflow-hidden p-0">
@@ -200,7 +200,7 @@ export function PriceEditor({ id, locked = false }: { id: string; locked?: boole
           {offer?.promotion && promotionRequest?.status !== "pending" && promotionRequest?.status !== "rejected" && <div className="rounded-lg border border-success/40 bg-success/5 p-3 text-sm"><p className="font-semibold text-success">Khuyến mãi đã được duyệt</p><p className="mt-1 text-xs text-muted-foreground">Ưu đãi đang theo lịch đã duyệt. Mọi chỉnh sửa hoặc yêu cầu gỡ sẽ được gửi lại cho Admin.</p></div>}
           <div className="grid min-w-0 gap-3 sm:grid-cols-2">
             <Field error={promoForm.errors.label} htmlFor="promo-label" label="Tên chương trình" description="Từ 2 đến 60 ký tự."><input {...fieldA11y("promo-label", promoForm.errors.label)} className={inputClassName} value={label} onChange={(event) => setLabel(event.target.value)} /></Field>
-            <Field error={promoForm.errors.salePrice} htmlFor="promo-price" label="Giá ưu đãi (VND)" description={`Từ 1.000 ₫ và thấp hơn giá ${offer.pendingPriceVnd !== null ? "đề xuất" : "niêm yết"}.`}><input {...fieldA11y("promo-price", promoForm.errors.salePrice)} className={inputClassName} inputMode="numeric" value={salePrice} onChange={(event) => setSalePrice(event.target.value)} /></Field>
+            <Field error={promoForm.errors.salePrice} htmlFor="promo-price" label="Giá ưu đãi (VND)" description={`Từ 5.000 ₫ và thấp hơn giá ${offer.pendingPriceVnd !== null ? "đề xuất" : "niêm yết"}.`}><input {...fieldA11y("promo-price", promoForm.errors.salePrice)} className={inputClassName} inputMode="numeric" value={salePrice} onChange={(event) => setSalePrice(event.target.value)} /></Field>
             <div className="flex flex-wrap items-center gap-2 sm:col-span-2"><span className="text-xs text-muted-foreground">Giảm nhanh:</span>{[10, 20, 25, 30, 50].map((percent) => <button key={percent} type="button" onClick={() => applyDiscount(percent)} className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold hover:border-primary hover:text-primary">-{percent}%</button>)}</div>
             <Field error={promoForm.errors.startsAt} htmlFor="promo-starts" label="Bắt đầu"><input {...fieldA11y("promo-starts", promoForm.errors.startsAt)} className={inputClassName} type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></Field>
             <Field error={promoForm.errors.endsAt} htmlFor="promo-ends" label="Kết thúc"><input {...fieldA11y("promo-ends", promoForm.errors.endsAt)} className={inputClassName} type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></Field>

@@ -195,9 +195,23 @@ export function dateRange(
   return undefined;
 }
 
+/** Giới hạn một giao dịch VNPAY — bản sao `MIN_PAID_PRICE_VND`/`MAX_PRICE_VND` ở learning-service. */
+export const MIN_PAID_PRICE_VND = 5_000;
+export const MAX_PRICE_VND = 999_999_999;
+
+/** Giá khóa học: 0 = miễn phí, hoặc khoảng cổng thanh toán nhận được. */
+export function coursePrice(value: string): FieldError {
+  const base = integer(value, "Giá", { min: 0, max: MAX_PRICE_VND, optional: false });
+  if (base) return base;
+  const price = toNumber(value);
+  return price > 0 && price < MIN_PAID_PRICE_VND
+    ? `Khóa trả phí tối thiểu ${fmt(MIN_PAID_PRICE_VND)} ₫ (giới hạn cổng thanh toán). Nhập 0 nếu miễn phí.`
+    : undefined;
+}
+
 /**
  * Form khuyến mãi — dùng chung cho Admin (đơn lẻ + theo lô) và Giảng viên. Bản sao của
- * `PromotionDto`/`BatchPromotionDto` (tên 2–60, giá 1.000–1.000.000.000, giảm 1–99%) cộng
+ * `PromotionDto`/`BatchPromotionDto` (tên 2–60, giá 5.000–999.999.999, giảm 1–99%) cộng
  * luật ở `CommerceAccessService` (kết thúc sau bắt đầu, giá ưu đãi thấp hơn giá niêm yết).
  * Truyền `salePrice` cho form theo giá, `discount` cho form theo phần trăm.
  */
@@ -212,7 +226,7 @@ export function promotion(input: {
   const salePrice =
     input.salePrice === undefined
       ? undefined
-      : (integer(input.salePrice, "Giá ưu đãi", { min: 1000, max: 1_000_000_000, optional: false }) ??
+      : (integer(input.salePrice, "Giá ưu đãi", { min: MIN_PAID_PRICE_VND, max: MAX_PRICE_VND, optional: false }) ??
         (input.listPrice !== undefined && toNumber(input.salePrice) >= input.listPrice
           ? `Giá ưu đãi phải thấp hơn giá niêm yết (${fmt(input.listPrice)} ₫)`
           : undefined));

@@ -19,6 +19,7 @@ import {
   length,
   maskAccount,
   promotion,
+  coursePrice,
   reason,
   search,
   toNumber,
@@ -128,3 +129,13 @@ assert.equal(maskAccount(""), "");
 assert.equal(maskAccount(undefined), "");
 
 console.log("validate.test.ts OK");
+
+// coursePrice — 0 miễn phí, trả phí phải nằm trong giới hạn VNPAY.
+assert.equal(coursePrice("0"), undefined);
+assert.equal(coursePrice("5000"), undefined);
+assert.equal(coursePrice("999999999"), undefined);
+assert.match(coursePrice("4999") ?? "", /tối thiểu 5\.000/);
+assert.ok(coursePrice("1000000000"));
+// Giá ưu đãi dưới 5.000 ₫ bị chặn trước khi tới backend.
+assert.ok(promotion({ label: "Sale", startsAt: "a", endsAt: "b", salePrice: "4000", listPrice: 10000 }).salePrice);
+

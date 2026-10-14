@@ -21,6 +21,18 @@ export interface Page<T> {
   nextCursor: string | null;
 }
 
+/**
+ * Tổng chi phí học hết lộ trình, do learning-service cộng từ giá từng khóa (`totalVnd` đã
+ * áp khuyến mãi đang chạy, `listTotalVnd` là tổng giá niêm yết). Tuỳ chọn vì backend cũ
+ * chưa trả trường này — thiếu thì giao diện ẩn giá chứ không hiện "Miễn phí" sai.
+ */
+export interface RoadmapPricing {
+  totalVnd: number;
+  listTotalVnd: number;
+  paidCourses: number;
+  freeCourses: number;
+}
+
 export interface RoadmapSummary {
   id: string;
   slug: string;
@@ -36,6 +48,7 @@ export interface RoadmapSummary {
   authorName: string | null;
   topics?: CatalogueTopic[];
   updatedAt: string;
+  pricing?: RoadmapPricing;
 }
 
 export interface CourseSummary {

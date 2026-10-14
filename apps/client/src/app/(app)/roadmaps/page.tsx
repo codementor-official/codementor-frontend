@@ -5,6 +5,7 @@ import { Map as MapIcon } from "lucide-react";
 import { FilterBar, Select, StatStrip, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { EntityCard } from "@/components/entity-card";
+import { RoadmapPrice } from "@/components/roadmap-price";
 import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { Pagination } from "@/components/ui/pagination";
 import {
@@ -224,6 +225,7 @@ export default function RoadmapsPage() {
                       ...(roadmap.estimatedHours ? [{ label: "giờ", value: roadmap.estimatedHours }] : []),
                       ...(roadmap.authorName ? [{ label: "", value: roadmap.authorName }] : []),
                     ]}
+                    footer={roadmap.pricing ? <RoadmapPrice pricing={roadmap.pricing} /> : undefined}
                     href={`/roadmaps/${roadmap.id}`}
                   />
                 </li>

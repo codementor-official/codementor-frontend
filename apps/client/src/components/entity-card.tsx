@@ -21,7 +21,7 @@ export interface EntityCardProps {
   tileVariant?: keyof typeof tileVariantClasses;
   /** Taller tile for browse-grid contexts (roadmaps/courses); shorter for compact tiles. `lg` gives the thumbnail top billing. */
   tileHeight?: "sm" | "md" | "lg";
-  /** `horizontal`: fixed-width thumbnail on the left, content on the right, as one row — for list-style contexts (roadmap course rows). Ignores `tileHeight`, `progress`, `footer`, `cta`, `action`. */
+  /** `horizontal`: thumbnail on the left, content on the right — for list-style contexts (roadmap course rows). Stacks when its container is narrow. Ignores `tileHeight`, `cta`, `action`; `progress` and `footer` (e.g. the price) render under the body. */
   layout?: "vertical" | "horizontal";
   eyebrow?: string;
   coverImage?: string;
@@ -91,7 +91,11 @@ export function EntityCard({
             // Căn giữa theo chiều dọc (thẻ dùng `items-center`), không dán lên mép trên:
             // thẻ cao hơn ảnh khi phần thân có nhiều hàng, và ảnh treo lủng lẳng ở trên với
             // khoảng trắng bên dưới đọc như lỗi dựng chứ không như bố cục.
-            "aspect-video w-48 shrink-0 overflow-hidden rounded-md sm:w-72"
+            //
+            // Rộng theo KHUNG CHỨA chứ không theo viewport: cột khóa học của lộ trình nằm cạnh
+            // sidebar và rail phải, nên ở màn 800px nó chỉ còn ~350px — ảnh 288px cố định từng
+            // bóp phần chữ thành vài ký tự mỗi dòng. Khung hẹp thì ảnh lên trên, chữ xuống dưới.
+            "aspect-video w-full shrink-0 overflow-hidden rounded-md @lg:w-56 @3xl:w-72"
           : tileHeight === "sm"
             ? "h-16 text-base"
             : tileHeight === "lg"
@@ -186,6 +190,16 @@ export function EntityCard({
           {note}
         </p>
       )}
+      {horizontal && (typeof progress === "number" || footer) && (
+        <div className="flex flex-col gap-2 pt-1">
+          {typeof progress === "number" && <ProgressBar value={progress} />}
+          {footer && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-soft pt-2 text-xs text-text-faint">
+              {footer}
+            </div>
+          )}
+        </div>
+      )}
       {!horizontal &&
         (typeof progress === "number" || footer || cta || action) && (
           // Một khối ghim đáy cho cả tiến độ, giá, CTA: ghim từng phần riêng thì thẻ có thanh
@@ -211,11 +225,11 @@ export function EntityCard({
     </div>
   );
 
-  return (
+  const card = (
     <Card
       interactive={Boolean(href)}
       className={`relative h-full overflow-hidden ${
-        horizontal ? "flex flex-row items-center gap-4 p-3" : "flex flex-col"
+        horizontal ? "flex flex-col gap-3 p-3 @lg:flex-row @lg:items-center @lg:gap-4" : "flex flex-col"
       }`}
     >
       {/* A stretched overlay link rather than a wrapper around the card: `action` holds real
@@ -228,4 +242,6 @@ export function EntityCard({
       {bodyBlock}
     </Card>
   );
+  // Ngữ cảnh container cho các biến thể `@lg:` ở trên — chỉ thẻ ngang cần đo khung chứa.
+  return horizontal ? <div className="@container h-full">{card}</div> : card;
 }
