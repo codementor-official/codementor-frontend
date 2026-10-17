@@ -117,6 +117,42 @@ export interface AdminContentReport {
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Nội dung bị báo cáo, đọc từ bảng của từng loại; `null` khi nội dung đã bị xoá. */
+  targetTitle: string | null;
+  targetSlug: string | null;
+  targetStatus: string | null;
+  /** Tên nhóm chứa tài liệu (chỉ với DOCUMENT). */
+  targetParentName: string | null;
+  ownerId: string | null;
+  ownerName: string | null;
+  ownerEmail: string | null;
+  ownerRole: string | null;
+  ownerStatus: string | null;
+  /** Tổng số báo cáo cho cùng nội dung, kể cả báo cáo này. */
+  sameTargetCount: number;
+}
+
+export type ReportActionKind = "STATUS_CHANGED" | "USER_SUSPENDED" | "ROLLED_BACK";
+
+export interface ReportAction {
+  id: string;
+  action: ReportActionKind;
+  actorEmail: string;
+  fromStatus: ReportStatus | null;
+  toStatus: ReportStatus | null;
+  note: string;
+  sanctionedUserId: string | null;
+  sanctionedUserName: string | null;
+  revertsActionId: string | null;
+  revertedAt: string | null;
+  createdAt: string;
+  /** Lý do không hoàn tác được, do server tính; `null` là hoàn tác được. */
+  rollbackBlocker: string | null;
+}
+
+export interface AdminReportDetail extends AdminContentReport {
+  submittedAt: string;
+  actions: ReportAction[];
 }
 
 export const reportsApi = {
@@ -138,15 +174,18 @@ export const reportsApi = {
       total: number;
       totalPages: number;
     }>(request, `/reports${search(params)}`),
-  resolve: (
-    request: Request,
-    id: string,
-    status: "RESOLVED" | "REJECTED",
-    resolutionNote: string,
-  ) =>
-    unwrap<AdminContentReport>(request, `/reports/${id}`, {
+  detail: (request: Request, id: string) => unwrap<AdminReportDetail>(request, `/reports/${id}`),
+  changeStatus: (request: Request, id: string, status: ReportStatus, resolutionNote: string) =>
+    unwrap<AdminReportDetail>(request, `/reports/${id}`, {
       method: "PATCH",
       body: { status, resolutionNote },
+    }),
+  suspendOwner: (request: Request, id: string, note: string) =>
+    unwrap<AdminReportDetail>(request, `/reports/${id}/sanctions`, { method: "POST", body: { note } }),
+  rollback: (request: Request, id: string, actionId: string, note: string) =>
+    unwrap<AdminReportDetail>(request, `/reports/${id}/actions/${actionId}/rollback`, {
+      method: "POST",
+      body: { note },
     }),
 };
 

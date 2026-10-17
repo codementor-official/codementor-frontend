@@ -55,7 +55,9 @@ export function RevenueDetailTable({ report }: { report: RevenueReport }) {
           </select>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      {/* relative: caption `sr-only` là absolute — thiếu khung định vị thì nó bám vào <body>, kéo dài
+          cả trang và làm khung app cuộn trôi lên khi xem góc nhìn "Tất cả". */}
+      <div className="relative overflow-x-auto">
         <table className="w-full min-w-[600px] text-left text-sm">
           <caption className="sr-only">
             Số liệu doanh thu theo ngày, cùng kỳ và phạm vi với biểu đồ

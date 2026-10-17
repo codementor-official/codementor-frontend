@@ -132,6 +132,7 @@ export function RevenueOverview({
               value={view}
               onChange={(e) => setView(e.target.value)}
             >
+              <option value="all">Tất cả</option>
               <option value="overview">
                 {renderOverview ? "Tổng quan hệ thống" : "Xu hướng doanh thu"}
               </option>
@@ -143,7 +144,6 @@ export function RevenueOverview({
               ))}
               <option value="statuses">Trạng thái đơn hàng</option>
               <option value="details">Số liệu chi tiết</option>
-              <option value="all">Tất cả</option>
             </select>
           </label>
           <div className="flex flex-wrap gap-2 sm:ml-auto">

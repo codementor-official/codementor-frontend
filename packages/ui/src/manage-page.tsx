@@ -77,6 +77,9 @@ export interface ManagePageProps<TData> {
    */
   initialSelectedId?: string | null;
 
+  /** Mở dòng ở nơi khác thay vì drawer — ví dụ một modal. Bị bỏ qua khi có `drawer`. */
+  onRowOpen?: (row: TData) => void;
+
   /** Right-hand drawer contents for the selected row. Absent means rows are not clickable. */
   drawer?: {
     title: (row: TData) => string;
@@ -142,6 +145,7 @@ export function ManagePage<TData>({
   exportFilename,
   onRefresh,
   initialSelectedId = null,
+  onRowOpen,
   drawer,
   view,
 }: ManagePageProps<TData>) {
@@ -240,14 +244,14 @@ export function ManagePage<TData>({
           <CardGrid
             emptyMessage={loading ? "Đang tải…" : emptyMessage}
             getRowId={getRowId}
-            onCardClick={drawer ? (row) => setSelectedId(getRowId(row)) : undefined}
+            onCardClick={drawer ? (row) => setSelectedId(getRowId(row)) : onRowOpen}
             renderCard={view.renderCard}
             rows={table.getRowModel().rows.map((row) => row.original)}
           />
         ) : (
           <DataTable
             emptyMessage={loading ? "Đang tải…" : emptyMessage}
-            onRowClick={drawer ? (row) => setSelectedId(getRowId(row)) : undefined}
+            onRowClick={drawer ? (row) => setSelectedId(getRowId(row)) : onRowOpen}
             table={table}
           />
         )}

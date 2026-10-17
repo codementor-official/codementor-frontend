@@ -256,7 +256,7 @@ export function EarningsScreen() {
       {tab === "overview" ? (
         // Không bọc Card: RevenueOverview đã tự có khung, bọc thêm thành card lồng card.
         <RevenueOverview
-          defaultView="overview"
+          defaultView="all"
           report={report}
           days={days}
           onDaysChange={setDays}
@@ -417,8 +417,9 @@ export function EarningsScreen() {
                       <td className="whitespace-nowrap p-3">
                         {vnd(o.instructorAmount)} ({o.instructorBps / 100}%)
                       </td>
-                      <td className="p-3">
-                        <p className="font-medium">
+                      {/* min-w: không có thì bảng co cột này lại, "Đã thanh toán" bẻ làm hai dòng và mọi hàng cao gấp đôi. */}
+                      <td className="min-w-40 p-3">
+                        <p className="font-medium whitespace-nowrap">
                           {COMMERCE_STATUS[o.status] ?? o.status}
                         </p>
                         <p className="text-xs text-muted-foreground">
