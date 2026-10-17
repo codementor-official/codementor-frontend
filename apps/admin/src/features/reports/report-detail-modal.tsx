@@ -30,8 +30,9 @@ import {
   ROLE,
   STATUS,
   STATUS_TONE,
+  SUSPENSION_OPTIONS,
   TARGET,
-  reportedContentUrl,
+  reportedContentPath,
 } from "./report-labels";
 
 const dateTime = new Intl.DateTimeFormat("vi-VN", {
@@ -60,8 +61,12 @@ function Section({
 }
 
 function actionTitle(action: ReportAction) {
-  if (action.action === "USER_SUSPENDED")
-    return `Tạm khoá tài khoản ${action.sanctionedUserName ?? "tác giả"}`;
+  if (action.action === "USER_SUSPENDED") {
+    const until = action.suspendedUntil
+      ? `tới ${dateTime.format(new Date(action.suspendedUntil))}`
+      : "không thời hạn";
+    return `Khoá tài khoản ${action.sanctionedUserName ?? "tác giả"} ${until}`;
+  }
   if (action.action === "ROLLED_BACK")
     return action.sanctionedUserId
       ? "Hoàn tác khoá tài khoản"
@@ -127,7 +132,7 @@ export function ReportDetailModal({
   };
 
   const report = detail;
-  const contentUrl = report ? reportedContentUrl(report) : null;
+  const contentPath = report ? reportedContentPath(report) : null;
   const category = report ? CATEGORY[report.category] : null;
   const canSuspend =
     report?.ownerId &&
@@ -162,15 +167,19 @@ export function ReportDetailModal({
                 <RejectDialogButton
                   variant="outline"
                   title="Tạm khoá tài khoản tác giả"
-                  description={`${report.ownerName} sẽ không đăng nhập được cho tới khi được mở khoá. Có thể hoàn tác trong lịch sử thao tác.`}
-                  decisions={[
-                    { value: "suspend", label: "Tạm khoá tài khoản" },
-                  ]}
+                  description={`${report.ownerName} bị đăng xuất ngay và không đăng nhập được tới hết thời hạn — hệ thống tự mở khoá khi hết hạn. Có thể hoàn tác sớm trong lịch sử thao tác.`}
+                  decisions={SUSPENSION_OPTIONS}
                   placeholder="Lý do khoá, ví dụ: đăng nội dung vi phạm bản quyền lần thứ hai…"
-                  onConfirm={(_, note) =>
+                  onConfirm={(days, note) =>
                     run(
-                      () => reportsApi.suspendOwner(request, report.id, note),
-                      "Đã tạm khoá tài khoản tác giả.",
+                      () =>
+                        reportsApi.suspendOwner(
+                          request,
+                          report.id,
+                          note,
+                          days === "none" ? null : Number(days),
+                        ),
+                      "Đã khoá tài khoản tác giả và đăng xuất mọi phiên của họ.",
                     )
                   }
                 >
@@ -260,15 +269,17 @@ export function ReportDetailModal({
               <dt className="text-muted-foreground">Mã</dt>
               <dd className="font-mono text-xs break-all">{report.targetId}</dd>
             </dl>
-            {contentUrl && (
-              <a
-                href={contentUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
-              >
-                Mở nội dung để kiểm tra <ExternalLink className="size-4" />
-              </a>
+            {contentPath && (
+              // POST sang tab mới: admin vào client đã đăng nhập sẵn bằng chính tài khoản này ("super login").
+              <form method="post" action="/api/auth/client-handoff" target="_blank" className="mt-3">
+                <input type="hidden" name="path" value={contentPath} />
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
+                >
+                  Mở nội dung để kiểm tra <ExternalLink className="size-4" />
+                </button>
+              </form>
             )}
           </Section>
 

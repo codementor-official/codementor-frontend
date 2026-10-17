@@ -373,6 +373,9 @@ importers:
       '@codementor/types':
         specifier: workspace:*
         version: link:../types
+      jose:
+        specifier: ^6.2.8
+        version: 6.2.8
       oidc-client-ts:
         specifier: ^3.3.0
         version: 3.5.0

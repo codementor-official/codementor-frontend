@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { allowLoginAttempt } from "@/features/auth/server/rate-limit";
 import {
+  AccountSuspendedError,
   InvalidCredentialsError,
   setSessionCookies,
   signInWithPassword,
@@ -50,6 +51,13 @@ export async function POST(request: NextRequest) {
     response.headers.set("Cache-Control", "no-store");
     return response;
   } catch (cause) {
+    // Trước InvalidCredentialsError: lớp này là lớp con của nó.
+    if (cause instanceof AccountSuspendedError) {
+      return NextResponse.json(
+        { message: "Tài khoản của bạn đang bị tạm khoá.", code: "ACCOUNT_SUSPENDED" },
+        { status: 403 },
+      );
+    }
     if (cause instanceof InvalidCredentialsError) {
       return NextResponse.json(
         { message: "Email/tên đăng nhập hoặc mật khẩu không đúng." },

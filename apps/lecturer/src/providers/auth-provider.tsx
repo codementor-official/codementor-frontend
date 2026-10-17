@@ -33,8 +33,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     let active = true;
     void fetch("/api/auth/session", { cache: "no-store", signal: AbortSignal.timeout(8_000) })
       .then(async (response) => {
-        const body = (await response.json()) as { authenticated: boolean; user: User | null };
+        const body = (await response.json()) as { authenticated: boolean; user: User | null; suspended?: boolean };
         if (!active) return;
+        if (body.suspended) {
+          window.location.assign("/login?reason=suspended");
+          return;
+        }
         if (response.ok && body.authenticated) {
           // The encrypted BFF session contains Keycloak's `sub`, while ownership fields
           // in Learning/Core use the platform user id. Resolve `/me` once so edit actions
@@ -54,14 +58,36 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     return () => { active = false; };
   }, []);
 
+  // Nhịp 60 giây: đăng xuất ngay giảng viên vừa bị admin khoá (session route hỏi core `/me`).
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    const beat = () => {
+      if (document.visibilityState !== "visible") return;
+      void fetch("/api/auth/session", { cache: "no-store" })
+        .then((response) => response.json() as Promise<{ suspended?: boolean }>)
+        .then((body) => {
+          if (body.suspended) window.location.assign("/login?reason=suspended");
+        })
+        .catch(() => undefined);
+    };
+    const timer = setInterval(beat, 60_000);
+    document.addEventListener("visibilitychange", beat);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", beat);
+    };
+  }, [status]);
+
   const signIn = useCallback(async (username: string, password: string) => {
     setError(null);
     const response = await fetch("/api/auth/login", {
       method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    const body = (await response.json()) as { message?: string; user?: User };
-    if (!response.ok || !body.user) throw new Error(body.message ?? "Đăng nhập thất bại.");
+    const body = (await response.json()) as { message?: string; code?: string; user?: User };
+    if (!response.ok || !body.user) {
+      throw Object.assign(new Error(body.message ?? "Đăng nhập thất bại."), { code: body.code });
+    }
     setUser(await api.me().catch(() => body.user ?? null));
     setStatus("authenticated");
   }, []);

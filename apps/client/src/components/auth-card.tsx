@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Lock, Mail, UserRound } from "lucide-react";
 import { resetPasswordUrl } from "@codementor/auth";
-import { FieldError, fieldA11y, Input, useFieldErrors } from "@codementor/ui";
+import { ACCOUNT_SUSPENDED, AccountSuspendedNotice, FieldError, fieldA11y, Input, useFieldErrors } from "@codementor/ui";
 import { email, length, required } from "@codementor/utils";
 import { BrandLogo } from "@/components/brand-logo";
 import { FacebookIcon, GoogleIcon } from "@/components/provider-icons";
@@ -29,11 +29,12 @@ import { useAuth } from "@/providers/auth-provider";
  */
 type Pending = "credentials" | "google" | "facebook" | null;
 
-export function AuthCard({ mode }: { mode: "login" | "signup" }) {
+export function AuthCard({ mode, suspended: suspendedOnLoad = false }: { mode: "login" | "signup"; suspended?: boolean }) {
   const { status, user, error, signInWithPassword, signUpWithPassword, signInWithPopup, cancelPopupSignIn } = useAuth();
   const router = useRouter();
   const isSignup = mode === "signup";
 
+  const [suspended, setSuspended] = useState(suspendedOnLoad);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -79,6 +80,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
+    setSuspended(false);
 
     // Kiểm ngay tại chỗ: gửi lên rồi mới biết hai ô mật khẩu lệch nhau là một vòng
     // request thừa, và tài khoản có thể đã được tạo với mật khẩu người dùng gõ nhầm.
@@ -96,6 +98,10 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
       setPassword("");
       setConfirmPassword("");
     } catch (cause) {
+      if ((cause as { code?: string }).code === ACCOUNT_SUSPENDED) {
+        setSuspended(true);
+        return;
+      }
       setFormError(cause instanceof Error ? cause.message : "Thao tác thất bại.");
     } finally {
       setPending(null);
@@ -130,7 +136,8 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
             : "Đăng nhập để tiếp tục học tập và luyện tập."}
         </p>
 
-        {message && (
+        {suspended && <AccountSuspendedNotice className="mb-4" />}
+        {!suspended && message && (
           <p
             className="mb-4 rounded-md border border-danger/40 bg-danger-tint px-3 py-2 text-sm text-danger"
             role="alert"

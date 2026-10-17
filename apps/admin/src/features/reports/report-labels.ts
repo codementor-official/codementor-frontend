@@ -66,31 +66,34 @@ export const ACCOUNT_STATUS: Record<string, string> = {
   deleted: "Đã xoá",
 };
 
-const CLIENT_URL = (
-  process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000"
-).replace(/\/+$/, "");
+/** Mức khoá tài khoản tác giả; giá trị là số ngày, "none" = không thời hạn. */
+export const SUSPENSION_OPTIONS = [
+  { value: "1", label: "Khoá 1 ngày" },
+  { value: "3", label: "Khoá 3 ngày" },
+  { value: "7", label: "Khoá 7 ngày" },
+  { value: "30", label: "Khoá 30 ngày" },
+  { value: "none", label: "Khoá không thời hạn (tới khi mở thủ công)" },
+];
 
-/** Trang bên app học viên nơi nội dung bị báo cáo hiển thị — tài liệu nhóm mở về nhóm chứa nó. */
-export function reportedContentUrl(
-  report: Pick<
-    AdminContentReport,
-    "targetType" | "targetId" | "targetRef" | "targetSlug"
-  >,
+/**
+ * Đường dẫn bên app học viên nơi nội dung bị báo cáo hiển thị — tài liệu nhóm mở về nhóm chứa
+ * nó. Chỉ trả path: `/api/auth/client-handoff` ghép origin của client và đăng nhập sẵn cho admin.
+ */
+export function reportedContentPath(
+  report: Pick<AdminContentReport, "targetType" | "targetId" | "targetRef" | "targetSlug">,
 ): string | null {
   const slug = report.targetSlug ?? report.targetRef;
   switch (report.targetType) {
     case "COURSE":
-      return `${CLIENT_URL}/courses/${report.targetId}`;
+      return `/courses/${report.targetId}`;
     case "ROADMAP":
-      return `${CLIENT_URL}/roadmaps/${report.targetId}`;
+      return `/roadmaps/${report.targetId}`;
     case "EXERCISE":
-      return `${CLIENT_URL}/solve/${report.targetId}`;
+      return `/solve/${report.targetId}`;
     case "POST":
-      return `${CLIENT_URL}/articles/${slug ?? report.targetId}`;
+      return `/articles/${encodeURIComponent(slug ?? report.targetId)}`;
     case "WORKSPACE":
     case "DOCUMENT":
-      return report.targetSlug
-        ? `${CLIENT_URL}/workspace/${report.targetSlug}`
-        : null;
+      return report.targetSlug ? `/workspace/${encodeURIComponent(report.targetSlug)}` : null;
   }
 }

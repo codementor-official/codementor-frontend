@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   clearSessionCookies,
+  endKeycloakSession,
   InvalidCredentialsError,
+  isAccountSuspended,
   readSession,
   refreshWebSession,
   sessionNeedsRefresh,
@@ -19,6 +21,13 @@ export async function GET(request: NextRequest) {
   try {
     const refreshed = sessionNeedsRefresh(session);
     if (refreshed) session = await refreshWebSession(session);
+    if (await isAccountSuspended(session)) {
+      const response = NextResponse.json({ authenticated: false, user: null, suspended: true });
+      clearSessionCookies(response);
+      await endKeycloakSession(session).catch(() => undefined);
+      response.headers.set("Cache-Control", "no-store");
+      return response;
+    }
     const response = NextResponse.json({ authenticated: true, user: session.user });
     if (refreshed) await setSessionCookies(response, session);
     response.headers.set("Cache-Control", "no-store");

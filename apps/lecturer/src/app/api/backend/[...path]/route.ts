@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clearSession, needsRefresh, readSession, refreshSession, setSession } from "@/features/auth/server/session";
+import { clearSession, isSuspendedBody, needsRefresh, readSession, refreshSession, setSession } from "@/features/auth/server/session";
 
 const SAFE = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -30,10 +30,22 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   }
   headers.set("Authorization", `Bearer ${session.accessToken}`);
   try {
-    const upstream = await fetch(target, {
+    let upstream = await fetch(target, {
       body: SAFE.has(request.method) ? undefined : await request.arrayBuffer(),
       cache: "no-store", headers, method: request.method, redirect: "manual",
     });
+    // Bị khoá giữa phiên: xoá phiên ngay để giảng viên ra trang đăng nhập với hướng dẫn kháng cáo.
+    if (upstream.status === 403) {
+      const text = await upstream.text();
+      let body: unknown = null;
+      try { body = JSON.parse(text); } catch { /* không phải lỗi khoá của core */ }
+      if (isSuspendedBody(body)) {
+        const suspended = NextResponse.json({ message: "Tài khoản của bạn đang bị tạm khoá.", code: "ACCOUNT_SUSPENDED" }, { status: 401 });
+        clearSession(suspended);
+        return suspended;
+      }
+      upstream = new Response(text, { headers: upstream.headers, status: 403, statusText: upstream.statusText });
+    }
     const responseHeaders = new Headers();
     for (const name of ["content-type", "etag", "last-modified", "location", "x-request-id"]) {
       const value = upstream.headers.get(name);

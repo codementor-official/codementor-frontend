@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./handoff": "./src/handoff.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@codementor/types": "workspace:*",
-    "oidc-client-ts": "^3.3.0"
+    "oidc-client-ts": "^3.3.0",
+    "jose": "^6.2.8"
   },
   "devDependencies": {
     "typescript": "^5"

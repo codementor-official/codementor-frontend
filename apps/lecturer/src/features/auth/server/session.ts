@@ -33,7 +33,27 @@ export interface LecturerSession {
 }
 
 export class LoginError extends Error {
-  constructor(public readonly status: number, message: string) { super(message); }
+  constructor(public readonly status: number, message: string, public readonly code?: string) { super(message); }
+}
+
+/** Thân lỗi của core khi tài khoản bị khoá: `{ details: { code: "ACCOUNT_SUSPENDED" } }`. */
+export function isSuspendedBody(body: unknown): boolean {
+  return (body as { details?: { code?: unknown } } | null)?.details?.code === "ACCOUNT_SUSPENDED";
+}
+
+/**
+ * Core trả 403 `ACCOUNT_SUSPENDED` ngay khi admin khoá, dù access token còn hạn tới 5 phút.
+ * Lỗi mạng trả `false`: không chắc thì không đăng xuất người dùng.
+ */
+export async function isAccountSuspended(session: LecturerSession): Promise<boolean> {
+  const base = (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
+  if (!base) return false;
+  try {
+    const response = await fetch(`${base}/me`, { cache: "no-store", headers: { Authorization: `Bearer ${session.accessToken}` } });
+    return response.status === 403 && isSuspendedBody(await response.json().catch(() => null));
+  } catch {
+    return false;
+  }
 }
 
 function config(): Config {
@@ -54,6 +74,13 @@ async function requestTokens(params: Record<string, string>): Promise<Tokens> {
     method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(params), cache: "no-store",
   });
+  if (response.status === 400) {
+    // Keycloak báo "Account disabled" khi admin đã khoá tài khoản — khác với sai mật khẩu.
+    const body = (await response.json().catch(() => null)) as { error_description?: string } | null;
+    if (body?.error_description === "Account disabled") {
+      throw new LoginError(403, "Tài khoản của bạn đang bị tạm khoá.", "ACCOUNT_SUSPENDED");
+    }
+  }
   if (!response.ok) throw new LoginError(response.status === 400 ? 401 : 502,
     response.status === 400 ? "Email hoặc mật khẩu không đúng." : "Không thể kết nối dịch vụ đăng nhập.");
   return response.json() as Promise<Tokens>;

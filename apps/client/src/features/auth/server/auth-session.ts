@@ -44,6 +44,19 @@ export class InvalidCredentialsError extends Error {
 }
 
 /**
+ * Tài khoản bị tắt ở Keycloak (admin tạm khoá). Keycloak báo "Account disabled" ngay sau khi
+ * tìm thấy tài khoản — tách riêng để người dùng biết vì sao và cách kháng cáo, thay vì đoán
+ * là gõ sai mật khẩu.
+ */
+export class AccountSuspendedError extends InvalidCredentialsError {
+  constructor() {
+    super();
+    this.message = "account_disabled";
+    this.name = "AccountSuspendedError";
+  }
+}
+
+/**
  * Direct Access Grant, chạy TRỌN VẸN phía server bằng client bí mật
  * `codementor-web-bff`. Mật khẩu chỉ tồn tại trong tham số của hàm này và trong thân
  * request tới Keycloak — không ghi log, không lưu, không đi vào phiên trả về.
@@ -75,6 +88,42 @@ export async function refreshWebSession(session: WebSession): Promise<WebSession
   });
   const accessPayload = await verifyToken(tokens.access_token, config.audience);
   return sessionFromTokens({ ...tokens, id_token: tokens.id_token ?? session.idToken }, accessPayload);
+}
+
+/**
+ * Core-service trả 403 `ACCOUNT_SUSPENDED` ngay khi admin khoá tài khoản, trong khi access token
+ * vẫn còn hạn tới 5 phút. Nhịp kiểm tra phiên hỏi `/me` để đá người dùng ra ngay lúc đó.
+ * Lỗi mạng hay gateway trả `false`: không chắc thì không đăng xuất người dùng.
+ */
+export async function isAccountSuspended(session: WebSession): Promise<boolean> {
+  const base = (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
+  if (!base) return false;
+  try {
+    const response = await fetch(`${base}/me`, {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+    });
+    return response.status === 403 && isSuspendedBody(await response.json().catch(() => null));
+  } catch {
+    return false;
+  }
+}
+
+/** Thân lỗi của core: `{ code: "HTTP_ERROR", details: { code: "ACCOUNT_SUSPENDED" } }`. */
+export function isSuspendedBody(body: unknown): boolean {
+  return (body as { details?: { code?: unknown } } | null)?.details?.code === "ACCOUNT_SUSPENDED";
+}
+
+/** Phiên mới từ một refresh token có sẵn — dùng cho "super login" từ admin. */
+export async function sessionFromRefreshToken(refreshToken: string): Promise<WebSession> {
+  const config = getWebAuthConfig();
+  const tokens = await requestTokens({
+    grant_type: "refresh_token",
+    client_id: config.bffClientId,
+    client_secret: config.bffClientSecret,
+    refresh_token: refreshToken,
+  });
+  return sessionFromTokens(tokens, await verifyToken(tokens.access_token, config.audience));
 }
 
 export function sessionNeedsRefresh(session: WebSession): boolean {
@@ -157,7 +206,11 @@ async function requestTokens(parameters: Record<string, string>): Promise<TokenR
   // 401 dành cho sai mật khẩu, 400 `invalid_grant` dành cho cả sai mật khẩu lẫn tài
   // khoản bị khoá tạm bởi brute-force detection. Cả hai đều không được nói rõ lý do
   // cho trình duyệt — làm thế là chỉ điểm tài khoản nào có thật.
-  if (response.status === 400 || response.status === 401) throw new InvalidCredentialsError();
+  if (response.status === 400 || response.status === 401) {
+    const body = (await response.json().catch(() => null)) as { error_description?: string } | null;
+    if (body?.error_description === "Account disabled") throw new AccountSuspendedError();
+    throw new InvalidCredentialsError();
+  }
   if (!response.ok) throw new Error(`Keycloak token request failed with status ${response.status}`);
   return (await response.json()) as TokenResponse;
 }

@@ -16,7 +16,8 @@ export type AuthStatus = "loading" | "authenticated" | "anonymous";
  * và xa dưới hạn nhàn rỗi 1800s của refresh token nên phiên không bao giờ chạm mốc đó
  * khi người học vẫn đang mở tab.
  */
-const SESSION_HEARTBEAT_MS = 4 * 60 * 1000;
+// 60 giây: ngoài giữ phiên, nhịp này còn là đường đăng xuất người vừa bị admin khoá.
+const SESSION_HEARTBEAT_MS = 60 * 1000;
 
 /** Keycloak identity provider alias, provisioned in the realm — see configure-codementor-realm.sh. */
 export type SocialProvider = "google" | "facebook";
@@ -209,7 +210,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (document.visibilityState !== "visible") return;
       try {
         const response = await fetch("/api/auth/session", { cache: "no-store" });
-        const body = (await response.json()) as { authenticated?: boolean; transient?: boolean };
+        const body = (await response.json()) as { authenticated?: boolean; transient?: boolean; suspended?: boolean };
+        if (body.suspended) {
+          await applySession(null);
+          window.location.assign("/login?reason=suspended");
+          return;
+        }
         // Phiên chết giữa chừng mà trạng thái vẫn là "đã đăng nhập" thì mọi trang chỉ
         // hiện 401 và không có đường ra. `transient` là "chưa hỏi được Keycloak", không
         // phải "hết phiên", nên không đá người dùng ra vì một cú vấp mạng.
@@ -359,8 +365,9 @@ async function postCredentials(path: string, body: Record<string, string>): Prom
     method: "POST",
   });
   if (!response.ok) {
-    const problem = (await response.json().catch(() => null)) as { message?: string } | null;
-    throw new Error(problem?.message ?? "Thao tác thất bại. Vui lòng thử lại.");
+    const problem = (await response.json().catch(() => null)) as { message?: string; code?: string } | null;
+    // `code` đi kèm để form đăng nhập nhận ra tài khoản bị khoá và hiện hướng dẫn kháng cáo.
+    throw Object.assign(new Error(problem?.message ?? "Thao tác thất bại. Vui lòng thử lại."), { code: problem?.code });
   }
 }
 

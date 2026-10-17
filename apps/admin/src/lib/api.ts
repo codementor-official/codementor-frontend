@@ -145,6 +145,8 @@ export interface ReportAction {
   sanctionedUserName: string | null;
   revertsActionId: string | null;
   revertedAt: string | null;
+  /** Hạn khoá với USER_SUSPENDED; `null` là khoá không thời hạn. */
+  suspendedUntil: string | null;
   createdAt: string;
   /** Lý do không hoàn tác được, do server tính; `null` là hoàn tác được. */
   rollbackBlocker: string | null;
@@ -180,8 +182,9 @@ export const reportsApi = {
       method: "PATCH",
       body: { status, resolutionNote },
     }),
-  suspendOwner: (request: Request, id: string, note: string) =>
-    unwrap<AdminReportDetail>(request, `/reports/${id}/sanctions`, { method: "POST", body: { note } }),
+  /** `days` null = khoá không thời hạn (tới khi có người mở). */
+  suspendOwner: (request: Request, id: string, note: string, days: number | null) =>
+    unwrap<AdminReportDetail>(request, `/reports/${id}/sanctions`, { method: "POST", body: { note, days } }),
   rollback: (request: Request, id: string, actionId: string, note: string) =>
     unwrap<AdminReportDetail>(request, `/reports/${id}/actions/${actionId}/rollback`, {
       method: "POST",

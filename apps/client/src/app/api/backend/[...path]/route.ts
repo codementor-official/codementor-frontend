@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   clearSessionCookies,
   InvalidCredentialsError,
+  isSuspendedBody,
   readSession,
   refreshWebSession,
   sessionNeedsRefresh,
@@ -107,6 +108,26 @@ async function proxyBackend(request: NextRequest, context: { params: Promise<{ p
       `[auth] upstream ${upstream.status} ${request.method} /${path.join("/")}` +
         ` (phiên còn hiệu lực, token vừa gắn${refreshed ? ", vừa gia hạn" : ""})`,
     );
+  }
+  // Bị khoá giữa phiên: core trả 403 `ACCOUNT_SUSPENDED`. Xoá phiên ngay để mọi tab cùng ra
+  // trang đăng nhập với thông báo kháng cáo, thay vì tiếp tục gọi API rồi nhận 403 mãi.
+  if (upstream.status === 403) {
+    const text = await upstream.text();
+    let body: unknown = null;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      // Không phải JSON thì không phải lỗi khoá tài khoản của core.
+    }
+    if (isSuspendedBody(body)) {
+      const suspended = NextResponse.json(
+        { message: "Tài khoản của bạn đang bị tạm khoá.", code: "ACCOUNT_SUSPENDED" },
+        { status: 401 },
+      );
+      clearSessionCookies(suspended);
+      return suspended;
+    }
+    upstream = new Response(text, { headers: upstream.headers, status: 403, statusText: upstream.statusText });
   }
   const responseHeaders = new Headers();
   for (const name of ["content-type", "etag", "last-modified", "location", "x-request-id"]) {

@@ -34,6 +34,9 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     const status = error instanceof LoginError ? error.status : 502;
-    return NextResponse.json({ message: error instanceof LoginError ? error.message : "Không thể xác minh đăng nhập." }, { status });
+    return NextResponse.json({
+      message: error instanceof LoginError ? error.message : "Không thể xác minh đăng nhập.",
+      code: error instanceof LoginError ? error.code : undefined,
+    }, { status });
   }
 }
