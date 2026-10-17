@@ -93,7 +93,8 @@ export function reportedContentPath(
     case "POST":
       return `/articles/${encodeURIComponent(slug ?? report.targetId)}`;
     case "WORKSPACE":
-    case "DOCUMENT":
       return report.targetSlug ? `/workspace/${encodeURIComponent(report.targetSlug)}` : null;
+    case "DOCUMENT":
+      return report.targetSlug ? `/workspace/${encodeURIComponent(report.targetSlug)}?tab=documents` : null;
   }
 }
