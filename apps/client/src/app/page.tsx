@@ -1,202 +1,34 @@
-import Image from "next/image";
-import Link from "next/link";
-import {
-  ArrowRight,
-  Award,
-  BarChart3,
-  BookOpen,
-  Bot,
-  CheckCircle2,
-  Code2,
-  Flame,
-  GraduationCap,
-  Lightbulb,
-  MessageSquareText,
-  Play,
-  Search,
-  Sparkles,
-  Target,
-  UsersRound,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { BrandLogo } from "@/components/brand-logo";
-import type { ArticleSummary, CourseSummary, RoadmapSummary } from "@/types/catalogue";
+import { LandingHeader } from "@/features/landing/landing-header";
+import { LandingHero } from "@/features/landing/hero";
+import { LandingTopicRail } from "@/features/landing/topic-rail";
+import { LandingCategories } from "@/features/landing/categories";
+import { LandingFeaturedCourses } from "@/features/landing/featured-courses";
+import { LandingLearningPaths } from "@/features/landing/learning-paths";
+import { LandingPractice } from "@/features/landing/practice";
+import { LandingBenefits } from "@/features/landing/benefits";
+import { LandingArticles } from "@/features/landing/latest-articles";
+import { LandingFooter } from "@/features/landing/landing-footer";
+import { loadLanding } from "@/features/landing/data";
 
-// Số liệu trên trang lấy từ danh mục công khai, làm mới mỗi 5 phút. Trước đây là số bịa
-// (1.200+ người học, 48.000+ lượt chạy code…) và lời chứng thực của người không có thật.
+// Chỉ dữ liệu thật từ danh mục công khai; thiếu thì section tự ẩn. Phải là literal để Next đọc được.
 export const revalidate = 300;
 
-async function publicList<T>(path: string): Promise<T[]> {
-  const base = (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
-  if (!base) return [];
-  try {
-    const res = await fetch(`${base}${path}`, { next: { revalidate } });
-    if (!res.ok) return [];
-    const body = (await res.json()) as { data?: { items?: T[] } };
-    return body.data?.items ?? [];
-  } catch {
-    // Landing không được sập vì gateway chậm: thiếu số liệu thì ẩn phần đó.
-    return [];
-  }
-}
-
-const count = (value: number) => value.toLocaleString("vi-VN");
-
-const audiences = [
-  {
-    icon: Code2,
-    title: "Người học lập trình",
-    description: "Xây năng lực bằng lộ trình có cấu trúc, bài luyện tập sát thực tế và hồ sơ kỹ năng có thể chứng minh.",
-    features: ["IDE và chấm bài trực tuyến", "Ngân hàng bài theo kỹ năng", "XP, chuỗi học và thành tích"],
-  },
-  {
-    icon: UsersRound,
-    title: "Nhóm học tập",
-    description: "Cùng học trên một không gian chung, giao bài, thảo luận hướng giải và theo dõi sự tiến bộ của từng thành viên.",
-    features: ["Tài liệu và bài tập dùng chung", "Bảng xếp hạng theo XP", "Theo dõi bài nộp của nhóm"],
-  },
-  {
-    icon: GraduationCap,
-    title: "Mentor & tổ chức",
-    description: "Tạo nội dung, đánh giá kỹ năng thực hành và xây cộng đồng học tập dựa trên dữ liệu thật.",
-    features: ["Tạo bộ đề và lộ trình riêng", "Phân quyền quản lý nhóm", "Dữ liệu tiến độ minh bạch"],
-  },
-];
-
-
-const learningSteps = [
-  { number: "01", icon: Target, title: "Chọn mục tiêu", description: "Cá nhân hóa lĩnh vực, trình độ và thời gian học mỗi tuần." },
-  { number: "02", icon: BookOpen, title: "Theo lộ trình", description: "Học theo chương, bài học và cột mốc được sắp xếp rõ ràng." },
-  { number: "03", icon: Code2, title: "Luyện tập thật", description: "Viết code, chạy test và trao đổi hướng giải cùng cộng đồng." },
-  { number: "04", icon: BarChart3, title: "Chứng minh tiến bộ", description: "Tích lũy XP, duy trì chuỗi học và hoàn thiện hồ sơ kỹ năng." },
-];
-
-const activity = [0, 1, 2, 0, 3, 2, 1, 0, 2, 4, 3, 1, 0, 1, 3, 4, 2, 1, 0, 2, 3, 1, 4, 2, 0, 1, 2, 3, 4, 3, 1, 0, 2, 4, 2, 3, 1, 0, 1, 3, 4, 2];
-
 export default async function LandingPage() {
-  const [courses, roadmaps, articles] = await Promise.all([
-    publicList<CourseSummary>("/courses?limit=100"),
-    publicList<RoadmapSummary>("/roadmaps?limit=100"),
-    publicList<ArticleSummary>("/articles?limit=100"),
-  ]);
-  const lessons = courses.reduce((sum, course) => sum + (course.totalLessons ?? 0), 0);
-  const stats = [
-    { icon: BookOpen, value: courses.length, label: "khóa học" },
-    { icon: Target, value: roadmaps.length, label: "lộ trình" },
-    { icon: GraduationCap, value: lessons, label: "bài học" },
-    { icon: MessageSquareText, value: articles.length, label: "bài viết" },
-  ].filter((stat) => stat.value > 0);
-  const [course] = courses;
-  const [roadmap] = roadmaps;
-  const [article] = articles;
-  const highlights = [
-    roadmap && { type: "Lộ trình", title: roadmap.title, description: roadmap.shortDescription ?? "", meta: [roadmap.courseCount && `${roadmap.courseCount} khóa học`, roadmap.estimatedHours && `${roadmap.estimatedHours} giờ`].filter(Boolean).join(" · "), icon: Target, href: `/roadmaps/${roadmap.id}` },
-    course && { type: "Khóa học", title: course.title, description: course.description ?? "", meta: [course.totalLessons && `${course.totalLessons} bài học`, course.authorName].filter(Boolean).join(" · "), icon: BookOpen, href: `/courses/${course.id}` },
-    article && { type: "Bài viết", title: article.title, description: article.excerpt ?? "", meta: [article.authorName, article.readMinutes && `${article.readMinutes} phút đọc`].filter(Boolean).join(" · "), icon: MessageSquareText, href: `/articles/${article.slug}` },
-    { type: "AI học tập", title: "Codey đồng hành theo trạng thái làm bài", description: "Gợi ý ngắn khi bế tắc và phản hồi theo kết quả test case.", meta: "Hỗ trợ 24/7", icon: Bot, href: "/ai-tutor" },
-  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const latestArticles = articles.slice(0, 3);
-
-  return <div className="min-h-full bg-surface text-navy">
-    <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-5 sm:px-8">
-        <Link href="/" className="shrink-0"><BrandLogo size="sm" priority /></Link>
-        <nav className="hidden items-center gap-5 lg:flex">
-          {[["Khám phá", "/explore"], ["Luyện tập", "/practice"], ["Lộ trình", "/roadmaps"], ["Nhóm học", "/workspace"]].map(([label, href]) => <Link key={label} href={href} className="text-xs font-medium text-text-muted hover:text-navy">{label}</Link>)}
-        </nav>
-        <div className="flex-1" />
-        <label className="hidden h-9 w-56 items-center gap-2 rounded-full border border-border px-3 xl:flex"><Search className="h-3.5 w-3.5 text-text-faint" /><span className="text-xs text-text-faint">Tìm bài tập, lộ trình...</span></label>
-        <Link href="/login" className="text-xs font-semibold text-text hover:text-navy">Đăng nhập</Link>
-        <Button href="/signup" size="sm">Đăng ký</Button>
-      </div>
-    </header>
-
-    <main>
-      <section className="relative overflow-hidden px-5 py-16 sm:px-8 lg:py-22">
-        <div className="pointer-events-none absolute -top-20 left-1/2 h-72 w-72 rounded-full bg-primary-tint blur-3xl" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_0.92fr]">
-          <div>
-            <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold tracking-[0.15em] text-primary uppercase"><Sparkles className="h-4 w-4" /> Nền tảng chứng minh năng lực</div>
-            <h1 className="max-w-2xl text-4xl leading-[1.08] font-extrabold tracking-tight text-navy sm:text-5xl lg:text-6xl">Nơi kỹ năng lập trình được rèn luyện và ghi nhận.</h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-text-muted">Học theo lộ trình, giải bài trong workspace chuyên nghiệp, thảo luận cùng cộng đồng và xây hồ sơ năng lực dựa trên kết quả thật.</p>
-            <div className="mt-7 flex flex-wrap gap-3"><Button href="/signup">Bắt đầu miễn phí <ArrowRight className="h-4 w-4" /></Button><Button href="/practice" variant="outline">Xem bài luyện tập</Button></div>
-            <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3 border-t border-border pt-6">
-              {[...stats.slice(0, 2).map((stat) => [count(stat.value), stat.label]), ["24/7", "AI đồng hành"]].map(([value, label]) => <div key={label}><b className="text-lg text-navy">{value}</b><span className="ml-2 text-xs text-text-muted">{label}</span></div>)}
-            </div>
-          </div>
-          <div className="relative mx-auto w-full max-w-lg">
-            <div className="absolute inset-x-10 bottom-5 h-10 rounded-full bg-border-soft blur-xl" />
-            <Image src="/illustrations/hero.svg" alt="Người học theo dõi bài giảng trực tuyến" width={692} height={500} className="relative h-auto w-full object-contain" priority />
-            <div className="absolute right-0 bottom-3 rounded-xl border border-border bg-surface/95 p-3 shadow-lg backdrop-blur sm:right-4"><div className="flex items-center gap-2"><Flame className="h-4 w-4 text-primary" /><div><b className="block text-xs">Chuỗi học mỗi ngày</b><span className="text-2xs text-text-muted">Học đều để giữ nhịp</span></div></div></div>
-          </div>
-        </div>
-      </section>
-
-      {stats.length > 0 && <section className="border-y border-border bg-surface px-5 py-6 sm:px-8">
-        <div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => <div key={stat.label} className="flex items-center gap-3 rounded-xl border border-border bg-bg/70 px-4 py-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-tint"><stat.icon className="h-4.5 w-4.5 text-primary" /></span><div><b className="block text-lg text-navy">{count(stat.value)}</b><span className="text-xs text-text-muted">{stat.label}</span></div></div>)}
-        </div>
-      </section>}
-
-      <section className="px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl"><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Hành trình rõ ràng</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-navy">Từ mục tiêu học tập đến năng lực có thể <br />chứng minh</h2><p className="mt-3 text-sm leading-6 text-text-muted">Mọi hoạt động trong hệ thống đều nối tiếp nhau, giúp bạn luôn biết mình đang ở đâu và bước tiếp theo là gì.</p></div>
-          <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {learningSteps.map((step, index) => <article key={step.number} className="relative rounded-xl border border-border p-5 transition hover:border-primary/20"><span className="absolute top-4 right-4 font-mono text-xs text-text-faint">{step.number}</span><span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-tint text-primary"><step.icon className="h-5 w-5" /></span><h3 className="mt-5 text-sm font-bold text-navy">{step.title}</h3><p className="mt-2 text-xs leading-5 text-text-muted">{step.description}</p>{index < learningSteps.length - 1 && <ArrowRight className="absolute -right-3 top-1/2 z-10 hidden h-5 w-5 rounded-full bg-surface text-text-faint lg:block" />}</article>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-border bg-bg px-5 py-14 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-8"><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Ai đang ở CodeMentor?</p><h2 className="mt-2 text-2xl font-bold text-navy">Một không gian chung cho người học và người hướng dẫn</h2></div>
-          <div className="grid gap-8 lg:grid-cols-3">
-            {audiences.map((audience) => <article key={audience.title} className="grid grid-cols-[1fr_auto] gap-5"><div><audience.icon className="mb-4 h-7 w-7 text-primary" /><h3 className="text-lg font-bold text-navy">{audience.title}</h3><p className="mt-2 text-sm leading-6 text-text-muted">{audience.description}</p><p className="mt-5 text-2xs font-bold tracking-widest text-text-faint uppercase">Tính năng chính</p><ul className="mt-3 space-y-2">{audience.features.map((feature) => <li key={feature} className="flex items-center gap-2 text-xs text-text"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{feature}</li>)}</ul></div><div className="mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-surface shadow-sm"><audience.icon className="h-7 w-7 text-navy" /></div></article>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-14 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-7 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Mới & đáng chú ý</p><h2 className="mt-2 text-2xl font-bold text-navy">Bắt đầu từ điều phù hợp với bạn</h2><p className="mt-1 text-sm text-text-muted">Lộ trình, bài luyện tập và hoạt động nổi bật trên hệ thống.</p></div><Link href="/explore" className="inline-flex items-center gap-1 text-xs font-semibold text-text hover:text-primary">Xem toàn bộ <ArrowRight className="h-3.5 w-3.5" /></Link></div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{highlights.map((item) => <Link key={item.title} href={item.href} className="group flex flex-col rounded-xl border border-border bg-surface p-4 transition hover:border-border"><div className="flex items-start justify-between gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-tint text-primary"><item.icon className="h-4.5 w-4.5" /></span><ArrowRight className="h-4 w-4 text-text-faint transition group-hover:text-primary" /></div><p className="mt-5 text-2xs font-bold tracking-wider text-primary uppercase">{item.type}</p><h3 className="mt-1.5 text-sm font-bold leading-5 text-navy">{item.title}</h3><p className="mt-2 mb-4 line-clamp-3 text-xs leading-5 text-text-muted">{item.description}</p><p className="mt-auto border-t border-border-soft pt-3 text-2xs font-medium text-text-faint">{item.meta}</p></Link>)}</div>
-        </div>
-      </section>
-
-      <section className="border-y border-border bg-bg px-5 py-16 sm:px-8">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.78fr_1.22fr]">
-          <div><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Workspace luyện tập</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-navy">Đề bài, code, test và cộng đồng trong cùng một màn hình.</h2><p className="mt-4 text-sm leading-6 text-text-muted">Một trải nghiệm giống công cụ làm việc thật: quản lý file, viết code với Monaco, chạy test và thảo luận mà không rời phiên làm bài.</p><ul className="mt-5 space-y-2">{["Editor nhiều ngôn ngữ và tự động lưu", "Public test, hidden test và kết quả chi tiết", "Thảo luận hướng giải theo từng bài"].map((item) => <li key={item} className="flex items-center gap-2 text-xs text-text"><CheckCircle2 className="h-3.5 w-3.5 text-success" />{item}</li>)}</ul><Button href="/practice" variant="outline" className="mt-6">Thử workspace <Play className="h-3.5 w-3.5" /></Button></div>
-          <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-lg"><div className="flex h-10 items-center gap-2 border-b border-border bg-bg px-3"><span className="h-2.5 w-2.5 rounded-full bg-border-soft" /><span className="h-2.5 w-2.5 rounded-full bg-border-soft" /><span className="h-2.5 w-2.5 rounded-full bg-primary" /><span className="ml-2 font-mono text-2xs text-text-muted">solution.cpp</span><span className="ml-auto rounded bg-border-soft px-2 py-1 text-2xs font-semibold text-text-muted">C++</span></div><div className="grid min-h-72 grid-cols-[0.8fr_1.2fr]"><div className="border-r border-border p-4"><div className="text-xs font-bold text-navy">Giải phương trình bậc hai</div><div className="mt-3 space-y-2 text-2xs leading-5 text-text-muted"><p>Cho ba hệ số a, b, c.</p><p>Tính delta và in nghiệm thực.</p><span className="inline-flex rounded bg-primary-tint px-2 py-1 font-semibold text-primary">+25 XP</span></div><div className="mt-6 rounded-lg border border-border p-3"><p className="font-mono text-2xs text-text-faint">TEST RESULT</p><p className="mt-2 text-xs font-semibold text-success">✓ 3/3 test case đạt</p></div></div><pre className="overflow-hidden bg-ink-fixed p-4 font-mono text-2xs leading-5 text-on-ink-fixed"><span className="text-primary">double</span>{` delta = b*b - 4*a*c;\n`}<span className="text-primary">if</span>{` (delta > 0) {\n  // two roots\n}\n`}</pre></div></div>
-        </div>
-      </section>
-
-      <section className="px-5 py-16 sm:px-8">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-2 lg:items-center">
-          <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary-tint p-6 shadow-sm">
-            <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-primary-tint blur-3xl" />
-            <div className="relative flex items-start gap-4"><span className="mascot-sprite mascot-sprite-idle h-24 w-24 shrink-0" /><div><span className="inline-flex rounded-full border border-primary/20 bg-surface px-2 py-1 text-2xs font-bold tracking-wide text-primary uppercase">Codey · phản hồi nhanh</span><h3 className="mt-3 text-xl font-bold text-navy">Một người bạn nhỏ trong lúc code</h3><p className="mt-2 text-xs leading-5 text-text-muted">Codey đọc trạng thái chạy bài, nhắc test case biên và đưa gợi ý ngắn ngay trong popup để bạn không mất tập trung.</p></div></div>
-            <div className="relative mt-5 ml-16 rounded-xl border border-primary/20 bg-surface p-3 text-xs leading-5 text-text"><Lightbulb className="mr-2 inline h-3.5 w-3.5 text-primary" />Thử tách ba trường hợp theo dấu của delta trước nhé.</div>
-          </div>
-          <div><p className="text-xs font-bold tracking-[0.15em] text-ai uppercase">Hai cấp độ hỗ trợ</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-navy">Hỏi nhanh Codey, phân tích sâu với Trợ lý AI</h2><p className="mt-4 text-sm leading-6 text-text-muted">Hai công cụ có nhiệm vụ riêng để bạn chọn đúng mức hỗ trợ, từ một lời nhắc nhỏ đến phân tích toàn bộ chiến lược giải.</p><div className="mt-6 grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-primary/20 bg-primary-tint p-4"><Bot className="h-5 w-5 text-primary" /><b className="mt-3 block text-sm">Codey</b><p className="mt-1 text-xs leading-5 text-text-muted">Gợi ý nhanh, đọc trạng thái test và giữ bạn trong luồng làm bài.</p></div><div className="rounded-xl border border-border bg-bg p-4"><Sparkles className="h-5 w-5 text-ai" /><b className="mt-3 block text-sm">Trợ lý AI</b><p className="mt-1 text-xs leading-5 text-text-muted">Phân tích code, độ phức tạp và phương án cải thiện chuyên sâu.</p></div></div></div>
-        </div>
-      </section>
-
-      <section className="border-y border-border bg-bg px-5 py-16 sm:px-8">
-        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-          <div><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Tiến bộ nhìn thấy được</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-navy">Mỗi ngày học đều góp vào hồ sơ của bạn</h2><p className="mt-3 text-sm leading-6 text-text-muted">XP, chuỗi hoạt động, kỹ năng và bài đã giải được tổng hợp thành một bức tranh năng lực rõ ràng.</p><p className="mt-6 text-2xs font-semibold tracking-wide text-text-faint uppercase">Minh họa hồ sơ mẫu</p><div className="mt-2 grid grid-cols-3 gap-3">{[["2.450", "Tổng XP"], ["47", "Bài đã giải"], ["12 ngày", "Chuỗi dài nhất"]].map(([value, label]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><b className="block text-lg text-navy">{value}</b><span className="mt-1 block text-2xs text-text-muted">{label}</span></div>)}</div></div>
-          <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm"><div className="flex items-center justify-between"><div><b className="text-sm">Hoạt động 6 tuần gần nhất</b><p className="mt-1 text-2xs text-text-muted">Minh họa · mỗi ô là một ngày học</p></div><span className="flex items-center gap-1 text-xs font-semibold text-primary"><Flame className="h-4 w-4" /> 5 ngày</span></div><div className="mt-5 grid grid-flow-col grid-rows-6 gap-1.5">{activity.map((level, index) => <span key={index} className={`aspect-square min-h-3 rounded-sm ${level === 0 ? "bg-border-soft" : level === 1 ? "bg-primary-tint" : level === 2 ? "bg-primary-tint" : level === 3 ? "bg-primary/60" : "bg-primary/60"}`} />)}</div><div className="mt-5 flex items-center justify-between border-t border-border-soft pt-4 text-2xs text-text-muted"><span>Kỹ năng nổi bật</span><span className="font-semibold text-text">Java · SQL · API Design</span></div></div>
-        </div>
-      </section>
-
-      {latestArticles.length > 0 && <section className="px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl"><div className="text-center"><p className="text-xs font-bold tracking-[0.15em] text-primary uppercase">Bài viết mới</p><h2 className="mt-2 text-3xl font-bold text-navy">Kinh nghiệm từ giảng viên CodeMentor</h2></div><div className="mt-9 grid gap-4 lg:grid-cols-3">{latestArticles.map((item) => <Link key={item.id} href={`/articles/${item.slug}`} className="group flex flex-col rounded-xl border border-border p-5 transition hover:border-primary/30">{item.tagName && <p className="text-2xs font-bold tracking-wider text-primary uppercase">{item.tagName}</p>}<h3 className="mt-2 text-base font-bold leading-6 text-navy group-hover:text-primary">{item.title}</h3>{item.excerpt && <p className="mt-3 mb-5 line-clamp-3 text-sm leading-6 text-text-muted">{item.excerpt}</p>}<p className="mt-auto border-t border-border-soft pt-4 text-xs text-text-faint">{[item.authorName, item.readMinutes && `${item.readMinutes} phút đọc`].filter(Boolean).join(" · ")}</p></Link>)}</div></div>
-      </section>}
-
-      <section className="px-5 pb-16 sm:px-8">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-primary/20 bg-primary-tint px-6 py-10 text-center sm:px-10"><Award className="mx-auto h-8 w-8 text-primary" /><h2 className="mt-4 text-3xl font-bold text-navy">Sẵn sàng chinh phục cột mốc tiếp theo?</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-text-muted">Tạo hồ sơ miễn phí, chọn mục tiêu và bắt đầu tích lũy XP từ bài luyện tập đầu tiên.</p><div className="mt-6 flex flex-wrap justify-center gap-3"><Button href="/signup">Tạo tài khoản miễn phí <ArrowRight className="h-4 w-4" /></Button><Button href="/roadmaps" variant="outline">Xem lộ trình học</Button></div></div>
-      </section>
-    </main>
-
-    <footer className="border-t border-border px-5 py-7 sm:px-8"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-xs text-text-muted sm:flex-row"><BrandLogo size="sm" /><span>© 2026 CodeMentor · Học, luyện tập và chứng minh năng lực.</span><div className="flex gap-4"><Link href="/practice" className="hover:text-navy">Luyện tập</Link><Link href="/login" className="hover:text-navy">Đăng nhập</Link></div></div></footer>
-  </div>;
+  const data = await loadLanding();
+  return (
+    <div className="min-h-full bg-surface text-navy">
+      <LandingHeader />
+      <main>
+        <LandingHero {...data} />
+        <LandingTopicRail courses={data.courses} />
+        <LandingCategories courses={data.courses} />
+        <LandingFeaturedCourses courses={data.courses} />
+        <LandingLearningPaths roadmaps={data.roadmaps} />
+        <LandingPractice />
+        <LandingBenefits />
+        <LandingArticles articles={data.articles} />
+      </main>
+      <LandingFooter {...data} />
+    </div>
+  );
 }

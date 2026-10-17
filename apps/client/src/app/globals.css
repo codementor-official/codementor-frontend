@@ -333,6 +333,27 @@ html {
   animation: mascot-idle-frames 3.2s steps(1, end) infinite;
 }
 
+/* Hero landing: code tự gõ từng dòng, test lần lượt chuyển sang Đạt. Chạy một lần, chỉ dưới
+ * `motion-safe`; giảm chuyển động thì trang hiện thẳng trạng thái cuối. */
+@keyframes hero-type {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* Dải chủ đề landing: track chứa hai bản giống hệt, dịch đúng nửa chiều dài là khớp vòng. */
+@keyframes landing-marquee {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes hero-show {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+@keyframes hero-hide {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 @utility animate-menu-in {
   animation: menu-in var(--duration-fast) var(--ease-standard);
 }
