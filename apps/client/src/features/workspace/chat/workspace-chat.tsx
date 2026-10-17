@@ -170,15 +170,22 @@ export function WorkspaceChatTab({
         </div>
       )}
       {attachmentError && <div role="alert" className="shrink-0 border-t border-danger/20 bg-danger-tint px-4 py-2 text-xs text-danger">{attachmentError}</div>}
-      <Composer
-        value={draft}
-        onChange={setDraft}
-        onSubmit={() => void submit()}
-        sending={chat.sending}
-        placeholder="Nhắn cho nhóm… Dùng ``` để chia sẻ code"
-        onAttach={(file) => void attach(file)}
-        attaching={attaching}
-      />
+      {detail.currentMembership.adminView ? (
+        // Admin xem để kiểm duyệt thì chỉ đọc — server cũng từ chối tin nhắn từ tư cách này.
+        <p className="shrink-0 border-t border-border px-4 py-3 text-xs text-text-muted">
+          Quản trị viên chỉ xem cuộc trò chuyện của nhóm, không gửi tin nhắn.
+        </p>
+      ) : (
+        <Composer
+          value={draft}
+          onChange={setDraft}
+          onSubmit={() => void submit()}
+          sending={chat.sending}
+          placeholder="Nhắn cho nhóm… Dùng ``` để chia sẻ code"
+          onAttach={(file) => void attach(file)}
+          attaching={attaching}
+        />
+      )}
       <Modal open={resourcesOpen} onClose={() => setResourcesOpen(false)} title="Tài nguyên đã chia sẻ trong chat" width="lg">
         <p className="mb-4 text-xs text-text-muted">Tổng hợp file và liên kết từ tối đa 500 tin nhắn gần nhất của nhóm.</p>
         {resourcesLoading ? <p className="flex items-center gap-2 py-8 text-sm text-text-muted"><LoaderCircle className="h-4 w-4 animate-spin" /> Đang tổng hợp tài nguyên…</p> : resourcesError ? <p role="alert" className="text-sm text-danger">{resourcesError}</p> : resources.length === 0 ? <div className="py-10 text-center"><Paperclip className="mx-auto h-6 w-6 text-text-faint" /><p className="mt-2 text-sm font-semibold text-navy">Chưa có file hoặc liên kết</p><p className="mt-1 text-xs text-text-muted">Các URL được chia sẻ trong chat sẽ xuất hiện tại đây.</p></div> : <ul className="max-h-[60dvh] divide-y divide-border-soft overflow-y-auto">{resources.map((resource) => <li key={resource.url}><a href={resource.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 py-3 hover:text-primary"><span className="rounded-lg bg-bg p-2 text-primary">{resource.kind === "file" ? <Paperclip className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-navy">{resource.title}</span><span className="text-2xs text-text-muted">{resource.senderName} · {new Date(resource.createdAt).toLocaleString("vi-VN")}</span></span><ExternalLink className="h-4 w-4 text-text-faint" /></a></li>)}</ul>}

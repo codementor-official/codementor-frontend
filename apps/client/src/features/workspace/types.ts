@@ -90,6 +90,8 @@ export interface WorkspaceDetail {
     role: WorkspaceRole;
     joinedAt: string;
     permissions: Record<WorkspacePermission, boolean>;
+    /** Quản trị viên nền tảng xem nhóm để kiểm duyệt báo cáo: không phải thành viên, chỉ xem. */
+    adminView?: boolean;
   };
   rolePermissions: {
     deputy: Record<WorkspacePermission, boolean>;

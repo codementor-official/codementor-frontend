@@ -498,9 +498,9 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           </p>
         </div>
         <Badge tone={isOwner ? "brown" : "neutral"}>
-          {ROLE_LABEL[detail.currentMembership.role]}
+          {detail.currentMembership.adminView ? "Quản trị viên · chỉ xem" : ROLE_LABEL[detail.currentMembership.role]}
         </Badge>
-        {!isOwner && (
+        {!isOwner && !detail.currentMembership.adminView && (
           <ReportButton
             compact
             targetType="WORKSPACE"
@@ -508,7 +508,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
             targetRef={detail.slug}
           />
         )}
-        {!isOwner && (
+        {!isOwner && !detail.currentMembership.adminView && (
           <Button
             size="sm"
             variant="outline"
@@ -520,6 +520,12 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         )}
       </div>
 
+      {detail.currentMembership.adminView && (
+        <p className="mb-4 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-text">
+          Bạn đang xem nhóm này với quyền quản trị viên để kiểm duyệt nội dung. Bạn không phải thành viên nên
+          không thể đăng, sửa hay xoá nội dung trong nhóm.
+        </p>
+      )}
       <div className="scrollbar-none mb-5 overflow-x-auto border-b border-border">
         <nav className="flex min-w-max gap-1" aria-label="Mục của nhóm">
           {visibleTabs.map(({ key: value, label, icon: Icon }) => (
