@@ -56,6 +56,8 @@ export function UsersPage() {
   const [search, setSearch] = useUrlState("q", "");
   const [role, setRole] = useUrlState("role", "");
   const [status, setStatus] = useUrlState("status", "");
+  // `?user=<id>` mở sẵn drawer của tài khoản đó — báo cáo vi phạm dẫn tới đây từ nút "Xem tài khoản".
+  const [openUser] = useUrlState("user", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -273,6 +275,7 @@ export function UsersPage() {
         </>
       }
       getRowId={(row) => row.id}
+      initialSelectedId={openUser || null}
       loading={loading}
       onClearFilters={() => {
         setRole("");

@@ -296,7 +296,7 @@ export function ReportDetailModal({
                   </p>
                 </div>
                 <a
-                  href={`/users?q=${encodeURIComponent(report.ownerEmail ?? "")}`}
+                  href={`/users?q=${encodeURIComponent(report.ownerEmail ?? "")}&user=${report.ownerId}`}
                   className="font-medium text-primary hover:underline"
                 >
                   Xem tài khoản

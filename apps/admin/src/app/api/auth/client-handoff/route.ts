@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
 <body style="font-family:system-ui,sans-serif;padding:2rem">
 <form id="handoff" method="post" action="${escapeHtml(`${CLIENT_URL}/api/auth/handoff`)}">
 <input type="hidden" name="token" value="${escapeHtml(token)}">
+<input type="hidden" name="path" value="${escapeHtml(path)}">
 <p>Đang đăng nhập vào CodeMentor bằng tài khoản quản trị…</p>
 <noscript><button type="submit">Tiếp tục</button></noscript>
 </form>

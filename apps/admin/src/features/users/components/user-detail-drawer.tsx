@@ -12,6 +12,10 @@ import {
   LogOut,
   Route,
   Trophy,
+  Flag,
+  PenLine,
+  ShoppingCart,
+  UsersRound,
 } from "lucide-react";
 import { ApiClientError } from "@codementor/api-client";
 import { SegmentedTabs } from "@codementor/ui";
@@ -50,6 +54,10 @@ const ACTIVITY_LABELS: Record<ActivityEntry["kind"], { label: string; icon: type
   course_completed: { label: "Hoàn thành khoá học", icon: Trophy },
   lesson_completed: { label: "Hoàn thành bài học", icon: CheckCircle2 },
   exercise_solved: { label: "Giải được bài tập", icon: GraduationCap },
+  course_purchased: { label: "Mua khoá học", icon: ShoppingCart },
+  group_activity: { label: "Hoạt động trong nhóm", icon: UsersRound },
+  report_submitted: { label: "Gửi báo cáo vi phạm", icon: Flag },
+  article_written: { label: "Viết bài", icon: PenLine },
 };
 
 /**

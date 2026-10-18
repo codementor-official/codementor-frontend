@@ -274,7 +274,11 @@ export interface ActivityEntry {
     | "course_enrolled"
     | "course_completed"
     | "lesson_completed"
-    | "exercise_solved";
+    | "exercise_solved"
+    | "course_purchased"
+    | "group_activity"
+    | "report_submitted"
+    | "article_written";
   title: string;
   detail: string | null;
   occurredAt: string;

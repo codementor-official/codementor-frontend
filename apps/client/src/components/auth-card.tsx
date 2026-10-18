@@ -29,7 +29,15 @@ import { useAuth } from "@/providers/auth-provider";
  */
 type Pending = "credentials" | "google" | "facebook" | null;
 
-export function AuthCard({ mode, suspended: suspendedOnLoad = false }: { mode: "login" | "signup"; suspended?: boolean }) {
+export function AuthCard({
+  mode,
+  suspended: suspendedOnLoad = false,
+  handoffFailed = false,
+}: {
+  mode: "login" | "signup";
+  suspended?: boolean;
+  handoffFailed?: boolean;
+}) {
   const { status, user, error, signInWithPassword, signUpWithPassword, signInWithPopup, cancelPopupSignIn } = useAuth();
   const router = useRouter();
   const isSignup = mode === "signup";
@@ -118,7 +126,10 @@ export function AuthCard({ mode, suspended: suspendedOnLoad = false }: { mode: "
     }
   };
 
-  const message = formError ?? error;
+  const message =
+    formError ??
+    error ??
+    (handoffFailed ? "Không tự đăng nhập được từ trang quản trị. Đăng nhập bằng tài khoản quản trị để mở nội dung." : null);
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center bg-bg px-5 py-10">

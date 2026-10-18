@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { openHandoff } from "@codementor/auth/handoff";
+import { openHandoff, safeHandoffPath } from "@codementor/auth/handoff";
 import { getWebAuthConfig } from "@/features/auth/server/auth-config";
 import { endKeycloakSession, sessionFromRefreshToken, setSessionCookies } from "@/features/auth/server/auth-session";
 
@@ -11,21 +11,34 @@ import { endKeycloakSession, sessionFromRefreshToken, setSessionCookies } from "
 export async function POST(request: NextRequest) {
   const form = await request.formData().catch(() => null);
   const token = form?.get("token");
-  const handoff = typeof token === "string" ? await openHandoff(token, getWebAuthConfig().bffClientSecret) : null;
-  if (!handoff) return NextResponse.redirect(new URL("/login?handoff=expired", request.url), 303);
+  // `path` đi kèm bản rõ chỉ để lùi về đúng trang khi gói hỏng; nó không cấp quyền gì.
+  const fallbackPath = safeHandoffPath(form?.get("path"));
+  const failed = (stage: string) => {
+    console.error(`[auth] super login thất bại ở bước ${stage}`);
+    const login = new URL("/login", request.url);
+    login.searchParams.set("handoff", "failed");
+    if (fallbackPath) login.searchParams.set("next", fallbackPath);
+    return NextResponse.redirect(login, 303);
+  };
 
+  const handoff = typeof token === "string" ? await openHandoff(token, getWebAuthConfig().bffClientSecret) : null;
+  // Không mở được: hết 60 giây, hoặc hai app không cùng KEYCLOAK_BFF_CLIENT_SECRET.
+  if (!handoff) return failed("mở gói");
+
+  let session;
   try {
-    const session = await sessionFromRefreshToken(handoff.refreshToken);
-    // Gói chỉ admin phát ra; vẫn kiểm lại ở đây để nó không thành cửa sau cho vai trò khác.
-    if (session.user.role !== "admin") {
-      await endKeycloakSession(session).catch(() => undefined);
-      return NextResponse.redirect(new URL("/login", request.url), 303);
-    }
-    const response = NextResponse.redirect(new URL(handoff.path, request.url), 303);
-    await setSessionCookies(response, session);
-    response.headers.set("Cache-Control", "no-store");
-    return response;
-  } catch {
-    return NextResponse.redirect(new URL("/login?handoff=expired", request.url), 303);
+    session = await sessionFromRefreshToken(handoff.refreshToken);
+  } catch (cause) {
+    console.error("[auth] super login: Keycloak từ chối refresh token", cause);
+    return failed("đổi refresh token");
   }
+  // Gói chỉ admin phát ra; vẫn kiểm lại ở đây để nó không thành cửa sau cho vai trò khác.
+  if (session.user.role !== "admin") {
+    await endKeycloakSession(session).catch(() => undefined);
+    return failed("kiểm vai trò");
+  }
+  const response = NextResponse.redirect(new URL(handoff.path, request.url), 303);
+  await setSessionCookies(response, session);
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
