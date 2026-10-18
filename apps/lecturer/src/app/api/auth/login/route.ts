@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LoginError, setSession, signInWithPassword } from "@/features/auth/server/session";
+import { LoginError, setSession, signInWithPassword, suspensionEnd } from "@/features/auth/server/session";
 
 const attempts = new Map<string, number[]>();
 
@@ -34,9 +34,11 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     const status = error instanceof LoginError ? error.status : 502;
+    const code = error instanceof LoginError ? error.code : undefined;
     return NextResponse.json({
       message: error instanceof LoginError ? error.message : "Không thể xác minh đăng nhập.",
-      code: error instanceof LoginError ? error.code : undefined,
+      code,
+      suspendedUntil: code === "ACCOUNT_SUSPENDED" ? await suspensionEnd({ login: username }) : undefined,
     }, { status });
   }
 }

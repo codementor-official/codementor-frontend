@@ -5,7 +5,9 @@ import {
   InvalidCredentialsError,
   setSessionCookies,
   signInWithPassword,
+  suspensionEnd,
 } from "@/features/auth/server/auth-session";
+import { findUserIdByLogin } from "@/features/auth/server/keycloak-admin";
 
 /**
  * Điểm chạm duy nhất của trình duyệt với việc đăng nhập bằng mật khẩu.
@@ -53,8 +55,10 @@ export async function POST(request: NextRequest) {
   } catch (cause) {
     // Trước InvalidCredentialsError: lớp này là lớp con của nó.
     if (cause instanceof AccountSuspendedError) {
+      const userId = await findUserIdByLogin(username);
+      const suspendedUntil = userId ? await suspensionEnd(userId) : undefined;
       return NextResponse.json(
-        { message: "Tài khoản của bạn đang bị tạm khoá.", code: "ACCOUNT_SUSPENDED" },
+        { message: "Tài khoản của bạn đang bị tạm khoá.", code: "ACCOUNT_SUSPENDED", suspendedUntil },
         { status: 403 },
       );
     }

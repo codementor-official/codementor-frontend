@@ -95,4 +95,4 @@ export { useFieldErrors } from "./use-field-errors";
 export { MaskedAccount } from "./masked-account";
 export { StatusPage } from "./status-page";
 export { useUrlState } from "./use-url-state";
-export { ACCOUNT_SUSPENDED, APPEAL_EMAIL, AccountSuspendedNotice } from "./account-suspended-notice";
+export { ACCOUNT_SUSPENDED, APPEAL_EMAIL, AccountSuspendedNotice, formatSuspensionLeft } from "./account-suspended-notice";

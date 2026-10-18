@@ -210,10 +210,15 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (document.visibilityState !== "visible") return;
       try {
         const response = await fetch("/api/auth/session", { cache: "no-store" });
-        const body = (await response.json()) as { authenticated?: boolean; transient?: boolean; suspended?: boolean };
+        const body = (await response.json()) as {
+          authenticated?: boolean;
+          transient?: boolean;
+          suspended?: boolean;
+          suspendedUntil?: string | null;
+        };
         if (body.suspended) {
           await applySession(null);
-          window.location.assign("/login?reason=suspended");
+          window.location.assign(suspendedLoginUrl(body.suspendedUntil));
           return;
         }
         // Phiên chết giữa chừng mà trạng thái vẫn là "đã đăng nhập" thì mọi trang chỉ
@@ -374,6 +379,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
  * Gửi thông tin đăng nhập/đăng ký tới BFF và ném lỗi kèm thông điệp hiển thị được.
  * Không log, không giữ lại gì: đối tượng `body` chết ngay khi request kết thúc.
  */
+/** `/login` với thông báo khoá; `until` "none" = không thời hạn, bỏ trống = chưa biết hạn. */
+export function suspendedLoginUrl(until: string | null | undefined): string {
+  const params = new URLSearchParams({ reason: "suspended" });
+  if (until !== undefined) params.set("until", until ?? "none");
+  return `/login?${params}`;
+}
+
 async function postCredentials(path: string, body: Record<string, string>): Promise<void> {
   const response = await fetch(path, {
     body: JSON.stringify(body),
@@ -383,7 +395,10 @@ async function postCredentials(path: string, body: Record<string, string>): Prom
   if (!response.ok) {
     const problem = (await response.json().catch(() => null)) as { message?: string; code?: string } | null;
     // `code` đi kèm để form đăng nhập nhận ra tài khoản bị khoá và hiện hướng dẫn kháng cáo.
-    throw Object.assign(new Error(problem?.message ?? "Thao tác thất bại. Vui lòng thử lại."), { code: problem?.code });
+    throw Object.assign(new Error(problem?.message ?? "Thao tác thất bại. Vui lòng thử lại."), {
+      code: problem?.code,
+      suspendedUntil: (problem as { suspendedUntil?: string | null } | null)?.suspendedUntil,
+    });
   }
 }
 

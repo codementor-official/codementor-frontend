@@ -32,10 +32,13 @@ type Pending = "credentials" | "google" | "facebook" | null;
 export function AuthCard({
   mode,
   suspended: suspendedOnLoad = false,
+  suspendedUntil: suspendedUntilOnLoad,
   handoffFailed = false,
 }: {
   mode: "login" | "signup";
   suspended?: boolean;
+  /** ISO lúc mở khoá; `null` = không thời hạn; `undefined` = chưa biết. */
+  suspendedUntil?: string | null;
   handoffFailed?: boolean;
 }) {
   const { status, user, error, signInWithPassword, signUpWithPassword, signInWithPopup, cancelPopupSignIn } = useAuth();
@@ -43,6 +46,7 @@ export function AuthCard({
   const isSignup = mode === "signup";
 
   const [suspended, setSuspended] = useState(suspendedOnLoad);
+  const [suspendedUntil, setSuspendedUntil] = useState(suspendedUntilOnLoad);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -108,6 +112,7 @@ export function AuthCard({
     } catch (cause) {
       if ((cause as { code?: string }).code === ACCOUNT_SUSPENDED) {
         setSuspended(true);
+        setSuspendedUntil((cause as { suspendedUntil?: string | null }).suspendedUntil);
         return;
       }
       setFormError(cause instanceof Error ? cause.message : "Thao tác thất bại.");
@@ -147,7 +152,7 @@ export function AuthCard({
             : "Đăng nhập để tiếp tục học tập và luyện tập."}
         </p>
 
-        {suspended && <AccountSuspendedNotice className="mb-4" />}
+        {suspended && <AccountSuspendedNotice className="mb-4" until={suspendedUntil} />}
         {!suspended && message && (
           <p
             className="mb-4 rounded-md border border-danger/40 bg-danger-tint px-3 py-2 text-sm text-danger"

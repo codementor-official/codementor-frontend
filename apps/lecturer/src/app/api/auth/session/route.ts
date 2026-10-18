@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clearSession, isAccountSuspended, needsRefresh, readSession, refreshSession, revokeSession, setSession } from "@/features/auth/server/session";
+import { clearSession, isAccountSuspended, suspensionEnd, needsRefresh, readSession, refreshSession, revokeSession, setSession } from "@/features/auth/server/session";
 
 export async function GET(request: NextRequest) {
   let session = await readSession(request);
@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
     const refreshed = needsRefresh(session);
     if (refreshed) session = await refreshSession(session);
     if (await isAccountSuspended(session)) {
-      const response = NextResponse.json({ authenticated: false, user: null, suspended: true });
+      const suspendedUntil = await suspensionEnd({ externalId: session.user.id });
+      const response = NextResponse.json({ authenticated: false, user: null, suspended: true, suspendedUntil });
       clearSession(response);
       await revokeSession(session).catch(() => undefined);
       response.headers.set("Cache-Control", "no-store");

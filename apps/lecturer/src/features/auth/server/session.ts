@@ -36,6 +36,43 @@ export class LoginError extends Error {
   constructor(public readonly status: number, message: string, public readonly code?: string) { super(message); }
 }
 
+/**
+ * Hạn mở khoá của một tài khoản bị khoá, để trang đăng nhập đếm ngược: tra `sub` bằng service
+ * account của `codementor-web-bff` (chỉ khi đã biết `login`), rồi hỏi core. ISO, `null` =
+ * không thời hạn, `undefined` = không hỏi được.
+ */
+export async function suspensionEnd(input: { externalId?: string; login?: string }): Promise<string | null | undefined> {
+  try {
+    let externalId = input.externalId;
+    if (!externalId && input.login) {
+      const settings = config();
+      const tokens = await requestTokens({
+        grant_type: "client_credentials",
+        client_id: settings.clientId,
+        client_secret: settings.clientSecret,
+      });
+      const admin = settings.realmUrl.replace("/realms/", "/admin/realms/");
+      for (const field of input.login.includes("@") ? ["email", "username"] : ["username"]) {
+        const response = await fetch(`${admin}/users?${new URLSearchParams({ [field]: input.login, exact: "true" })}`, {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${tokens.access_token}` },
+        });
+        const [user] = response.ok ? ((await response.json()) as Array<{ id: string }>) : [];
+        if (user) { externalId = user.id; break; }
+      }
+    }
+    const base = (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
+    if (!externalId || !base) return undefined;
+    const response = await fetch(`${base}/system/suspensions/${encodeURIComponent(externalId)}`, { cache: "no-store" });
+    if (!response.ok) return undefined;
+    const body = (await response.json()) as { data?: { until?: string | null }; until?: string | null };
+    const value = body.data ?? body;
+    return value.until === undefined ? undefined : value.until;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Thân lỗi của core khi tài khoản bị khoá: `{ details: { code: "ACCOUNT_SUSPENDED" } }`. */
 export function isSuspendedBody(body: unknown): boolean {
   return (body as { details?: { code?: unknown } } | null)?.details?.code === "ACCOUNT_SUSPENDED";

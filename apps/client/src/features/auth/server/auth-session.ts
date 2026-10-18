@@ -109,6 +109,24 @@ export async function isAccountSuspended(session: WebSession): Promise<boolean> 
   }
 }
 
+/**
+ * Hạn mở khoá do core trả: ISO, `null` = không thời hạn, `undefined` = không hỏi được (khi
+ * đó thông báo chỉ bỏ dòng đếm ngược, vẫn hiện hướng dẫn kháng cáo).
+ */
+export async function suspensionEnd(externalId: string): Promise<string | null | undefined> {
+  const base = (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
+  if (!base) return undefined;
+  try {
+    const response = await fetch(`${base}/system/suspensions/${encodeURIComponent(externalId)}`, { cache: "no-store" });
+    if (!response.ok) return undefined;
+    const body = (await response.json()) as { data?: { until?: string | null }; until?: string | null };
+    const value = body.data ?? body;
+    return value.until === undefined ? undefined : value.until;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Thân lỗi của core: `{ code: "HTTP_ERROR", details: { code: "ACCOUNT_SUSPENDED" } }`. */
 export function isSuspendedBody(body: unknown): boolean {
   return (body as { details?: { code?: unknown } } | null)?.details?.code === "ACCOUNT_SUSPENDED";

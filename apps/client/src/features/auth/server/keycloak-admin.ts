@@ -68,6 +68,30 @@ export async function createAccount(input: {
   // `view-realm` chỉ để đọc lại định nghĩa role.
 }
 
+/**
+ * `sub` của tài khoản theo tên đăng nhập hoặc email — chỉ dùng sau khi Keycloak đã báo
+ * "Account disabled", để hỏi core hạn mở khoá. `null` nếu không tìm thấy hoặc lỗi.
+ */
+export async function findUserIdByLogin(login: string): Promise<string | null> {
+  try {
+    const config = getWebAuthConfig();
+    const token = await serviceAccountToken();
+    const base = `${config.internalKeycloakUrl}/admin/realms/${encodeURIComponent(config.realm)}/users`;
+    for (const field of login.includes("@") ? ["email", "username"] : ["username"]) {
+      const response = await fetch(`${base}?${new URLSearchParams({ [field]: login, exact: "true" })}`, {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return null;
+      const [user] = (await response.json()) as Array<{ id: string }>;
+      if (user) return user.id;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function serviceAccountToken(): Promise<string> {
   const config = getWebAuthConfig();
   const response = await fetch(`${keycloakRealmUrl(config)}/protocol/openid-connect/token`, {
