@@ -236,6 +236,22 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     };
   }, [status, applySession]);
 
+  // Đăng nhập Google/Facebook bằng tài khoản bị khoá: trang lỗi của theme Keycloak
+  // (`codementor-web/login/error.ftl`) báo tín hiệu này rồi tự đóng popup. Chỉ tin tín hiệu
+  // từ đúng origin Keycloak; tín hiệu không mang dữ liệu nên không có gì để giả mạo thêm.
+  useEffect(() => {
+    if (!keycloakConfig.url) return;
+    const keycloakOrigin = new URL(keycloakConfig.url).origin;
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== keycloakOrigin) return;
+      if ((event.data as { type?: unknown } | null)?.type !== "codementor:account-suspended") return;
+      popupAbortRef.current?.abort();
+      window.location.assign("/login?reason=suspended");
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
