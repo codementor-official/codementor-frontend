@@ -69,6 +69,8 @@ export function OnboardingModal() {
     if (status === "authenticated" && userId && checkedUserId === userId && pathname !== "/profile" && !hasCompletedOnboarding && !hasSkippedOnboarding) openModal();
   }, [checkedUserId, hasCompletedOnboarding, hasSkippedOnboarding, openModal, pathname, status, userId]);
 
+  // Khảo sát định hướng là của người học; admin vào client (super login) để kiểm duyệt, không học.
+  if (user?.role === "admin") return null;
   if (!isModalOpen || hasCompletedOnboarding || status !== "authenticated" || checkedUserId !== userId || pathname === "/profile") return null;
 
   const totalSteps = onboardingSteps.length;

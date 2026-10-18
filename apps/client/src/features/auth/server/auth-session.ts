@@ -25,6 +25,11 @@ export interface WebSession {
   accessExpiresAt: number;
   refreshExpiresAt: number;
   user: User;
+  /**
+   * Phiên mượn từ admin qua "super login": dùng chung phiên Keycloak với trang quản trị. Đăng
+   * xuất phiên này chỉ xoá cookie client — kết thúc phiên Keycloak là đăng xuất luôn admin.
+   */
+  borrowed?: boolean;
 }
 
 interface TokenResponse {
@@ -87,7 +92,10 @@ export async function refreshWebSession(session: WebSession): Promise<WebSession
     refresh_token: session.refreshToken,
   });
   const accessPayload = await verifyToken(tokens.access_token, config.audience);
-  return sessionFromTokens({ ...tokens, id_token: tokens.id_token ?? session.idToken }, accessPayload);
+  return {
+    ...sessionFromTokens({ ...tokens, id_token: tokens.id_token ?? session.idToken }, accessPayload),
+    borrowed: session.borrowed,
+  };
 }
 
 /**

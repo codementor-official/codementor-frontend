@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
   }
 
   const session = await readSession(request);
-  if (session) await endKeycloakSession(session).catch(() => undefined);
+  // Phiên mượn từ admin: không đụng phiên Keycloak dùng chung, kẻo đăng xuất luôn trang quản trị.
+  if (session && !session.borrowed) await endKeycloakSession(session).catch(() => undefined);
 
   const response = NextResponse.json({ ok: true });
   clearSessionCookies(response);

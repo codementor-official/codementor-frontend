@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     return failed("kiểm vai trò");
   }
   const response = NextResponse.redirect(new URL(handoff.path, request.url), 303);
-  await setSessionCookies(response, session);
+  await setSessionCookies(response, { ...session, borrowed: true });
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
