@@ -189,23 +189,37 @@ export function ReportDetailModal({
               <RejectDialogButton
                 variant="default"
                 title="Đổi trạng thái xử lý"
-                description="Ghi rõ kết quả kiểm tra. Lần đổi này được lưu vào lịch sử và hoàn tác được."
+                description={
+                  canSuspend
+                    ? "Kết luận có vi phạm sẽ khoá luôn tác giả theo thời hạn bạn chọn. Lý do hiện cho tác giả ở trang đăng nhập; mỗi bước lưu vào lịch sử và hoàn tác được."
+                    : "Ghi rõ kết quả kiểm tra. Lần đổi này được lưu vào lịch sử và hoàn tác được."
+                }
+                // "RESOLVED:<ngày|none>": kết luận vi phạm kèm mức khoá tác giả, khi khoá được.
                 decisions={(Object.keys(STATUS) as ReportStatus[])
                   .filter((s) => s !== report.status)
-                  .map((value) => ({ value, label: STATUS[value] }))}
+                  .flatMap((value) =>
+                    value === "RESOLVED" && canSuspend
+                      ? SUSPENSION_OPTIONS.map((option) => ({
+                          value: `RESOLVED:${option.value}`,
+                          label: `${STATUS.RESOLVED} · ${option.label.replace(/^Khoá /, "khoá tác giả ")}`,
+                        }))
+                      : [{ value, label: STATUS[value] }],
+                  )}
                 placeholder="Kết quả kiểm tra và hành động đã thực hiện…"
-                onConfirm={(status, note) =>
-                  run(
+                onConfirm={(decision, note) => {
+                  const [status, days] = decision.split(":");
+                  return run(
                     () =>
                       reportsApi.changeStatus(
                         request,
                         report.id,
                         status as ReportStatus,
                         note,
+                        days && days !== "none" ? Number(days) : null,
                       ),
-                    "Đã cập nhật trạng thái báo cáo.",
-                  )
-                }
+                    days ? "Đã kết luận vi phạm và khoá tác giả." : "Đã cập nhật trạng thái báo cáo.",
+                  );
+                }}
               >
                 Đổi trạng thái
               </RejectDialogButton>

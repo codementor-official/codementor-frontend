@@ -177,10 +177,17 @@ export const reportsApi = {
       totalPages: number;
     }>(request, `/reports${search(params)}`),
   detail: (request: Request, id: string) => unwrap<AdminReportDetail>(request, `/reports/${id}`),
-  changeStatus: (request: Request, id: string, status: ReportStatus, resolutionNote: string) =>
+  /** RESOLVED cũng khoá tác giả nếu khoá được; `days` null = không thời hạn. */
+  changeStatus: (
+    request: Request,
+    id: string,
+    status: ReportStatus,
+    resolutionNote: string,
+    days: number | null = null,
+  ) =>
     unwrap<AdminReportDetail>(request, `/reports/${id}`, {
       method: "PATCH",
-      body: { status, resolutionNote },
+      body: { status, resolutionNote, days },
     }),
   /** `days` null = khoá không thời hạn (tới khi có người mở). */
   suspendOwner: (request: Request, id: string, note: string, days: number | null) =>
