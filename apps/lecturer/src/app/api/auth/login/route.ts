@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LoginError, setSession, signInWithPassword, suspensionEnd } from "@/features/auth/server/session";
+import { isAccountSuspended, LoginError, revokeSession, setSession, signInWithPassword, suspensionEnd } from "@/features/auth/server/session";
 
 const attempts = new Map<string, number[]>();
 
@@ -28,6 +28,15 @@ export async function POST(request: NextRequest) {
   if (!username || !password) return NextResponse.json({ message: "Vui lòng nhập email và mật khẩu." }, { status: 400 });
   try {
     const session = await signInWithPassword(username, password);
+    // Khoá theo báo cáo không tắt tài khoản ở Keycloak; core mới là nơi chặn — hỏi trước khi đặt cookie.
+    if (await isAccountSuspended(session)) {
+      await revokeSession(session).catch(() => undefined);
+      return NextResponse.json({
+        message: "Tài khoản của bạn đang bị tạm khoá.",
+        code: "ACCOUNT_SUSPENDED",
+        suspendedUntil: await suspensionEnd({ externalId: session.user.id }),
+      }, { status: 403 });
+    }
     const response = NextResponse.json({ user: session.user });
     await setSession(response, session);
     response.headers.set("Cache-Control", "no-store");

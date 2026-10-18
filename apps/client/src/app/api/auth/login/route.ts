@@ -4,6 +4,8 @@ import {
   AccountSuspendedError,
   InvalidCredentialsError,
   setSessionCookies,
+  endKeycloakSession,
+  isAccountSuspended,
   signInWithPassword,
   suspensionEnd,
 } from "@/features/auth/server/auth-session";
@@ -48,6 +50,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const session = await signInWithPassword(username, password);
+    // Khoá theo báo cáo không tắt tài khoản ở Keycloak — mật khẩu đúng vẫn qua được tới đây.
+    // Core mới là nơi chặn; hỏi nó trước khi đặt cookie, để báo kèm hạn mở khoá.
+    if (await isAccountSuspended(session)) {
+      await endKeycloakSession(session).catch(() => undefined);
+      return NextResponse.json(
+        {
+          message: "Tài khoản của bạn đang bị tạm khoá.",
+          code: "ACCOUNT_SUSPENDED",
+          suspendedUntil: await suspensionEnd(session.user.id),
+        },
+        { status: 403 },
+      );
+    }
     const response = NextResponse.json({ user: session.user });
     await setSessionCookies(response, session);
     response.headers.set("Cache-Control", "no-store");

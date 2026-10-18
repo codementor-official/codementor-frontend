@@ -6,7 +6,7 @@ import { ApiClientError } from "@codementor/api-client";
 import { accessTokenOf, currentUser, getUserManager } from "@codementor/auth";
 import type { OidcUser, UserManager } from "@codementor/auth";
 import type { User } from "@codementor/types";
-import { keycloakConfig } from "@/lib/env";
+import { apiBaseUrl, keycloakConfig } from "@/lib/env";
 import { api, setAccessTokenReader } from "@/lib/api";
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
@@ -149,6 +149,14 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       // từ khi có RequireAuth thì đoán sai ở đây không còn là một ô trống trên trang nữa
       // mà là đá thẳng người dùng về /login giữa lúc đang làm bài.
       const status = cause instanceof ApiClientError ? cause.status : 0;
+      // Bị khoá (core trả ACCOUNT_SUSPENDED): đăng xuất và ra trang đăng nhập kèm hạn mở khoá.
+      // Với phiên popup, `sub` nằm ngay trong token nên tra được hạn mà không cần BFF.
+      if (cause instanceof ApiClientError && isSuspendedProblem(cause.body)) {
+        const sub = token ? oidcUser?.profile.sub : undefined;
+        if (token) void manager().removeUser();
+        window.location.assign(suspendedLoginUrl(sub ? await suspensionEndOf(sub) : undefined));
+        return;
+      }
       if (status !== 401 && status !== 403) {
         setStatus(tokenRef.current || (await hasPasswordSession()) ? "authenticated" : "anonymous");
         return;
@@ -379,6 +387,24 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
  * Gửi thông tin đăng nhập/đăng ký tới BFF và ném lỗi kèm thông điệp hiển thị được.
  * Không log, không giữ lại gì: đối tượng `body` chết ngay khi request kết thúc.
  */
+/** Lỗi khoá tài khoản: từ core (`details.code`) hoặc từ BFF proxy (`code`). */
+function isSuspendedProblem(body: unknown): boolean {
+  const problem = body as { code?: unknown; details?: { code?: unknown } } | null;
+  return problem?.code === "ACCOUNT_SUSPENDED" || problem?.details?.code === "ACCOUNT_SUSPENDED";
+}
+
+/** Hạn mở khoá từ endpoint công khai của core; `undefined` khi không hỏi được. */
+async function suspensionEndOf(sub: string): Promise<string | null | undefined> {
+  try {
+    const response = await fetch(`${apiBaseUrl.replace(/\/+$/, "")}/system/suspensions/${encodeURIComponent(sub)}`);
+    if (!response.ok) return undefined;
+    const body = (await response.json()) as { data?: { until?: string | null } };
+    return body.data?.until;
+  } catch {
+    return undefined;
+  }
+}
+
 /** `/login` với thông báo khoá; `until` "none" = không thời hạn, bỏ trống = chưa biết hạn. */
 export function suspendedLoginUrl(until: string | null | undefined): string {
   const params = new URLSearchParams({ reason: "suspended" });
