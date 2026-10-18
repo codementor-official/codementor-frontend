@@ -33,10 +33,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     let active = true;
     void fetch("/api/auth/session", { cache: "no-store", signal: AbortSignal.timeout(8_000) })
       .then(async (response) => {
-        const body = (await response.json()) as { authenticated: boolean; user: User | null; suspended?: boolean; suspendedUntil?: string | null };
+        const body = (await response.json()) as { authenticated: boolean; user: User | null; suspended?: boolean; suspendedUntil?: string | null; suspensionReason?: string | null };
         if (!active) return;
         if (body.suspended) {
-          window.location.assign(suspendedLoginUrl(body.suspendedUntil));
+          window.location.assign(suspendedLoginUrl(body));
           return;
         }
         if (response.ok && body.authenticated) {
@@ -64,9 +64,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     const beat = () => {
       if (document.visibilityState !== "visible") return;
       void fetch("/api/auth/session", { cache: "no-store" })
-        .then((response) => response.json() as Promise<{ suspended?: boolean; suspendedUntil?: string | null }>)
+        .then((response) => response.json() as Promise<{ suspended?: boolean; suspendedUntil?: string | null; suspensionReason?: string | null }>)
         .then((body) => {
-          if (body.suspended) window.location.assign(suspendedLoginUrl(body.suspendedUntil));
+          if (body.suspended) window.location.assign(suspendedLoginUrl(body));
         })
         .catch(() => undefined);
     };
@@ -84,9 +84,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    const body = (await response.json()) as { message?: string; code?: string; suspendedUntil?: string | null; user?: User };
+    const body = (await response.json()) as { message?: string; code?: string; suspendedUntil?: string | null; suspensionReason?: string | null; user?: User };
     if (!response.ok || !body.user) {
-      throw Object.assign(new Error(body.message ?? "Đăng nhập thất bại."), { code: body.code, suspendedUntil: body.suspendedUntil });
+      throw Object.assign(new Error(body.message ?? "Đăng nhập thất bại."), { code: body.code, suspendedUntil: body.suspendedUntil, suspensionReason: body.suspensionReason });
     }
     setUser(await api.me().catch(() => body.user ?? null));
     setStatus("authenticated");
@@ -121,9 +121,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/** `/login` với thông báo khoá; `until` "none" = không thời hạn, bỏ trống = chưa biết hạn. */
-function suspendedLoginUrl(until: string | null | undefined): string {
+/** `/login` với thông báo khoá: `until` ("none" = không thời hạn) và `why` nếu đã biết. */
+function suspendedLoginUrl({
+  suspendedUntil,
+  suspensionReason,
+}: {
+  suspendedUntil?: string | null;
+  suspensionReason?: string | null;
+}): string {
   const params = new URLSearchParams({ reason: "suspended" });
-  if (until !== undefined) params.set("until", until ?? "none");
+  if (suspendedUntil !== undefined) params.set("until", suspendedUntil ?? "none");
+  if (suspensionReason) params.set("why", suspensionReason);
   return `/login?${params}`;
 }

@@ -1,9 +1,9 @@
 import { LoginForm } from "./login-form";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ reason?: string; until?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ reason?: string; until?: string; why?: string }> }) {
   // `reason=suspended`: vừa bị đăng xuất vì tài khoản bị khoá giữa phiên. `until`: ISO lúc mở
   // khoá, "none" = không thời hạn; giá trị lạ coi như chưa biết.
-  const { reason, until } = await searchParams;
+  const { reason, until, why } = await searchParams;
   const suspendedUntil = until === "none" ? null : until && !Number.isNaN(Date.parse(until)) ? until : undefined;
-  return <LoginForm suspended={reason === "suspended"} suspendedUntil={suspendedUntil} />;
+  return <LoginForm suspended={reason === "suspended"} suspendedUntil={suspendedUntil} suspensionReason={why?.slice(0, 1000)} />;
 }

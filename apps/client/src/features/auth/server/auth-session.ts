@@ -110,20 +110,22 @@ export async function isAccountSuspended(session: WebSession): Promise<boolean> 
 }
 
 /**
- * Hạn mở khoá do core trả: ISO, `null` = không thời hạn, `undefined` = không hỏi được (khi
- * đó thông báo chỉ bỏ dòng đếm ngược, vẫn hiện hướng dẫn kháng cáo).
+ * Hạn và lý do khoá do core trả, để trang đăng nhập đếm ngược và nói vì sao. `suspendedUntil`:
+ * ISO, `null` = không thời hạn. Hỏi không được thì trả object rỗng — thông báo vẫn hiện hướng
+ * dẫn kháng cáo, chỉ thiếu hai dòng này.
  */
-export async function suspensionEnd(externalId: string): Promise<string | null | undefined> {
+export async function suspensionDetails(
+  externalId: string,
+): Promise<{ suspendedUntil?: string | null; suspensionReason?: string | null }> {
   const base = (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
-  if (!base) return undefined;
+  if (!base) return {};
   try {
     const response = await fetch(`${base}/system/suspensions/${encodeURIComponent(externalId)}`, { cache: "no-store" });
-    if (!response.ok) return undefined;
-    const body = (await response.json()) as { data?: { until?: string | null }; until?: string | null };
-    const value = body.data ?? body;
-    return value.until === undefined ? undefined : value.until;
+    if (!response.ok) return {};
+    const body = (await response.json()) as { data?: { until?: string | null; reason?: string | null } };
+    return { suspendedUntil: body.data?.until, suspensionReason: body.data?.reason };
   } catch {
-    return undefined;
+    return {};
   }
 }
 

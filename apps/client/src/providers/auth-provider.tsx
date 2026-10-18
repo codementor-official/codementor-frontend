@@ -154,7 +154,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (cause instanceof ApiClientError && isSuspendedProblem(cause.body)) {
         const sub = token ? oidcUser?.profile.sub : undefined;
         if (token) void manager().removeUser();
-        window.location.assign(suspendedLoginUrl(sub ? await suspensionEndOf(sub) : undefined));
+        window.location.assign(suspendedLoginUrl(sub ? await suspensionDetailsOf(sub) : {}));
         return;
       }
       if (status !== 401 && status !== 403) {
@@ -223,10 +223,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           transient?: boolean;
           suspended?: boolean;
           suspendedUntil?: string | null;
+          suspensionReason?: string | null;
         };
         if (body.suspended) {
           await applySession(null);
-          window.location.assign(suspendedLoginUrl(body.suspendedUntil));
+          window.location.assign(suspendedLoginUrl(body));
           return;
         }
         // Phiên chết giữa chừng mà trạng thái vẫn là "đã đăng nhập" thì mọi trang chỉ
@@ -393,22 +394,29 @@ function isSuspendedProblem(body: unknown): boolean {
   return problem?.code === "ACCOUNT_SUSPENDED" || problem?.details?.code === "ACCOUNT_SUSPENDED";
 }
 
-/** Hạn mở khoá từ endpoint công khai của core; `undefined` khi không hỏi được. */
-async function suspensionEndOf(sub: string): Promise<string | null | undefined> {
+/** Hạn (ISO, `null` = không thời hạn) và lý do khoá; trường nào thiếu là chưa biết. */
+export interface Suspension {
+  suspendedUntil?: string | null;
+  suspensionReason?: string | null;
+}
+
+/** Hạn và lý do khoá từ endpoint công khai của core; object rỗng khi không hỏi được. */
+async function suspensionDetailsOf(sub: string): Promise<Suspension> {
   try {
     const response = await fetch(`${apiBaseUrl.replace(/\/+$/, "")}/system/suspensions/${encodeURIComponent(sub)}`);
-    if (!response.ok) return undefined;
-    const body = (await response.json()) as { data?: { until?: string | null } };
-    return body.data?.until;
+    if (!response.ok) return {};
+    const body = (await response.json()) as { data?: { until?: string | null; reason?: string | null } };
+    return { suspendedUntil: body.data?.until, suspensionReason: body.data?.reason };
   } catch {
-    return undefined;
+    return {};
   }
 }
 
-/** `/login` với thông báo khoá; `until` "none" = không thời hạn, bỏ trống = chưa biết hạn. */
-export function suspendedLoginUrl(until: string | null | undefined): string {
+/** `/login` với thông báo khoá: `until` ("none" = không thời hạn) và `why` nếu đã biết. */
+export function suspendedLoginUrl({ suspendedUntil, suspensionReason }: Suspension): string {
   const params = new URLSearchParams({ reason: "suspended" });
-  if (until !== undefined) params.set("until", until ?? "none");
+  if (suspendedUntil !== undefined) params.set("until", suspendedUntil ?? "none");
+  if (suspensionReason) params.set("why", suspensionReason);
   return `/login?${params}`;
 }
 
@@ -423,7 +431,8 @@ async function postCredentials(path: string, body: Record<string, string>): Prom
     // `code` đi kèm để form đăng nhập nhận ra tài khoản bị khoá và hiện hướng dẫn kháng cáo.
     throw Object.assign(new Error(problem?.message ?? "Thao tác thất bại. Vui lòng thử lại."), {
       code: problem?.code,
-      suspendedUntil: (problem as { suspendedUntil?: string | null } | null)?.suspendedUntil,
+      suspendedUntil: (problem as Suspension | null)?.suspendedUntil,
+      suspensionReason: (problem as Suspension | null)?.suspensionReason,
     });
   }
 }

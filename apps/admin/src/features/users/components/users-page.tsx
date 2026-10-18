@@ -14,7 +14,7 @@ import {
   Users,
   UserX,
 } from "lucide-react";
-import { Button, ManagePage, Select, StatusBadge, useToast, useUrlState } from "@codementor/ui";
+import { Button, ManagePage, RejectDialogButton, Select, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { CreateUserModal } from "@/features/users/components/create-user-modal";
 import { UserDetailDrawer } from "@/features/users/components/user-detail-drawer";
@@ -26,6 +26,12 @@ import {
   type AdminUser,
   type KeycloakRole,
 } from "@/lib/api";
+
+const ROLE_OPTIONS = [
+  { value: "STUDENT", label: "Học viên" },
+  { value: "LECTURER", label: "Giảng viên" },
+  { value: "ADMIN", label: "Quản trị" },
+];
 
 const ROLE_LABELS: Record<string, string> = {
   learner: "Học viên",
@@ -207,41 +213,70 @@ export function UsersPage() {
             </p>
           ) : (
             <>
-              <Select
-                label="Đổi vai trò"
-                onChange={(value) =>
-                  void act(() => usersApi.setRole(request, row.externalId!, value as KeycloakRole))
+              {/* Đổi vai trò và khoá/mở đều qua hộp xác nhận có lý do — backend còn chặn tự đổi
+                  quyền mình, hạ/khoá admin cuối cùng và đổi vai trò tài khoản đang bị khoá. */}
+              <RejectDialogButton
+                disabled={busy || row.status !== "active"}
+                title={`Đổi vai trò · ${row.displayName}`}
+                description={
+                  <>
+                    Hiện là <b>{ROLE_LABELS[row.role] ?? row.role}</b>. Vai trò mới có hiệu lực từ lần đăng nhập
+                    kế tiếp: Học viên chỉ dùng app học tập; Giảng viên vào thêm app giảng viên để tạo và bán khoá
+                    học; Quản trị có toàn quyền trang quản trị, kể cả khoá tài khoản và duyệt nội dung.
+                  </>
                 }
-                options={[
-                  { value: "STUDENT", label: "Học viên" },
-                  { value: "LECTURER", label: "Giảng viên" },
-                  { value: "ADMIN", label: "Quản trị" },
-                ]}
-                value={KEYCLOAK_ROLE_OF[row.role] ?? "STUDENT"}
-              />
+                decisions={ROLE_OPTIONS.filter((option) => option.value !== (KEYCLOAK_ROLE_OF[row.role] ?? "STUDENT"))}
+                placeholder="Lý do đổi vai trò, ví dụ: được tuyển làm giảng viên khoá Python…"
+                onConfirm={(role, reason) =>
+                  act(async () => {
+                    await usersApi.setRole(request, row.externalId!, role as KeycloakRole, reason);
+                    toast.success("Đã đổi vai trò.");
+                  })
+                }
+                type="button"
+                variant="outline"
+              >
+                <ShieldCheck aria-hidden="true" className="size-4" />
+                Đổi vai trò
+              </RejectDialogButton>
               {row.status === "suspended" ? (
-                <Button
+                <RejectDialogButton
                   disabled={busy}
-                  onClick={() =>
-                    void act(() => usersApi.setStatus(request, row.externalId!, "ACTIVE"))
+                  title={`Mở khoá · ${row.displayName}`}
+                  description="Tài khoản đăng nhập lại được ngay."
+                  decisions={[{ value: "ACTIVE", label: "Mở khoá tài khoản" }]}
+                  placeholder="Lý do mở khoá…"
+                  onConfirm={(_, reason) =>
+                    act(async () => {
+                      await usersApi.setStatus(request, row.externalId!, "ACTIVE", reason);
+                      toast.success("Đã mở khoá tài khoản.");
+                    })
                   }
                   type="button"
+                  variant="default"
                 >
                   <Unlock aria-hidden="true" className="size-4" />
                   Mở khoá
-                </Button>
+                </RejectDialogButton>
               ) : (
-                <Button
+                <RejectDialogButton
                   disabled={busy}
-                  onClick={() =>
-                    void act(() => usersApi.setStatus(request, row.externalId!, "SUSPENDED"))
+                  title={`Tạm khoá · ${row.displayName}`}
+                  description="Tài khoản bị đăng xuất khỏi mọi phiên và không đăng nhập được cho tới khi mở khoá. Lý do hiện cho người dùng ở trang đăng nhập."
+                  decisions={[{ value: "SUSPENDED", label: "Tạm khoá không thời hạn" }]}
+                  placeholder="Lý do khoá — người dùng sẽ đọc được…"
+                  onConfirm={(_, reason) =>
+                    act(async () => {
+                      await usersApi.setStatus(request, row.externalId!, "SUSPENDED", reason);
+                      toast.success("Đã tạm khoá tài khoản.");
+                    })
                   }
                   type="button"
                   variant="outline"
                 >
                   <Lock aria-hidden="true" className="size-4" />
                   Tạm khoá
-                </Button>
+                </RejectDialogButton>
               )}
             </>
           )

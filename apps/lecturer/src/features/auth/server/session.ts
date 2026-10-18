@@ -37,11 +37,14 @@ export class LoginError extends Error {
 }
 
 /**
- * Hạn mở khoá của một tài khoản bị khoá, để trang đăng nhập đếm ngược: tra `sub` bằng service
- * account của `codementor-web-bff` (chỉ khi đã biết `login`), rồi hỏi core. ISO, `null` =
- * không thời hạn, `undefined` = không hỏi được.
+ * Hạn và lý do khoá, để trang đăng nhập đếm ngược và nói vì sao: tra `sub` bằng service
+ * account của `codementor-web-bff` (chỉ khi đã biết `login`), rồi hỏi core. `suspendedUntil`
+ * ISO, `null` = không thời hạn; object rỗng khi không hỏi được.
  */
-export async function suspensionEnd(input: { externalId?: string; login?: string }): Promise<string | null | undefined> {
+export async function suspensionDetails(input: {
+  externalId?: string;
+  login?: string;
+}): Promise<{ suspendedUntil?: string | null; suspensionReason?: string | null }> {
   try {
     let externalId = input.externalId;
     if (!externalId && input.login) {
@@ -62,14 +65,13 @@ export async function suspensionEnd(input: { externalId?: string; login?: string
       }
     }
     const base = (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
-    if (!externalId || !base) return undefined;
+    if (!externalId || !base) return {};
     const response = await fetch(`${base}/system/suspensions/${encodeURIComponent(externalId)}`, { cache: "no-store" });
-    if (!response.ok) return undefined;
-    const body = (await response.json()) as { data?: { until?: string | null }; until?: string | null };
-    const value = body.data ?? body;
-    return value.until === undefined ? undefined : value.until;
+    if (!response.ok) return {};
+    const body = (await response.json()) as { data?: { until?: string | null; reason?: string | null } };
+    return { suspendedUntil: body.data?.until, suspensionReason: body.data?.reason };
   } catch {
-    return undefined;
+    return {};
   }
 }
 

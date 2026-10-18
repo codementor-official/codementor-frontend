@@ -387,20 +387,22 @@ export const usersApi = {
     },
   ) => unwrap<ManagedUser>(request, "/users", { method: "POST", body }),
 
-  setRole: (request: Request, externalId: string, role: KeycloakRole) =>
+  /** `reason` bắt buộc: ghi vào nhật ký kiểm toán. */
+  setRole: (request: Request, externalId: string, role: KeycloakRole, reason: string) =>
     unwrap<ManagedUser>(request, `/users/${externalId}/role`, {
       method: "PATCH",
-      body: { role },
+      body: { role, reason },
     }),
 
   setStatus: (
     request: Request,
     externalId: string,
     status: "ACTIVE" | "SUSPENDED",
+    reason: string,
   ) =>
     unwrap<ManagedUser>(request, `/users/${externalId}/status`, {
       method: "PATCH",
-      body: { status },
+      body: { status, reason },
     }),
 };
 

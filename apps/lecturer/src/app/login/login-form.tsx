@@ -10,9 +10,11 @@ import { useAuth } from "@/providers/auth-provider";
 export function LoginForm({
   suspended: suspendedOnLoad,
   suspendedUntil: suspendedUntilOnLoad,
+  suspensionReason: suspensionReasonOnLoad,
 }: {
   suspended: boolean;
   suspendedUntil?: string | null;
+  suspensionReason?: string | null;
 }) {
   const { status, signIn } = useAuth();
   const router = useRouter();
@@ -23,6 +25,7 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [suspended, setSuspended] = useState(suspendedOnLoad);
   const [suspendedUntil, setSuspendedUntil] = useState(suspendedUntilOnLoad);
+  const [suspensionReason, setSuspensionReason] = useState(suspensionReasonOnLoad);
 
   useEffect(() => {
     if (status === "authenticated") router.replace("/dashboard");
@@ -40,6 +43,7 @@ export function LoginForm({
       if ((cause as { code?: string }).code === "ACCOUNT_SUSPENDED") {
         setSuspended(true);
         setSuspendedUntil((cause as { suspendedUntil?: string | null }).suspendedUntil);
+        setSuspensionReason((cause as { suspensionReason?: string | null }).suspensionReason);
       }
       else setError(cause instanceof Error ? cause.message : "Đăng nhập thất bại.");
     } finally {
@@ -70,7 +74,7 @@ export function LoginForm({
           <form className="mt-8 space-y-5" onSubmit={(event) => void submit(event)}>
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="lecturer-email">Email hoặc tên đăng nhập</label><Input id="lecturer-email" autoComplete="username" autoFocus placeholder="codementor@gmail.com" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={pending} /></div>
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="lecturer-password">Mật khẩu</label><Input id="lecturer-password" autoComplete="current-password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} required disabled={pending} rightSlot={<button type="button" className="text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>} /></div>
-            {suspended && <AccountSuspendedNotice until={suspendedUntil} />}
+            {suspended && <AccountSuspendedNotice until={suspendedUntil} reason={suspensionReason} />}
             {error && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
             <Button className="w-full" type="submit" disabled={status === "loading" || pending}>{pending ? "Đang đăng nhập…" : "Vào trang giảng viên"}</Button>
           </form>

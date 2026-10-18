@@ -21,10 +21,19 @@ export function formatSuspensionLeft(ms: number): string {
 const endFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
 
 /**
- * Thông báo đỏ cho tài khoản bị tạm khoá: vì sao không vào được, khi nào mở lại và cách
+ * Thông báo đỏ cho tài khoản bị tạm khoá: bị khoá vì sao, khi nào mở lại và cách
  * kháng cáo. `until`: ISO lúc mở khoá; `null` = khoá không thời hạn; bỏ trống = chưa biết.
  */
-export function AccountSuspendedNotice({ until, className = "" }: { until?: string | null; className?: string }) {
+export function AccountSuspendedNotice({
+  until,
+  reason,
+  className = "",
+}: {
+  until?: string | null;
+  /** Lý do admin ghi khi khoá (kèm loại vi phạm nếu khoá từ báo cáo). */
+  reason?: string | null;
+  className?: string;
+}) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     if (!until) return;
@@ -44,6 +53,11 @@ export function AccountSuspendedNotice({ until, className = "" }: { until?: stri
       className={`rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive ${className}`}
     >
       <p className="font-semibold">Tài khoản của bạn đang bị tạm khoá.</p>
+      {reason && (
+        <p className="mt-1">
+          <span className="font-semibold">Lý do:</span> <span className="whitespace-pre-wrap">{reason}</span>
+        </p>
+      )}
       {end && (
         <p className="mt-1">
           Tự mở lại sau{" "}
@@ -55,8 +69,8 @@ export function AccountSuspendedNotice({ until, className = "" }: { until?: stri
       )}
       {until === null && <p className="mt-1">Khoá không thời hạn — chỉ mở lại khi quản trị viên xem xét.</p>}
       <p className="mt-1 leading-relaxed">
-        Tài khoản bị khoá do nội dung vi phạm quy định của CodeMentor. Nếu bạn cho rằng đây là nhầm lẫn và
-        muốn kháng cáo, hãy liên hệ{" "}
+        {reason ? "" : "Tài khoản bị khoá do nội dung vi phạm quy định của CodeMentor. "}Nếu bạn cho rằng đây là
+        nhầm lẫn và muốn kháng cáo, hãy liên hệ{" "}
         <a href={`mailto:${APPEAL_EMAIL}`} className="font-semibold underline underline-offset-2">
           {APPEAL_EMAIL}
         </a>

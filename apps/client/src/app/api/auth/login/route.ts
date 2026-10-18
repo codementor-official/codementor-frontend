@@ -7,7 +7,7 @@ import {
   endKeycloakSession,
   isAccountSuspended,
   signInWithPassword,
-  suspensionEnd,
+  suspensionDetails,
 } from "@/features/auth/server/auth-session";
 import { findUserIdByLogin } from "@/features/auth/server/keycloak-admin";
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         {
           message: "Tài khoản của bạn đang bị tạm khoá.",
           code: "ACCOUNT_SUSPENDED",
-          suspendedUntil: await suspensionEnd(session.user.id),
+          ...(await suspensionDetails(session.user.id)),
         },
         { status: 403 },
       );
@@ -71,9 +71,9 @@ export async function POST(request: NextRequest) {
     // Trước InvalidCredentialsError: lớp này là lớp con của nó.
     if (cause instanceof AccountSuspendedError) {
       const userId = await findUserIdByLogin(username);
-      const suspendedUntil = userId ? await suspensionEnd(userId) : undefined;
+      const details = userId ? await suspensionDetails(userId) : {};
       return NextResponse.json(
-        { message: "Tài khoản của bạn đang bị tạm khoá.", code: "ACCOUNT_SUSPENDED", suspendedUntil },
+        { message: "Tài khoản của bạn đang bị tạm khoá.", code: "ACCOUNT_SUSPENDED", ...details },
         { status: 403 },
       );
     }

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { keycloakConfig, roleHomes } from "@/lib/env";
 import { postLoginTarget } from "@/lib/navigation/post-login";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth, type Suspension } from "@/providers/auth-provider";
 
 /**
  * Đăng nhập và đăng ký, cả hai đều nằm trên giao diện CodeMentor — không trang nào của
@@ -32,13 +32,13 @@ type Pending = "credentials" | "google" | "facebook" | null;
 export function AuthCard({
   mode,
   suspended: suspendedOnLoad = false,
-  suspendedUntil: suspendedUntilOnLoad,
+  suspension: suspensionOnLoad = {},
   handoffFailed = false,
 }: {
   mode: "login" | "signup";
   suspended?: boolean;
-  /** ISO lúc mở khoá; `null` = không thời hạn; `undefined` = chưa biết. */
-  suspendedUntil?: string | null;
+  /** Hạn và lý do khoá; trường nào thiếu là chưa biết. */
+  suspension?: Suspension;
   handoffFailed?: boolean;
 }) {
   const { status, user, error, signInWithPassword, signUpWithPassword, signInWithPopup, cancelPopupSignIn } = useAuth();
@@ -46,7 +46,7 @@ export function AuthCard({
   const isSignup = mode === "signup";
 
   const [suspended, setSuspended] = useState(suspendedOnLoad);
-  const [suspendedUntil, setSuspendedUntil] = useState(suspendedUntilOnLoad);
+  const [suspension, setSuspension] = useState<Suspension>(suspensionOnLoad);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -112,7 +112,7 @@ export function AuthCard({
     } catch (cause) {
       if ((cause as { code?: string }).code === ACCOUNT_SUSPENDED) {
         setSuspended(true);
-        setSuspendedUntil((cause as { suspendedUntil?: string | null }).suspendedUntil);
+        setSuspension(cause as Suspension);
         return;
       }
       setFormError(cause instanceof Error ? cause.message : "Thao tác thất bại.");
@@ -152,7 +152,7 @@ export function AuthCard({
             : "Đăng nhập để tiếp tục học tập và luyện tập."}
         </p>
 
-        {suspended && <AccountSuspendedNotice className="mb-4" until={suspendedUntil} />}
+        {suspended && <AccountSuspendedNotice className="mb-4" until={suspension.suspendedUntil} reason={suspension.suspensionReason} />}
         {!suspended && message && (
           <p
             className="mb-4 rounded-md border border-danger/40 bg-danger-tint px-3 py-2 text-sm text-danger"

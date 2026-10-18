@@ -4,7 +4,7 @@ import {
   endKeycloakSession,
   InvalidCredentialsError,
   isAccountSuspended,
-  suspensionEnd,
+  suspensionDetails,
   readSession,
   refreshWebSession,
   sessionNeedsRefresh,
@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     const refreshed = sessionNeedsRefresh(session);
     if (refreshed) session = await refreshWebSession(session);
     if (await isAccountSuspended(session)) {
-      const suspendedUntil = await suspensionEnd(session.user.id);
-      const response = NextResponse.json({ authenticated: false, user: null, suspended: true, suspendedUntil });
+      const details = await suspensionDetails(session.user.id);
+      const response = NextResponse.json({ authenticated: false, user: null, suspended: true, ...details });
       clearSessionCookies(response);
       await endKeycloakSession(session).catch(() => undefined);
       response.headers.set("Cache-Control", "no-store");

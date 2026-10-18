@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAccountSuspended, LoginError, revokeSession, setSession, signInWithPassword, suspensionEnd } from "@/features/auth/server/session";
+import { isAccountSuspended, LoginError, revokeSession, setSession, signInWithPassword, suspensionDetails } from "@/features/auth/server/session";
 
 const attempts = new Map<string, number[]>();
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         message: "Tài khoản của bạn đang bị tạm khoá.",
         code: "ACCOUNT_SUSPENDED",
-        suspendedUntil: await suspensionEnd({ externalId: session.user.id }),
+        ...(await suspensionDetails({ externalId: session.user.id })),
       }, { status: 403 });
     }
     const response = NextResponse.json({ user: session.user });
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: error instanceof LoginError ? error.message : "Không thể xác minh đăng nhập.",
       code,
-      suspendedUntil: code === "ACCOUNT_SUSPENDED" ? await suspensionEnd({ login: username }) : undefined,
+      ...(code === "ACCOUNT_SUSPENDED" ? await suspensionDetails({ login: username }) : {}),
     }, { status });
   }
 }
