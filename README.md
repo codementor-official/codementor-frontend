@@ -1,132 +1,152 @@
+<div align="center">
+
 # CodeMentor Frontend
 
-CodeMentor's frontend is a pnpm/Turborepo monorepo with three independently deployable Next.js applications:
+**Three Next.js applications for CodeMentor — the learner app, the lecturer studio and the admin console — in one pnpm/Turborepo monorepo.**
 
-```text
-apps/client     Member and student application — 28 routes
-apps/lecturer   Lecturer dashboard — 18 routes: shell, auth, courses/exercises/roadmaps, studio
-apps/admin      Administration dashboard — 12 routes: shell, auth boundary, dashboard/sections
-```
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white)
+![Turborepo](https://img.shields.io/badge/Turborepo-monorepo-EF4444?logo=turborepo&logoColor=white)
 
-All three are built out; none is a placeholder scaffold. `AGENTS.md` carries the authoritative
-per-package table — when the two disagree, `AGENTS.md` wins.
+</div>
 
-The backend and Keycloak deployment are maintained independently. Keycloak is reached at
-`https://id.codementor.cloud`; the backend is reached through the Kong gateway, never per-service.
+---
 
-## Requirements
+## Contents
 
-- Node.js 22 or newer (the backend pins 22+)
-- pnpm 11.19.0 (pinned by `packageManager` in `package.json`; run through Corepack)
+- [Applications](#applications)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Quality checks](#quality-checks)
+- [Project structure](#project-structure)
+- [Design system](#design-system)
+- [Authentication](#authentication)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
 
-## Install
+## Applications
+
+| Application | Package | Local URL | Audience |
+| --- | --- | --- | --- |
+| **Client** | `@codementor/client` | http://localhost:3000 | Learners: courses, learning paths, practice, study groups, AI tutor |
+| **Lecturer** | `@codementor/lecturer` | http://localhost:3010 | Lecturers: course and exercise studio, revenue, payouts |
+| **Admin** | `@codementor/admin` | http://localhost:3011 | Administrators: users, moderation, reports, commerce, system |
+
+Each application deploys independently. All of them reach the backend through **one origin** — the
+Kong gateway at `/api/v1` — and authenticate against Keycloak at `https://id.codementor.cloud`.
+
+## Getting started
+
+**Prerequisites:** Node.js ≥ 22 and pnpm 11 (pinned by `packageManager`; enable it with Corepack).
 
 ```bash
 pnpm install
-```
 
-Copy the relevant `apps/<app>/.env.example` to `.env.local` when an application needs environment configuration. Only browser-safe values may use the `NEXT_PUBLIC_*` prefix.
-
-## Development
-
-Start all applications:
-
-```bash
-pnpm dev
-```
-
-Or start one application:
-
-```bash
-pnpm dev:client
+pnpm dev               # all three applications
+pnpm dev:client        # or one of them
 pnpm dev:lecturer
 pnpm dev:admin
 ```
 
-| Application | Package | Local URL |
-| --- | --- | --- |
-| Client | `@codementor/client` | http://localhost:3000 |
-| Lecturer | `@codementor/lecturer` | http://localhost:3010 |
-| Admin | `@codementor/admin` | http://localhost:3011 |
+Ports 3001–3013 belong to backend services; frontend applications use 3000, 3010 and 3011.
 
-Ports 3001–3013 belong to the backend services. Frontend apps start at 3010, never below.
+## Configuration
+
+Copy `apps/<app>/.env.example` to `apps/<app>/.env.local` and fill it in.
+
+| Variable | Used by | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` · `API_INTERNAL_URL` | all | Gateway URL for the browser and for server-side calls |
+| `NEXT_PUBLIC_KEYCLOAK_*` · `KEYCLOAK_*` | all | Realm, public client and the confidential BFF client |
+| `KEYCLOAK_BFF_CLIENT_SECRET` · `AUTH_SESSION_SECRET` | all | Server-only secrets for the encrypted session cookie |
+| `NEXT_PUBLIC_REALTIME_URL` | all | WebSocket origin |
+| `NEXT_PUBLIC_CLIENT_URL` | lecturer, admin | Links into the learner app (admin "open content" sign-in) |
+| `NEXT_PUBLIC_LECTURER_APP_URL` · `NEXT_PUBLIC_ADMIN_APP_URL` | client | Where lecturers and admins land after signing in |
+
+Only browser-safe values may use the `NEXT_PUBLIC_` prefix — it is inlined into the client bundle.
 
 ## Quality checks
 
 ```bash
-pnpm lint        # eslint over the whole workspace
+pnpm lint        # ESLint across the workspace, including UI rules
 pnpm typecheck   # turbo run typecheck
-pnpm build       # turbo run build
+pnpm test        # node:assert self-checks (*.test.ts), run with tsx
+pnpm build       # turbo run build — the gate that catches prerender failures
 ```
 
-`pnpm build` is the gate that catches what `typecheck` does not — Next.js prerendering runs at
-build time and fails on server-only code reached during static generation. Read its **exit code**;
-`pnpm build | tail` reports the pipe's status, so a red build reads as green.
-
-Turbo builds the three apps in parallel by default. On a machine without much headroom that is
-three Next.js compilers at once and the run dies with exit 137 (the OOM killer, not a code error);
-`pnpm build --concurrency=1` trades about a minute for surviving it.
-
-Lint is clean at **zero errors**. It still reports warnings, all of them accepted and explained in
-`AGENTS.md` → Validation — mostly `react-hooks/set-state-in-effect`, a React Compiler performance
-hint on effects that have to stay effects.
-
-There is no test runner. The `*.test.ts` files present are self-checks that need `tsx`, which is
-not installed — see `AGENTS.md` before citing them.
+Read the **exit code** of `pnpm build`; piping it through `tail` hides a failure. On a machine with
+little memory, `pnpm build --concurrency=1` avoids running out of memory with three Next.js
+compilers at once.
 
 ## Project structure
 
 ```text
 apps/
-  client/       Member/student product
-  lecturer/     Lecturer product
-  admin/        Administration product
+  client/          Learner application
+  lecturer/        Lecturer application
+  admin/           Admin application
 packages/
-  ui/           The primitive library — every app's buttons, cards, inputs, filters, tables
-  editor/       Monaco code editor and TipTap rich-text editor
-  solve/        SolvePreview, the three-pane solve screen. Used by lecturer's preview
-  api-client/   Shared HTTP transport used by application API adapters
-  auth/         Shared Keycloak-facing role and authentication primitives
-  types/        Cross-application contracts
-  utils/        Framework-independent shared utilities
-  eslint-config/
-  typescript-config/
-docs/
-  architecture/frontend-architecture.md
-  UI_AUDIT_AND_PLAN.md          The UI audit, its rules, and the rebuild plan
-  PAGE_GUIDELINES.md            The page shell and the per-page review checklist
-  COMPONENT_SPECIFICATION.md    Component props, and the gaps still open
-  PROJECT_DESIGN_PRINCIPLES.md  Why the rules are what they are
-  DASHBOARD_IMPLEMENTATION.md   How the dashboards are put together
-  AI_CODE_HINT_PIPELINE.md      The hint pipeline against ai-service
-  superpowers/                  Specs and plans for in-flight work
+  ui/              The only home for UI primitives (buttons, cards, tables, filters, modals)
+  editor/          Monaco code editor and TipTap rich-text editor
+  solve/           The three-pane solve screen, shared by the client and the lecturer preview
+  api-client/      Shared HTTP transport
+  auth/            Keycloak roles, session helpers, admin-to-client sign-in handoff
+  types/           Cross-application contracts
+  utils/           Framework-independent helpers (CSV, validation, dates)
+  eslint-config/ · typescript-config/
+docs/              Architecture, design rules and feature notes
+scripts/           Test runner and maintenance scripts
 ```
 
-All three applications consume `ui`, `api-client`, `auth`, and `types`. A workspace package must
-be listed as `workspace:*` in the app's `dependencies` **and** added to `transpilePackages` in its
-`next.config.ts` — the packages ship raw TypeScript.
+Application code is organised feature-first under `apps/<app>/src/features`; App Router files stay
+thin. Applications never import from each other — shared code goes into a package. A workspace
+package must be listed as `workspace:*` **and** added to `transpilePackages`, because packages ship
+raw TypeScript.
 
 ## Design system
 
-`packages/ui` is the **only** home for UI primitives — an app never defines its own `Button`,
-`Card`, or `PageHeader`. Application `src/components/` holds composed, domain-aware components
-only.
+`packages/ui` is the single source of UI primitives; applications compose them in
+`src/components`. Every page follows `Breadcrumb → PageHeader → StatStrip? → content`. Styling uses
+design tokens only (no raw palette colours or arbitrary sizes), so light and dark themes stay
+correct.
 
-Nine UI rules govern every page. The short version:
+- Tokens and components: [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md)
+- The full UI rules and package table: [AGENTS.md](AGENTS.md) (authoritative when documents disagree)
 
-- Every page is `Breadcrumb → PageHeader → StatStrip? → content`, in that order.
-- The breadcrumb is rendered by the shell and derived from `route-meta.ts` — never hand-rolled.
-- Only the shell sets a width ceiling; pages fill it. `max-w-[72ch]` on prose is the one clamp.
-- Grid when the user is choosing between items, list when hunting for one. No horizontal scroll
-  strips — overflow wraps.
-- One `StatStrip` per page, real numbers only. Stats never displace the page's actual content.
-- Tokens only: no `zinc-*`/`orange-*`/`bg-white`, no arbitrary type sizes. Hardcoded colors break
-  dark mode.
-- Hover and focus are a border/background delta at 150ms. No translate, scale, or hover shadow.
-- No nav-reachable route may render a placeholder.
+## Authentication
 
-Full rules: [AGENTS.md](AGENTS.md) → UI rules.
-Tokens and components: [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md).
-Audit and rebuild plan: [docs/UI_AUDIT_AND_PLAN.md](docs/UI_AUDIT_AND_PLAN.md).
+Password sign-in runs through a **backend-for-frontend**: each application's `/api/auth/*` route
+talks to Keycloak with a confidential client and keeps tokens in an encrypted, HTTP-only cookie —
+the browser never sees an access or refresh token. Google and Facebook sign-in use a Keycloak
+popup. API calls go through each application's `/api/backend/*` proxy, which attaches the token.
 
-See [Frontend architecture](docs/architecture/frontend-architecture.md) for ownership rules, dependency boundaries, authentication guidance, and feature placement.
+Suspended accounts are signed out within a minute and see the reason, the time left and the appeal
+address on the sign-in page.
+
+## Deployment
+
+Each application is a separate Vercel project that builds from `main`. Set the variables from
+[Configuration](#configuration) in every project; the BFF client secret must be the same across
+all three.
+
+## Documentation
+
+| Document | Covers |
+| --- | --- |
+| [docs/architecture/frontend-architecture.md](docs/architecture/frontend-architecture.md) | Ownership, dependency boundaries, authentication, feature placement |
+| [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) | Tokens, typography, components |
+| [docs/UI_AUDIT_AND_PLAN.md](docs/UI_AUDIT_AND_PLAN.md) | UI audit, rules and rebuild plan |
+| [docs/PAGE_GUIDELINES.md](docs/PAGE_GUIDELINES.md) | Page shell and review checklist |
+| [docs/COMPONENT_SPECIFICATION.md](docs/COMPONENT_SPECIFICATION.md) | Component props and open gaps |
+| [docs/PROJECT_DESIGN_PRINCIPLES.md](docs/PROJECT_DESIGN_PRINCIPLES.md) | Why the rules are what they are |
+| [docs/DASHBOARD_IMPLEMENTATION.md](docs/DASHBOARD_IMPLEMENTATION.md) | How the dashboards are built |
+| [docs/AI_CODE_HINT_PIPELINE.md](docs/AI_CODE_HINT_PIPELINE.md) | The code-hint pipeline against ai-service |
+| [docs/revenue-analytics-ui.md](docs/revenue-analytics-ui.md) · [docs/commerce-job-results-ui.md](docs/commerce-job-results-ui.md) | Revenue reports and commerce job results |
+
+## Related repositories
+
+- **codementor-backend** — NestJS and Python services behind the Kong gateway.
+- **codementor-infra** — PostgreSQL schema, MongoDB, Keycloak and the data host stack.

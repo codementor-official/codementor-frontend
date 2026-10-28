@@ -1,14 +1,16 @@
-# Pipeline AI đọc code và sinh gợi ý ngắn
+# AI pipeline: read code, return a short hint
 
-## 1. Mục tiêu
+## 1. Goal
 
-Codey không cần sinh lời giải hoàn chỉnh. Nhiệm vụ của Codey là xác định trở ngại gần nhất của người học và trả về **một gợi ý ngắn, có thể thực hiện ngay**.
+Codey does not need to produce a full solution. Its job is to find the learner's nearest obstacle
+and return **one short hint that can be acted on immediately**.
 
-Trợ lý AI chuyên sâu là luồng riêng, có thể phân tích toàn bộ lời giải, độ phức tạp và đề xuất tái cấu trúc code.
+The in-depth AI assistant is a separate flow: it may analyse the whole solution and its complexity,
+and suggest refactoring.
 
-## 2. Dữ liệu cần gửi cho backend
+## 2. Data sent to the backend
 
-Frontend chỉ gửi dữ liệu khi người dùng chủ động hỏi Codey hoặc sau khi chạy test:
+The frontend sends data only when the user asks Codey, or after running the tests:
 
 ```ts
 interface CodeHintRequest {
@@ -33,65 +35,67 @@ interface CodeHintRequest {
 }
 ```
 
-Không nên gửi liên tục theo từng phím bấm. Khi cần phân tích tự động, dùng debounce khoảng 1–2 giây và chỉ gửi nếu hash của code đã thay đổi.
+Do not send on every keystroke. When automatic analysis is needed, debounce by about 1–2 seconds
+and send only if the hash of the code has changed.
 
-## 3. Thuật toán xử lý đề xuất
+## 3. Proposed processing
 
-### Bước 1 — Chuẩn hóa và bảo vệ dữ liệu
+### Step 1 — Normalise and protect the input
 
-1. Giới hạn kích thước source code.
-2. Xóa token, mật khẩu hoặc URL bí mật nếu phát hiện.
-3. Chuẩn hóa line ending và loại phần code sinh tự động không cần thiết.
-4. Tạo `codeHash = SHA256(problemId + language + normalizedCode + testSummary)` để cache kết quả.
+1. Limit the source code size.
+2. Strip tokens, passwords or secret URLs if any are detected.
+3. Normalise line endings and remove generated code that is not needed.
+4. Compute `codeHash = SHA256(problemId + language + normalizedCode + testSummary)` to cache results.
 
-### Bước 2 — Phân tích xác định trước bằng compiler và AST
+### Step 2 — Deterministic analysis with the compiler and an AST
 
-Ưu tiên công cụ xác định trước khi gọi mô hình ngôn ngữ:
+Prefer deterministic tools before calling a language model:
 
-1. Compile hoặc parse code trong sandbox.
-2. Lấy lỗi cú pháp, lỗi kiểu dữ liệu và warning.
-3. Tạo AST bằng Tree-sitter hoặc parser tương ứng ngôn ngữ.
-4. Trích xuất hàm, vòng lặp, nhánh điều kiện, biến và lời gọi hàm.
-5. Đối chiếu test thất bại để xác định nhánh code có khả năng gây lỗi.
+1. Compile or parse the code in the sandbox.
+2. Collect syntax errors, type errors and warnings.
+3. Build an AST with Tree-sitter or the language's own parser.
+4. Extract functions, loops, conditional branches, variables and calls.
+5. Match failing tests to find the branch most likely at fault.
 
-Ví dụ: nếu `delta < 0` thất bại và AST không có nhánh xử lý số âm, hệ thống có thể đưa gợi ý bằng rule mà chưa cần gọi AI.
+Example: if `delta < 0` fails and the AST has no branch for negative numbers, a rule can produce
+the hint without calling the AI.
 
-### Bước 3 — Bộ luật gợi ý nhanh
+### Step 3 — Fast hint rules
 
-Áp dụng theo thứ tự ưu tiên:
+Applied in priority order:
 
-1. `compiler_error`: gợi ý tại dòng lỗi đầu tiên.
-2. `runtime_error`: giải thích loại lỗi và dữ liệu gây lỗi.
-3. `failed_test`: so sánh expected/actual và nhánh điều kiện liên quan.
-4. `edge_case_missing`: tìm trường hợp biên chưa xuất hiện trong AST.
-5. `complexity_risk`: cảnh báo khi cấu trúc thuật toán không đáp ứng ràng buộc.
-6. Nếu không rule nào đủ chắc chắn, mới chuyển context rút gọn sang LLM.
+1. `compiler_error`: hint at the first error line.
+2. `runtime_error`: explain the error type and the input that caused it.
+3. `failed_test`: compare expected/actual and the related conditional branch.
+4. `edge_case_missing`: find edge cases the AST does not handle.
+5. `complexity_risk`: warn when the algorithm's structure cannot meet the constraints.
+6. Only when no rule is confident enough, send a reduced context to the LLM.
 
-### Bước 4 — Tạo context cho LLM
+### Step 4 — Build the LLM context
 
-Context không nên chỉ chứa source code. Nó cần gồm:
+The context should hold more than the source code:
 
-- Mô tả và ràng buộc bài toán.
-- Ngôn ngữ đang dùng.
-- Source code có đánh số dòng.
-- Vị trí con trỏ hoặc đoạn đang được chọn.
-- Diagnostics từ compiler.
-- Tóm tắt test đạt/thất bại, không gửi hidden input nhạy cảm.
-- Các node AST quan trọng và độ phức tạp ước tính.
-- Câu hỏi hiện tại của người học.
+- The problem statement and constraints.
+- The language in use.
+- The source code with line numbers.
+- The cursor position or the selected snippet.
+- Compiler diagnostics.
+- A pass/fail test summary — never sensitive hidden inputs.
+- Key AST nodes and the estimated complexity.
+- The learner's current question.
 
-Prompt hệ thống nên quy định:
+The system prompt should state:
 
 ```text
-Bạn là Codey, trợ lý gợi ý ngắn.
-- Không viết lời giải hoàn chỉnh.
-- Chỉ nêu một vấn đề quan trọng nhất.
-- Tối đa 60 từ tiếng Việt.
-- Nếu có thể, nhắc dòng code hoặc cấu trúc liên quan.
-- Kết thúc bằng một hành động người học có thể làm ngay.
+You are Codey, a short-hint assistant.
+- Never write a complete solution.
+- Point out only the single most important problem.
+- At most 60 words, in Vietnamese.
+- Where possible, mention the related line or construct.
+- End with one action the learner can take right now.
 ```
 
-### Bước 5 — Ép đầu ra có cấu trúc
+### Step 5 — Enforce structured output
 
 ```ts
 interface CodeHintResponse {
@@ -104,7 +108,8 @@ interface CodeHintResponse {
 }
 ```
 
-Backend phải kiểm tra schema, giới hạn độ dài và loại bỏ code lời giải trước khi trả về frontend.
+The backend must validate the schema, cap the length and strip solution code before returning to
+the frontend.
 
 ## 4. Pseudocode
 
@@ -135,17 +140,17 @@ function generateShortHint(request):
     return validateAndCache(aiHint)
 ```
 
-## 5. Phân biệt Codey và Trợ lý AI
+## 5. Codey vs. the AI assistant
 
-| Thành phần | Codey | Trợ lý AI |
+| | Codey | AI assistant |
 |---|---|---|
-| Mục đích | Gỡ vướng ngay lúc code | Phân tích chuyên sâu |
-| Context | Lỗi gần nhất, test gần nhất, vị trí con trỏ | Toàn bộ đề, code, lịch sử hỏi đáp |
-| Độ dài | Một gợi ý dưới 60 từ | Có thể giải thích nhiều bước |
-| Tần suất | Nhanh, cache mạnh | Chỉ khi người dùng chủ động mở |
-| Đáp án hoàn chỉnh | Không | Vẫn nên ưu tiên hướng dẫn thay vì làm hộ |
+| Purpose | Unblock the learner while coding | In-depth analysis |
+| Context | Latest error, latest test, cursor position | Full problem, code, Q&A history |
+| Length | One hint under 60 words | May explain in several steps |
+| Frequency | Fast, heavily cached | Only when the user opens it |
+| Full answer | No | Still prefers guidance over doing it for them |
 
-## 6. API tối thiểu
+## 6. Minimal API
 
 ```http
 POST /api/ai/code-hint
@@ -153,7 +158,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-Response:
+Response (hints are returned in Vietnamese):
 
 ```json
 {
@@ -166,12 +171,12 @@ Response:
 }
 ```
 
-## 7. Yêu cầu an toàn và vận hành
+## 7. Safety and operations
 
-- Compile code trong sandbox bị giới hạn CPU, bộ nhớ và thời gian.
-- Không ghi source code vào log thông thường.
-- Rate limit theo người dùng và bài tập.
-- Không gửi hidden test case đầy đủ cho mô hình.
-- Cache theo code hash để giảm chi phí và độ trễ.
-- Gắn `requestId`, thời gian phản hồi và nguồn `rule/llm` để theo dõi chất lượng.
-- Cho phép người học đánh giá “Hữu ích/Không hữu ích” để cải thiện rule và prompt.
+- Compile code in a sandbox with CPU, memory and time limits.
+- Never write source code to regular logs.
+- Rate-limit per user and per exercise.
+- Never send the full hidden test cases to the model.
+- Cache by code hash to cut cost and latency.
+- Tag each response with a `requestId`, the response time and its `rule/llm` source to track quality.
+- Let learners rate a hint "Helpful / Not helpful" to improve the rules and the prompt.

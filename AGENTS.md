@@ -16,7 +16,7 @@ pnpm workspace (`apps/*`, `packages/*`) orchestrated by Turborepo.
 | `packages/editor` | `@codementor/editor` | — | Monaco code editor + TipTap rich-text editor. Used by client + lecturer |
 | `packages/api-client` | `@codementor/api-client` | — | `createApiClient`, `ApiClientError`. Used by all three apps |
 | `packages/auth` | `@codementor/auth` | — | Keycloak config types, `hasRole`/`hasAnyRole`. Used by all three apps |
-| `packages/solve` | `@codementor/solve` | — | `SolvePreview` (màn giải bài ba khung) + kiểu/nhãn bài code. Used by lecturer (xem thử) |
+| `packages/solve` | `@codementor/solve` | — | `SolvePreview` (the three-pane solve screen) + coding-exercise types/labels. Used by lecturer (preview) |
 | `packages/types` | `@codementor/types` | — | `Role`, `User`, `Pagination`, `ApiResponse`, and the content vocabulary (`FIELDS`/`LEVELS`/`MODES`/`CONTENT_STATUSES`, `LESSON_TYPES` and their labels/tones). Used by all three apps |
 | `packages/utils` | `@codementor/utils` | — | `joinUrl`. Used by `api-client`, client, lecturer |
 | `packages/eslint-config` | `@codementor/eslint-config` | — | Flat config consumed by root `eslint.config.mjs` |
