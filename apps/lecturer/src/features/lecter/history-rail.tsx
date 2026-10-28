@@ -5,6 +5,14 @@ import { History, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Plus, Trash2 } 
 import { Button, ConfirmButton, useToast } from "@codementor/ui";
 import { api } from "@/lib/api";
 
+/**
+ * Nút chỉ có icon. Cố ý KHÔNG dùng `Button`: nó nối class chứ không merge, nên `h-9 px-3` của nó
+ * thắng `size-7 px-0` truyền vào — nút "tùy chọn" rộng 28px mà ăn 24px padding, icon ba chấm bị
+ * ép còn 4px và chỉ còn thấy chấm giữa.
+ */
+const ICON_BUTTON =
+  "inline-flex shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+
 export interface SessionSummary {
   id: string;
   title: string;
@@ -69,20 +77,19 @@ export function HistoryRail({
           <Plus aria-hidden="true" className="size-4 shrink-0" />
           {!collapsed && "Hội thoại mới"}
         </Button>
-        <Button
+        <button
           aria-label={collapsed ? "Mở rộng danh sách hội thoại" : "Thu gọn danh sách hội thoại"}
-          className="size-10 shrink-0 px-0"
+          className={`${ICON_BUTTON} size-9`}
           onClick={onToggle}
           title={collapsed ? "Mở rộng" : "Thu gọn"}
           type="button"
-          variant="ghost"
         >
           {collapsed ? (
             <PanelLeftOpen aria-hidden="true" className="size-5" />
           ) : (
             <PanelLeftClose aria-hidden="true" className="size-5" />
           )}
-        </Button>
+        </button>
       </div>
 
       <p className={`flex items-center gap-1.5 px-3 pb-1.5 text-xs font-medium text-muted-foreground ${collapsed ? "justify-center px-0" : ""}`}>
@@ -111,17 +118,16 @@ export function HistoryRail({
             </button>
             {!collapsed && (
               <>
-                <Button
+                <button
                   aria-expanded={openMenuId === session.id}
                   aria-haspopup="menu"
                   aria-label={`Tùy chọn cho ${session.title}`}
-                  className="absolute right-1 size-7 px-0 opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100"
+                  className={`${ICON_BUTTON} absolute right-1 size-7 opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 aria-expanded:opacity-100`}
                   onClick={() => setOpenMenuId((current) => (current === session.id ? null : session.id))}
                   type="button"
-                  variant="ghost"
                 >
                   <MoreHorizontal aria-hidden="true" className="size-4" />
-                </Button>
+                </button>
                 {openMenuId === session.id && (
                   <div className="absolute right-1 top-full z-10 mt-1 min-w-36 rounded-lg border border-border bg-popover p-1 shadow-lg" role="menu">
                     <ConfirmButton

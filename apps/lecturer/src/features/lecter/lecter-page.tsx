@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BookOpen, Code2, FileText, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -80,12 +88,17 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
   const running = agent.isRunning;
   const empty = agent.messages.length === 0;
   const wasRunning = useRef(false);
+  const runHadMessages = useRef(false);
 
   // Lượt vừa kết thúc = server vừa ghi xong hội thoại; nạp lại rail để tiêu đề mới xuất hiện.
+  // Trừ lượt nạp lịch sử: `connectAgent` cũng bật `isRunning`, nên mỗi lần mở một hội thoại cũ
+  // từng kéo theo một lần nạp lại danh sách vô ích. Lượt thật luôn bắt đầu khi đã có tin người
+  // dùng; lượt nạp lịch sử bắt đầu từ khung trống.
   useEffect(() => {
-    if (wasRunning.current && !running) onRunEnd();
+    if (running && !wasRunning.current) runHadMessages.current = !empty;
+    if (wasRunning.current && !running && runHadMessages.current) onRunEnd();
     wasRunning.current = running;
-  }, [running, onRunEnd]);
+  }, [running, empty, onRunEnd]);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
@@ -125,25 +138,21 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
   );
 }
 
-export function LecterPage() {
-  const router = useRouter();
-  // Hội thoại đang mở nằm trong URL, không phải trong state. Trước đây nó là `useState`, nên bấm
-  // "Mở Studio" rồi nhấn Back là quay về `/lecter` trắng trơn — hội thoại vừa nãy không có địa
-  // chỉ nào để quay lại. `/lecter` và `/lecter/[id]` dùng chung đúng component này.
-  const routeId = useParams<{ id?: string }>().id;
-  // Id cho lần mở `/lecter` trần. Sinh một lần rồi đẩy vào URL ngay, chứ không đợi tin nhắn đầu:
-  // người soạn có thể bấm "Mở Studio" từ thẻ kết quả trước khi kịp gõ gì thêm.
-  const [freshId] = useState(() => crypto.randomUUID());
-  const threadId = routeId ?? freshId;
+/** Nạp lại danh sách hội thoại. Rail nằm ở layout, khung chat nằm ở page: đây là đường nối. */
+const ReloadHistoryContext = createContext<() => void>(() => undefined);
 
+/**
+ * Khung bao `/lecter` và `/lecter/[id]`: giữ danh sách hội thoại.
+ *
+ * Nằm ở layout chứ không ở page vì page remount mỗi lần `[id]` đổi. Khi rail còn nằm trong page,
+ * bấm một hội thoại là danh sách bị dựng lại từ đầu và tải lại — chớp trắng cả cột.
+ */
+export function LecterLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const routeId = useParams<{ id?: string }>().id;
   const [reloadKey, setReloadKey] = useState(0);
   const [railCollapsed, setRailCollapsed] = useState(false);
-
-  useEffect(() => {
-    // `replace` chứ không `push`: `/lecter` trần không đáng chiếm một mục trong lịch sử trình
-    // duyệt, Back từ đây phải về trang trước đó chứ không kẹt lại chính nó.
-    if (!routeId) router.replace(`/lecter/${freshId}`);
-  }, [routeId, freshId, router]);
+  const reload = useCallback(() => setReloadKey((value) => value + 1), []);
 
   // Đổi hội thoại là điều hướng thật: URL đổi thì `threadId` đổi, CopilotKit gọi lại
   // `/agent/lecter/connect`, và route runtime phát lại lịch sử từ `ai_agent_sessions`.
@@ -157,28 +166,51 @@ export function LecterPage() {
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1">
         <HistoryRail
-          activeId={threadId}
+          activeId={routeId ?? ""}
           collapsed={railCollapsed}
           onNew={newThread}
           onPick={openThread}
           onToggle={() => setRailCollapsed((value) => !value)}
           reloadKey={reloadKey}
         />
-        <CopilotKitProvider
-          // Inspector bật mặc định ở dev và chèn cả banner quảng cáo sản phẩm của CopilotKit
-          // vào giữa trang giảng viên. `showDevConsole` KHÔNG còn điều khiển nó (đã deprecated);
-          // `enableInspector` mới là cờ đúng.
-          enableInspector={false}
-          // Tầng Node cùng origin, không phải Kong: xem `app/api/copilotkit/[[...path]]/route.ts`.
-          runtimeUrl="/api/copilotkit"
-        >
-          <ToolRenderers />
-          <LecterHumanInTheLoop />
-          <LecterCourseHumanInTheLoop />
-          <LecterRoadmapHumanInTheLoop />
-          <ChatPanel onRunEnd={() => setReloadKey((value) => value + 1)} threadId={threadId} />
-        </CopilotKitProvider>
+        <ReloadHistoryContext.Provider value={reload}>{children}</ReloadHistoryContext.Provider>
       </div>
     </div>
+  );
+}
+
+export function LecterPage() {
+  const router = useRouter();
+  const reloadHistory = useContext(ReloadHistoryContext);
+  // Hội thoại đang mở nằm trong URL, không phải trong state. Trước đây nó là `useState`, nên bấm
+  // "Mở Studio" rồi nhấn Back là quay về `/lecter` trắng trơn — hội thoại vừa nãy không có địa
+  // chỉ nào để quay lại. `/lecter` và `/lecter/[id]` dùng chung đúng component này.
+  const routeId = useParams<{ id?: string }>().id;
+  // Id cho lần mở `/lecter` trần. Sinh một lần rồi đẩy vào URL ngay, chứ không đợi tin nhắn đầu:
+  // người soạn có thể bấm "Mở Studio" từ thẻ kết quả trước khi kịp gõ gì thêm.
+  const [freshId] = useState(() => crypto.randomUUID());
+  const threadId = routeId ?? freshId;
+
+  useEffect(() => {
+    // `replace` chứ không `push`: `/lecter` trần không đáng chiếm một mục trong lịch sử trình
+    // duyệt, Back từ đây phải về trang trước đó chứ không kẹt lại chính nó.
+    if (!routeId) router.replace(`/lecter/${freshId}`);
+  }, [routeId, freshId, router]);
+
+  return (
+    <CopilotKitProvider
+      // Inspector bật mặc định ở dev và chèn cả banner quảng cáo sản phẩm của CopilotKit
+      // vào giữa trang giảng viên. `showDevConsole` KHÔNG còn điều khiển nó (đã deprecated);
+      // `enableInspector` mới là cờ đúng.
+      enableInspector={false}
+      // Tầng Node cùng origin, không phải Kong: xem `app/api/copilotkit/[[...path]]/route.ts`.
+      runtimeUrl="/api/copilotkit"
+    >
+      <ToolRenderers />
+      <LecterHumanInTheLoop />
+      <LecterCourseHumanInTheLoop />
+      <LecterRoadmapHumanInTheLoop />
+      <ChatPanel onRunEnd={reloadHistory} threadId={threadId} />
+    </CopilotKitProvider>
   );
 }
