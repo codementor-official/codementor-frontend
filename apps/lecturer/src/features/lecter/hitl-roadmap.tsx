@@ -56,9 +56,17 @@ export function LecterRoadmapHumanInTheLoop() {
         const title = `Tạo lộ trình nháp: ${args.title}`;
         const lines = [`Lĩnh vực: ${args.field}`, `Trình độ: ${args.level}`];
         if (status === "complete")
-          return <SettledProposal lines={lines} outcome={readOutcome(result)} title={title} />;
+          return (
+            <SettledProposal
+              lines={lines}
+              outcome={readOutcome(result)}
+              target={{ kind: "roadmap" }}
+              title={title}
+            />
+          );
         return (
           <ProposalCard
+            target={{ kind: "roadmap" }}
             title={title}
             lines={lines}
             confirmLabel="Tạo lộ trình nháp"

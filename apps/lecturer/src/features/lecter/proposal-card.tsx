@@ -28,7 +28,8 @@ import { ContentCreatedCard } from "./content-created-card";
  */
 export interface ContentTarget {
   kind: "exercise" | "course" | "roadmap";
-  id: string;
+  /** Vắng với `create_*`: id chỉ có sau khi tạo, nằm trong `outcome`. */
+  id?: string;
 }
 
 const STUDIO_SEGMENT: Record<ContentTarget["kind"], string> = {
@@ -37,7 +38,13 @@ const STUDIO_SEGMENT: Record<ContentTarget["kind"], string> = {
   roadmap: "roadmaps",
 };
 
-export function studioHref({ kind, id }: ContentTarget): string {
+export const CONTENT_KIND_LABELS: Record<ContentTarget["kind"], string> = {
+  exercise: "Bài code",
+  course: "Khóa học",
+  roadmap: "Lộ trình",
+};
+
+export function studioHref({ kind, id }: Required<ContentTarget>): string {
   return `/${STUDIO_SEGMENT[kind]}/${id}/studio`;
 }
 
@@ -122,8 +129,13 @@ export function SettledProposal({
   outcome: ProposalOutcome | null;
   /** Tóm tắt để hiện lại trên thẻ kết quả; cùng mảng đã đưa cho `ProposalCard`. */
   lines?: string[];
-  /** Nội dung được sửa. Với `create_*` thì id chỉ có trong `outcome`, không có trong args. */
-  target?: ContentTarget;
+  /**
+   * Nội dung được sửa. Với `create_*` thì id chỉ có trong `outcome`, không có trong args.
+   *
+   * Bắt buộc, kể cả khi chỉ có `kind`: trước đây nó tùy chọn và rơi về `"exercise"`, nên
+   * `create_course` vẽ thẻ dẫn sang `/exercises/<id khóa học>/studio`.
+   */
+  target: ContentTarget;
 }) {
   if (outcome?.outcome === "failed") {
     return (
@@ -148,11 +160,12 @@ export function SettledProposal({
     );
   }
 
-  const id = target?.id ?? outcome?.id;
+  const id = target.id ?? outcome?.id;
   if (outcome?.outcome === "applied" && id) {
     return (
       <ContentCreatedCard
-        href={studioHref({ kind: target?.kind ?? "exercise", id })}
+        href={studioHref({ kind: target.kind, id })}
+        kindLabel={CONTENT_KIND_LABELS[target.kind]}
         lines={lines}
         status={outcome.status}
         title={outcome.title ?? title}
@@ -186,8 +199,8 @@ export interface ProposalCardProps {
   /** Tóm tắt thay đổi, mỗi dòng một ý. Đủ để duyệt mà không phải mở studio. */
   lines: string[];
   children?: ReactNode;
-  /** Có thì hộp sẽ tự đọc trạng thái từ backend để cảnh báo và để dựng link studio. */
-  target?: ContentTarget;
+  /** Có `id` thì hộp sẽ tự đọc trạng thái từ backend để cảnh báo. `kind` để dựng link studio. */
+  target: ContentTarget;
   /**
    * Hàm kiểm chạy trên ĐÚNG payload sắp ghi, gọi lúc thẻ hiện ra.
    *
@@ -237,10 +250,9 @@ export function ProposalCard({
   // thấy. Đọc từ backend NGAY TRONG hộp, không lấy từ tham số tool: model không đặt được nó.
   const [info, setInfo] = useState<CourseLikeInfo | null>(null);
 
-  const kind = target?.kind;
-  const id = target?.id;
+  const { kind, id } = target;
   useEffect(() => {
-    if (!kind || !id) return;
+    if (!id) return;
     let cancelled = false;
     const read =
       kind === "course"
@@ -307,7 +319,7 @@ export function ProposalCard({
   // Gỡ một khóa khỏi lộ trình thì `course_enrollments` của khóa đó vẫn nguyên — chỉ phần trăm
   // hoàn thành lộ trình được tính lại trên số khóa còn lại.
   const removalNotice =
-    target?.kind === "roadmap"
+    target.kind === "roadmap"
       ? `Sẽ GỠ ${removals.length} khóa học khỏi lộ trình. Tiến độ trong từng khóa vẫn còn, nhưng phần trăm hoàn thành lộ trình của học viên đang theo sẽ đổi.`
       : `Sẽ XÓA ${removals.length} mục. Tiến độ của học viên ở phần này mất theo và không khôi phục được.`;
 
@@ -317,6 +329,7 @@ export function ProposalCard({
     return (
       <SettledProposal
         outcome={{ outcome: settled, reason: failure ?? undefined }}
+        target={target}
         title={title}
       />
     );

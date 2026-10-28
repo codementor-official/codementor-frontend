@@ -30,10 +30,13 @@ import {
 export function ContentCreatedCard({
   title,
   href,
+  kindLabel,
   lines,
   status,
 }: {
   title: string;
+  /** "Khóa học", "Bài code"…: tiêu đề tự nó không nói thẻ dẫn sang loại nội dung nào. */
+  kindLabel: string;
   /** Đường sang studio, do caller dựng — bài code và khóa học nằm ở hai route khác nhau. */
   href: string;
   lines?: string[];
@@ -43,7 +46,10 @@ export function ContentCreatedCard({
   return (
     <section className="my-2 rounded-lg border border-border bg-card p-3.5">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="min-w-0 break-words text-sm font-semibold">{title}</h3>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">{kindLabel}</p>
+          <h3 className="break-words text-sm font-semibold">{title}</h3>
+        </div>
         {status && (
           <span className="shrink-0">
             <StatusBadge tone={CONTENT_STATUS_TONES[status]}>{CONTENT_STATUS_LABELS[status]}</StatusBadge>

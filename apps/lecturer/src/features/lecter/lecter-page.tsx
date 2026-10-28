@@ -31,6 +31,11 @@ function Markdown({ content }: { content: string }) {
   );
 }
 
+// Fragment rỗng, không phải `null`: kiểu slot của CopilotKit đòi trả về Element.
+function NoCursor() {
+  return <></>;
+}
+
 function WelcomeContent() {
   return (
     <div className="w-full max-w-xl">
@@ -95,7 +100,13 @@ function ChatPanel({ threadId, onRunEnd }: { threadId: string; onRunEnd: () => v
             chatInputPlaceholder: "Nhờ Lecter soạn bài code…",
             chatDisclaimerText: "Lecter có thể sai. Mọi thay đổi đều cần bạn xác nhận.",
           }}
-          messageView={{ assistantMessage: { markdownRenderer: Markdown } }}
+          messageView={{
+            assistantMessage: { markdownRenderer: Markdown },
+            /* `connectAgent` (nạp lịch sử khi mở hội thoại) cũng bật `isRunning`, và CopilotKit vẽ
+               chấm "đang chạy" theo đúng cờ đó — nên lúc chờ nạp, chấm đen nằm trơ ở góc trên khung
+               chat trống. Lượt thật luôn có tin của người dùng trước, nên ẩn khi trống là đủ. */
+            cursor: empty ? NoCursor : undefined,
+          }}
           /* Slot, không phải prop: `inputValue`/`onInputChange`/`onSubmitMessage` truyền
              thẳng cho <CopilotChat> đều bị chính nó ghi đè. Xem `lecter-composer.tsx`. */
           input={LecterComposer}

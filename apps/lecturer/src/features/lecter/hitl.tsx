@@ -101,9 +101,17 @@ export function LecterHumanInTheLoop() {
         ];
         // Đã xử lý xong, nạp lại từ lịch sử: KHÔNG vẽ lại nút. Xem `SettledProposal`.
         if (status === "complete")
-          return <SettledProposal lines={lines} outcome={readOutcome(result)} title={title} />;
+          return (
+            <SettledProposal
+              lines={lines}
+              outcome={readOutcome(result)}
+              target={{ kind: "exercise" }}
+              title={title}
+            />
+          );
         return (
           <ProposalCard
+            target={{ kind: "exercise" }}
             title={title}
             lines={[...lines, args.slug ? `Slug: ${args.slug}` : "Slug: hệ thống tự sinh"]}
             confirmLabel="Tạo bài nháp"
@@ -169,7 +177,13 @@ export function LecterHumanInTheLoop() {
       render: ({ status, args, result, respond }) => {
         if (status === "inProgress") return <p className="my-2 text-sm text-muted-foreground">Đang soạn đề xuất…</p>;
         if (status === "complete")
-          return <SettledProposal outcome={readOutcome(result)} title="Sửa thông tin bài" />;
+          return (
+            <SettledProposal
+              outcome={readOutcome(result)}
+              target={{ kind: "exercise", id: args.id }}
+              title="Sửa thông tin bài"
+            />
+          );
         const { id, ...changes } = args;
         return (
           <ProposalCard

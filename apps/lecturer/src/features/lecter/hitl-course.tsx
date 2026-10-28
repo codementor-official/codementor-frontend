@@ -62,9 +62,17 @@ export function LecterCourseHumanInTheLoop() {
         const title = `Tạo khóa học nháp: ${args.title}`;
         const lines = [`Trình độ: ${args.level}`];
         if (status === "complete")
-          return <SettledProposal lines={lines} outcome={readOutcome(result)} title={title} />;
+          return (
+            <SettledProposal
+              lines={lines}
+              outcome={readOutcome(result)}
+              target={{ kind: "course" }}
+              title={title}
+            />
+          );
         return (
           <ProposalCard
+            target={{ kind: "course" }}
             title={title}
             lines={lines}
             confirmLabel="Tạo khóa nháp"
