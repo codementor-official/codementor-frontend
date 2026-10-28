@@ -14,9 +14,8 @@
  * Giá phải trả, nói thẳng: đổi máy hoặc xoá dữ liệu duyệt web là mất điểm dừng và phần đã
  * xem, phải xem lại từ đầu. Thứ KHÔNG mất là `completed` — nó nằm ở máy chủ.
  *
- * Và cổng 80% là một cái gờ giảm tốc, không phải bằng chứng. Ai mở devtools cũng sửa được
- * con số này. Máy chủ không có cách nào biết một người có thật sự xem hay không, nên hứa
- * hơn thế là nói dối — cùng lý do đã ghi ở `useReadingGate`.
+ * Cổng 80% chỉ hỏi "đã tới được 80% video chưa", tua cũng tính — nó là lời nhắc xem bài,
+ * không phải bằng chứng đã xem.
  */
 
 const KEY_PREFIX = "codementor.video-progress.";
@@ -39,7 +38,10 @@ function keyFor(userId: string, lessonId: string): string {
 export interface VideoProgress {
   /** Điểm dừng lần trước, giây — chỗ hộp thoại mời học tiếp sẽ tua tới. */
   positionSeconds: number;
-  /** Tổng số giây đã xem thật, KHÔNG tính các đoạn tua qua. */
+  /**
+   * Vị trí xa nhất đã tới, giây — tua tới cũng tính (chủ dự án chốt 2026-10-28: tua hết video
+   * là được qua bài). Tua lui để xem lại không làm con số này giảm.
+   */
   watchedSeconds: number;
   /** Thời lượng video lúc lưu. `0` khi chưa đọc được. */
   durationSeconds: number;
@@ -47,33 +49,6 @@ export interface VideoProgress {
 
 /** Phải xem đủ ngần này mới được đánh dấu hoàn thành bài. */
 export const REQUIRED_WATCH_RATIO = 0.8;
-
-/**
- * Bước nhảy lớn hơn ngần này là TUA, không phải xem.
- *
- * Nhịp báo vị trí dày hơn nhiều (thẻ `<video>` ~4 lần/giây, YouTube 2 lần/giây), nên một
- * bước 1.5 giây đã là bất thường. Nhờ vậy kéo thanh thời gian tới cuối video không cộng
- * được giây nào — cái mẹo hiển nhiên nhất để qua cổng 80%.
- */
-const MAX_STEP_SECONDS = 1.5;
-
-/**
- * Cộng dồn phần đã xem từ hai lần báo vị trí liên tiếp.
- *
- * Không cần biết video đang phát hay đang dừng: đứng yên thì `step` bằng 0, tua tới thì
- * `step` quá lớn, tua lui thì `step` âm. Cả ba đều không cộng gì. Vì thế hàm này không
- * phải lắng nghe `play`/`pause` của ba trình phát khác nhau — điều mà YouTube và Vimeo
- * báo theo hai kiểu chẳng giống nhau.
- */
-export function accumulateWatched(
-  watchedSeconds: number,
-  previousTime: number,
-  currentTime: number,
-): number {
-  const step = currentTime - previousTime;
-  if (step <= 0 || step > MAX_STEP_SECONDS) return watchedSeconds;
-  return watchedSeconds + step;
-}
 
 /** Phần đã xem, chặn ở 1. `0` khi chưa biết thời lượng — chưa biết thì chưa mở cổng. */
 export function watchedRatio(progress: VideoProgress): number {

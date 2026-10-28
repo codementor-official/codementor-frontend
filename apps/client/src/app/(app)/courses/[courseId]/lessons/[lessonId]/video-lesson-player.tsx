@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Modal, useToast } from "@codementor/ui";
+import { InfoHint, Modal, useToast } from "@codementor/ui";
 import { attachPlayer, formatDuration, type ResolvedVideo, type VideoController } from "@codementor/utils";
 import { PlayCircle, RotateCcw } from "lucide-react";
 import {
   REQUIRED_WATCH_RATIO,
-  accumulateWatched,
   isResumable,
   readVideoProgress,
   writeVideoProgress,
@@ -44,9 +43,9 @@ export interface WatchGate {
  * Khung phát video của học viên, kèm hai thứ mà một thẻ `<video>` trần không có: đếm phần
  * đã xem, và mời học tiếp từ chỗ đang dở.
  *
- * Phần đã xem đếm bằng cách cộng dồn các bước nhảy nhỏ của kim thời gian (xem
- * `accumulateWatched`), nên kéo thanh tua tới cuối không qua được cổng. Cả ba nguồn phát
- * đi chung một đường: `attachPlayer` đã giấu sự khác nhau giữa `<video>`, YouTube và Vimeo.
+ * Phần đã xem là vị trí xa nhất kim thời gian từng tới, nên tua tới cuối là qua cổng — chủ
+ * dự án chốt như vậy ngày 2026-10-28. Cả ba nguồn phát đi chung một đường: `attachPlayer`
+ * đã giấu sự khác nhau giữa `<video>`, YouTube và Vimeo.
  */
 export function VideoLessonPlayer({
   lessonId,
@@ -77,7 +76,6 @@ export function VideoLessonPlayer({
   // một lần render lại cả bài học, và không ai cần thấy tiến trình mượt tới từng khung hình.
   const watchedRef = useRef(0);
   const positionRef = useRef(0);
-  const lastTimeRef = useRef<number | null>(null);
   const durationRef = useRef(authoredDurationSeconds ?? 0);
   const savedAtRef = useRef(0);
 
@@ -128,11 +126,7 @@ export function VideoLessonPlayer({
   const noteTime = useCallback(
     (seconds: number) => {
       positionRef.current = seconds;
-      const previous = lastTimeRef.current;
-      lastTimeRef.current = seconds;
-      if (previous !== null) {
-        watchedRef.current = accumulateWatched(watchedRef.current, previous, seconds);
-      }
+      watchedRef.current = Math.max(watchedRef.current, seconds);
 
       if (durationRef.current > 0) {
         setRatio(Math.min(1, watchedRef.current / durationRef.current));
@@ -217,7 +211,6 @@ export function VideoLessonPlayer({
     // Giữ lại phần đã xem: học viên đã bỏ công xem thật, chọn quay về đầu không phải lý do
     // bắt họ tích luỹ lại từ số không. Chỉ điểm dừng là bỏ.
     positionRef.current = 0;
-    lastTimeRef.current = null;
     controllerRef.current?.seek(0);
     if (userId) writeVideoProgress(userId, lessonId, snapshot());
     setResume(null);
@@ -305,23 +298,39 @@ function WatchMeter({
     return <p className="mt-2 text-xs text-text-faint">Đang tải video…</p>;
   }
 
-  const percent = Math.round(ratio * 100);
+  // Phút:giây thay cho % làm tròn: với bài giảng 2 tiếng, 1% là 74 giây, nên nửa phút đầu một
+  // con số % vẫn ghi "0%" — trông y như không đếm gì.
   const target = Math.round(REQUIRED_WATCH_RATIO * 100);
   const done = ratio >= REQUIRED_WATCH_RATIO;
+  const hint = done
+    ? `Đã xem đủ ${target}% — có thể hoàn thành bài.`
+    : `Đã xem ${formatDuration(ratio * duration)} / cần ${formatDuration(REQUIRED_WATCH_RATIO * duration)} (${target}% của ${formatDuration(duration)}) để hoàn thành bài`;
 
   return (
-    <div className="mt-2">
-      <div className="h-1.5 overflow-hidden rounded-full bg-border-soft">
+    <div className="mt-2 flex items-center gap-2">
+      <div
+        aria-label="Tiến trình xem video"
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={Math.floor(ratio * 100)}
+        aria-valuetext={hint}
+        className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-border-soft"
+        role="progressbar"
+      >
         <div
           className={`h-full transition-[width] ${done ? "bg-primary" : "bg-navy"}`}
-          style={{ width: `${percent}%` }}
+          style={{ width: `${ratio * 100}%` }}
         />
+        {/* Vạch mốc phải tới để hoàn thành bài. */}
+        {!done && (
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 w-0.5 bg-text-faint/60"
+            style={{ left: `${target}%` }}
+          />
+        )}
       </div>
-      <p className="mt-1 text-xs text-text-faint">
-        {done
-          ? `Đã xem ${percent}% — đủ điều kiện hoàn thành bài.`
-          : `Đã xem ${percent}% · cần ${target}% để hoàn thành bài (video dài ${formatDuration(duration)}).`}
-      </p>
+      <InfoHint className="shrink-0 text-text-faint" text={hint} />
     </div>
   );
 }

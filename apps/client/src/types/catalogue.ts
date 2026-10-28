@@ -205,6 +205,15 @@ export interface LessonContent {
    * xem trước — nên thứ giảng viên duyệt qua là thứ học viên nhận.
    */
   media?: { url: string; durationSeconds?: number; captionsUrl?: string };
+  /** Ghi công khi bài dựa trên tác phẩm của người khác — giấy phép CC bắt buộc hiển thị. */
+  attribution?: {
+    title: string;
+    author: string;
+    sourceUrl: string;
+    license: string;
+    licenseUrl: string;
+    changes?: string;
+  };
 }
 
 export type ProgressStatus = "not_started" | "in_progress" | "completed";

@@ -9,7 +9,6 @@ import assert from "node:assert/strict";
 // Import tĩnh là đủ: module chỉ đọc `window` khi hàm được gọi, không phải lúc nạp. (Top-level
 // `await import` không chạy được khi package biên dịch sang CommonJS, như ở `pnpm test`.)
 import {
-  accumulateWatched,
   hasWatchedEnough,
   isResumable,
   watchedRatio,
@@ -36,29 +35,6 @@ const progress = (overrides: Partial<VideoProgress> = {}): VideoProgress => ({
   durationSeconds: 600,
   ...overrides,
 });
-
-// -- accumulateWatched -----------------------------------------------------
-
-// Phát bình thường: cộng đúng bước nhảy.
-assert.equal(accumulateWatched(10, 4, 4.25), 10.25);
-
-// Đứng yên (đang tạm dừng): không cộng gì.
-assert.equal(accumulateWatched(10, 4, 4), 10);
-
-// Tua TỚI cuối video — mẹo hiển nhiên nhất để qua cổng. Không được cộng giây nào.
-assert.equal(accumulateWatched(10, 4, 595), 10);
-
-// Tua LUI để xem lại: bước âm, cũng không cộng.
-assert.equal(accumulateWatched(10, 300, 120), 10);
-
-// Ngay tại ngưỡng vẫn tính là xem; vượt ngưỡng thì không.
-assert.equal(accumulateWatched(0, 0, 1.5), 1.5);
-assert.equal(accumulateWatched(0, 0, 1.51), 0);
-
-// Xem hết bằng nhiều bước nhỏ thì cộng dồn đủ — đây là đường đi thật của người học.
-let watched = 0;
-for (let t = 0; t < 500; t += 0.25) watched = accumulateWatched(watched, t, t + 0.25);
-assert.ok(Math.abs(watched - 500) < 0.001, `cộng dồn ra ${watched}, cần ~500`);
 
 // -- watchedRatio / hasWatchedEnough ---------------------------------------
 

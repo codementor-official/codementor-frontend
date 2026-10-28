@@ -166,6 +166,21 @@ export function TheoryLesson({
             </Card>
           )
         )}
+        {/* Giấy phép Creative Commons của nguồn gốc buộc phải hiện dòng này trên chính bài
+          * học: tác phẩm, tác giả, link gốc, giấy phép và đã thay đổi gì. */}
+        {content?.attribution && (
+          <p className="mt-6 border-t border-border pt-3 text-2xs leading-relaxed text-text-faint">
+            Nguồn:{" "}
+            <a className="underline hover:text-text" href={content.attribution.sourceUrl} rel="noopener noreferrer" target="_blank">
+              “{content.attribution.title}”
+            </a>{" "}
+            — {content.attribution.author}. Giấy phép{" "}
+            <a className="underline hover:text-text" href={content.attribution.licenseUrl} rel="noopener noreferrer license" target="_blank">
+              {content.attribution.license}
+            </a>
+            .{content.attribution.changes && ` ${content.attribution.changes}`}
+          </p>
+        )}
         <div ref={endRef} aria-hidden />
       </article>
 
