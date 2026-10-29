@@ -303,7 +303,7 @@ function PlanCard({
             </li>
           );
         })}
-        {v.highlights.map((h) => (
+        {v.highlights.filter((h) => !catalog.features.some((f) => f.label === h)).map((h) => (
           <li key={h} className="flex items-start gap-2.5">
             <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
             <span className="text-text">{h}</span>
