@@ -374,8 +374,19 @@ export interface WorkspaceSubmission {
 }
 export interface WorkspaceUploadConfig {
   enabled: boolean;
+  /** Smallest of the platform cap, the owner's per-file limit and the owner's remaining storage. */
   maxBytes: number;
   acceptedTypes: string[];
+  quota: {
+    planName: string;
+    maxUploadBytes: number;
+    platformMaxUploadBytes: number;
+    remainingBytes: number;
+    storageFull: boolean;
+    /** Owner only. */
+    usedBytes?: number;
+    maxStorageBytes?: number;
+  };
 }
 export interface PresignedWorkspaceUpload {
   uploadUrl: string;

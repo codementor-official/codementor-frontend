@@ -43,6 +43,7 @@ import type {
 } from "../types";
 import { WorkspaceMemberSelector } from "./workspace-member-selector";
 import { REPORT_CATEGORIES } from "@/features/reports/report-button";
+import { useQuotaDialog } from "@/features/workspace-billing/quota-dialog";
 
 const EMPTY_PAGE = <T,>(): WorkspaceContentPage<T> => ({
   items: [],
@@ -61,6 +62,8 @@ const inputClass =
 
 export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const toast = useToast();
+  const quota = useQuotaDialog();
+  const isOwner = detail.currentMembership.role === "owner";
   const [data, setData] = useState(EMPTY_PAGE<WorkspaceDocument>());
   const [page, setPage] = useUrlState("dPage", 1);
   const [q, setQ] = useUrlState("dQ", "");
@@ -124,11 +127,22 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
     try {
       const config = await api.workspaces.documentUploadConfig(detail.slug);
       if (!config.enabled) throw new Error("Storage chưa được cấu hình");
-      if (
-        !config.acceptedTypes.includes(file.type) ||
-        file.size > config.maxBytes
-      )
-        throw new Error("Định dạng hoặc dung lượng tệp không hợp lệ");
+      if (!config.acceptedTypes.includes(file.type)) throw new Error("Định dạng tệp chưa được hỗ trợ");
+      if (file.size > config.maxBytes) {
+        // Same explanation the server would give, without uploading the file first.
+        const perFile = Math.min(config.quota.maxUploadBytes, config.quota.platformMaxUploadBytes);
+        quota.show(
+          file.size > perFile
+            ? { code: "WORKSPACE_FILE_SIZE_EXCEEDED", message: "", details: { limit: perFile, requested: file.size, plan: config.quota.planName } }
+            : {
+                code: "WORKSPACE_STORAGE_LIMIT_REACHED",
+                message: "",
+                details: { limit: config.quota.maxStorageBytes, used: config.quota.usedBytes, requested: file.size, plan: config.quota.planName },
+              },
+          isOwner,
+        );
+        return;
+      }
       const signed = await api.workspaces.documentUploadUrl(detail.slug, {
         filename: file.name,
         contentType: file.type,
@@ -151,7 +165,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
       );
       await load();
     } catch (e) {
-      toast.error(messageOf(e));
+      if (!quota.handle(e, isOwner)) toast.error(messageOf(e));
     } finally {
       setUploading(false);
       setProgress(0);
@@ -240,6 +254,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   };
   return (
     <div className="space-y-4">
+      {quota.dialog}
       {canApprove && pendingCount > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
           <Clock3 className="h-4 w-4 text-primary" />

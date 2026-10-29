@@ -18,6 +18,7 @@ import type { WorkspaceSummary } from "@/features/workspace/types";
 import type { StudyGroup } from "@/types/study-group";
 import { StudyGroupActions } from "./study-group-actions";
 import { StudyGroupCard } from "./study-group-card";
+import { useQuotaDialog } from "@/features/workspace-billing/quota-dialog";
 
 type Scope = "all" | "mine" | "owned" | "joined" | "public";
 
@@ -195,11 +196,20 @@ export function StudyGroupBoard({ initialScope = "mine" }: { initialScope?: Scop
     setPageByScope((current) => ({ ...current, [scope]: 1 }));
   };
 
+  const quota = useQuotaDialog();
+
   const create = async (name: string, description: string) => {
-    const created = await api.workspaces.create({
-      name,
-      description: description || undefined,
-    });
+    let created;
+    try {
+      created = await api.workspaces.create({
+        name,
+        description: description || undefined,
+      });
+    } catch (cause) {
+      // A plan limit is explained in its own dialog, with the way out; the form just closes.
+      if (quota.handle(cause, true)) return;
+      throw cause;
+    }
     toast.success(`Đã tạo nhóm “${created.name}”`);
     setScope("owned");
     setSearch("");
@@ -208,7 +218,13 @@ export function StudyGroupBoard({ initialScope = "mine" }: { initialScope?: Scop
   };
 
   const join = async (code: string) => {
-    const result = await api.workspaces.join(code);
+    let result;
+    try {
+      result = await api.workspaces.join(code);
+    } catch (cause) {
+      if (quota.handle(cause, false)) return;
+      throw cause;
+    }
     if (result.status === "pending") {
       toast.success(
         "Đã gửi yêu cầu. Chủ nhóm sẽ duyệt trước khi bạn tham gia.",
@@ -230,7 +246,7 @@ export function StudyGroupBoard({ initialScope = "mine" }: { initialScope?: Scop
       toast.success(`Đã gửi yêu cầu tham gia “${group.name}”`);
       await load(scope, search, pageByScope[scope]);
     } catch (cause) {
-      toast.error(messageOf(cause, "Không thể gửi yêu cầu tham gia."));
+      if (!quota.handle(cause, false)) toast.error(messageOf(cause, "Không thể gửi yêu cầu tham gia."));
     }
   };
 
@@ -239,6 +255,7 @@ export function StudyGroupBoard({ initialScope = "mine" }: { initialScope?: Scop
 
   return (
     <div>
+      {quota.dialog}
       <StatStrip
         className="mb-5"
         stats={[

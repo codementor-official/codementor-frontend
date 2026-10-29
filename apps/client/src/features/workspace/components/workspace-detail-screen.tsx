@@ -61,6 +61,7 @@ import {
 import { useWorkspaceChat } from "../chat/use-workspace-chat";
 import { WorkspaceChatTab } from "../chat/workspace-chat";
 import { ReportButton } from "@/features/reports/report-button";
+import { useQuotaDialog } from "@/features/workspace-billing/quota-dialog";
 
 type Tab =
   | "overview"
@@ -195,6 +196,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
+  const quota = useQuotaDialog();
   const [detail, setDetail] = useState<WorkspaceDetail | null>(null);
   const [publicDetail, setPublicDetail] =
     useState<PublicWorkspaceDetail | null>(null);
@@ -425,6 +427,8 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   if (!detail) {
     if (publicDetail) {
       return (
+        <>
+        {quota.dialog}
         <PublicWorkspaceView
           workspace={publicDetail}
           pending={pending}
@@ -444,12 +448,13 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
                 toast.success("Đã gửi yêu cầu tham gia");
               }
             } catch (cause) {
-              toast.error(messageOf(cause, "Không thể gửi yêu cầu tham gia."));
+              if (!quota.handle(cause, false)) toast.error(messageOf(cause, "Không thể gửi yêu cầu tham gia."));
             } finally {
               setPending(false);
             }
           }}
         />
+        </>
       );
     }
     return (
@@ -1666,6 +1671,7 @@ function JoinRequestsPanel({
   onCountChange?: (count: number) => void;
 }) {
   const toast = useToast();
+  const quota = useQuotaDialog();
   const [requests, setRequests] = useState<WorkspaceJoinRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
@@ -1705,7 +1711,7 @@ function JoinRequestsPanel({
         decision === "approve" ? "Đã duyệt thành viên" : "Đã từ chối yêu cầu",
       );
     } catch (cause) {
-      toast.error(messageOf(cause, "Không thể xử lý yêu cầu."));
+      if (!quota.handle(cause, true)) toast.error(messageOf(cause, "Không thể xử lý yêu cầu."));
     } finally {
       setReviewingId(null);
     }
@@ -1713,6 +1719,7 @@ function JoinRequestsPanel({
 
   return (
     <Card className="overflow-hidden">
+      {quota.dialog}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-4 py-3">
         <div>
           <h2 className="text-sm font-bold text-navy">

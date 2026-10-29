@@ -12,11 +12,13 @@ import { useRecommendations } from "@/features/recommendations/use-recommendatio
 import { inRecommendationOrder } from "@/features/recommendations/ranked-items";
 import { RecommendationError, RecommendationNotice } from "@/features/recommendations/recommendation-feedback";
 import { StudyGroupCard } from "./study-group-card";
+import { useQuotaDialog } from "@/features/workspace-billing/quota-dialog";
 
 const GRID = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
 export function RecommendedGroups({ limit = 3 }: { limit?: number }) {
   const toast = useToast();
+  const quota = useQuotaDialog();
   const [joining, setJoining] = useState<string | null>(null);
   const load = useCallback(async () => {
     const ranked = await api.recommendations.groups(Math.min(limit, 20));
@@ -45,7 +47,7 @@ export function RecommendedGroups({ limit = 3 }: { limit?: number }) {
         window.location.assign(`/workspace/${group.id}`);
       }
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Không thể gửi yêu cầu tham gia.");
+      if (!quota.handle(cause, false)) toast.error(cause instanceof Error ? cause.message : "Không thể gửi yêu cầu tham gia.");
     } finally {
       setJoining(null);
     }
@@ -57,6 +59,7 @@ export function RecommendedGroups({ limit = 3 }: { limit?: number }) {
   if (!data.items.length) return <CatalogueEmpty icon={Users} title="Chưa có nhóm mới để đề xuất"
     description="Hiện chưa có nhóm công khai khác phù hợp để tham gia." />;
   return <>
+    {quota.dialog}
     <RecommendationNotice personalized={data.personalized} />
     <ul className={GRID} aria-label="Nhóm có thể hợp với bạn" aria-busy={joining !== null}>
       {data.items.map((group) => <li key={group.id}><StudyGroupCard group={group}
