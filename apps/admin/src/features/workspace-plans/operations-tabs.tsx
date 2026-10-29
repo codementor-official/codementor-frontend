@@ -478,6 +478,25 @@ const DETAIL_LABEL: Record<string, string> = {
 };
 const STAGE_LABEL: Record<string, string> = { notice: "cảnh báo", read_only: "chỉ đọc", hidden: "tạm ẩn" };
 
+const VALUE_LABEL: Record<string, string> = {
+  percent: "phần trăm",
+  fixed: "số tiền",
+  new: "mua mới",
+  renewal: "gia hạn",
+  upgrade: "nâng cấp",
+  month: "tháng",
+  year: "năm",
+  ...STAGE_LABEL,
+};
+
+function auditValue(key: string, value: unknown, d: Record<string, unknown>): string {
+  if (value === null || value === undefined) return "—";
+  if (/Vnd$/.test(key) || (key === "value" && d.kind === "fixed")) return formatVnd(Number(value));
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value)) return formatVnDate(value, true);
+  if (typeof value === "string" && VALUE_LABEL[value]) return VALUE_LABEL[value];
+  return String(value);
+}
+
 /** The readable part of an entry: known scalar fields, and for settings what changed. */
 function auditSummary(details: unknown): string[] {
   if (!details || typeof details !== "object") return [];
@@ -486,16 +505,11 @@ function auditSummary(details: unknown): string[] {
     const before = d.before as Record<string, unknown>;
     return Object.entries(d.after as Record<string, unknown>)
       .filter(([k, v]) => before[k] !== v && DETAIL_LABEL[k])
-      .map(([k, v]) => `${DETAIL_LABEL[k]}: ${String(before[k])} → ${String(v)}`);
+      .map(([k, v]) => `${DETAIL_LABEL[k]}: ${auditValue(k, before[k], before)} → ${auditValue(k, v, d.after as Record<string, unknown>)}`);
   }
   return Object.entries(d)
     .filter(([k, v]) => DETAIL_LABEL[k] && v !== null && typeof v !== "object")
-    .map(([k, v]) => {
-      const text = k === "stage" ? STAGE_LABEL[String(v)] ?? String(v)
-        : /Vnd$/.test(k) ? formatVnd(Number(v))
-          : typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) ? formatVnDate(v, true) : String(v);
-      return `${DETAIL_LABEL[k]}: ${text}`;
-    });
+    .map(([k, v]) => `${DETAIL_LABEL[k]}: ${auditValue(k, v, d)}`);
 }
 
 export function AuditTab() {

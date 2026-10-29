@@ -125,7 +125,7 @@ export function PlansTab() {
                   </Button>
                 </>
               )}
-              {!plan.isRecommended && plan.status === "active" && (
+              {!plan.isDefault && !plan.isRecommended && plan.status === "active" && (
                 <Button size="sm" variant="ghost" onClick={() => patch(plan, { isRecommended: true }, "Đã đặt làm gói đề xuất")}>
                   Đặt làm “Phổ biến nhất”
                 </Button>
