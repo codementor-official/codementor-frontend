@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, CalendarClock, CreditCard, Receipt, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, BellRing, CalendarClock, CreditCard, EyeOff, Lock, Receipt, ShieldCheck, Sparkles } from "lucide-react";
 import { apiErrorMessage } from "@codementor/api-client";
 import { ServerPagination, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";
@@ -215,6 +215,15 @@ export function BillingScreen() {
                           level={g.memberLevel}
                           display={`${g.memberCount} / ${formatLimit(usage.entitlements.maxMembersPerGroup)} · ${formatBytes(g.storedBytes)}`}
                         />
+                        {g.overLimitReasons.length > 0 && (
+                          <p className="mt-1 text-xs text-danger">
+                            Vượt hạn mức:{" "}
+                            {g.overLimitReasons
+                              .map((r) => ({ groups: "ngoài số nhóm được giữ", members: "quá số thành viên", storage: "dung lượng chung" })[r])
+                              .join(", ")}
+                            {usage.overage && ` · ${{ notice: "sắp chỉ đọc", read_only: "đang chỉ đọc", hidden: "đang tạm ẩn" }[usage.overage.stage]}`}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -224,6 +233,8 @@ export function BillingScreen() {
           )}
         </Card>
       </div>
+
+      {overview && <LapsePolicy policy={overview.policy} />}
 
       <Card className="mt-4 overflow-hidden">
         <div className="flex items-center gap-2 border-b border-border px-5 py-4">
@@ -315,12 +326,32 @@ function Notices({ overview, usage, renewHref }: { overview: SubscriptionOvervie
       text: `Bạn có giao dịch ${formatVnd(overview.pendingOrder.amountVnd)} chưa hoàn tất, hết hạn lúc ${formatVnDate(overview.pendingOrder.expiresAt, true)}.`,
       action: { href: `/workspace/billing/checkout/result?order=${overview.pendingOrder.id}`, label: "Xem giao dịch" },
     });
-  if (usage.overLimit.groups)
-    notices.push({ key: "groups", text: `Bạn đang sở hữu ${usage.usage.ownedGroups} nhóm, gói hiện tại cho phép ${usage.entitlements.maxOwnedGroups}. Không thể tạo nhóm mới cho đến khi nâng cấp.`, action: { href: "/workspace/pricing", label: "So sánh gói" } });
-  if (usage.overLimit.storage)
-    notices.push({ key: "storage", text: `Workspace đang dùng ${formatBytes(usage.usage.totalBytes)}, gói hiện tại cho phép ${formatBytes(usage.entitlements.maxStorageBytes)}. Không thể tải thêm tài liệu cho đến khi dọn bớt hoặc nâng cấp.`, action: { href: "/workspace/pricing", label: "So sánh gói" } });
-  if (usage.overLimit.memberGroupIds.length)
-    notices.push({ key: "members", text: `${usage.overLimit.memberGroupIds.length} nhóm đang vượt số thành viên tối đa. Thành viên hiện tại được giữ, nhưng không thể thêm người mới.` });
+  const why = [
+    usage.overLimit.groups && `sở hữu ${usage.usage.ownedGroups}/${usage.entitlements.maxOwnedGroups} nhóm`,
+    usage.overLimit.storage && `dùng ${formatBytes(usage.usage.totalBytes)}/${formatBytes(usage.entitlements.maxStorageBytes)}`,
+    usage.overLimit.memberGroupIds.length > 0 && `${usage.overLimit.memberGroupIds.length} nhóm quá số thành viên`,
+  ].filter(Boolean).join(", ");
+  const affected = usage.groups.filter((g) => g.overLimitReasons.length).length;
+  if (why) {
+    const o = usage.overage;
+    const when = !o
+      ? `Nếu chưa xử lý, sau ${overview.policy.overageNoticeDays} ngày các nhóm vượt hạn mức sẽ chuyển sang chỉ đọc.`
+      : o.stage === "notice"
+        ? `Từ ${formatVnDate(o.readOnlyAt)}, ${affected} nhóm vượt hạn mức sẽ chuyển sang chỉ đọc.`
+        : o.stage === "read_only"
+          ? `${affected} nhóm đang chỉ đọc. Từ ${formatVnDate(o.hiddenAt)} các nhóm này sẽ tạm ẩn với thành viên.`
+          : `${affected} nhóm đang tạm ẩn với thành viên. Dữ liệu vẫn được giữ nguyên.`;
+    notices.push({
+      key: "overage",
+      text: (
+        <>
+          <strong>Workspace đang vượt hạn mức gói {usage.plan.name}</strong> ({why}). {when} Nâng cấp, gia hạn hoặc dọn dẹp để
+          mở lại ngay; các nhóm bị ảnh hưởng được đánh dấu bên dưới.
+        </>
+      ),
+      action: { href: "/workspace/pricing", label: "So sánh gói" },
+    });
+  }
   if (!notices.length) return null;
   return (
     <div className="mb-4 space-y-2">
@@ -336,6 +367,37 @@ function Notices({ overview, usage, renewHref }: { overview: SubscriptionOvervie
         </div>
       ))}
     </div>
+  );
+}
+
+/** What happens if a paid plan is not renewed, with the durations configured by administrators. */
+export function LapsePolicy({ policy }: { policy: SubscriptionOverview["policy"] }) {
+  const steps = [
+    { icon: BellRing, title: `${policy.renewalReminderDays} ngày trước hạn`, body: "Bạn nhận thông báo nhắc gia hạn. Không có khoản tự động trừ tiền." },
+    { icon: ShieldCheck, title: `Ân hạn ${policy.graceDays} ngày`, body: "Hết kỳ vẫn giữ nguyên hạn mức và tính năng của gói." },
+    { icon: AlertTriangle, title: `Cảnh báo ${policy.overageNoticeDays} ngày`, body: "Về hạn mức Free. Nếu đang vượt, mọi thứ vẫn chạy và bạn được báo ngày khoá." },
+    { icon: Lock, title: `Chỉ đọc ${policy.overageReadOnlyDays} ngày`, body: "Nhóm vượt hạn mức: xem, tải, làm bài đã giao, dọn dẹp được; không thêm nội dung mới." },
+    { icon: EyeOff, title: "Tạm ẩn", body: "Thành viên không mở được nhóm; bạn vẫn vào để dọn dẹp. Không có dữ liệu nào bị xoá." },
+  ];
+  return (
+    <Card className="mt-4 p-5">
+      <h2 className="font-semibold text-navy">Nếu không gia hạn thì sao?</h2>
+      <p className="mt-1 text-sm text-text-muted">
+        Chỉ các nhóm vượt hạn mức Free bị ảnh hưởng: nhóm ngoài số nhóm được giữ (giữ nhóm hoạt động gần nhất), nhóm quá số thành
+        viên, hoặc mọi nhóm nếu vượt dung lượng. Gia hạn, nâng cấp hay dọn dẹp ở bất kỳ bước nào đều mở lại ngay.
+      </p>
+      <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {steps.map((step, i) => (
+          <li key={step.title} className="rounded-lg border border-border-soft p-3">
+            <span className="flex items-center gap-2 text-xs font-semibold text-text-faint">
+              <step.icon className="h-4 w-4 text-primary" aria-hidden /> Bước {i + 1}
+            </span>
+            <p className="mt-1 text-sm font-semibold text-navy">{step.title}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-text-muted">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+    </Card>
   );
 }
 

@@ -38,6 +38,7 @@ import { LecterDrawer } from "../lecter/lecter-drawer";
 import { applyPatch } from "../lecter/patch";
 import type { LecterDraftPatch } from "../lecter/types";
 import { WorkspaceMemberSelector } from "./workspace-member-selector";
+import { useQuotaDialog } from "@/features/workspace-billing/quota-dialog";
 
 const inputClass =
   "rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy";
@@ -153,6 +154,7 @@ export function WorkspaceExerciseStudio({
   const [busy, setBusy] = useState(false);
 
   const [aiOpen, setAiOpen] = useState(false);
+  const quota = useQuotaDialog();
 
   const backHref = `/workspace/${encodeURIComponent(slug)}?tab=exercises`;
   const storageKey = draftStorageKey(
@@ -164,6 +166,9 @@ export function WorkspaceExerciseStudio({
     detail !== null &&
     (detail.currentMembership.role === "owner" ||
       detail.currentMembership.permissions.assign_exercise);
+  // Owner's plan: deadlines, picking members and Lecter are paid; Free assigns to everyone.
+  const advanced = detail?.plan.features.includes("advanced_assignments") ?? false;
+  const isOwner = detail?.currentMembership.role === "owner";
 
   useEffect(() => {
     let cancelled = false;
@@ -366,7 +371,7 @@ export function WorkspaceExerciseStudio({
       );
       router.push(backHref);
     } catch (cause) {
-      toast.error(messageOf(cause));
+      if (!quota.handle(cause, isOwner)) toast.error(messageOf(cause));
     } finally {
       setBusy(false);
     }
@@ -413,9 +418,24 @@ export function WorkspaceExerciseStudio({
         }}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setAiOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                advanced
+                  ? setAiOpen(true)
+                  : quota.show(
+                      {
+                        code: "WORKSPACE_FEATURE_LOCKED",
+                        message: `Soạn bài bằng Lecter thuộc Quản lý bài tập nâng cao, không có trong gói ${detail.plan.name} của chủ nhóm.`,
+                        details: { plan: detail.plan.name, feature: "advanced_assignments" },
+                      },
+                      isOwner,
+                    )
+              }
+            >
               <Sparkles className="h-3.5 w-3.5" />
-              Lecter
+              Lecter{!advanced && " · Plus+"}
             </Button>
             <Button
               size="sm"
@@ -471,20 +491,38 @@ export function WorkspaceExerciseStudio({
         ) : (
           <StudioScroll>
             <div className="space-y-4">
+              {!advanced && (
+                <p className="rounded-md border border-border-soft bg-surface px-3 py-2 text-xs text-text-muted">
+                  Gói {detail.plan.name} của chủ nhóm giao bài cho cả nhóm, không đặt hạn nộp. Hạn nộp và giao cho từng
+                  thành viên có trong gói Plus trở lên.
+                </p>
+              )}
               <label className="block text-xs font-medium text-text-muted">
                 Hạn nộp của Workspace
                 <input
                   type="datetime-local"
                   className={`${inputClass} mt-1 block w-full max-w-sm`}
                   value={dueAt}
+                  disabled={!advanced}
                   onChange={(event) => setDueAt(event.target.value)}
                 />
               </label>
-              <WorkspaceMemberSelector
-                members={members}
-                selectedIds={memberIds}
-                onChange={setMemberIds}
-              />
+              {advanced ? (
+                <WorkspaceMemberSelector
+                  members={members}
+                  selectedIds={memberIds}
+                  onChange={setMemberIds}
+                />
+              ) : (
+                <label className="flex items-center gap-2 text-sm text-text">
+                  <input
+                    type="checkbox"
+                    checked={members.length > 0 && memberIds.length === members.length}
+                    onChange={(event) => setMemberIds(event.target.checked ? members.map((m) => m.id) : [])}
+                  />
+                  Giao cho cả nhóm ({members.length} thành viên)
+                </label>
+              )}
             </div>
           </StudioScroll>
         )}
@@ -516,6 +554,7 @@ export function WorkspaceExerciseStudio({
           </span>
         </p>
       </Modal>
+      {quota.dialog}
       <LecterDrawer
         open={aiOpen}
         slug={slug}

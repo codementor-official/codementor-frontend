@@ -155,8 +155,8 @@ export function PricingScreen() {
           hạn để gia hạn mà không mất hạn mức.
         </Explainer>
         <Explainer icon={BadgeCheck} title="Không bao giờ xoá dữ liệu của bạn">
-          Hết hạn hay chuyển gói, mọi nhóm, thành viên và tài liệu vẫn được giữ. Chỉ các thao tác dùng thêm hạn mức bị tạm
-          chặn cho đến khi bạn nâng cấp hoặc dọn bớt.
+          Hết hạn mà vẫn vượt hạn mức Free, nhóm vượt hạn mức được cảnh báo, rồi chuyển chỉ đọc, sau cùng tạm ẩn với thành
+          viên. Dữ liệu luôn được giữ; gia hạn hoặc dọn dẹp là mở lại ngay.
         </Explainer>
       </div>
 
@@ -295,10 +295,11 @@ function PlanCard({
               ) : (
                 <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-text-faint" aria-hidden />
               )}
-              <span className="text-text">
+              <span className="min-w-0 flex-1 text-text">
                 {f.label}
                 {f.status === "planned" && <span className="ml-1 text-xs text-text-muted">(sắp ra mắt)</span>}
               </span>
+              <InfoHint text={f.description} />
             </li>
           );
         })}
@@ -351,6 +352,7 @@ function Comparison({ catalog }: { catalog: PlanCatalog }) {
                 <th scope="row" className="px-5 py-3 text-left font-medium text-text">
                   {f.label}
                   {f.status === "planned" && <span className="ml-1 text-xs text-text-muted">(sắp ra mắt)</span>}
+                  <span className="mt-0.5 block text-xs font-normal text-text-muted">{f.description}</span>
                 </th>
                 {catalog.plans.map((p) => (
                   <td key={p.id} className="px-5 py-3">
@@ -400,8 +402,12 @@ const FAQ = [
     a: "Phần chưa dùng của kỳ hiện tại được trừ vào giá gói mới theo tỷ lệ thời gian còn lại. Gói mới có hiệu lực ngay sau khi thanh toán được xác nhận.",
   },
   {
-    q: "Hạ gói hoặc hết hạn thì dữ liệu có bị xoá?",
-    a: "Không bao giờ. Bạn vẫn xem và dọn dẹp được mọi thứ; chỉ việc tạo thêm nhóm, thêm thành viên hoặc tải thêm tài liệu bị chặn khi đang vượt hạn mức.",
+    q: "Không gia hạn thì nhóm 100 thành viên của tôi sẽ ra sao?",
+    a: "Sau thời gian ân hạn, tài khoản về hạn mức Free. Nhóm vượt hạn mức (quá số thành viên, quá số nhóm, hoặc vượt dung lượng) được cảnh báo trước, rồi chuyển chỉ đọc: thành viên vẫn xem, tải tài liệu và làm bài đã giao nhưng không thêm nội dung mới. Nếu vẫn chưa xử lý, nhóm tạm ẩn với thành viên; bạn vẫn vào để dọn dẹp. Không có dữ liệu nào bị xoá, và nhóm mở lại ngay khi bạn gia hạn, nâng cấp hoặc giảm về trong hạn mức. Số ngày cụ thể hiển thị ở trang Gói của tôi.",
+  },
+  {
+    q: "Gói Free khác gói trả phí ở tính năng nào?",
+    a: "Free giao bài cho cả nhóm, xem số liệu tổng. Từ Plus trở lên có thêm Quản lý bài tập nâng cao (hạn nộp, giới hạn số lần nộp, giao cho từng thành viên, soạn bài bằng AI Lecter) và Thống kê nhóm chi tiết (tiến độ từng thành viên, xu hướng, xuất CSV). Tính năng tính theo gói của Chủ nhóm, áp dụng cho cả nhóm.",
   },
   {
     q: "Tôi có được hoàn tiền không?",

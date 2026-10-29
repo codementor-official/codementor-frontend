@@ -61,6 +61,9 @@ import { useWorkspaceChat } from "../chat/use-workspace-chat";
 import { WorkspaceChatTab } from "../chat/workspace-chat";
 import { ReportButton } from "@/features/reports/report-button";
 import { useQuotaDialog } from "@/features/workspace-billing/quota-dialog";
+import { GroupPlanBanner } from "@/features/workspace-billing/group-plan-banner";
+import { FeatureLockedCard } from "@/features/workspace-billing/feature-locked";
+import { quotaRefusal } from "@/features/workspace-billing/api";
 import { OwnershipOfferBanner, OwnershipTransferCard } from "./ownership-transfer";
 
 type Tab =
@@ -266,6 +269,11 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       setMembers(nextMembers.items);
       setOverview(nextOverview);
     } catch (cause) {
+      // A hidden group is still theirs: explain it rather than offering to join again.
+      if (quotaRefusal(cause)?.code === "WORKSPACE_GROUP_HIDDEN") {
+        setError(messageOf(cause, "Nhóm đang tạm ẩn."));
+        return;
+      }
       const wasMember = window.sessionStorage.getItem(`codementor-workspace-member:${slug}`) === "1";
       if (wasMember && cause instanceof ApiClientError && [403, 404].includes(cause.status)) {
         setMembershipRemoved(true);
@@ -481,6 +489,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
     <div>
       <BreadcrumbTitle slug={slug} title={detail.name} />
       {detail.currentMembership.role !== "owner" && <OwnershipOfferBanner slug={slug} onAccepted={() => void load()} />}
+      <GroupPlanBanner plan={detail.plan} owner={detail.currentMembership.role === "owner"} />
       <div className="mb-5 flex flex-wrap items-center gap-3">
         {detail.coverUrl ? (
           // Ảnh bìa do người dùng tải lên, host tuỳ ý. Ghi chú đầy đủ ở workspace-chat.tsx.
@@ -593,7 +602,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         />
       )}
       {activeTab === "progress" && (
-        <Progress slug={detail.slug} overview={overview} />
+        <Progress slug={detail.slug} overview={overview} owner={detail.currentMembership.role === "owner"} />
       )}
       {activeTab === "chat" && <WorkspaceChatTab detail={detail} chat={chat} />}
       {activeTab === "settings" && isOwner && (
@@ -1083,12 +1092,7 @@ function Overview({
                     key={bucket.key}
                     label={bucket.label}
                     value={bucket.value}
-                    total={Math.max(
-                      1,
-                      overview.members.filter(
-                        (member) => member.assignedCount > 0,
-                      ).length,
-                    )}
+                    total={Math.max(1, overview.activeLearners)}
                   />
                 ))}
               </div>
@@ -1156,7 +1160,9 @@ function Meta({
 function Progress({
   slug,
   overview,
+  owner,
 }: {
+  owner: boolean;
   slug: string;
   overview: WorkspaceOverview | null;
 }) {
@@ -1249,35 +1255,49 @@ function Progress({
         avatarUrl: member.avatarUrl,
       },
     });
+  const statCards = (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <StatCard
+        icon={TrendingUp}
+        label="Hoàn thành"
+        value={overview.assignments.completionRate}
+        note={`${overview.assignments.completed}/${overview.assignments.total} assignment · đơn vị %`}
+      />
+      <StatCard
+        icon={ClipboardCheck}
+        label="Lượt nộp"
+        value={overview.submissions.total}
+        note={`Trung bình ${overview.submissions.averageAttempts} lần/bài`}
+      />
+      <StatCard
+        icon={CheckCircle2}
+        label="Tỷ lệ đạt"
+        value={overview.submissions.acceptanceRate}
+        note={`${overview.submissions.accepted} đạt · ${overview.submissions.failed} chưa đạt · đơn vị %`}
+      />
+      <StatCard
+        icon={RotateCcw}
+        label="Nhiều lần nhất"
+        value={overview.submissions.maxAttempts}
+        note={`Điểm trung bình ${overview.submissions.averageScore}/100`}
+      />
+    </div>
+  );
+  if (!overview.detailedAnalytics)
+    return (
+      <div className="min-w-0 space-y-4 pb-20">
+        {statCards}
+        <FeatureLockedCard
+          owner={owner}
+          title="Thống kê nhóm chi tiết"
+          body="Tiến độ từng thành viên, xu hướng nộp bài và hoàn thành 14 ngày, lọc thành viên cần hỗ trợ và xuất CSV có trong các gói từ Plus."
+        />
+      </div>
+    );
   return (
     <>
       <div className="min-w-0 space-y-4 pb-20">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard
-            icon={TrendingUp}
-            label="Hoàn thành"
-            value={overview.assignments.completionRate}
-            note={`${overview.assignments.completed}/${overview.assignments.total} assignment · đơn vị %`}
-          />
-          <StatCard
-            icon={ClipboardCheck}
-            label="Lượt nộp"
-            value={overview.submissions.total}
-            note={`Trung bình ${overview.submissions.averageAttempts} lần/bài`}
-          />
-          <StatCard
-            icon={CheckCircle2}
-            label="Tỷ lệ đạt"
-            value={overview.submissions.acceptanceRate}
-            note={`${overview.submissions.accepted} đạt · ${overview.submissions.failed} chưa đạt · đơn vị %`}
-          />
-          <StatCard
-            icon={RotateCcw}
-            label="Nhiều lần nhất"
-            value={overview.submissions.maxAttempts}
-            note={`Điểm trung bình ${overview.submissions.averageScore}/100`}
-          />
-        </div>
+        {statCards}
         <div className="grid gap-4 xl:grid-cols-3">
           <Card className="p-5 xl:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">

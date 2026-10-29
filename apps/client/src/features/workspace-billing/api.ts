@@ -49,7 +49,16 @@ export const billingApi = {
 export interface QuotaRefusal {
   code: WorkspaceQuotaCode;
   message: string;
-  details: { limit?: number; used?: number; requested?: number; available?: number; plan?: string };
+  details: {
+    limit?: number;
+    used?: number;
+    requested?: number;
+    available?: number;
+    plan?: string;
+    feature?: string;
+    stage?: string;
+    reasons?: string[];
+  };
 }
 
 const QUOTA_CODES: WorkspaceQuotaCode[] = [

@@ -820,6 +820,10 @@ export function WorkspaceExercisesTab({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const quota = useQuotaDialog();
+  // Deadlines and assigning part of the group are paid tools; Free assigns to everyone, no deadline.
+  const advanced = detail.plan.features.includes("advanced_assignments");
+  const isOwner = detail.currentMembership.role === "owner";
   const [data, setData] = useState(EMPTY_PAGE<WorkspaceExercise>());
   const [bank, setBank] = useState<ExerciseSummary[]>([]);
   const [page, setPage] = useUrlState("ePage", 1);
@@ -923,7 +927,7 @@ export function WorkspaceExercisesTab({
       setDueAt("");
       await load();
     } catch (e) {
-      toast.error(messageOf(e));
+      if (!quota.handle(e, isOwner)) toast.error(messageOf(e));
     } finally {
       setBusy(false);
     }
@@ -978,6 +982,7 @@ export function WorkspaceExercisesTab({
   };
   return (
     <div className="space-y-4">
+      {quota.dialog}
       {(canCreate || canAssign) && (
         <Card className="space-y-3 p-4">
           <div className="flex items-center gap-3">
@@ -985,7 +990,9 @@ export function WorkspaceExercisesTab({
               <h2 className="text-sm font-bold text-navy">Quản lý bài tập</h2>
               {canAssign && (
                 <p className="mt-1 text-xs text-text-faint">
-                  {memberIds.length} thành viên đang được chọn để phân công
+                  {advanced
+                    ? `${memberIds.length} thành viên đang được chọn để phân công`
+                    : `Giao cho cả nhóm (${memberIds.length} thành viên). Hạn nộp và giao cho từng người có trong gói Plus trở lên.`}
                 </p>
               )}
             </div>
@@ -1014,11 +1021,13 @@ export function WorkspaceExercisesTab({
                 />
               </div>
               <label className="grid gap-1 text-xs font-medium text-text-muted">
-                <span>Hạn nộp</span>
+                <span>{advanced ? "Hạn nộp" : "Hạn nộp · gói Plus+"}</span>
                 <input
                   type="datetime-local"
                   className={`${inputClass} h-9 w-full py-0 text-xs`}
                   value={dueAt}
+                  disabled={!advanced}
+                  title={advanced ? undefined : "Hạn nộp có trong gói Plus trở lên của chủ nhóm"}
                   onChange={(e) => setDueAt(e.target.value)}
                 />
               </label>
@@ -1026,6 +1035,8 @@ export function WorkspaceExercisesTab({
                 size="sm"
                 variant="outline"
                 className="h-9 whitespace-nowrap"
+                disabled={!advanced}
+                title={advanced ? undefined : "Giao cho từng thành viên có trong gói Plus trở lên"}
                 aria-expanded={assignmentOpen}
                 aria-controls="workspace-assignment-options"
                 onClick={() => setAssignmentOpen((value) => !value)}
@@ -1046,7 +1057,7 @@ export function WorkspaceExercisesTab({
               </Button>
             </div>
           )}
-          {canAssign && assignmentOpen && (
+          {canAssign && advanced && assignmentOpen && (
             <WorkspaceMemberSelector
               id="workspace-assignment-options"
               members={assignable}

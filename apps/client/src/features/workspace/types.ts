@@ -1,3 +1,4 @@
+import type { GroupPlan } from "@codementor/types";
 export type WorkspaceRole = "owner" | "deputy" | "member";
 
 export type WorkspacePermission =
@@ -84,6 +85,8 @@ export interface WorkspaceDetail {
   updatedAt: string;
   lastActivityAt: string | null;
   owner: WorkspaceUserSummary;
+  /** The owner's plan as it applies here: paid tools and any over-limit restriction. */
+  plan: GroupPlan;
   inviteCode: string | null;
   currentMembership: {
     id: string;
@@ -235,6 +238,10 @@ export interface WorkspaceOverview {
   completionTrend: Array<{ label: string; value: number }>;
   activityTrend: Array<{ label: string; value: number }>;
   progressDistribution: Array<{ key: string; label: string; value: number }>;
+  /** False when the owner's plan lacks detailed analytics: `members` and the trends come back empty. */
+  detailedAnalytics: boolean;
+  /** Members with at least one assignment, counted even when `members` is withheld. */
+  activeLearners: number;
   memberCount: number;
   createdAt: string;
   topic: string | null;

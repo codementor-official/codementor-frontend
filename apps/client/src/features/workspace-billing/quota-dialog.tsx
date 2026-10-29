@@ -120,6 +120,27 @@ function describe({ code, message, details: d }: QuotaRefusal, owner: boolean) {
         figures: owner && d.used !== undefined ? `Đã dùng ${d.used} / ${d.limit} lượt` : null,
         hint: owner ? "Lượt mới được cấp vào ngày 1 hằng tháng, hoặc nâng cấp để có thêm lượt." : "Bạn có thể báo Chủ nhóm.",
       };
+    case "WORKSPACE_FEATURE_LOCKED":
+      return {
+        title: "Tính năng của gói trả phí",
+        body: owner
+          ? message
+          : `Tính năng này chưa có trong ${plan} của Chủ nhóm.`,
+        figures: null,
+        hint: owner
+          ? "Các gói từ Plus trở lên có hạn nộp, giao bài cho từng thành viên, soạn bài bằng AI và thống kê chi tiết."
+          : "Bạn vẫn giao bài cho cả nhóm, không đặt hạn nộp. Hãy báo Chủ nhóm nếu cần tính năng này.",
+      };
+    case "WORKSPACE_GROUP_READ_ONLY":
+    case "WORKSPACE_GROUP_HIDDEN":
+      return {
+        title: code === "WORKSPACE_GROUP_HIDDEN" ? "Nhóm đang tạm ẩn" : "Nhóm đang ở chế độ chỉ đọc",
+        body: message,
+        figures: null,
+        hint: owner
+          ? "Gia hạn, nâng cấp hoặc dọn dẹp (xoá bớt thành viên, tài liệu, nhóm) để mở lại ngay. Dữ liệu không bị xoá."
+          : "Dữ liệu của nhóm vẫn còn nguyên. Chủ nhóm mở lại được bất kỳ lúc nào.",
+      };
     default:
       return { title: "Chưa thực hiện được", body: message || "Hệ thống gói Workspace tạm thời chưa sẵn sàng.", figures: null, hint: null };
   }
