@@ -7,6 +7,9 @@ export interface LimitRow {
   icon: LucideIcon;
   label: string;
   value: string;
+  /** Card wording: `strong` is emphasised, `rest` completes the phrase. */
+  strong: string;
+  rest: string;
   hint: string;
 }
 
@@ -18,6 +21,8 @@ export function limitRows(e: Entitlements): LimitRow[] {
       icon: LayoutGrid,
       label: "Nhóm sở hữu",
       value: `${formatLimit(e.maxOwnedGroups)} nhóm`,
+      strong: formatLimit(e.maxOwnedGroups),
+      rest: "nhóm sở hữu",
       hint: "Số nhóm học tập bạn được làm Chủ nhóm, tính cả nhóm đã lưu trữ.",
     },
     {
@@ -25,6 +30,8 @@ export function limitRows(e: Entitlements): LimitRow[] {
       icon: UsersRound,
       label: "Thành viên mỗi nhóm",
       value: e.maxMembersPerGroup === null ? "Không giới hạn*" : `${formatLimit(e.maxMembersPerGroup)} người`,
+      strong: e.maxMembersPerGroup === null ? "Không giới hạn*" : formatLimit(e.maxMembersPerGroup),
+      rest: "thành viên mỗi nhóm",
       hint: "Tính riêng cho từng nhóm, gồm cả Chủ nhóm. * Không giới hạn theo chính sách sử dụng hợp lý.",
     },
     {
@@ -32,6 +39,8 @@ export function limitRows(e: Entitlements): LimitRow[] {
       icon: HardDrive,
       label: "Dung lượng tài liệu",
       value: formatBytes(e.maxStorageBytes),
+      strong: formatBytes(e.maxStorageBytes),
+      rest: "dung lượng tài liệu",
       hint: "Tổng dung lượng tài liệu của tất cả nhóm bạn sở hữu, không reset theo tháng.",
     },
     {
@@ -39,6 +48,8 @@ export function limitRows(e: Entitlements): LimitRow[] {
       icon: FileUp,
       label: "Tệp tối đa",
       value: formatBytes(e.maxUploadBytes),
+      strong: formatBytes(e.maxUploadBytes),
+      rest: "mỗi tệp tải lên",
       hint: "Kích thước tối đa của một tệp tải lên. Tệp còn phải vừa với dung lượng còn lại.",
     },
     {
@@ -46,6 +57,8 @@ export function limitRows(e: Entitlements): LimitRow[] {
       icon: Sparkles,
       label: "Lượt hỏi AI tài liệu",
       value: `${formatLimit(e.monthlyAiRequests)} / tháng`,
+      strong: formatLimit(e.monthlyAiRequests),
+      rest: "lượt hỏi AI mỗi tháng",
       hint: "Số câu hỏi Trợ lý AI tài liệu trong mọi nhóm bạn sở hữu, tính theo tháng (giờ Việt Nam).",
     },
   ];

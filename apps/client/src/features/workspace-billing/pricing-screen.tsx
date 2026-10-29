@@ -132,6 +132,11 @@ export function PricingScreen() {
                 cycle={cycle}
                 catalog={catalog!}
                 isCurrent={plan.id === overview?.plan.id}
+                contractPriceVnd={
+                  overview?.subscription?.planId === plan.id && overview.subscription.billingCycle === cycle
+                    ? overview.subscription.priceVnd
+                    : null
+                }
                 action={actionFor(plan)}
                 onSchedule={() => setScheduling(plan)}
               />
@@ -195,6 +200,7 @@ function PlanCard({
   cycle,
   catalog,
   isCurrent,
+  contractPriceVnd,
   action,
   onSchedule,
 }: {
@@ -202,6 +208,8 @@ function PlanCard({
   cycle: BillingCycle;
   catalog: PlanCatalog;
   isCurrent: boolean;
+  /** What this subscriber renews at; differs from the list price once a newer version is published. */
+  contractPriceVnd: number | null;
   action: Action;
   onSchedule: () => void;
 }) {
@@ -209,6 +217,7 @@ function PlanCard({
   const annual = cycle === "year" ? v.annualPriceVnd : null;
   const saving = annualSaving(v.monthlyPriceVnd, v.annualPriceVnd);
   const featured = plan.isRecommended;
+  const listPrice = cycle === "year" ? v.annualPriceVnd : v.monthlyPriceVnd;
   return (
     <Card className={`flex flex-col p-5 ${featured ? "border-primary ring-1 ring-primary" : ""}`}>
       <div className="flex items-start justify-between gap-2">
@@ -241,6 +250,11 @@ function PlanCard({
             <span className="text-sm font-medium text-text-muted"> / tháng</span>
           </p>
         )}
+        {contractPriceVnd !== null && contractPriceVnd !== listPrice && (
+          <p className="mt-1 text-xs font-semibold text-success">
+            Bạn gia hạn với giá đã mua: {formatVnd(contractPriceVnd)} / {CYCLE_LABEL[cycle]}
+          </p>
+        )}
       </div>
 
       {v.description && <p className="mt-2 text-sm text-text">{v.description}</p>}
@@ -266,7 +280,7 @@ function PlanCard({
           <li key={row.key} className="flex items-start gap-2.5">
             <row.icon className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" aria-hidden />
             <span className="min-w-0 flex-1 text-text">
-              <span className="font-semibold text-navy">{row.value}</span> {row.label.toLowerCase()}
+              <span className="font-semibold text-navy">{row.strong}</span> {row.rest}
             </span>
             <InfoHint text={row.hint} />
           </li>

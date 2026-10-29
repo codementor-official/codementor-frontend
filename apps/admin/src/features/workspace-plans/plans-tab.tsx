@@ -224,7 +224,7 @@ function SortOrder({ plan, onSave }: { plan: AdminPlan; onSave: (n: number) => v
       <label htmlFor={id} className="text-xs text-muted-foreground">
         Thứ tự
       </label>
-      <input id={id} className={`${inputClassName} h-8 w-16 py-1`} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))} />
+      <input id={id} className={`${inputClassName} h-8 w-16! py-1`} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))} />
       <Button size="sm" variant="ghost" type="submit">
         Lưu
       </Button>
