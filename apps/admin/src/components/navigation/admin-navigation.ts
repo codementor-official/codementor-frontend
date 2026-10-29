@@ -6,6 +6,7 @@ import {
   Bot,
   Braces,
   Flag,
+  Gem,
   LayoutDashboard,
   Network,
   Newspaper,
@@ -52,6 +53,7 @@ export const adminNavigation: AdminNavGroup[] = [
       { href: "/commerce", icon: Wallet, label: "Giao dịch" },
       { href: "/revenue", icon: ChartNoAxesCombined, label: "Doanh thu hệ thống" },
       { href: "/promotions", icon: BadgePercent, label: "Khuyến mãi" },
+      { href: "/workspace-plans", icon: Gem, label: "Gói Workspace" },
     ],
   },
   {

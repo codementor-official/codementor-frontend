@@ -8,3 +8,4 @@ export * from "./holding-period";
 export function joinUrl(baseUrl: string, path: string): string {
   return baseUrl.replace(/\/$/, "") + "/" + path.replace(/^\//, "");
 }
+export * from "./workspace-billing";

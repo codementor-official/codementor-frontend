@@ -38,3 +38,4 @@ export interface ApiResponse<T> {
 }
 export * from './commerce';
 export * from './revenue';
+export * from './workspace-billing';

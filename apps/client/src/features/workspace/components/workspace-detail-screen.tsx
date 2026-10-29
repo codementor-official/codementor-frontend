@@ -12,7 +12,6 @@ import {
   CalendarDays,
   ClipboardCheck,
   ClipboardList,
-  Crown,
   Copy,
   Download,
   FileText,
@@ -61,6 +60,11 @@ import {
 import { useWorkspaceChat } from "../chat/use-workspace-chat";
 import { WorkspaceChatTab } from "../chat/workspace-chat";
 import { ReportButton } from "@/features/reports/report-button";
+import { useQuotaDialog } from "@/features/workspace-billing/quota-dialog";
+import { GroupPlanBanner } from "@/features/workspace-billing/group-plan-banner";
+import { FeatureLockedCard } from "@/features/workspace-billing/feature-locked";
+import { quotaRefusal } from "@/features/workspace-billing/api";
+import { OwnershipOfferBanner, OwnershipTransferCard } from "./ownership-transfer";
 
 type Tab =
   | "overview"
@@ -195,6 +199,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
+  const quota = useQuotaDialog();
   const [detail, setDetail] = useState<WorkspaceDetail | null>(null);
   const [publicDetail, setPublicDetail] =
     useState<PublicWorkspaceDetail | null>(null);
@@ -264,6 +269,11 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
       setMembers(nextMembers.items);
       setOverview(nextOverview);
     } catch (cause) {
+      // A hidden group is still theirs: explain it rather than offering to join again.
+      if (quotaRefusal(cause)?.code === "WORKSPACE_GROUP_HIDDEN") {
+        setError(messageOf(cause, "Nhóm đang tạm ẩn."));
+        return;
+      }
       const wasMember = window.sessionStorage.getItem(`codementor-workspace-member:${slug}`) === "1";
       if (wasMember && cause instanceof ApiClientError && [403, 404].includes(cause.status)) {
         setMembershipRemoved(true);
@@ -425,6 +435,8 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   if (!detail) {
     if (publicDetail) {
       return (
+        <>
+        {quota.dialog}
         <PublicWorkspaceView
           workspace={publicDetail}
           pending={pending}
@@ -444,12 +456,13 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
                 toast.success("Đã gửi yêu cầu tham gia");
               }
             } catch (cause) {
-              toast.error(messageOf(cause, "Không thể gửi yêu cầu tham gia."));
+              if (!quota.handle(cause, false)) toast.error(messageOf(cause, "Không thể gửi yêu cầu tham gia."));
             } finally {
               setPending(false);
             }
           }}
         />
+        </>
       );
     }
     return (
@@ -475,6 +488,8 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   return (
     <div>
       <BreadcrumbTitle slug={slug} title={detail.name} />
+      {detail.currentMembership.role !== "owner" && <OwnershipOfferBanner slug={slug} onAccepted={() => void load()} />}
+      <GroupPlanBanner plan={detail.plan} owner={detail.currentMembership.role === "owner"} />
       <div className="mb-5 flex flex-wrap items-center gap-3">
         {detail.coverUrl ? (
           // Ảnh bìa do người dùng tải lên, host tuỳ ý. Ghi chú đầy đủ ở workspace-chat.tsx.
@@ -587,7 +602,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         />
       )}
       {activeTab === "progress" && (
-        <Progress slug={detail.slug} overview={overview} />
+        <Progress slug={detail.slug} overview={overview} owner={detail.currentMembership.role === "owner"} />
       )}
       {activeTab === "chat" && <WorkspaceChatTab detail={detail} chat={chat} />}
       {activeTab === "settings" && isOwner && (
@@ -1077,12 +1092,7 @@ function Overview({
                     key={bucket.key}
                     label={bucket.label}
                     value={bucket.value}
-                    total={Math.max(
-                      1,
-                      overview.members.filter(
-                        (member) => member.assignedCount > 0,
-                      ).length,
-                    )}
+                    total={Math.max(1, overview.activeLearners)}
                   />
                 ))}
               </div>
@@ -1150,7 +1160,9 @@ function Meta({
 function Progress({
   slug,
   overview,
+  owner,
 }: {
+  owner: boolean;
   slug: string;
   overview: WorkspaceOverview | null;
 }) {
@@ -1243,35 +1255,49 @@ function Progress({
         avatarUrl: member.avatarUrl,
       },
     });
+  const statCards = (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <StatCard
+        icon={TrendingUp}
+        label="Hoàn thành"
+        value={overview.assignments.completionRate}
+        note={`${overview.assignments.completed}/${overview.assignments.total} assignment · đơn vị %`}
+      />
+      <StatCard
+        icon={ClipboardCheck}
+        label="Lượt nộp"
+        value={overview.submissions.total}
+        note={`Trung bình ${overview.submissions.averageAttempts} lần/bài`}
+      />
+      <StatCard
+        icon={CheckCircle2}
+        label="Tỷ lệ đạt"
+        value={overview.submissions.acceptanceRate}
+        note={`${overview.submissions.accepted} đạt · ${overview.submissions.failed} chưa đạt · đơn vị %`}
+      />
+      <StatCard
+        icon={RotateCcw}
+        label="Nhiều lần nhất"
+        value={overview.submissions.maxAttempts}
+        note={`Điểm trung bình ${overview.submissions.averageScore}/100`}
+      />
+    </div>
+  );
+  if (!overview.detailedAnalytics)
+    return (
+      <div className="min-w-0 space-y-4 pb-20">
+        {statCards}
+        <FeatureLockedCard
+          owner={owner}
+          title="Thống kê nhóm chi tiết"
+          body="Tiến độ từng thành viên, xu hướng nộp bài và hoàn thành 14 ngày, lọc thành viên cần hỗ trợ và xuất CSV có trong các gói từ Plus."
+        />
+      </div>
+    );
   return (
     <>
       <div className="min-w-0 space-y-4 pb-20">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard
-            icon={TrendingUp}
-            label="Hoàn thành"
-            value={overview.assignments.completionRate}
-            note={`${overview.assignments.completed}/${overview.assignments.total} assignment · đơn vị %`}
-          />
-          <StatCard
-            icon={ClipboardCheck}
-            label="Lượt nộp"
-            value={overview.submissions.total}
-            note={`Trung bình ${overview.submissions.averageAttempts} lần/bài`}
-          />
-          <StatCard
-            icon={CheckCircle2}
-            label="Tỷ lệ đạt"
-            value={overview.submissions.acceptanceRate}
-            note={`${overview.submissions.accepted} đạt · ${overview.submissions.failed} chưa đạt · đơn vị %`}
-          />
-          <StatCard
-            icon={RotateCcw}
-            label="Nhiều lần nhất"
-            value={overview.submissions.maxAttempts}
-            note={`Điểm trung bình ${overview.submissions.averageScore}/100`}
-          />
-        </div>
+        {statCards}
         <div className="grid gap-4 xl:grid-cols-3">
           <Card className="p-5 xl:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1666,6 +1692,7 @@ function JoinRequestsPanel({
   onCountChange?: (count: number) => void;
 }) {
   const toast = useToast();
+  const quota = useQuotaDialog();
   const [requests, setRequests] = useState<WorkspaceJoinRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
@@ -1705,7 +1732,7 @@ function JoinRequestsPanel({
         decision === "approve" ? "Đã duyệt thành viên" : "Đã từ chối yêu cầu",
       );
     } catch (cause) {
-      toast.error(messageOf(cause, "Không thể xử lý yêu cầu."));
+      if (!quota.handle(cause, true)) toast.error(messageOf(cause, "Không thể xử lý yêu cầu."));
     } finally {
       setReviewingId(null);
     }
@@ -1713,6 +1740,7 @@ function JoinRequestsPanel({
 
   return (
     <Card className="overflow-hidden">
+      {quota.dialog}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-4 py-3">
         <div>
           <h2 className="text-sm font-bold text-navy">
@@ -2564,7 +2592,6 @@ function SettingsPanel({
   const [coverPosition, setCoverPosition] = useState(detail.coverPosition);
   const [coverFit, setCoverFit] = useState(detail.coverFit);
   const [coverHeight, setCoverHeight] = useState(detail.coverHeight);
-  const [transferTo, setTransferTo] = useState("");
   const [pending, setPending] = useState(false);
   const [coverPreview, setCoverPreview] = useState(detail.coverUrl);
   const [showPublicConfirmation, setShowPublicConfirmation] = useState(false);
@@ -2657,19 +2684,6 @@ function SettingsPanel({
     }
   };
 
-  const transfer = async () => {
-    if (!transferTo) return;
-    setPending(true);
-    try {
-      await api.workspaces.transferOwnership(detail.slug, transferTo);
-      toast.success("Đã chuyển quyền Chủ nhóm");
-      window.location.assign(`/workspace/${detail.slug}`);
-    } catch (cause) {
-      toast.error(messageOf(cause, "Không thể chuyển quyền sở hữu."));
-    } finally {
-      setPending(false);
-    }
-  };
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
@@ -2852,38 +2866,7 @@ function SettingsPanel({
             </Button>
           </form>
         </Card>
-        <Card className="p-5">
-          <h2 className="mb-2 text-sm font-bold text-navy">
-            Chuyển quyền sở hữu
-          </h2>
-          <p className="mb-3 text-xs leading-relaxed text-text-faint">
-            Bạn sẽ trở thành Phó nhóm sau khi chuyển quyền. Chủ nhóm mới có thể
-            quản lý thành viên và lưu trữ nhóm.
-          </p>
-          <Select
-            label="Chủ nhóm mới"
-            className="w-full"
-            value={transferTo}
-            onChange={setTransferTo}
-            options={[
-              { value: "", label: "Chọn thành viên" },
-              ...members.map((member) => ({
-                value: member.id,
-                label: member.user.displayName,
-              })),
-            ]}
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            className="mt-3"
-            disabled={!transferTo || pending}
-            onClick={() => void transfer()}
-          >
-            <Crown className="h-3.5 w-3.5" />
-            Chuyển quyền
-          </Button>
-        </Card>
+        <OwnershipTransferCard slug={detail.slug} members={members} />
         <Card className="border-primary/30 p-5">
           <div className="flex items-center gap-2">
             <Archive className="h-4 w-4 text-primary" />

@@ -81,7 +81,8 @@ export function breadcrumbTrail(
     href += `/${segment}`;
     if (skip.has(segment)) continue;
     const entry = titles[segment];
-    const title = typeof entry === "string" ? entry : entry?.label;
+    // A registered static route (e.g. /workspace/billing) names itself, like the root does.
+    const title = (typeof entry === "string" ? entry : entry?.label) ?? routes[href]?.label;
     // An id nobody registered a title for is noise: "Khóa học › 3f2a1c…" tells the reader
     // less than "Khóa học › Studio". Pages that know the real name register it and it
     // shows up here instead.
