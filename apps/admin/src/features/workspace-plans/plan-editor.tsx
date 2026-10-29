@@ -197,10 +197,10 @@ export function PlanEditor({
 
           <fieldset className="grid gap-3 rounded-md border p-3 sm:grid-cols-2">
             <legend className="px-1 text-xs font-medium text-muted-foreground">Hạn mức</legend>
-            <Field label="Nhóm sở hữu" htmlFor="pe-groups">
+            <Field label="Nhóm sở hữu" htmlFor="pe-groups" hint="Tính cả nhóm đã lưu trữ.">
               <input id="pe-groups" className={inputClassName} inputMode="numeric" value={form.groups} onChange={(e) => set("groups", e.target.value.replace(/\D/g, ""))} />
             </Field>
-            <Field label="Thành viên mỗi nhóm" htmlFor="pe-members">
+            <Field label="Thành viên mỗi nhóm" htmlFor="pe-members" hint="Tính cả chủ nhóm.">
               <div className="flex items-center gap-2">
                 <input id="pe-members" className={inputClassName} inputMode="numeric" value={form.unlimitedMembers ? "" : form.members} disabled={form.unlimitedMembers} placeholder={form.unlimitedMembers ? "Không giới hạn" : ""} onChange={(e) => set("members", e.target.value.replace(/\D/g, ""))} />
                 <label className="flex shrink-0 items-center gap-1.5 text-xs">
@@ -210,26 +210,33 @@ export function PlanEditor({
             </Field>
             <ByteField id="pe-storage" label="Tổng dung lượng" value={form.storage} unit={form.storageUnit} onValue={(v) => set("storage", v)} onUnit={(u) => set("storageUnit", u)} />
             <ByteField id="pe-upload" label="Tệp tối đa" value={form.upload} unit={form.uploadUnit} onValue={(v) => set("upload", v)} onUnit={(u) => set("uploadUnit", u)} />
-            <Field label="Lượt hỏi AI tài liệu / tháng" htmlFor="pe-ai">
+            <Field label="Lượt hỏi AI tài liệu / tháng" htmlFor="pe-ai" hint="Chung cho mọi nhóm của chủ nhóm, theo tháng dương lịch.">
               <input id="pe-ai" className={inputClassName} inputMode="numeric" value={form.ai} onChange={(e) => set("ai", e.target.value.replace(/\D/g, ""))} />
             </Field>
           </fieldset>
 
           <fieldset className="rounded-md border p-3">
             <legend className="px-1 text-xs font-medium text-muted-foreground">Tính năng</legend>
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <div className="grid gap-2 sm:grid-cols-3">
               {features.map((f) => (
-                <label key={f.key} className="flex items-center gap-2 text-sm">
+                <label key={f.key} className="flex items-start gap-2 rounded-md border p-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
                   <input
                     type="checkbox"
+                    className="mt-0.5"
                     checked={form.features.includes(f.key)}
                     onChange={(e) => set("features", e.target.checked ? [...form.features, f.key] : form.features.filter((k) => k !== f.key))}
                   />
-                  {f.label}
-                  {f.status === "planned" && <span className="text-xs text-muted-foreground">(sắp ra mắt)</span>}
+                  <span>
+                    <span className="block font-medium">
+                      {f.label}
+                      {f.status === "planned" && <span className="font-normal text-muted-foreground"> (sắp ra mắt)</span>}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">{f.description}</span>
+                  </span>
                 </label>
               ))}
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">Tính năng thêm vào gói cũng áp dụng cho người đã mua gói này; giá và hạn mức của họ giữ nguyên.</p>
           </fieldset>
 
           {attempted && issues.length > 0 && (

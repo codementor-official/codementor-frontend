@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
 import { Button, Card, Field, ReasonButton, ServerPagination, SideDrawer, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd, toBytes } from "@codementor/utils";
-import type { AdminPlan, BillingPage, Entitlements, SubscriberDetail, SubscriberRow, SubscriptionState } from "@codementor/types";
+import type { AdminPlan, BillingPage, Entitlements, SubscriberDetail, SubscriberRow, SubscriberStats, SubscriptionState } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { inputClassName } from "@/features/commerce/form-style";
 import { plansApi } from "./api";
+import { SubscriberStatsPanel } from "./subscriber-stats";
 
 export const STATE: Record<SubscriptionState, { label: string; tone: "success" | "warning" | "danger" | "neutral" }> = {
   FREE: { label: "Free", tone: "neutral" },
@@ -30,6 +31,7 @@ export function SubscribersTab() {
   const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [error, setError] = useState("");
   const [open, setOpen] = useState<string | null>(null);
+  const [stats, setStats] = useState<SubscriberStats | null>(null);
 
   const load = useCallback(
     () =>
@@ -47,10 +49,20 @@ export function SubscribersTab() {
   }, [load]);
   useEffect(() => {
     plansApi.plans(request).then(setPlans).catch(() => setPlans([]));
+    plansApi.subscriberStats(request).then(setStats).catch(() => setStats(null));
   }, [request]);
+  const filtered = Boolean(q || planId || state);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      <SubscriberStatsPanel
+        stats={stats}
+        onFilter={(f) => {
+          if (f.planId !== undefined) setPlanId(f.planId);
+          if (f.state !== undefined) setState(f.state);
+          setPage(1);
+        }}
+      />
       <form
         className="flex flex-wrap items-end gap-2"
         onSubmit={(e) => {
@@ -82,6 +94,12 @@ export function SubscribersTab() {
           </select>
         </div>
         <Button type="submit" variant="outline">Lọc</Button>
+        {filtered && (
+          <Button type="button" variant="ghost" onClick={() => { setQ(""); setSearch(""); setPlanId(""); setState(""); setPage(1); }}>
+            Xoá bộ lọc
+          </Button>
+        )}
+        {data && <span className="ml-auto text-sm text-muted-foreground">{data.total.toLocaleString("vi-VN")} người đăng ký</span>}
       </form>
 
       {error && <Card className="p-4 text-sm text-destructive" role="alert">{error}</Card>}
@@ -92,17 +110,19 @@ export function SubscribersTab() {
             <tr>
               <th className="px-3 py-2 font-medium">Người dùng</th>
               <th className="px-3 py-2 font-medium">Gói</th>
-              <th className="px-3 py-2 font-medium">Giá hợp đồng</th>
+              <th className="px-3 py-2 text-right font-medium">Giá hợp đồng</th>
               <th className="px-3 py-2 font-medium">Trạng thái</th>
-              <th className="px-3 py-2 font-medium">Đến</th>
+              <th className="px-3 py-2 font-medium">Đã trả đến</th>
+              <th className="px-3 py-2 text-right font-medium">Nhóm sở hữu</th>
+              <th className="px-3 py-2 text-right font-medium">Tổng đã trả</th>
             </tr>
           </thead>
           <tbody>
             {!data && !error && (
-              <tr><td colSpan={5} className="px-3 py-6"><div className="h-4 animate-pulse rounded bg-muted" /></td></tr>
+              <tr><td colSpan={7} className="px-3 py-6"><div className="h-4 animate-pulse rounded bg-muted" /></td></tr>
             )}
             {data?.items.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Không có người đăng ký phù hợp.</td></tr>
+              <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Không có người đăng ký phù hợp.</td></tr>
             )}
             {data?.items.map((s) => (
               <tr key={s.id} className="cursor-pointer border-t transition-colors duration-150 hover:bg-muted/50" onClick={() => setOpen(s.user.id)}>
@@ -112,10 +132,18 @@ export function SubscribersTab() {
                     <span className="block text-xs text-muted-foreground">{s.user.email}</span>
                   </button>
                 </td>
-                <td className="px-3 py-2">{s.planName} · {s.billingCycle === "year" ? "năm" : "tháng"}</td>
-                <td className="px-3 py-2">{formatVnd(s.priceVnd)}</td>
-                <td className="px-3 py-2"><StatusBadge tone={STATE[s.state].tone}>{STATE[s.state].label}</StatusBadge></td>
+                <td className="px-3 py-2">
+                  <span className="block font-medium">{s.planName}</span>
+                  <span className="block text-xs text-muted-foreground">Theo {s.billingCycle === "year" ? "năm" : "tháng"} · từ {formatVnDate(s.createdAt)}</span>
+                </td>
+                <td className="px-3 py-2 text-right">{formatVnd(s.priceVnd)}</td>
+                <td className="px-3 py-2">
+                  <StatusBadge tone={STATE[s.state].tone}>{STATE[s.state].label}</StatusBadge>
+                  {s.overLimitSince && <span className="mt-1 block text-xs text-destructive">Vượt hạn mức từ {formatVnDate(s.overLimitSince)}</span>}
+                </td>
                 <td className="px-3 py-2 text-muted-foreground">{s.paidThrough ? formatVnDate(s.paidThrough) : "—"}</td>
+                <td className="px-3 py-2 text-right">{s.ownedGroups}</td>
+                <td className="px-3 py-2 text-right">{formatVnd(s.lifetimeValueVnd)}</td>
               </tr>
             ))}
           </tbody>

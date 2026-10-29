@@ -58,6 +58,7 @@ export interface FeatureDefinition {
   label: string;
   /** `planned` features are shown as coming soon and grant nothing yet. */
   status: "available" | "planned";
+  description: string;
 }
 
 export interface PlanCatalog {
@@ -116,7 +117,7 @@ export interface SubscriptionOverview {
     suspendedReason: string | null;
   };
   pendingOrder: WorkspaceOrder | null;
-  policy: { graceDays: number; renewalReminderDays: number; autoRenew: false };
+  policy: { graceDays: number; renewalReminderDays: number; overageNoticeDays: number; overageReadOnlyDays: number; autoRenew: false };
 }
 
 export type PlanChange = "new" | "renewal" | "upgrade" | "downgrade" | "cycle_change";
@@ -170,7 +171,27 @@ export interface WorkspacePlanUsage {
     memberCount: number;
     storedBytes: number;
     memberLevel: UsageLevel;
+    overLimitReasons: OverageReason[];
   }[];
+  /** Set once the sweep has seen the owner above their plan; dates of each stage. */
+  overage: OverageTimeline | null;
+}
+
+export type OverageReason = "groups" | "members" | "storage";
+export type OverageStage = "notice" | "read_only" | "hidden";
+
+export interface OverageTimeline {
+  stage: OverageStage;
+  overSince: string;
+  readOnlyAt: string;
+  hiddenAt: string;
+}
+
+/** The group owner's plan as it applies to one group (part of the group detail). */
+export interface GroupPlan {
+  name: string;
+  features: FeatureKey[];
+  restriction: (OverageTimeline & { reasons: OverageReason[] }) | null;
 }
 
 /** Quota refusals from workspace-service; `details` carries limit and usage. */
@@ -180,7 +201,10 @@ export type WorkspaceQuotaCode =
   | "WORKSPACE_STORAGE_LIMIT_REACHED"
   | "WORKSPACE_FILE_SIZE_EXCEEDED"
   | "WORKSPACE_AI_LIMIT_REACHED"
-  | "WORKSPACE_ENTITLEMENT_UNAVAILABLE";
+  | "WORKSPACE_ENTITLEMENT_UNAVAILABLE"
+  | "WORKSPACE_GROUP_READ_ONLY"
+  | "WORKSPACE_GROUP_HIDDEN"
+  | "WORKSPACE_FEATURE_LOCKED";
 
 export interface AdminPlan extends PlanSummary {
   openSubscriptions: number;
@@ -232,6 +256,41 @@ export interface SubscriberRow {
   paidThrough: string | null;
   cancelAtPeriodEnd: boolean;
   createdAt: string;
+  ownedGroups: number;
+  overLimitSince: string | null;
+  lifetimeValueVnd: number;
+}
+
+export interface SubscriberStats {
+  byState: { state: SubscriptionState; count: number }[];
+  byPlan: { planId: string; name: string; count: number; monthlyValueVnd: number }[];
+  byCycle: { cycle: BillingCycle; count: number }[];
+  monthly: { month: string; newSubscriptions: number; renewals: number; revenueVnd: number }[];
+  /** Week 0 = the next 7 days. */
+  expiringByWeek: { week: number; count: number; valueVnd: number }[];
+  overLimitOwners: { notice: number; readOnly: number; hidden: number };
+}
+
+export interface BillingSettings {
+  graceDays: number;
+  renewalReminderDays: number;
+  overageNoticeDays: number;
+  overageReadOnlyDays: number;
+  termsVersion: string;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export type AuditCategory = "plan" | "subscription" | "order" | "payment" | "coupon" | "adjustment" | "settings";
+
+export interface AuditEntry {
+  id: string;
+  action: string;
+  entity_id: string | null;
+  details: unknown;
+  created_at: string;
+  actor: string | null;
+  subject: string | null;
 }
 
 export interface BillingPage<T> {

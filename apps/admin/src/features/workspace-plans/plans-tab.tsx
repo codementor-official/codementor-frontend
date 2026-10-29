@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { History, Pencil, Plus, Rocket } from "lucide-react";
+import { FilePenLine, History, Pencil, Plus, Rocket, ShieldCheck } from "lucide-react";
 import { apiErrorMessage } from "@codementor/api-client";
 import { Button, Card, ConfirmButton, Field, Modal, SideDrawer, StatusBadge, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";
@@ -50,14 +50,23 @@ export function PlansTab() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          Mỗi thay đổi về giá hay hạn mức là một phiên bản mới. Người đã mua giữ nguyên phiên bản họ đã mua.
-        </p>
+      <Card className="flex flex-wrap items-center gap-4 p-4">
+        <ol className="grid flex-1 gap-3 text-sm sm:grid-cols-3">
+          {[
+            { icon: FilePenLine, title: "1. Sửa bản nháp", body: "Đổi giá, hạn mức, tính năng. Chưa ảnh hưởng ai." },
+            { icon: Rocket, title: "2. Xuất bản", body: "Ngay hoặc hẹn giờ. Có bảng so sánh với bản đang bán." },
+            { icon: ShieldCheck, title: "3. Người đã mua được giữ", body: "Giá và hạn mức họ đã mua không đổi khi gia hạn." },
+          ].map((step) => (
+            <li key={step.title} className="flex gap-2">
+              <step.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span><span className="block font-medium">{step.title}</span><span className="block text-xs text-muted-foreground">{step.body}</span></span>
+            </li>
+          ))}
+        </ol>
         <Button onClick={() => setEditing({ plan: null, version: null })}>
           <Plus className="h-4 w-4" /> Tạo gói
         </Button>
-      </div>
+      </Card>
 
       {error && (
         <Card className="p-4 text-sm text-destructive" role="alert">
@@ -89,7 +98,7 @@ export function PlansTab() {
                   <History className="h-3.5 w-3.5" /> Phiên bản
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setEditing({ plan, version: plan.draft ?? plan.onSale })}>
-                  <Pencil className="h-3.5 w-3.5" /> {plan.draft ? "Sửa bản nháp" : "Tạo bản nháp"}
+                  <Pencil className="h-3.5 w-3.5" /> {plan.draft ? `Sửa tiếp bản nháp v${plan.draft.version}` : "Chỉnh sửa giá & hạn mức"}
                 </Button>
                 {plan.draft && (
                   <Button size="sm" onClick={() => setPublishing(plan)}>
@@ -196,8 +205,12 @@ function VersionSummary({ label, version, empty }: { label: string; version: Pla
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {formatLimit(version.entitlements.maxOwnedGroups)} nhóm · {version.entitlements.maxMembersPerGroup === null ? "∞" : version.entitlements.maxMembersPerGroup} TV/nhóm ·{" "}
-            {formatBytes(version.entitlements.maxStorageBytes)} · tệp {formatBytes(version.entitlements.maxUploadBytes)}
+            {formatBytes(version.entitlements.maxStorageBytes)} · tệp {formatBytes(version.entitlements.maxUploadBytes)} ·{" "}
+            {version.entitlements.monthlyAiRequests} lượt AI/tháng
           </p>
+          {version.entitlements.features.length > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">+ {version.entitlements.features.length} tính năng</p>
+          )}
           {version.availableFrom && version.status === "published" && (
             <p className="mt-1 text-xs text-muted-foreground">Áp dụng từ {formatVnDate(version.availableFrom, true)}</p>
           )}

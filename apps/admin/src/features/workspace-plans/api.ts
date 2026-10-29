@@ -1,6 +1,10 @@
 import type { createApiClient } from "@codementor/api-client";
 import type {
   AdminPlan,
+  AuditCategory,
+  AuditEntry,
+  BillingSettings,
+  SubscriberStats,
   ApiResponse,
   BillingCycle,
   BillingOverview,
@@ -29,15 +33,6 @@ function query(params: Record<string, string | number | undefined>) {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "") q.set(k, String(v));
   return q.toString();
-}
-
-export interface AuditEntry {
-  id: string;
-  action: string;
-  entity_id: string | null;
-  details: unknown;
-  created_at: string;
-  actor: string | null;
 }
 
 export interface CouponInput {
@@ -69,6 +64,7 @@ export const plansApi = {
     call<PlanVersion>(r, `${base}/plans/${planId}/publish`, "POST", { expectedUpdatedAt, ...(availableFrom ? { availableFrom } : {}) }),
   subscribers: (r: Request, p: { page: number; q?: string; planId?: string; state?: string }) =>
     call<BillingPage<SubscriberRow>>(r, `${base}/subscribers?${query(p)}`),
+  subscriberStats: (r: Request) => call<SubscriberStats>(r, `${base}/subscribers/stats`),
   subscriber: (r: Request, userId: string) => call<SubscriberDetail>(r, `${base}/subscribers/${userId}`),
   suspend: (r: Request, userId: string, reason: string) => call(r, `${base}/subscribers/${userId}/suspend`, "POST", { reason }),
   restore: (r: Request, userId: string, reason: string) => call(r, `${base}/subscribers/${userId}/restore`, "POST", { reason }),
@@ -83,8 +79,10 @@ export const plansApi = {
     call<{ refunded: true; endedSubscription: boolean }>(r, `${base}/orders/${id}/refund`, "POST", { reason, ...(gatewayReference ? { gatewayReference } : {}) }),
   coupons: (r: Request) => call<WorkspaceCoupon[]>(r, `${base}/coupons`),
   createCoupon: (r: Request, body: CouponInput) => call<{ id: string }>(r, `${base}/coupons`, "POST", { ...body }),
-  deactivateCoupon: (r: Request, id: string) => call(r, `${base}/coupons/${id}/deactivate`, "POST"),
-  settings: (r: Request) => call<{ graceDays: number; renewalReminderDays: number; termsVersion: string; updatedAt: string }>(r, `${base}/settings`),
-  updateSettings: (r: Request, body: { graceDays: number; renewalReminderDays: number }) => call(r, `${base}/settings`, "PUT", body),
-  audit: (r: Request, page: number) => call<{ items: AuditEntry[]; page: number; limit: number }>(r, `${base}/audit?page=${page}`),
+  setCouponActive: (r: Request, id: string, active: boolean) => call(r, `${base}/coupons/${id}/${active ? "activate" : "deactivate"}`, "POST"),
+  settings: (r: Request) => call<BillingSettings>(r, `${base}/settings`),
+  updateSettings: (r: Request, body: Pick<BillingSettings, "graceDays" | "renewalReminderDays" | "overageNoticeDays" | "overageReadOnlyDays">) =>
+    call<BillingSettings>(r, `${base}/settings`, "PUT", { ...body }),
+  audit: (r: Request, p: { page: number; limit: number; category?: AuditCategory }) =>
+    call<BillingPage<AuditEntry>>(r, `${base}/audit?${query(p)}`),
 };
