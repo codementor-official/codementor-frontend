@@ -1,4 +1,5 @@
-import { Users } from "lucide-react";
+import { CreditCard, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { RecommendedGroups } from "@/components/study-group/recommended-groups";
 import { StudyGroupBoard } from "@/components/study-group/study-group-board";
@@ -15,6 +16,11 @@ export default async function WorkspaceListPage({
         icon={Users}
         title="Nhóm học tập"
         subtitle="Quản lý nhóm của bạn hoặc tìm nhóm công khai để xem thông tin và gửi yêu cầu tham gia."
+        actions={
+          <Button href="/workspace/billing" variant="outline" size="sm">
+            <CreditCard className="h-4 w-4" /> Gói & dung lượng
+          </Button>
+        }
       />
       <StudyGroupBoard initialScope={tab === "public" ? "public" : "mine"} />
       {/* Gợi ý đứng SAU nhóm của chính người dùng: người vào trang này phần lớn để mở lại
