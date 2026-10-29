@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Button, Card, ConfirmButton, Field, Modal, ServerPagination, StatusBadge, useToast, useUrlState } from "@codementor/ui";
+import { Button, Card, ConfirmButton, Field, Modal, ReasonButton, ServerPagination, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { formatVnDate, formatVnd } from "@codementor/utils";
 import type { AdminPlan, BillingCycle, BillingPage, WorkspaceCoupon, WorkspaceOrder } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
@@ -112,6 +112,26 @@ export function OrdersTab() {
                     <Button size="sm" variant="ghost" onClick={() => reconcile(o.id)}>
                       <RefreshCw className="h-3.5 w-3.5" /> Đối soát
                     </Button>
+                  )}
+                  {(o.status === "paid" || o.status === "review") && (
+                    <ReasonButton
+                      size="sm"
+                      variant="ghost"
+                      title={`Ghi nhận hoàn ${formatVnd(o.amountVnd)}?`}
+                      description="Chỉ ghi nhận sau khi đã hoàn tiền trên cổng thanh toán. Sổ cái được bù trừ; nếu kỳ của đơn chưa kết thúc, gói của người mua kết thúc ngay và tài khoản về Free (dữ liệu vẫn giữ). Ghi lý do và mã hoàn tiền của cổng."
+                      placeholder="Lý do · mã hoàn tiền trên cổng (nếu có)"
+                      onConfirm={async (reason) => {
+                        try {
+                          const r = await plansApi.refund(request, o.id, reason);
+                          toast.success(r.endedSubscription ? "Đã ghi nhận hoàn tiền và kết thúc gói" : "Đã ghi nhận hoàn tiền");
+                          await load();
+                        } catch (e) {
+                          toast.error(apiErrorMessage(e));
+                        }
+                      }}
+                    >
+                      Hoàn tiền
+                    </ReasonButton>
                   )}
                 </td>
               </tr>

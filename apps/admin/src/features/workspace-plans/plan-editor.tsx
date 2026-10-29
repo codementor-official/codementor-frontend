@@ -210,7 +210,7 @@ export function PlanEditor({
             </Field>
             <ByteField id="pe-storage" label="Tổng dung lượng" value={form.storage} unit={form.storageUnit} onValue={(v) => set("storage", v)} onUnit={(u) => set("storageUnit", u)} />
             <ByteField id="pe-upload" label="Tệp tối đa" value={form.upload} unit={form.uploadUnit} onValue={(v) => set("upload", v)} onUnit={(u) => set("uploadUnit", u)} />
-            <Field label="Lượt AI / tháng (chưa áp dụng)" htmlFor="pe-ai">
+            <Field label="Lượt hỏi AI tài liệu / tháng" htmlFor="pe-ai">
               <input id="pe-ai" className={inputClassName} inputMode="numeric" value={form.ai} onChange={(e) => set("ai", e.target.value.replace(/\D/g, ""))} />
             </Field>
           </fieldset>

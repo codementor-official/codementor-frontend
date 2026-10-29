@@ -79,6 +79,8 @@ export const plansApi = {
     call<BillingPage<WorkspaceOrder & { buyer: { id: string; name: string; email: string } }>>(r, `${base}/orders?${query(p)}`),
   order: (r: Request, id: string) => call<WorkspaceOrderDetail>(r, `${base}/orders/${id}`),
   reconcile: (r: Request, id: string) => call<WorkspaceOrderDetail>(r, `${base}/orders/${id}/reconcile`, "POST"),
+  refund: (r: Request, id: string, reason: string, gatewayReference?: string) =>
+    call<{ refunded: true; endedSubscription: boolean }>(r, `${base}/orders/${id}/refund`, "POST", { reason, ...(gatewayReference ? { gatewayReference } : {}) }),
   coupons: (r: Request) => call<WorkspaceCoupon[]>(r, `${base}/coupons`),
   createCoupon: (r: Request, body: CouponInput) => call<{ id: string }>(r, `${base}/coupons`, "POST", { ...body }),
   deactivateCoupon: (r: Request, id: string) => call(r, `${base}/coupons/${id}/deactivate`, "POST"),
