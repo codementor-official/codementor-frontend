@@ -12,7 +12,6 @@ import {
   CalendarDays,
   ClipboardCheck,
   ClipboardList,
-  Crown,
   Copy,
   Download,
   FileText,
@@ -62,6 +61,7 @@ import { useWorkspaceChat } from "../chat/use-workspace-chat";
 import { WorkspaceChatTab } from "../chat/workspace-chat";
 import { ReportButton } from "@/features/reports/report-button";
 import { useQuotaDialog } from "@/features/workspace-billing/quota-dialog";
+import { OwnershipOfferBanner, OwnershipTransferCard } from "./ownership-transfer";
 
 type Tab =
   | "overview"
@@ -480,6 +480,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
   return (
     <div>
       <BreadcrumbTitle slug={slug} title={detail.name} />
+      {detail.currentMembership.role !== "owner" && <OwnershipOfferBanner slug={slug} onAccepted={() => void load()} />}
       <div className="mb-5 flex flex-wrap items-center gap-3">
         {detail.coverUrl ? (
           // Ảnh bìa do người dùng tải lên, host tuỳ ý. Ghi chú đầy đủ ở workspace-chat.tsx.
@@ -2571,7 +2572,6 @@ function SettingsPanel({
   const [coverPosition, setCoverPosition] = useState(detail.coverPosition);
   const [coverFit, setCoverFit] = useState(detail.coverFit);
   const [coverHeight, setCoverHeight] = useState(detail.coverHeight);
-  const [transferTo, setTransferTo] = useState("");
   const [pending, setPending] = useState(false);
   const [coverPreview, setCoverPreview] = useState(detail.coverUrl);
   const [showPublicConfirmation, setShowPublicConfirmation] = useState(false);
@@ -2664,19 +2664,6 @@ function SettingsPanel({
     }
   };
 
-  const transfer = async () => {
-    if (!transferTo) return;
-    setPending(true);
-    try {
-      await api.workspaces.transferOwnership(detail.slug, transferTo);
-      toast.success("Đã chuyển quyền Chủ nhóm");
-      window.location.assign(`/workspace/${detail.slug}`);
-    } catch (cause) {
-      toast.error(messageOf(cause, "Không thể chuyển quyền sở hữu."));
-    } finally {
-      setPending(false);
-    }
-  };
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
@@ -2859,38 +2846,7 @@ function SettingsPanel({
             </Button>
           </form>
         </Card>
-        <Card className="p-5">
-          <h2 className="mb-2 text-sm font-bold text-navy">
-            Chuyển quyền sở hữu
-          </h2>
-          <p className="mb-3 text-xs leading-relaxed text-text-faint">
-            Bạn sẽ trở thành Phó nhóm sau khi chuyển quyền. Chủ nhóm mới có thể
-            quản lý thành viên và lưu trữ nhóm.
-          </p>
-          <Select
-            label="Chủ nhóm mới"
-            className="w-full"
-            value={transferTo}
-            onChange={setTransferTo}
-            options={[
-              { value: "", label: "Chọn thành viên" },
-              ...members.map((member) => ({
-                value: member.id,
-                label: member.user.displayName,
-              })),
-            ]}
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            className="mt-3"
-            disabled={!transferTo || pending}
-            onClick={() => void transfer()}
-          >
-            <Crown className="h-3.5 w-3.5" />
-            Chuyển quyền
-          </Button>
-        </Card>
+        <OwnershipTransferCard slug={detail.slug} members={members} />
         <Card className="border-primary/30 p-5">
           <div className="flex items-center gap-2">
             <Archive className="h-4 w-4 text-primary" />

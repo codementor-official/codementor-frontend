@@ -186,6 +186,13 @@ export function BillingScreen() {
                 level={usage.levels.storage}
                 display={`${formatBytes(usage.usage.totalBytes)} / ${formatBytes(usage.entitlements.maxStorageBytes)}`}
               />
+              <UsageMeter
+                label="Lượt hỏi AI tài liệu tháng này"
+                used={usage.usage.aiRequestsThisMonth}
+                limit={usage.entitlements.monthlyAiRequests}
+                level={usage.levels.ai}
+                display={`${usage.usage.aiRequestsThisMonth} / ${formatLimit(usage.entitlements.monthlyAiRequests)} lượt`}
+              />
               <div>
                 <p className="text-sm font-medium text-text">
                   Thành viên theo nhóm{" "}

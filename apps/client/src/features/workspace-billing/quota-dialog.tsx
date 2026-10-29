@@ -111,6 +111,15 @@ function describe({ code, message, details: d }: QuotaRefusal, owner: boolean) {
         figures: null,
         hint: owner ? "Nén tệp hoặc nâng cấp để tải tệp lớn hơn." : "Hãy nén tệp hoặc chia nhỏ trước khi tải lên.",
       };
+    case "WORKSPACE_AI_LIMIT_REACHED":
+      return {
+        title: "Đã hết lượt hỏi AI tháng này",
+        body: owner
+          ? `Các nhóm bạn sở hữu đã dùng hết ${d.limit ?? ""} lượt hỏi Trợ lý AI tài liệu của ${plan} trong tháng này.`
+          : "Nhóm này đã dùng hết lượt hỏi Trợ lý AI của tháng. Lượt mới được cấp vào đầu tháng sau.",
+        figures: owner && d.used !== undefined ? `Đã dùng ${d.used} / ${d.limit} lượt` : null,
+        hint: owner ? "Lượt mới được cấp vào ngày 1 hằng tháng, hoặc nâng cấp để có thêm lượt." : "Bạn có thể báo Chủ nhóm.",
+      };
     default:
       return { title: "Chưa thực hiện được", body: message || "Hệ thống gói Workspace tạm thời chưa sẵn sàng.", figures: null, hint: null };
   }

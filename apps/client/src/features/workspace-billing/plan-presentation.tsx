@@ -46,7 +46,7 @@ export function limitRows(e: Entitlements): LimitRow[] {
       icon: Sparkles,
       label: "Lượt hỏi AI tài liệu",
       value: `${formatLimit(e.monthlyAiRequests)} / tháng`,
-      hint: "Hạn mức dự kiến cho trợ lý AI trong nhóm. Hiện chưa áp dụng giới hạn này.",
+      hint: "Số câu hỏi Trợ lý AI tài liệu trong mọi nhóm bạn sở hữu, tính theo tháng (giờ Việt Nam).",
     },
   ];
 }

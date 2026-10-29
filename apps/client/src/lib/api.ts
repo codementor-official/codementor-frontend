@@ -161,6 +161,20 @@ function query(
   return encoded ? `?${encoded}` : "";
 }
 
+/** A pending offer to hand a study group to another member. */
+export interface OwnershipOffer {
+  id: string;
+  groupId: string;
+  fromUserId: string;
+  toUserId: string;
+  toMembershipId: string;
+  status: "pending" | "accepted" | "declined" | "cancelled";
+  expiresAt: string;
+  createdAt: string;
+  /** True when the current user is the recipient. */
+  forMe?: boolean;
+}
+
 export const api = {
   ai: {
     prepare: (slug: string, documentIds: string[]) =>
@@ -1006,13 +1020,21 @@ export const api = {
         { method: "DELETE", body: { reason } },
       ),
     transferOwnership: (slug: string, memberId: string) =>
-      unwrap<{ transferred: boolean }>(
+      unwrap<{ status: "pending"; offer: OwnershipOffer }>(
         `/workspaces/${encodeURIComponent(slug)}/transfer-ownership`,
         {
           method: "POST",
           body: { memberId },
         },
       ),
+    pendingTransfer: (slug: string) =>
+      unwrap<OwnershipOffer | null>(`/workspaces/${encodeURIComponent(slug)}/transfer-ownership`, { cache: "no-store" }),
+    acceptTransfer: (slug: string, offerId: string) =>
+      unwrap<{ transferred: true }>(`/workspaces/${encodeURIComponent(slug)}/transfer-ownership/${offerId}/accept`, { method: "POST" }),
+    declineTransfer: (slug: string, offerId: string) =>
+      unwrap<{ declined: true }>(`/workspaces/${encodeURIComponent(slug)}/transfer-ownership/${offerId}/decline`, { method: "POST" }),
+    cancelTransfer: (slug: string, offerId: string) =>
+      unwrap<{ cancelled: true }>(`/workspaces/${encodeURIComponent(slug)}/transfer-ownership/${offerId}/cancel`, { method: "POST" }),
     updateRolePermissions: (
       slug: string,
       role: Exclude<WorkspaceRole, "owner">,

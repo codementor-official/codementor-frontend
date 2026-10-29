@@ -158,9 +158,9 @@ export type UsageLevel = "ok" | "info" | "warning" | "reached";
 
 export interface WorkspacePlanUsage {
   plan: { name: string; source: "free" | "paid" | "grace" };
-  entitlements: Omit<Entitlements, "monthlyAiRequests" | "features"> & { source: string; planName: string };
-  usage: { ownedGroups: number; storedBytes: number; reservedBytes: number; totalBytes: number };
-  levels: { groups: UsageLevel; storage: UsageLevel };
+  entitlements: Omit<Entitlements, "features"> & { source: string; planName: string };
+  usage: { ownedGroups: number; storedBytes: number; reservedBytes: number; totalBytes: number; aiRequestsThisMonth: number };
+  levels: { groups: UsageLevel; storage: UsageLevel; ai: UsageLevel };
   overLimit: { groups: boolean; storage: boolean; memberGroupIds: string[] };
   groups: {
     id: string;
@@ -179,6 +179,7 @@ export type WorkspaceQuotaCode =
   | "WORKSPACE_MEMBER_LIMIT_REACHED"
   | "WORKSPACE_STORAGE_LIMIT_REACHED"
   | "WORKSPACE_FILE_SIZE_EXCEEDED"
+  | "WORKSPACE_AI_LIMIT_REACHED"
   | "WORKSPACE_ENTITLEMENT_UNAVAILABLE";
 
 export interface AdminPlan extends PlanSummary {
