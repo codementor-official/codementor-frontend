@@ -132,6 +132,7 @@ export interface QuoteSnapshot {
   creditVnd: number;
   amountVnd: number;
   coupon: { id: string; code: string; kind: "percent" | "fixed"; value: number } | null;
+  /** `paidVnd` is the unused value credited (same as `creditVnd`), not what was paid for the term. */
   credit: { subscriptionId: string; termStart: string; termEnd: string; paidVnd: number } | null;
   startsAt: string | null;
   termsVersion: string;

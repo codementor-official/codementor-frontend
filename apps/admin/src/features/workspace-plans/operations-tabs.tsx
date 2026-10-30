@@ -41,7 +41,10 @@ export function OrdersTab() {
   const [search, setSearch] = useState(q);
   const [data, setData] = useState<BillingPage<WorkspaceOrder & { buyer: { id: string; name: string; email: string } }> | null>(null);
   const [error, setError] = useState("");
+  // Reload after the order drawer closes: a reconcile or refund changes the row.
+  const [openOrder] = useUrlState("order", "");
   useEffect(() => {
+    if (openOrder) return;
     plansApi
       .orders(request, { page, status: status || undefined, q: q || undefined })
       .then((d) => {
@@ -49,7 +52,7 @@ export function OrdersTab() {
         setData(d);
       })
       .catch((e) => setError(apiErrorMessage(e)));
-  }, [request, page, status, q]);
+  }, [request, page, status, q, openOrder]);
 
   return (
     <div className="space-y-3">
@@ -139,13 +142,17 @@ export function CouponsTab() {
   const toast = useToast();
   const trace = useTrace();
   const [coupons, setCoupons] = useState<WorkspaceCoupon[] | null>(null);
+  // Reload after the detail drawer closes: it may have edited or switched a coupon.
+  const [openCoupon] = useUrlState("coupon", "");
   const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [creating, setCreating] = useState(false);
   const load = useCallback(() => plansApi.coupons(request).then(setCoupons).catch((e) => toast.error(apiErrorMessage(e))), [request, toast]);
   useEffect(() => {
-    void load();
+    if (!openCoupon) void load();
+  }, [load, openCoupon]);
+  useEffect(() => {
     plansApi.plans(request).then(setPlans).catch(() => setPlans([]));
-  }, [load, request]);
+  }, [request]);
 
   const planName = (id: string) => plans.find((p) => p.id === id)?.onSale?.name ?? "gói đã xoá";
   const live = coupons?.filter((c) => couponStatus(c).label === "Đang áp dụng").length ?? 0;
@@ -461,6 +468,10 @@ const AUDIT_CATEGORIES: { value: AuditCategory | ""; label: string }[] = [
 
 const DETAIL_LABEL: Record<string, string> = {
   reason: "Lý do",
+  description: "Mục đích",
+  maxRedemptions: "Tổng lượt",
+  perUserLimit: "Lượt mỗi người",
+  startsAt: "Bắt đầu",
   amountVnd: "Số tiền",
   amount: "Mức",
   gatewayReference: "Mã cổng thanh toán",

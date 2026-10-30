@@ -110,7 +110,7 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
               {q.creditVnd > 0 && q.credit && (
                 <>
                   <dt className="text-muted-foreground">
-                    Trừ phần chưa dùng của kỳ {formatVnDate(q.credit.termStart)} – {formatVnDate(q.credit.termEnd)} (đã trả {formatVnd(q.credit.paidVnd)})
+                    Trừ phần chưa dùng của kỳ {formatVnDate(q.credit.termStart)} – {formatVnDate(q.credit.termEnd)} của gói đang dùng
                   </dt>
                   <dd className="text-right">−{formatVnd(q.creditVnd)}</dd>
                 </>

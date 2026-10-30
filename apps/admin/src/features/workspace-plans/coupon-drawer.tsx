@@ -72,14 +72,14 @@ export function CouponDrawer({ couponId, onClose, onChanged }: { couponId: strin
               <dt className="text-muted-foreground">Khách hàng</dt><dd>{c.new_customers_only ? "Chỉ người mua lần đầu" : "Mọi người"}</dd>
               <dt className="text-muted-foreground">Giới hạn</dt><dd>{c.max_redemptions ? `${c.max_redemptions} lượt tổng` : "Không giới hạn tổng"} · {c.per_user_limit} lượt mỗi người</dd>
               <dt className="text-muted-foreground">Áp dụng cho</dt><dd>Đơn mua mới và nâng cấp; không áp dụng khi gia hạn. Số phải trả sau giảm tối thiểu 5.000 ₫.</dd>
-              <dt className="text-muted-foreground">Tạo bởi</dt><dd>{c.created_by_name ?? "—"} · {formatVnDate(c.created_at, true)}{c.updated_at !== c.created_at ? ` · sửa lần cuối ${formatVnDate(c.updated_at, true)}` : ""}</dd>
+              <dt className="text-muted-foreground">Tạo bởi</dt><dd>{c.created_by_name ?? "—"} · {formatVnDate(c.created_at, true)} · lịch sử sửa trong Nhật ký</dd>
             </dl>
           </Section>
 
           <Section title={`Lượt dùng (${used}${c.max_redemptions ? ` / ${c.max_redemptions}` : ""})`} hint={`Tổng tiền đã giảm trên các đơn đã thanh toán: ${formatVnd(given)}.`}>
             <table className="w-full text-xs">
               <thead className="text-left text-muted-foreground">
-                <tr><th className="py-1 font-medium">Thời gian</th><th className="font-medium">Người dùng</th><th className="font-medium">Đơn</th><th className="text-right font-medium">Giảm</th><th className="font-medium">Trạng thái</th></tr>
+                <tr><th className="py-1 font-medium">Thời gian</th><th className="font-medium">Người dùng</th><th className="font-medium">Đơn</th><th className="text-right font-medium">Giảm</th><th className="pl-3 font-medium">Trạng thái</th></tr>
               </thead>
               <tbody>
                 {data!.redemptions.map((r) => (
@@ -91,7 +91,7 @@ export function CouponDrawer({ couponId, onClose, onChanged }: { couponId: strin
                       <StatusBadge tone={ORDER_TONE[r.order.status]}>{ORDER_LABEL[r.order.status]}</StatusBadge>
                     </td>
                     <td className="text-right">−{formatVnd(r.order.discountVnd)}</td>
-                    <td>{REDEMPTION[r.status]}</td>
+                    <td className="pl-3">{REDEMPTION[r.status]}</td>
                   </tr>
                 ))}
                 {data!.redemptions.length === 0 && <tr><td colSpan={5} className="py-3 text-muted-foreground">Chưa có ai dùng mã này.</td></tr>}

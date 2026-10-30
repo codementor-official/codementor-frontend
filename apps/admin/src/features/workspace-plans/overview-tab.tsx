@@ -38,6 +38,7 @@ const ACTION_LABEL: Record<string, string> = {
   "workspace_order.refunded": "Hoàn tiền",
   "workspace_coupon.created": "Tạo mã giảm giá",
   "workspace_coupon.activated": "Bật mã giảm giá",
+  "workspace_coupon.updated": "Sửa mã giảm giá",
   "workspace_coupon.deactivated": "Tắt mã giảm giá",
   "workspace_adjustment.created": "Cấp hạn mức ngoại lệ",
   "workspace_adjustment.revoked": "Thu hồi hạn mức ngoại lệ",

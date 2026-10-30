@@ -52,9 +52,11 @@ export function SubscribersTab() {
         .catch((e) => setError(apiErrorMessage(e))),
     [request, page, q, planId, state],
   );
+  // Reload after the customer drawer closes: suspension or adjustments change the row.
+  const [openUser] = useUrlState("user", "");
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!openUser) void load();
+  }, [load, openUser]);
   useEffect(() => {
     plansApi.plans(request).then(setPlans).catch(() => setPlans([]));
     plansApi.subscriberStats(request).then(setStats).catch(() => setStats(null));
