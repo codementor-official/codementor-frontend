@@ -682,6 +682,9 @@ const NOTIFICATION_TYPES = [
   // yêu cầu xin gỡ không xuất hiện ở bất kỳ đâu trong giao diện quản trị.
   "CONTENT_REMOVAL_REQUESTED",
   "ADMIN_ANNOUNCEMENT",
+  // Payments and promotions that need an administrator: promotion requests, Workspace orders
+  // paid or waiting for review. Addressed to each admin by id, so nobody else sees them.
+  "COMMERCE_UPDATED",
 ];
 
 export const notificationsApi = {
