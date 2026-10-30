@@ -515,11 +515,13 @@ export const api = {
     list: (params: { limit?: number; before?: string } = {}) =>
       unwrap<NotificationPage>(`/notifications${query(params)}`),
     unreadCount: () => unwrap<{ count: number }>("/notifications/unread-count"),
+    // keepalive: clicking a notification navigates at once, and the browser would cancel a plain request.
     markRead: (id: string) =>
-      unwrap<void>(`/notifications/${id}/read`, { method: "PATCH" }),
+      unwrap<void>(`/notifications/${id}/read`, { method: "PATCH", keepalive: true }),
     markAllRead: () =>
       unwrap<{ marked: number }>("/notifications/read-all", {
         method: "PATCH",
+        keepalive: true,
       }),
   },
 

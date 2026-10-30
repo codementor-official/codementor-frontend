@@ -682,6 +682,9 @@ const NOTIFICATION_TYPES = [
   // yêu cầu xin gỡ không xuất hiện ở bất kỳ đâu trong giao diện quản trị.
   "CONTENT_REMOVAL_REQUESTED",
   "ADMIN_ANNOUNCEMENT",
+  // Payments and promotions that need an administrator: promotion requests, Workspace orders
+  // paid or waiting for review. Addressed to each admin by id, so nobody else sees them.
+  "COMMERCE_UPDATED",
 ];
 
 export const notificationsApi = {
@@ -699,13 +702,14 @@ export const notificationsApi = {
       request,
       `/notifications/unread-count${search({ types: NOTIFICATION_TYPES.join(",") })}`,
     ),
+  // keepalive: clicking a notification navigates at once, and the browser would cancel a plain request.
   markRead: (request: Request, id: string) =>
-    unwrap<void>(request, `/notifications/${id}/read`, { method: "PATCH" }),
+    unwrap<void>(request, `/notifications/${id}/read`, { method: "PATCH", keepalive: true }),
   markAllRead: (request: Request) =>
     unwrap<{ marked: number }>(
       request,
       `/notifications/read-all${search({ types: NOTIFICATION_TYPES.join(",") })}`,
-      { method: "PATCH" },
+      { method: "PATCH", keepalive: true },
     ),
 };
 

@@ -374,9 +374,10 @@ export const api = {
         `/notifications?limit=${params.limit}${params.before ? `&before=${encodeURIComponent(params.before)}` : ""}&${NOTIFICATION_SCOPE}`,
       ),
     unreadCount: () => unwrap<{ count: number }>(`/notifications/unread-count?${NOTIFICATION_SCOPE}`),
-    markRead: (id: string) => unwrap<void>(`/notifications/${id}/read`, { method: "PATCH" }),
+    // keepalive: clicking a notification navigates at once, and the browser would cancel a plain request.
+    markRead: (id: string) => unwrap<void>(`/notifications/${id}/read`, { method: "PATCH", keepalive: true }),
     markAllRead: () =>
-      unwrap<{ marked: number }>(`/notifications/read-all?${NOTIFICATION_SCOPE}`, { method: "PATCH" }),
+      unwrap<{ marked: number }>(`/notifications/read-all?${NOTIFICATION_SCOPE}`, { method: "PATCH", keepalive: true }),
   },
 };
 
