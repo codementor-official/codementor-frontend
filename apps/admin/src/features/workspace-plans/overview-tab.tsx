@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { AlarmClock, CircleAlert, CreditCard, Hourglass, SearchCheck, UserRound } from "lucide-react";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Card, InfoHint, KpiStrip } from "@codementor/ui";
+import { Card, InfoHint } from "@codementor/ui";
 import { formatBytes, formatVnDate, formatVnd, usagePercent } from "@codementor/utils";
-import type { BillingOverview, StorageOverview } from "@codementor/types";
+import type { AuditEntry, BillingOverview, StorageOverview } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { plansApi } from "./api";
+import { AuditSubject, TraceLink, useTrace } from "./trace";
 
 const ACTION_LABEL: Record<string, string> = {
   "workspace_subscription.activated": "Kích hoạt gói",
@@ -51,11 +52,14 @@ export function OverviewTab() {
   const request = useAdminApi();
   const [data, setData] = useState<BillingOverview | null>(null);
   const [storage, setStorage] = useState<StorageOverview | null>(null);
+  const [events, setEvents] = useState<AuditEntry[] | null>(null);
+  const trace = useTrace();
   const [error, setError] = useState("");
 
   useEffect(() => {
     plansApi.overview(request).then(setData).catch((e) => setError(apiErrorMessage(e)));
     plansApi.storage(request).then(setStorage).catch(() => setStorage(null));
+    plansApi.audit(request, { page: 1, limit: 12 }).then((p) => setEvents(p.items)).catch(() => setEvents([]));
   }, [request]);
 
   if (error) return <Card className="p-4 text-sm text-destructive" role="alert">{error}</Card>;
@@ -63,17 +67,29 @@ export function OverviewTab() {
 
   return (
     <div className="space-y-4">
-      <KpiStrip
-        loading={!data}
-        metrics={[
-          { icon: CreditCard, label: "Đang trả phí", value: data?.paidSubscribers ?? null },
-          { icon: UserRound, label: "Tài khoản Free", value: data?.freeAccounts ?? null },
-          { icon: Hourglass, label: "Đang ân hạn", value: data?.gracePeriod ?? null },
-          { icon: AlarmClock, label: "Hết hạn trong 7 ngày", value: data?.expiringIn7Days ?? null },
-          { icon: CircleAlert, label: "Thanh toán lỗi (30 ngày)", value: data?.failedPayments30d ?? null },
-          { icon: SearchCheck, label: "Đơn chờ kiểm tra", value: data?.ordersInReview ?? null },
-        ]}
-      />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {[
+          { icon: CreditCard, label: "Đang trả phí", value: data?.paidSubscribers, hint: "Gói đang hoạt động hoặc đã tắt gia hạn nhưng còn kỳ", go: () => trace.goTab("subscribers", { sState: "ACTIVE" }) },
+          { icon: UserRound, label: "Tài khoản Free", value: data?.freeAccounts, hint: "Mọi tài khoản chưa có gói trả phí đang hiệu lực" },
+          { icon: Hourglass, label: "Đang ân hạn", value: data?.gracePeriod, hint: "Hết kỳ, chưa gia hạn, vẫn giữ hạn mức", go: () => trace.goTab("subscribers", { sState: "GRACE_PERIOD" }) },
+          { icon: AlarmClock, label: "Hết hạn trong 7 ngày", value: data?.expiringIn7Days, hint: "Xem biểu đồ “Sắp đến hạn” ở tab Người đăng ký", go: () => trace.goTab("subscribers") },
+          { icon: CircleAlert, label: "Thanh toán lỗi (30 ngày)", value: data?.failedPayments30d, hint: "Đơn thất bại trong 30 ngày", go: () => trace.goTab("orders", { oStatus: "failed" }) },
+          { icon: SearchCheck, label: "Đơn chờ kiểm tra", value: data?.ordersInReview, hint: "Đã trả tiền nhưng chưa áp dụng tự động: cần xử lý", go: () => trace.goTab("orders", { oStatus: "review" }) },
+        ].map((k) => {
+          const body = (
+            <>
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><k.icon className="size-3.5" aria-hidden />{k.label}</span>
+              <span className="mt-1 block text-2xl font-semibold">{k.value === undefined ? "—" : k.value.toLocaleString("vi-VN")}</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">{k.hint}{k.go ? " →" : ""}</span>
+            </>
+          );
+          return (
+            <Card key={k.label} className={`p-3 ${k.go ? "transition-colors hover:bg-muted/50" : ""}`}>
+              {k.go ? <button type="button" className="w-full text-left" onClick={k.go}>{body}</button> : body}
+            </Card>
+          );
+        })}
+      </div>
 
       {data && (
         <div className="grid gap-4 lg:grid-cols-3">
@@ -112,8 +128,8 @@ export function OverviewTab() {
           <table className="w-full text-sm">
             <tbody>
               {data?.revenueByPlan.map((p) => (
-                <tr key={p.planId} className="border-t first:border-t-0">
-                  <td className="px-4 py-2 font-medium">{p.name}</td>
+                <tr key={p.planId} className="cursor-pointer border-t first:border-t-0 hover:bg-muted/50" onClick={() => trace.goTab("subscribers", { sPlan: p.planId })}>
+                  <td className="px-4 py-2 font-medium text-primary">{p.name}</td>
                   <td className="px-4 py-2 text-muted-foreground">{p.activeSubscriptions} đang mở</td>
                   <td className="px-4 py-2 text-right">{formatVnd(p.revenueVnd)}</td>
                 </tr>
@@ -147,9 +163,9 @@ export function OverviewTab() {
           <table className="w-full text-sm">
             <tbody>
               {storage?.nearLimit.map((o) => (
-                <tr key={o.ownerId} className="border-t first:border-t-0">
+                <tr key={o.ownerId} className="cursor-pointer border-t first:border-t-0 hover:bg-muted/50" onClick={() => trace.openUser(o.ownerId)}>
                   <td className="px-4 py-2">
-                    <span className="block font-medium">{o.name}</span>
+                    <span className="block font-medium text-primary">{o.name}</span>
                     <span className="block text-xs text-muted-foreground">{o.email} · {o.plan}</span>
                   </td>
                   <td className="px-4 py-2 text-right text-xs">
@@ -165,15 +181,20 @@ export function OverviewTab() {
         </Card>
 
         <Card className="overflow-hidden">
-          <h3 className="border-b px-4 py-3 text-sm font-semibold">Sự kiện gần đây</h3>
+          <div className="flex items-center border-b px-4 py-3">
+            <h3 className="text-sm font-semibold">Sự kiện gần đây</h3>
+            <TraceLink className="ml-auto text-xs" onClick={() => trace.goTab("audit")}>Xem toàn bộ nhật ký →</TraceLink>
+          </div>
           <ul className="divide-y text-sm">
-            {data?.recentEvents.map((e, i) => (
-              <li key={i} className="flex items-center gap-3 px-4 py-2">
-                <span className="w-32 shrink-0 text-xs text-muted-foreground">{formatVnDate(e.at, true)}</span>
-                <span>{actionLabel(e.action)}</span>
+            {events?.map((e) => (
+              <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2">
+                <span className="w-32 shrink-0 text-xs text-muted-foreground">{formatVnDate(e.created_at, true)}</span>
+                <span className="font-medium">{actionLabel(e.action)}</span>
+                <AuditSubject entry={e} />
+                <span className="ml-auto text-xs text-muted-foreground">{e.actor ?? "Hệ thống"}</span>
               </li>
             ))}
-            {data?.recentEvents.length === 0 && <li className="px-4 py-3 text-muted-foreground">Chưa có sự kiện.</li>}
+            {events?.length === 0 && <li className="px-4 py-3 text-muted-foreground">Chưa có sự kiện.</li>}
           </ul>
         </Card>
       </div>

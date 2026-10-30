@@ -1,6 +1,10 @@
 import type { createApiClient } from "@codementor/api-client";
 import type {
+  AdminOrderDetail,
   AdminPlan,
+  CouponDetail,
+  OverageOwner,
+  WorkspacePlanUsage,
   AuditCategory,
   AuditEntry,
   BillingSettings,
@@ -17,7 +21,6 @@ import type {
   SubscriberRow,
   WorkspaceCoupon,
   WorkspaceOrder,
-  WorkspaceOrderDetail,
 } from "@codementor/types";
 
 type Request = ReturnType<typeof createApiClient>;
@@ -46,6 +49,7 @@ export interface CouponInput {
   planIds?: string[];
   billingCycles?: BillingCycle[];
   newCustomersOnly: boolean;
+  description: string;
 }
 
 export const plansApi = {
@@ -65,6 +69,8 @@ export const plansApi = {
   subscribers: (r: Request, p: { page: number; q?: string; planId?: string; state?: string }) =>
     call<BillingPage<SubscriberRow>>(r, `${base}/subscribers?${query(p)}`),
   subscriberStats: (r: Request) => call<SubscriberStats>(r, `${base}/subscribers/stats`),
+  ownerUsage: (r: Request, userId: string) => call<WorkspacePlanUsage>(r, `/workspaces/plan-usage/admin/${userId}`),
+  overage: (r: Request) => call<OverageOwner[]>(r, `${base}/overage`),
   subscriber: (r: Request, userId: string) => call<SubscriberDetail>(r, `${base}/subscribers/${userId}`),
   suspend: (r: Request, userId: string, reason: string) => call(r, `${base}/subscribers/${userId}/suspend`, "POST", { reason }),
   restore: (r: Request, userId: string, reason: string) => call(r, `${base}/subscribers/${userId}/restore`, "POST", { reason }),
@@ -73,12 +79,15 @@ export const plansApi = {
   revokeAdjustment: (r: Request, id: string, reason: string) => call(r, `${base}/adjustments/${id}/revoke`, "POST", { reason }),
   orders: (r: Request, p: { page: number; status?: string; q?: string }) =>
     call<BillingPage<WorkspaceOrder & { buyer: { id: string; name: string; email: string } }>>(r, `${base}/orders?${query(p)}`),
-  order: (r: Request, id: string) => call<WorkspaceOrderDetail>(r, `${base}/orders/${id}`),
-  reconcile: (r: Request, id: string) => call<WorkspaceOrderDetail>(r, `${base}/orders/${id}/reconcile`, "POST"),
+  order: (r: Request, id: string) => call<AdminOrderDetail>(r, `${base}/orders/${id}`),
+  reconcile: (r: Request, id: string) => call<WorkspaceOrder>(r, `${base}/orders/${id}/reconcile`, "POST"),
   refund: (r: Request, id: string, reason: string, gatewayReference?: string) =>
     call<{ refunded: true; endedSubscription: boolean }>(r, `${base}/orders/${id}/refund`, "POST", { reason, ...(gatewayReference ? { gatewayReference } : {}) }),
   coupons: (r: Request) => call<WorkspaceCoupon[]>(r, `${base}/coupons`),
   createCoupon: (r: Request, body: CouponInput) => call<{ id: string }>(r, `${base}/coupons`, "POST", { ...body }),
+  coupon: (r: Request, id: string) => call<CouponDetail>(r, `${base}/coupons/${id}`),
+  updateCoupon: (r: Request, id: string, body: Partial<Omit<CouponInput, "code" | "maxRedemptions">> & { maxRedemptions?: number | null }) =>
+    call<{ updated: true }>(r, `${base}/coupons/${id}`, "PATCH", { ...body }),
   setCouponActive: (r: Request, id: string, active: boolean) => call(r, `${base}/coupons/${id}/${active ? "activate" : "deactivate"}`, "POST"),
   settings: (r: Request) => call<BillingSettings>(r, `${base}/settings`),
   updateSettings: (r: Request, body: Pick<BillingSettings, "graceDays" | "renewalReminderDays" | "overageNoticeDays" | "overageReadOnlyDays">) =>
