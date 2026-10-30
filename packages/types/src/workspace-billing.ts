@@ -132,6 +132,7 @@ export interface QuoteSnapshot {
   creditVnd: number;
   amountVnd: number;
   coupon: { id: string; code: string; kind: "percent" | "fixed"; value: number } | null;
+  /** `paidVnd` is the unused value credited (same as `creditVnd`), not what was paid for the term. */
   credit: { subscriptionId: string; termStart: string; termEnd: string; paidVnd: number } | null;
   startsAt: string | null;
   termsVersion: string;
@@ -291,6 +292,45 @@ export interface AuditEntry {
   created_at: string;
   actor: string | null;
   subject: string | null;
+  /** The customer the entry concerns, when there is one: opens their detail. */
+  target_user_id: string | null;
+}
+
+export interface AdminOrderDetail extends WorkspaceOrder {
+  buyer: { id: string; name: string; email: string };
+  quote: QuoteSnapshot;
+  coupon: { code: string; id?: string; description?: string | null } | null;
+  replacedSubscriptionId: string | null;
+  payments: {
+    provider: "mock" | "vnpay" | "momo";
+    status: string;
+    reference: string | null;
+    providerDate: string | null;
+    createdAt: string;
+    startedAt: string | null;
+    reconciledAt: string | null;
+  }[];
+  ledger: { journalId: string; eventKey: string; at: string; account: string; amountVnd: number }[];
+  history: { action: string; at: string; details: unknown; actor: string | null }[];
+}
+
+export interface CouponDetail {
+  coupon: WorkspaceCoupon;
+  redemptions: {
+    status: "reserved" | "redeemed" | "released";
+    at: string;
+    user: { id: string; name: string; email: string };
+    order: { id: string; status: WorkspaceOrderStatus; plan: string; discountVnd: number; amountVnd: number };
+  }[];
+}
+
+export interface OverageOwner {
+  user: { id: string; name: string; email: string };
+  ownedGroups: number;
+  overSince: string;
+  readOnlyAt: string;
+  hiddenAt: string;
+  stage: OverageStage;
 }
 
 export interface BillingPage<T> {
@@ -336,6 +376,11 @@ export interface SubscriberDetail {
 export interface WorkspaceCoupon {
   id: string;
   code: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  created_by_name: string | null;
+  discount_given_vnd?: number;
   kind: "percent" | "fixed";
   value: number;
   starts_at: string;

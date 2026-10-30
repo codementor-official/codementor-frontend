@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BellRing, CalendarClock, Eye, EyeOff, Lock, RefreshCw, ShieldCheck, TicketPercent } from "lucide-react";
+import { BellRing, CalendarClock, Eye, EyeOff, Lock, ShieldCheck, TicketPercent } from "lucide-react";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Button, Card, ConfirmButton, Field, Modal, ReasonButton, ServerPagination, StatusBadge, useToast, useUrlState } from "@codementor/ui";
+import { Button, Card, ConfirmButton, Field, Modal, ServerPagination, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { formatVnDate, formatVnd } from "@codementor/utils";
-import type { AdminPlan, AuditCategory, AuditEntry, BillingCycle, BillingPage, BillingSettings, WorkspaceCoupon, WorkspaceOrder } from "@codementor/types";
+import type { AdminPlan, AuditCategory, AuditEntry, BillingCycle, BillingPage, BillingSettings, SubscriberStats, WorkspaceCoupon, WorkspaceOrder } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { inputClassName } from "@/features/commerce/form-style";
 import { plansApi, type CouponInput } from "./api";
 import { actionLabel } from "./overview-tab";
+import { AuditSubject, TraceLink, useTrace } from "./trace";
 
-const ORDER_TONE: Record<WorkspaceOrder["status"], "success" | "warning" | "danger" | "neutral"> = {
+export const ORDER_TONE: Record<WorkspaceOrder["status"], "success" | "warning" | "danger" | "neutral"> = {
   pending: "warning",
   paid: "success",
   failed: "danger",
@@ -20,7 +21,7 @@ const ORDER_TONE: Record<WorkspaceOrder["status"], "success" | "warning" | "dang
   review: "warning",
   refunded: "neutral",
 };
-const ORDER_LABEL: Record<WorkspaceOrder["status"], string> = {
+export const ORDER_LABEL: Record<WorkspaceOrder["status"], string> = {
   pending: "Chờ thanh toán",
   paid: "Đã thanh toán",
   failed: "Thất bại",
@@ -29,43 +30,44 @@ const ORDER_LABEL: Record<WorkspaceOrder["status"], string> = {
   review: "Cần kiểm tra",
   refunded: "Đã hoàn",
 };
-const KIND: Record<WorkspaceOrder["kind"], string> = { new: "Mua mới", renewal: "Gia hạn", upgrade: "Nâng cấp" };
+export const KIND: Record<WorkspaceOrder["kind"], string> = { new: "Mua mới", renewal: "Gia hạn", upgrade: "Nâng cấp" };
 
 export function OrdersTab() {
   const request = useAdminApi();
-  const toast = useToast();
+  const trace = useTrace();
   const [page, setPage] = useUrlState("oPage", 1);
   const [status, setStatus] = useUrlState("oStatus", "");
-  const [data, setData] = useState<BillingPage<WorkspaceOrder & { buyer: { name: string; email: string } }> | null>(null);
+  const [q, setQ] = useUrlState("oQ", "");
+  const [search, setSearch] = useState(q);
+  const [data, setData] = useState<BillingPage<WorkspaceOrder & { buyer: { id: string; name: string; email: string } }> | null>(null);
   const [error, setError] = useState("");
-  const load = useCallback(
-    () =>
-      plansApi
-        .orders(request, { page, status: status || undefined })
-        .then((d) => {
-          setError("");
-          setData(d);
-        })
-        .catch((e) => setError(apiErrorMessage(e))),
-    [request, page, status],
-  );
+  // Reload after the order drawer closes: a reconcile or refund changes the row.
+  const [openOrder] = useUrlState("order", "");
   useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function reconcile(id: string) {
-    try {
-      const o = await plansApi.reconcile(request, id);
-      toast.success(`Đã đối soát: ${ORDER_LABEL[o.status]}`);
-      await load();
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
-    }
-  }
+    if (openOrder) return;
+    plansApi
+      .orders(request, { page, status: status || undefined, q: q || undefined })
+      .then((d) => {
+        setError("");
+        setData(d);
+      })
+      .catch((e) => setError(apiErrorMessage(e)));
+  }, [request, page, status, q, openOrder]);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-end gap-2">
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setQ(search.trim());
+          setPage(1);
+        }}
+      >
+        <div>
+          <label htmlFor="o-q" className="text-xs text-muted-foreground">Người mua (tên hoặc email)</label>
+          <input id="o-q" className={`${inputClassName} w-64`} value={search} maxLength={100} onChange={(e) => setSearch(e.target.value)} />
+        </div>
         <div>
           <label htmlFor="o-status" className="text-xs text-muted-foreground">Trạng thái</label>
           <select id="o-status" className={inputClassName} value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
@@ -73,10 +75,13 @@ export function OrdersTab() {
             {Object.entries(ORDER_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
-      </div>
+        <Button type="submit" variant="outline">Lọc</Button>
+        {(q || status) && <Button type="button" variant="ghost" onClick={() => { setQ(""); setSearch(""); setStatus(""); setPage(1); }}>Xoá bộ lọc</Button>}
+        {data && <span className="ml-auto text-sm text-muted-foreground">{data.total.toLocaleString("vi-VN")} giao dịch · bấm một dòng để xem chi tiết</span>}
+      </form>
       {error && <Card className="p-4 text-sm text-destructive" role="alert">{error}</Card>}
-      <Card className="overflow-hidden">
-        <table className="w-full text-sm">
+      <Card className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-sm">
           <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
             <tr>
               <th className="px-3 py-2 font-medium">Thời gian</th>
@@ -84,15 +89,15 @@ export function OrdersTab() {
               <th className="px-3 py-2 font-medium">Nội dung</th>
               <th className="px-3 py-2 text-right font-medium">Số tiền</th>
               <th className="px-3 py-2 font-medium">Trạng thái</th>
-              <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody>
+            {!data && !error && <tr><td colSpan={5} className="px-3 py-6"><div className="h-4 animate-pulse rounded bg-muted" /></td></tr>}
             {data?.items.map((o) => (
-              <tr key={o.id} className="border-t">
+              <tr key={o.id} className="cursor-pointer border-t transition-colors duration-150 hover:bg-muted/50" onClick={() => trace.openOrder(o.id)}>
                 <td className="px-3 py-2 text-muted-foreground">{formatVnDate(o.createdAt, true)}</td>
-                <td className="px-3 py-2">
-                  <span className="block font-medium">{o.buyer.name}</span>
+                <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                  <TraceLink onClick={() => trace.openUser(o.buyer.id)}>{o.buyer.name}</TraceLink>
                   <span className="block text-xs text-muted-foreground">{o.buyer.email}</span>
                 </td>
                 <td className="px-3 py-2">
@@ -107,36 +112,9 @@ export function OrdersTab() {
                 </td>
                 <td className="px-3 py-2 text-right font-medium">{formatVnd(o.amountVnd)}</td>
                 <td className="px-3 py-2"><StatusBadge tone={ORDER_TONE[o.status]}>{ORDER_LABEL[o.status]}</StatusBadge></td>
-                <td className="px-3 py-2 text-right">
-                  {(o.status === "pending" || o.status === "review") && o.mode !== "mock" && (
-                    <Button size="sm" variant="ghost" onClick={() => reconcile(o.id)}>
-                      <RefreshCw className="h-3.5 w-3.5" /> Đối soát
-                    </Button>
-                  )}
-                  {(o.status === "paid" || o.status === "review") && (
-                    <ReasonButton
-                      size="sm"
-                      variant="ghost"
-                      title={`Ghi nhận hoàn ${formatVnd(o.amountVnd)}?`}
-                      description="Chỉ ghi nhận sau khi đã hoàn tiền trên cổng thanh toán. Sổ cái được bù trừ; nếu kỳ của đơn chưa kết thúc, gói của người mua kết thúc ngay và tài khoản về Free (dữ liệu vẫn giữ). Ghi lý do và mã hoàn tiền của cổng."
-                      placeholder="Lý do · mã hoàn tiền trên cổng (nếu có)"
-                      onConfirm={async (reason) => {
-                        try {
-                          const r = await plansApi.refund(request, o.id, reason);
-                          toast.success(r.endedSubscription ? "Đã ghi nhận hoàn tiền và kết thúc gói" : "Đã ghi nhận hoàn tiền");
-                          await load();
-                        } catch (e) {
-                          toast.error(apiErrorMessage(e));
-                        }
-                      }}
-                    >
-                      Hoàn tiền
-                    </ReasonButton>
-                  )}
-                </td>
               </tr>
             ))}
-            {data?.items.length === 0 && <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Không có giao dịch.</td></tr>}
+            {data?.items.length === 0 && <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Không có giao dịch.</td></tr>}
           </tbody>
         </table>
         {data && data.total > data.limit && (
@@ -151,7 +129,7 @@ export function OrdersTab() {
 
 type CouponStatus = { label: string; tone: "success" | "warning" | "danger" | "neutral" };
 
-function couponStatus(c: WorkspaceCoupon, now = Date.now()): CouponStatus {
+export function couponStatus(c: WorkspaceCoupon, now = Date.now()): CouponStatus {
   if (!c.is_active) return { label: "Đã tắt", tone: "neutral" };
   if (new Date(c.starts_at).getTime() > now) return { label: "Chưa bắt đầu", tone: "warning" };
   if (new Date(c.ends_at).getTime() <= now) return { label: "Đã hết hạn", tone: "neutral" };
@@ -162,14 +140,19 @@ function couponStatus(c: WorkspaceCoupon, now = Date.now()): CouponStatus {
 export function CouponsTab() {
   const request = useAdminApi();
   const toast = useToast();
+  const trace = useTrace();
   const [coupons, setCoupons] = useState<WorkspaceCoupon[] | null>(null);
+  // Reload after the detail drawer closes: it may have edited or switched a coupon.
+  const [openCoupon] = useUrlState("coupon", "");
   const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [creating, setCreating] = useState(false);
   const load = useCallback(() => plansApi.coupons(request).then(setCoupons).catch((e) => toast.error(apiErrorMessage(e))), [request, toast]);
   useEffect(() => {
-    void load();
+    if (!openCoupon) void load();
+  }, [load, openCoupon]);
+  useEffect(() => {
     plansApi.plans(request).then(setPlans).catch(() => setPlans([]));
-  }, [load, request]);
+  }, [request]);
 
   const planName = (id: string) => plans.find((p) => p.id === id)?.onSale?.name ?? "gói đã xoá";
   const live = coupons?.filter((c) => couponStatus(c).label === "Đang áp dụng").length ?? 0;
@@ -192,7 +175,7 @@ export function CouponsTab() {
           <TicketPercent className="size-5 text-muted-foreground" aria-hidden />
           <div>
             <p className="text-lg font-semibold leading-tight">{live} <span className="text-sm font-normal text-muted-foreground">/ {coupons?.length ?? 0} mã đang áp dụng</span></p>
-            <p className="text-xs text-muted-foreground">{redeemed} lượt đã dùng</p>
+            <p className="text-xs text-muted-foreground">{redeemed} lượt đã dùng · bấm một mã để xem chi tiết và sửa</p>
           </div>
         </Card>
         <p className="max-w-xl flex-1 text-sm text-muted-foreground">
@@ -224,8 +207,11 @@ export function CouponsTab() {
               ].filter(Boolean);
               const used = c.redeemed + c.reserved;
               return (
-                <tr key={c.id} className="border-t align-top">
-                  <td className="px-3 py-2 font-mono font-semibold">{c.code}</td>
+                <tr key={c.id} className="cursor-pointer border-t align-top transition-colors duration-150 hover:bg-muted/50" onClick={() => trace.openCoupon(c.id)}>
+                  <td className="px-3 py-2">
+                    <span className="font-mono font-semibold">{c.code}</span>
+                    {c.description && <span className="block max-w-56 text-xs text-muted-foreground">{c.description}</span>}
+                  </td>
                   <td className="px-3 py-2 font-medium">{c.kind === "percent" ? `−${c.value}%` : `−${formatVnd(c.value)}`}</td>
                   <td className="px-3 py-2 text-xs">{scope.join(" · ")}<span className="block text-muted-foreground">{c.per_user_limit} lượt/người</span></td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{formatVnDate(c.starts_at)}<span className="block">đến {formatVnDate(c.ends_at)}</span></td>
@@ -238,7 +224,7 @@ export function CouponsTab() {
                     )}
                   </td>
                   <td className="px-3 py-2"><StatusBadge tone={status.tone}>{status.label}</StatusBadge></td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
                     <ConfirmButton
                       size="sm"
                       variant={c.is_active ? "danger" : "default"}
@@ -264,7 +250,7 @@ export function CouponsTab() {
 function CouponDialog({ plans, onClose, onCreated }: { plans: AdminPlan[]; onClose: () => void; onCreated: () => Promise<void> }) {
   const request = useAdminApi();
   const toast = useToast();
-  const [f, setF] = useState({ code: "", kind: "percent" as "percent" | "fixed", value: "10", startsAt: "", endsAt: "", max: "", perUser: "1", planIds: [] as string[], cycles: [] as BillingCycle[], newOnly: false });
+  const [f, setF] = useState({ description: "", code: "", kind: "percent" as "percent" | "fixed", value: "10", startsAt: "", endsAt: "", max: "", perUser: "1", planIds: [] as string[], cycles: [] as BillingCycle[], newOnly: false });
   const [error, setError] = useState("");
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
 
@@ -284,6 +270,7 @@ function CouponDialog({ plans, onClose, onCreated }: { plans: AdminPlan[]; onClo
       ...(f.planIds.length ? { planIds: f.planIds } : {}),
       ...(f.cycles.length ? { billingCycles: f.cycles } : {}),
       newCustomersOnly: f.newOnly,
+      description: f.description.trim(),
     };
     try {
       await plansApi.createCoupon(request, body);
@@ -300,6 +287,9 @@ function CouponDialog({ plans, onClose, onCreated }: { plans: AdminPlan[]; onClo
       footer={<><Button variant="outline" onClick={onClose}>Huỷ</Button><Button onClick={submit}>Tạo mã</Button></>}>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Mã" htmlFor="c-code" hint="Người mua nhập mã này ở bước thanh toán, ví dụ LAUNCH20."><input id="c-code" className={inputClassName} value={f.code} onChange={(e) => set("code", e.target.value.toUpperCase())} /></Field>
+        <Field label="Mục đích" htmlFor="c-desc" hint="Giúp quản trị viên khác hiểu mã này dùng để làm gì.">
+          <input id="c-desc" className={inputClassName} maxLength={200} value={f.description} onChange={(e) => set("description", e.target.value)} placeholder="vd. Ưu đãi ra mắt" />
+        </Field>
         <Field label="Kiểu giảm" htmlFor="c-kind">
           <select id="c-kind" className={inputClassName} value={f.kind} onChange={(e) => set("kind", e.target.value as "percent" | "fixed")}>
             <option value="percent">Phần trăm</option>
@@ -343,105 +333,125 @@ const SETTING_RANGE: Record<keyof SettingsForm, [number, number]> = {
 export function SettingsTab() {
   const request = useAdminApi();
   const toast = useToast();
+  const trace = useTrace();
   const [saved, setSaved] = useState<BillingSettings | null>(null);
   const [form, setForm] = useState<SettingsForm | null>(null);
-  const apply = useCallback((s: BillingSettings) => {
-    setSaved(s);
+  const [stats, setStats] = useState<SubscriberStats | null>(null);
+  const apply = useCallback((v: BillingSettings) => {
+    setSaved(v);
     setForm({
-      graceDays: String(s.graceDays),
-      renewalReminderDays: String(s.renewalReminderDays),
-      overageNoticeDays: String(s.overageNoticeDays),
-      overageReadOnlyDays: String(s.overageReadOnlyDays),
+      graceDays: String(v.graceDays),
+      renewalReminderDays: String(v.renewalReminderDays),
+      overageNoticeDays: String(v.overageNoticeDays),
+      overageReadOnlyDays: String(v.overageReadOnlyDays),
     });
   }, []);
   useEffect(() => {
     plansApi.settings(request).then(apply).catch((e) => toast.error(apiErrorMessage(e)));
+    plansApi.subscriberStats(request).then(setStats).catch(() => setStats(null));
   }, [request, toast, apply]);
   if (!form || !saved) return <Card className="h-64 animate-pulse" aria-hidden />;
 
   const n = (k: keyof SettingsForm) => Number(form[k] || 0);
   const invalid = (Object.keys(SETTING_RANGE) as (keyof SettingsForm)[]).filter((k) => form[k] === "" || n(k) < SETTING_RANGE[k][0] || n(k) > SETTING_RANGE[k][1]);
   const dirty = (Object.keys(form) as (keyof SettingsForm)[]).some((k) => n(k) !== saved[k]);
-  const input = (k: keyof SettingsForm, id: string) => (
-    <input id={id} className={inputClassName} inputMode="numeric" aria-invalid={invalid.includes(k)} value={form[k]}
-      onChange={(e) => setForm({ ...form, [k]: e.target.value.replace(/\D/g, "").slice(0, 3) })} />
-  );
+  const grace = stats?.byState.find((x) => x.state === "GRACE_PERIOD")?.count ?? 0;
+  const over = stats?.overLimitOwners;
+  const day = (d: number) => (d === 0 ? "Ngày hết kỳ" : `Ngày ${d} sau khi hết kỳ`);
+
+  const steps: { icon: typeof BellRing; when: string; title: string; body: string; field?: keyof SettingsForm; unit?: string; affected?: { count: number; label: string; go: () => void } }[] = [
+    { icon: BellRing, when: `${n("renewalReminderDays")} ngày trước khi hết kỳ`, title: "Nhắc gia hạn", body: "Chủ nhóm nhận thông báo nhắc gia hạn. Gói không tự trừ tiền.", field: "renewalReminderDays", unit: "ngày trước" },
+    { icon: ShieldCheck, when: day(0), title: "Ân hạn", body: "Chưa gia hạn vẫn giữ nguyên hạn mức và tính năng của gói trong số ngày này.", field: "graceDays", unit: "ngày", affected: { count: grace, label: "tài khoản đang ân hạn", go: () => trace.goTab("subscribers", { sState: "GRACE_PERIOD" }) } },
+    { icon: CalendarClock, when: day(n("graceDays")), title: "Về hạn mức Free · cảnh báo", body: "Nếu đang vượt hạn mức Free: mọi thứ vẫn hoạt động, chủ nhóm được báo trước ngày khoá.", field: "overageNoticeDays", unit: "ngày cảnh báo", affected: over && { count: over.notice, label: "chủ nhóm đang được cảnh báo", go: () => trace.goTab("subscribers") } },
+    { icon: Lock, when: day(n("graceDays") + n("overageNoticeDays")), title: "Chỉ đọc", body: "Nhóm vượt hạn mức: xem, tải tài liệu, làm bài đã giao, xoá bớt được; không tải lên, không tạo hay giao bài, không nhắn tin mới.", field: "overageReadOnlyDays", unit: "ngày chỉ đọc", affected: over && { count: over.readOnly, label: "chủ nhóm có nhóm chỉ đọc", go: () => trace.goTab("subscribers") } },
+    { icon: EyeOff, when: day(n("graceDays") + n("overageNoticeDays") + n("overageReadOnlyDays")), title: "Tạm ẩn", body: "Thành viên không mở được nhóm; chủ nhóm vẫn vào để dọn dẹp. Không có dữ liệu nào bị xoá.", affected: over && { count: over.hidden, label: "chủ nhóm có nhóm tạm ẩn", go: () => trace.goTab("subscribers") } },
+    { icon: Eye, when: "Bất kỳ lúc nào", title: "Mở lại ngay", body: "Gia hạn, nâng cấp, xoá bớt thành viên/tài liệu hoặc chuyển nhóm cho người khác." },
+  ];
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="space-y-4">
-        <Card className="p-4">
-          <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold"><CalendarClock className="size-4" aria-hidden />Gia hạn</h3>
-          <p className="mb-3 text-xs text-muted-foreground">Gói không tự trừ tiền. Chủ nhóm tự gia hạn; hệ thống nhắc trước và giữ quyền lợi thêm một thời gian ân hạn.</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Nhắc gia hạn trước (ngày)" htmlFor="st-remind" hint="1–30 ngày trước khi kỳ đã trả kết thúc.">{input("renewalReminderDays", "st-remind")}</Field>
-            <Field label="Thời gian ân hạn (ngày)" htmlFor="st-grace" hint="0–30. Hết kỳ mà chưa gia hạn vẫn giữ hạn mức trả phí trong số ngày này.">{input("graceDays", "st-grace")}</Field>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold"><Lock className="size-4" aria-hidden />Khi chủ nhóm vượt hạn mức</h3>
-          <p className="mb-3 text-xs text-muted-foreground">
-            Áp dụng khi hết ân hạn, hạ gói hoặc bị thu hồi hạn mức mà chủ nhóm vẫn có nhiều nhóm, thành viên hay dung lượng hơn gói cho phép. Không có dữ liệu nào bị xoá.
+    <Card className="p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold">Chính sách gia hạn và vượt hạn mức</h3>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Toàn bộ những gì xảy ra với một chủ nhóm không gia hạn, theo thứ tự. Sửa số ngày ngay trong từng bước; mốc thời gian
+            tính lại khi bạn gõ. Chỉ nhóm vượt hạn mức Free bị ảnh hưởng: nhóm ngoài số nhóm được giữ (giữ nhóm hoạt động gần nhất),
+            nhóm quá số thành viên, hoặc mọi nhóm nếu vượt dung lượng.
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Cảnh báo trước khi khoá (ngày)" htmlFor="st-notice" hint="0–60. Mọi thứ vẫn hoạt động, chủ nhóm được báo ngày khoá.">{input("overageNoticeDays", "st-notice")}</Field>
-            <Field label="Chỉ đọc trước khi tạm ẩn (ngày)" htmlFor="st-ro" hint="1–365. Nhóm vượt hạn mức không thêm được nội dung mới.">{input("overageReadOnlyDays", "st-ro")}</Field>
-          </div>
-        </Card>
-        <div className="flex flex-wrap items-center gap-3">
-          <ConfirmButton
-            variant="default"
-            disabled={!dirty || invalid.length > 0}
-            title="Lưu cài đặt Workspace?"
-            description="Áp dụng ngay cho mọi tài khoản, kể cả tài khoản đang ân hạn hoặc đang vượt hạn mức: ngày khoá và ngày ẩn được tính lại theo số ngày mới."
-            onConfirm={async () => {
-              try {
-                apply(await plansApi.updateSettings(request, {
-                  graceDays: n("graceDays"),
-                  renewalReminderDays: n("renewalReminderDays"),
-                  overageNoticeDays: n("overageNoticeDays"),
-                  overageReadOnlyDays: n("overageReadOnlyDays"),
-                }));
-                toast.success("Đã lưu cài đặt");
-              } catch (e) {
-                toast.error(apiErrorMessage(e));
-              }
-            }}
-          >
-            Lưu cài đặt
-          </ConfirmButton>
-          {dirty && <Button variant="ghost" onClick={() => apply(saved)}>Hoàn tác</Button>}
-          {invalid.length > 0 && <span className="text-xs text-destructive" role="alert">Có giá trị ngoài khoảng cho phép.</span>}
-          <span className="ml-auto text-xs text-muted-foreground">
-            Cập nhật {formatVnDate(saved.updatedAt, true)}{saved.updatedBy ? ` bởi ${saved.updatedBy}` : ""} · Điều khoản {saved.termsVersion}
-          </span>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Cập nhật {formatVnDate(saved.updatedAt, true)}{saved.updatedBy ? ` bởi ${saved.updatedBy}` : ""}
+          <br />Điều khoản {saved.termsVersion}
+        </p>
       </div>
 
-      <Card className="p-4">
-        <h3 className="mb-1 text-sm font-semibold">Dòng thời gian khi không gia hạn</h3>
-        <p className="mb-4 text-xs text-muted-foreground">Xem trước theo số ngày đang nhập. Chủ nhóm gia hạn, nâng cấp hoặc dọn dẹp ở bất kỳ bước nào thì nhóm trở lại bình thường ngay.</p>
-        <ol className="relative space-y-4 border-l pl-5">
-          {[
-            { icon: BellRing, title: `${n("renewalReminderDays")} ngày trước khi hết kỳ`, body: "Gửi thông báo nhắc gia hạn." },
-            { icon: ShieldCheck, title: "Hết kỳ đã trả", body: `Ân hạn ${n("graceDays")} ngày: giữ nguyên hạn mức và tính năng của gói.` },
-            { icon: CalendarClock, title: `Ngày ${n("graceDays")}: về hạn mức Free`, body: `Nếu vượt hạn mức Free: cảnh báo ${n("overageNoticeDays")} ngày, mọi thứ vẫn hoạt động.` },
-            { icon: Lock, title: `Ngày ${n("graceDays") + n("overageNoticeDays")}: chỉ đọc`, body: "Nhóm vượt hạn mức: xem, tải tài liệu, làm bài đã giao, xoá bớt được; không tải lên, không tạo bài, không nhắn tin mới." },
-            { icon: EyeOff, title: `Ngày ${n("graceDays") + n("overageNoticeDays") + n("overageReadOnlyDays")}: tạm ẩn`, body: "Thành viên không mở được nhóm; chủ nhóm vẫn vào để dọn dẹp. Dữ liệu giữ nguyên, không tự xoá." },
-            { icon: Eye, title: "Bất kỳ lúc nào", body: "Gia hạn, nâng cấp, xoá bớt thành viên/tài liệu hoặc chuyển nhóm cho người khác: mở lại ngay." },
-          ].map((step) => (
-            <li key={step.title}>
-              <span className="absolute -left-3 flex size-6 items-center justify-center rounded-full border bg-background"><step.icon className="size-3.5" aria-hidden /></span>
-              <p className="text-sm font-medium">{step.title}</p>
-              <p className="text-xs text-muted-foreground">{step.body}</p>
-            </li>
-          ))}
-        </ol>
-        <p className="mt-4 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-          Nhóm bị ảnh hưởng: các nhóm ngoài số nhóm được phép (giữ lại nhóm hoạt động gần nhất), nhóm có quá số thành viên, và toàn bộ nhóm nếu vượt dung lượng.
-        </p>
-      </Card>
-    </div>
+      <ol className="mt-5 space-y-0">
+        {steps.map((step, i) => (
+          <li key={step.title} className="relative grid gap-3 pb-5 pl-10 last:pb-0 md:grid-cols-[minmax(0,1fr)_200px_220px] md:items-start">
+            {i < steps.length - 1 && <span className="absolute top-8 bottom-0 left-[15px] w-px bg-border" aria-hidden />}
+            <span className="absolute top-0 left-0 flex size-8 items-center justify-center rounded-full border bg-background"><step.icon className="size-4" aria-hidden /></span>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">{step.when}</p>
+              <p className="font-semibold">{step.title}</p>
+              <p className="text-sm text-muted-foreground">{step.body}</p>
+            </div>
+            <div>
+              {step.field && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    className={`${inputClassName} w-20! text-right`}
+                    inputMode="numeric"
+                    aria-label={`${step.title}: số ${step.unit}`}
+                    aria-invalid={invalid.includes(step.field)}
+                    value={form[step.field]}
+                    onChange={(e) => setForm({ ...form, [step.field!]: e.target.value.replace(/\D/g, "").slice(0, 3) })}
+                  />
+                  <span className="text-muted-foreground">{step.unit}</span>
+                </label>
+              )}
+              {step.field && (
+                <p className={`mt-1 text-xs ${invalid.includes(step.field) ? "text-destructive" : "text-muted-foreground"}`}>
+                  Cho phép {SETTING_RANGE[step.field][0]}–{SETTING_RANGE[step.field][1]}
+                </p>
+              )}
+            </div>
+            <div className="text-sm">
+              {step.affected && (
+                <button type="button" className="rounded-md border px-3 py-1.5 text-left hover:bg-muted" onClick={step.affected.go}>
+                  <span className="font-semibold">{step.affected.count}</span> <span className="text-muted-foreground">{step.affected.label} →</span>
+                </button>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-5 flex flex-wrap items-center gap-3 border-t pt-4">
+        <ConfirmButton
+          variant="default"
+          disabled={!dirty || invalid.length > 0}
+          title="Lưu chính sách Workspace?"
+          description="Áp dụng ngay cho mọi tài khoản, kể cả tài khoản đang ân hạn hoặc đang vượt hạn mức: ngày khoá và ngày ẩn được tính lại theo số ngày mới."
+          onConfirm={async () => {
+            try {
+              apply(await plansApi.updateSettings(request, {
+                graceDays: n("graceDays"),
+                renewalReminderDays: n("renewalReminderDays"),
+                overageNoticeDays: n("overageNoticeDays"),
+                overageReadOnlyDays: n("overageReadOnlyDays"),
+              }));
+              toast.success("Đã lưu chính sách");
+            } catch (e) {
+              toast.error(apiErrorMessage(e));
+            }
+          }}
+        >
+          Lưu thay đổi
+        </ConfirmButton>
+        {dirty && <Button variant="ghost" onClick={() => apply(saved)}>Hoàn tác</Button>}
+        {dirty && <span className="text-xs text-muted-foreground">Có thay đổi chưa lưu.</span>}
+      </div>
+    </Card>
   );
 }
 
@@ -458,6 +468,10 @@ const AUDIT_CATEGORIES: { value: AuditCategory | ""; label: string }[] = [
 
 const DETAIL_LABEL: Record<string, string> = {
   reason: "Lý do",
+  description: "Mục đích",
+  maxRedemptions: "Tổng lượt",
+  perUserLimit: "Lượt mỗi người",
+  startsAt: "Bắt đầu",
   amountVnd: "Số tiền",
   amount: "Mức",
   gatewayReference: "Mã cổng thanh toán",
@@ -567,7 +581,7 @@ export function AuditTab() {
                       </details>
                     )}
                   </td>
-                  <td className="px-3 py-2">{a.subject ?? <span className="text-muted-foreground">—</span>}</td>
+                  <td className="px-3 py-2"><AuditSubject entry={a} /></td>
                   <td className="px-3 py-2">{a.actor ?? <span className="text-muted-foreground">Hệ thống</span>}</td>
                 </tr>
               );
