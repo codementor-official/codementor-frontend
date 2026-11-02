@@ -30,6 +30,7 @@ export function CheckoutScreen() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | undefined>();
   const [error, setError] = useState("");
   const [couponError, setCouponError] = useState("");
+  const [checking, setChecking] = useState(false);
   const [paying, setPaying] = useState(false);
   const [conflict, setConflict] = useState<string | null>(null);
 
@@ -43,11 +44,25 @@ export function CheckoutScreen() {
           setCouponError("");
         })
         .catch((e) => {
-          if (code && billingErrorCode(e) === "WORKSPACE_COUPON_INVALID") setCouponError(apiErrorMessage(e));
-          else setError(apiErrorMessage(e));
-        }),
+          if (code && billingErrorCode(e) === "WORKSPACE_COUPON_INVALID") {
+            setCouponError(apiErrorMessage(e));
+            setAppliedCoupon(undefined);
+          } else setError(apiErrorMessage(e));
+        })
+        .finally(() => setChecking(false)),
     [planId, cycle],
   );
+
+  // Price the code as soon as typing pauses, so the total is final before paying.
+  useEffect(() => {
+    const code = coupon.trim();
+    if (code.length < 3 || code === appliedCoupon) return;
+    const timer = setTimeout(() => {
+      setChecking(true);
+      void requote(code);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [coupon, appliedCoupon, requote]);
 
   useEffect(() => {
     if (!planId) return;
@@ -143,15 +158,27 @@ export function CheckoutScreen() {
             <h2 className="font-semibold text-navy">Thanh toán</h2>
             <dl className="mt-4 space-y-2 text-sm">
               <Line label={`Giá gói (${CYCLE_LABEL[s.billingCycle]})`} value={formatVnd(s.listPriceVnd)} />
-              {s.discountVnd > 0 && <Line label={`Mã ${s.coupon?.code}`} value={`− ${formatVnd(s.discountVnd)}`} />}
+              {s.discountVnd > 0 && (
+                <Line
+                  label={`Mã ${s.coupon?.code} (${s.coupon?.kind === "percent" ? `−${s.coupon.value}%` : `−${formatVnd(s.coupon?.value ?? 0)}`})`}
+                  value={`− ${formatVnd(s.discountVnd)}`}
+                />
+              )}
               {s.creditVnd > 0 && <Line label="Trừ phần chưa dùng của gói cũ" value={`− ${formatVnd(s.creditVnd)}`} />}
               <div className="flex items-baseline justify-between border-t border-border pt-3">
                 <dt className="font-semibold text-navy">Tổng thanh toán</dt>
                 <dd className="text-2xl font-bold text-navy">{formatVnd(s.amountVnd)}</dd>
               </div>
+              {s.discountVnd + s.creditVnd > 0 && (
+                <p className="text-right text-xs font-semibold text-success">Tiết kiệm {formatVnd(s.discountVnd + s.creditVnd)}</p>
+              )}
             </dl>
 
-            {s.kind !== "renewal" && (
+            {s.kind === "renewal" ? (
+              <p className="mt-4 rounded-md bg-bg p-3 text-xs text-text-muted">
+                Gia hạn giữ nguyên giá bạn đã mua nên không dùng mã giảm giá. Mã giảm giá áp dụng khi mua gói mới hoặc nâng cấp.
+              </p>
+            ) : (
               <form
                 className="mt-4"
                 onSubmit={(e) => {
@@ -166,22 +193,37 @@ export function CheckoutScreen() {
                   <input
                     id="coupon"
                     value={coupon}
-                    onChange={(e) => setCoupon(e.target.value)}
+                    onChange={(e) => setCoupon(e.target.value.toUpperCase().replace(/\s/g, ""))}
                     maxLength={32}
+                    autoComplete="off"
                     aria-invalid={!!couponError}
-                    aria-describedby={couponError ? "coupon-error" : undefined}
-                    className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm text-navy"
-                    placeholder="Nhập mã"
+                    aria-describedby="coupon-status"
+                    className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-navy"
+                    placeholder="VD: LAUNCH20"
                   />
-                  <Button type="submit" variant="outline" size="sm" disabled={!coupon.trim()}>
-                    <TicketPercent className="h-4 w-4" /> Áp dụng
-                  </Button>
+                  {appliedCoupon ? (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => { setCoupon(""); void requote(); }}>
+                      Bỏ mã
+                    </Button>
+                  ) : (
+                    <Button type="submit" variant="outline" size="sm" disabled={coupon.trim().length < 3}>
+                      <TicketPercent className="h-4 w-4" /> Áp dụng
+                    </Button>
+                  )}
                 </div>
-                {couponError && (
-                  <p id="coupon-error" className="mt-1 text-xs text-danger">
-                    {couponError}
-                  </p>
-                )}
+                <p id="coupon-status" aria-live="polite" className="mt-1 min-h-4 text-xs">
+                  {checking ? (
+                    <span className="text-text-muted">Đang kiểm tra mã…</span>
+                  ) : couponError ? (
+                    <span className="text-danger">{couponError}</span>
+                  ) : appliedCoupon && s.discountVnd > 0 ? (
+                    <span className="font-semibold text-success">
+                      Đã áp dụng {appliedCoupon}: giảm {formatVnd(s.discountVnd)}, bạn trả {formatVnd(s.amountVnd)}.
+                    </span>
+                  ) : (
+                    <span className="text-text-muted">Gõ mã, giá cuối cùng cập nhật ngay bên trên.</span>
+                  )}
+                </p>
               </form>
             )}
 

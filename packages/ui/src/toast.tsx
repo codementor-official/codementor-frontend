@@ -80,9 +80,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           tồn tại từ trước thì mới đọc nội dung mới thêm vào. */}
       <div
         aria-live="polite"
-        // Giữa, ngay dưới topbar: góc dưới phải là chỗ của ô soạn trong drawer Lecter và các
-        // khung chat — toast "Đã đưa vào biểu mẫu" từng đè đúng lên nút gửi.
-        className="pointer-events-none fixed inset-x-0 top-14 z-[60] flex flex-col items-center gap-2 p-3"
+        // Góc dưới phải: ở giữa màn hình toast đè lên nội dung đang đọc. Bấm vào thẻ là tắt,
+        // nên khi nó che ô soạn (drawer Lecter, khung chat) chỉ mất một cú bấm.
+        className="pointer-events-none fixed right-0 bottom-0 z-[60] flex w-full max-w-sm flex-col items-end gap-2 p-4"
       >
         {toasts.map((toast) => (
           <ToastCard key={toast.id} onDismiss={() => dismiss(toast.id)} toast={toast} />
@@ -102,8 +102,10 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
 
   return (
     <div
-      className={`animate-modal-in pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm shadow-[0_12px_32px_rgba(0,0,0,0.24)] ${className}`}
+      className={`animate-modal-in pointer-events-auto flex w-full cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm shadow-[0_12px_32px_rgba(0,0,0,0.24)] ${className}`}
+      onClick={onDismiss}
       role={toast.tone === "error" ? "alert" : "status"}
+      title="Bấm để đóng"
     >
       <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
       <p className="min-w-0 flex-1 break-words">{toast.message}</p>

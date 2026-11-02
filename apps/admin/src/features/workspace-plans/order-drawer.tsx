@@ -5,7 +5,7 @@ import { RefreshCw } from "lucide-react";
 import { apiErrorMessage } from "@codementor/api-client";
 import { Button, ReasonButton, SideDrawer, StatusBadge, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";
-import type { AdminOrderDetail } from "@codementor/types";
+import type { AdminOrderDetail, RefundEffect } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { plansApi } from "./api";
 import { actionLabel } from "./overview-tab";
@@ -19,6 +19,12 @@ const PAYMENT_STATUS: Record<string, string> = {
   failed: "Thất bại",
   cancelled: "Đã huỷ",
   unknown: "Chưa rõ",
+};
+/** What recording a refund does to the subscription (backend `refundEffect`). */
+const REFUND_EFFECT: Record<RefundEffect, string> = {
+  end_subscription: "Kỳ của đơn đang chạy: gói kết thúc ngay, tài khoản về hạn mức Free (dữ liệu giữ nguyên; nếu vượt hạn mức Free sẽ qua cảnh báo → chỉ đọc → tạm ẩn).",
+  drop_future_term: "Đây là kỳ trả trước chưa bắt đầu: chỉ kỳ này bị huỷ, kỳ đang dùng giữ nguyên.",
+  money_only: "Kỳ của đơn đã kết thúc hoặc gói đã đóng: chỉ hoàn tiền, gói hiện tại không đổi.",
 };
 const ACCOUNT: Record<string, string> = { clearing: "Tiền chờ đối soát", platform: "Doanh thu nền tảng" };
 
@@ -76,7 +82,7 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
                   size="sm"
                   variant="danger"
                   title={`Ghi nhận hoàn ${formatVnd(order.amountVnd)}?`}
-                  description="Chỉ ghi nhận sau khi đã hoàn tiền trên cổng thanh toán. Sổ cái được bù trừ; nếu kỳ của đơn chưa kết thúc, gói kết thúc ngay và tài khoản về Free (dữ liệu vẫn giữ)."
+                  description={`Chỉ ghi nhận sau khi đã hoàn tiền trên cổng thanh toán; sổ cái được bù trừ. ${order.refundEffect ? REFUND_EFFECT[order.refundEffect] : ""}${order.creditVnd > 0 ? ` Phần ${formatVnd(order.creditVnd)} trừ từ gói cũ không phải tiền mặt nên không hoàn.` : ""}`}
                   placeholder="Lý do · mã hoàn tiền trên cổng (nếu có)"
                   onConfirm={(reason) => run(() => plansApi.refund(request, order.id, reason), "Đã ghi nhận hoàn tiền")}
                 >
@@ -85,6 +91,15 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
               )}
             </div>
           </section>
+
+          {order.refundEffect && (
+            <Section title="Nếu hoàn tiền đơn này">
+              <p className="rounded-md border p-3">
+                {REFUND_EFFECT[order.refundEffect]}
+                {order.term && <span className="block text-xs text-muted-foreground">Kỳ của đơn: {formatVnDate(order.term.startsAt)} – {formatVnDate(order.term.endsAt)}</span>}
+              </p>
+            </Section>
+          )}
 
           <Section title="Người mua">
             <TraceLink onClick={() => trace.openUser(order.buyer.id)}>{order.buyer.name}</TraceLink>

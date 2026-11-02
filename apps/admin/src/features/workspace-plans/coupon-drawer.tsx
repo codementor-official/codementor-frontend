@@ -10,7 +10,7 @@ import { inputClassName } from "@/features/commerce/form-style";
 import { plansApi } from "./api";
 import { ORDER_LABEL, ORDER_TONE, couponStatus } from "./operations-tabs";
 import { Section } from "./order-drawer";
-import { TraceLink, useTrace } from "./trace";
+import { CopyCode, TraceLink, useTrace } from "./trace";
 
 const REDEMPTION: Record<string, string> = { reserved: "Đang giữ chỗ", redeemed: "Đã dùng", released: "Đã trả lại" };
 const toLocal = (iso: string) => {
@@ -60,6 +60,8 @@ export function CouponDrawer({ couponId, onClose, onChanged }: { couponId: strin
           <section className="flex flex-wrap items-center gap-3">
             <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
             <span className="text-2xl font-semibold">{c.kind === "percent" ? `−${c.value}%` : `−${formatVnd(c.value)}`}</span>
+            <span className="font-mono text-lg font-semibold">{c.code}</span>
+            <CopyCode code={c.code} />
             <Button size="sm" variant="outline" className="ml-auto" onClick={() => setEditing(true)}>Sửa mã</Button>
           </section>
 

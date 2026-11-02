@@ -10,7 +10,7 @@ import { useAdminApi } from "@/features/auth/admin-api";
 import { inputClassName } from "@/features/commerce/form-style";
 import { plansApi, type CouponInput } from "./api";
 import { actionLabel } from "./overview-tab";
-import { AuditSubject, TraceLink, useTrace } from "./trace";
+import { AuditSubject, CopyCode, TraceLink, useTrace } from "./trace";
 
 export const ORDER_TONE: Record<WorkspaceOrder["status"], "success" | "warning" | "danger" | "neutral"> = {
   pending: "warning",
@@ -209,7 +209,7 @@ export function CouponsTab() {
               return (
                 <tr key={c.id} className="cursor-pointer border-t align-top transition-colors duration-150 hover:bg-muted/50" onClick={() => trace.openCoupon(c.id)}>
                   <td className="px-3 py-2">
-                    <span className="font-mono font-semibold">{c.code}</span>
+                    <span className="font-mono font-semibold">{c.code}</span> <CopyCode code={c.code} />
                     {c.description && <span className="block max-w-56 text-xs text-muted-foreground">{c.description}</span>}
                   </td>
                   <td className="px-3 py-2 font-medium">{c.kind === "percent" ? `−${c.value}%` : `−${formatVnd(c.value)}`}</td>

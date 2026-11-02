@@ -89,8 +89,16 @@ export interface WorkspaceOrder {
   createdAt: string;
 }
 
+export type RefundEffect = "money_only" | "drop_future_term" | "end_subscription";
+
+/** The buyer's invoice: what was bought, how the price was reached, how and when it was paid. */
 export interface WorkspaceOrderDetail extends WorkspaceOrder {
-  payment: { provider: "mock" | "vnpay" | "momo"; status: string; checkoutUrl: string | null };
+  quote: QuoteSnapshot;
+  buyer: { name: string; email: string };
+  /** The paid period this order created, once paid. */
+  term: { startsAt: string; endsAt: string } | null;
+  refund: { at: string; effect: RefundEffect | null } | null;
+  payment: { provider: "mock" | "vnpay" | "momo"; status: string; reference: string | null; checkoutUrl: string | null };
 }
 
 export interface SubscriptionOverview {
@@ -117,6 +125,7 @@ export interface SubscriptionOverview {
     suspendedReason: string | null;
   };
   pendingOrder: WorkspaceOrder | null;
+  recentlyEnded: { planName: string; endedAt: string; reason: string | null } | null;
   policy: { graceDays: number; renewalReminderDays: number; overageNoticeDays: number; overageReadOnlyDays: number; autoRenew: false };
 }
 
@@ -297,6 +306,9 @@ export interface AuditEntry {
 }
 
 export interface AdminOrderDetail extends WorkspaceOrder {
+  term: { startsAt: string; endsAt: string } | null;
+  /** What a refund would do now; null when the order cannot be refunded. */
+  refundEffect: RefundEffect | null;
   buyer: { id: string; name: string; email: string };
   quote: QuoteSnapshot;
   coupon: { code: string; id?: string; description?: string | null } | null;
