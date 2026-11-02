@@ -112,7 +112,7 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
           {article.coverImageUrl && (
             <Image
               alt={`Ảnh bìa ${article.title}`}
-              className="mt-6 aspect-[16/7] w-full rounded-xl object-cover"
+              className="mt-6 aspect-video w-full rounded-xl object-cover"
               height={560}
               priority
               src={article.coverImageUrl}
