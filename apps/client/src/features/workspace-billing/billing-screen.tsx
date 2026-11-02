@@ -259,10 +259,11 @@ export function BillingScreen() {
                     <span className="w-36 text-text-muted">{formatVnDate(o.createdAt, true)}</span>
                     <span className="min-w-0 flex-1 font-medium text-navy">
                       {KIND[o.kind]} {o.planName} · theo {CYCLE_LABEL[o.billingCycle]}
+                      {o.coupon && <span className="ml-2 text-xs font-normal text-success">mã {o.coupon.code} −{formatVnd(o.discountVnd)}</span>}
                     </span>
                     <span className="font-semibold text-navy">{formatVnd(o.amountVnd)}</span>
                     <OrderStatus status={o.status} />
-                    <ArrowUpRight className="h-4 w-4 text-text-faint" aria-hidden />
+                    <span className="flex items-center gap-1 text-xs text-text-faint">Hoá đơn <ArrowUpRight className="h-4 w-4" aria-hidden /></span>
                   </Link>
                 </li>
               ))}
@@ -314,6 +315,13 @@ function Notices({ overview, usage, renewHref }: { overview: SubscriptionOvervie
   const sub = overview.subscription;
   if (overview.state === "SUSPENDED")
     notices.push({ key: "suspended", text: `Gói đang bị tạm ngưng${sub?.suspendedReason ? `: ${sub.suspendedReason}` : ""}. Hạn mức Free đang được áp dụng; liên hệ codementor.official@gmail.com.` });
+  const ended = overview.recentlyEnded;
+  if (ended && ended.reason === "refunded")
+    notices.push({
+      key: "refunded",
+      text: `Gói ${ended.planName} đã kết thúc ngày ${formatVnDate(ended.endedAt)} vì đơn đã được hoàn tiền. Tài khoản đang dùng hạn mức Free; nhóm và tài liệu vẫn được giữ nguyên.`,
+      action: { href: "/workspace/pricing", label: "Mua lại gói" },
+    });
   if (overview.state === "GRACE_PERIOD" && sub?.graceEndsAt)
     notices.push({
       key: "grace",

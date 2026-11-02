@@ -2,17 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock, RefreshCw, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Printer, RefreshCw, XCircle } from "lucide-react";
 import { apiErrorMessage } from "@codementor/api-client";
 import { useToast } from "@codementor/ui";
-import { formatVnDate, formatVnd } from "@codementor/utils";
 import type { WorkspaceOrderDetail } from "@codementor/types";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { billingApi } from "./api";
 import { OrderStatus } from "./billing-screen";
-import { CYCLE_LABEL, limitRows } from "./plan-presentation";
+import { Invoice } from "./invoice";
 
 const POLL_MS = 3000;
 const POLL_LIMIT = 40;
@@ -64,7 +63,7 @@ export function CheckoutResultScreen() {
 
   return (
     <>
-      <PageHeader title="Kết quả thanh toán" subtitle={order ? `Mã giao dịch ${order.id.slice(0, 8).toUpperCase()}` : undefined} />
+      <PageHeader title="Giao dịch & hoá đơn" subtitle={order ? `Mã giao dịch ${order.id.slice(0, 8).toUpperCase()}` : undefined} />
       {shownError && (
         <Card className="p-5 text-sm text-danger" role="alert">
           {shownError}
@@ -88,24 +87,7 @@ export function CheckoutResultScreen() {
             <OrderStatus status={order.status} />
           </div>
 
-          <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-border-soft pt-5 text-sm sm:grid-cols-4">
-            <Item label="Gói" value={`${order.planName} · ${CYCLE_LABEL[order.billingCycle]}`} />
-            <Item label="Số tiền" value={formatVnd(order.amountVnd)} />
-            <Item label="Tạo lúc" value={formatVnDate(order.createdAt, true)} />
-            <Item label={paid ? "Thanh toán lúc" : "Hết hạn lúc"} value={formatVnDate(paid ? order.paidAt! : order.expiresAt, true)} />
-          </dl>
-
-          {paid && (
-            <ul className="mt-5 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-              {limitRows(order.entitlements).map((r) => (
-                <li key={r.key} className="flex items-center gap-2">
-                  <r.icon className="h-4 w-4 text-text-muted" aria-hidden />
-                  <span className="text-text-muted">{r.label}:</span>
-                  <span className="font-semibold text-navy">{r.value}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <Invoice order={order} />
 
           <div className="mt-6 flex flex-wrap gap-2">
             {pending && order.payment.checkoutUrl && (
@@ -124,6 +106,11 @@ export function CheckoutResultScreen() {
             {(pending || order.status === "review") && order.mode !== "mock" && (
               <Button variant="outline" disabled={busy} onClick={() => run(() => billingApi.reconcile(order.id))}>
                 <RefreshCw className="h-4 w-4" /> Kiểm tra lại với cổng thanh toán
+              </Button>
+            )}
+            {(paid || order.status === "refunded") && (
+              <Button variant="outline" onClick={() => window.print()}>
+                <Printer className="h-4 w-4" /> In / lưu PDF
               </Button>
             )}
             <Button href="/workspace/billing" variant={paid ? "primary" : "outline"}>
@@ -158,14 +145,5 @@ const DETAIL: Record<WorkspaceOrderDetail["status"], string> = {
   cancelled: "Không có khoản tiền nào được ghi nhận.",
   expired: "Giao dịch quá thời hạn thanh toán. Hãy tạo giao dịch mới nếu bạn vẫn muốn mua gói.",
   review: "Chúng tôi đã nhận tiền nhưng cần quản trị viên kiểm tra trước khi áp dụng. Bạn sẽ nhận thông báo khi có kết quả.",
-  refunded: "Khoản thanh toán đã được hoàn lại.",
+  refunded: "Khoản thanh toán đã được hoàn lại. Xem bên dưới gói của bạn thay đổi thế nào.",
 };
-
-function Item({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-xs text-text-muted">{label}</dt>
-      <dd className="mt-0.5 font-medium text-navy">{value}</dd>
-    </div>
-  );
-}

@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import type { AuditEntry } from "@codementor/types";
 
 export type PlansTab = "overview" | "plans" | "subscribers" | "orders" | "coupons" | "settings" | "audit";
@@ -57,4 +58,27 @@ export function AuditSubject({ entry: e }: { entry: AuditEntry }) {
   if (e.action.startsWith("workspace_plan.")) return <TraceLink onClick={() => trace.goTab("plans")}>{e.subject}</TraceLink>;
   if (e.target_user_id) return <TraceLink onClick={() => trace.openUser(e.target_user_id!)}>{e.subject}</TraceLink>;
   return <span>{e.subject}</span>;
+}
+
+/** Copies a coupon code in one click, for sharing or pasting at checkout. */
+export function CopyCode({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      aria-label={`Sao chép mã ${code}`}
+      title="Sao chép mã"
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+      onClick={(e) => {
+        e.stopPropagation();
+        void navigator.clipboard.writeText(code).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
+      }}
+    >
+      {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+      {copied ? "Đã chép" : "Chép"}
+    </button>
+  );
 }
