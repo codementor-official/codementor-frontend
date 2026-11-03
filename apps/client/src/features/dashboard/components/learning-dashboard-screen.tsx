@@ -19,7 +19,8 @@ import { DashboardCoach } from './dashboard-coach';
 import { DashboardPlanner } from './dashboard-planner';
 import { DashboardRecommendations } from './dashboard-recommendations';
 import { DashboardTodayPlan } from './dashboard-today-plan';
-import { DashboardUnavailable } from './dashboard-section';
+import { DashboardSection, DashboardUnavailable } from './dashboard-section';
+import { ProgramShowcase } from '@/components/program-showcase';
 
 export function LearningDashboardScreen() {
   const { user } = useAuth();
@@ -70,6 +71,9 @@ export function LearningDashboardScreen() {
         <div className="mt-5">
           <DashboardCoach data={coach.data} isLoading={coach.isLoading} error={coach.error} reload={coach.reload} onDataChange={coach.replaceData} />
         </div>
+        <DashboardSection className="mt-7" title="Khám phá CodeMentor">
+          <ProgramShowcase layout="list" />
+        </DashboardSection>
         <div className="mt-7 space-y-7">
           <DashboardTrends data={data} onRetry={reload} />
           <div className="grid items-start gap-5 xl:grid-cols-2">
