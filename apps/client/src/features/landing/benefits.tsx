@@ -16,10 +16,14 @@ export function LandingBenefits() {
     <LandingSection id="benefits" eyebrow="Vì sao CodeMentor" title="Mọi thứ cần để học lập trình, ở cùng một chỗ">
       <ul className="grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
         {BENEFITS.map((benefit) => (
-          <li key={benefit.title} className="border-t border-border pt-5">
-            <benefit.icon className="size-6 text-navy" aria-hidden />
-            <h3 className="mt-4 text-base font-semibold text-navy">{benefit.title}</h3>
-            <p className="mt-1.5 text-sm leading-6 text-text-muted">{benefit.text}</p>
+          <li key={benefit.title} className="flex gap-4">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-navy">
+              <benefit.icon className="size-5" aria-hidden />
+            </span>
+            <div>
+              <h3 className="text-base font-semibold text-navy">{benefit.title}</h3>
+              <p className="mt-1 text-sm leading-6 text-text-muted">{benefit.text}</p>
+            </div>
           </li>
         ))}
       </ul>

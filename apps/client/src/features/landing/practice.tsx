@@ -28,12 +28,16 @@ export function LandingPractice() {
             </Button>
           </div>
         </div>
-        <ul className="grid gap-px overflow-hidden rounded-2xl border border-on-ink-fixed/15 bg-on-ink-fixed/15 sm:grid-cols-2">
+        <ul className="divide-y divide-on-ink-fixed/10 overflow-hidden rounded-lg border border-on-ink-fixed/15">
           {POINTS.map((point) => (
-            <li key={point.title} className="bg-ink-fixed p-6">
-              <point.icon className="size-6 text-primary-fixed" aria-hidden />
-              <h3 className="mt-4 text-base font-semibold">{point.title}</h3>
-              <p className="mt-1.5 text-sm leading-6 text-on-ink-fixed/70">{point.text}</p>
+            <li key={point.title} className="flex items-start gap-4 px-5 py-4">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-on-ink-fixed/10 text-primary-fixed">
+                <point.icon className="size-5" aria-hidden />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-base font-semibold">{point.title}</span>
+                <span className="mt-0.5 block text-sm leading-6 text-on-ink-fixed/70">{point.text}</span>
+              </span>
             </li>
           ))}
         </ul>
