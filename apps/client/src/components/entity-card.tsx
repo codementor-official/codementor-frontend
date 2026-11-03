@@ -81,7 +81,7 @@ export function EntityCard({
       // Không có ảnh bìa thì là một ô tint, không phải khối màu đặc: `bg-navy` đảo thành gần
       // trắng trong dark mode và cả hàng thẻ thành dải trắng chói.
       className={`relative flex shrink-0 items-center justify-center font-mono font-bold ${
-        coverImage ? "bg-border-soft" : "bg-primary-tint text-primary"
+        coverImage ? "bg-border-soft" : "bg-border-soft text-navy"
       } ${
         horizontal
           ? // Khung theo tỉ lệ ảnh, KHÔNG kéo cao bằng thẻ: `object-cover` trên một ô cao

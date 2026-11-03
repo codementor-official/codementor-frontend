@@ -48,9 +48,9 @@ function ExerciseRow({ item, number }: { item: ExerciseSummary; number: number }
       <span className="hidden w-7 shrink-0 text-right text-xs tabular-nums text-text-faint md:block">{number}</span>
       <span className={`hidden h-8 w-8 shrink-0 items-center justify-center rounded-md sm:flex ${
         item.progressStatus === "solved"
-          ? "bg-success/10 text-success"
+          ? "bg-navy text-on-ink"
           : item.progressStatus === "attempted"
-            ? "bg-primary/10 text-primary"
+            ? "bg-border-soft text-navy"
             : "bg-muted text-muted-foreground"
       }`} title={item.progressStatus === "solved" ? "Đã giải" : item.progressStatus === "attempted" ? "Đang làm" : "Chưa giải"}>
         {item.progressStatus === "solved" ? <CheckCircle2 className="h-4 w-4" /> : item.progressStatus === "attempted" ? <Clock3 className="h-4 w-4" /> : <FileCode2 className="h-4 w-4" />}

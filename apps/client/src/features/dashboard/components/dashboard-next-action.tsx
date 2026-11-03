@@ -24,7 +24,7 @@ export function DashboardNextAction({ data, coach }: { data: DashboardData; coac
       <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-navy"><KindIcon className="size-5" aria-hidden /></span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-sm bg-primary-tint px-2 py-0.5 text-2xs font-bold text-primary-active">{action.label}</span>
+          <span className="rounded-sm bg-border-soft px-2 py-0.5 text-2xs font-bold text-navy">{action.label}</span>
           {action.status && <span className="rounded-sm bg-border-soft px-2 py-0.5 text-2xs font-semibold text-text-muted">{action.status}</span>}
         </div>
         <h2 className="mt-1.5 line-clamp-2 text-base font-bold text-navy">{action.title}</h2>

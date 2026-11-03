@@ -328,7 +328,7 @@ function TutorWorkspace({
                 key={tool.title}
                 disabled={busy}
                 onClick={() => suggest(tool.prompt)}
-                className="group flex w-full items-center gap-3 rounded-lg border border-border-soft p-3 text-left transition-colors hover:border-primary hover:bg-primary-tint disabled:opacity-50"
+                className="group flex w-full items-center gap-3 rounded-lg border border-border-soft p-3 text-left transition-colors hover:border-text-faint hover:bg-bg disabled:opacity-50"
               >
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-bg text-primary">
                   <tool.icon className="size-4" />
@@ -359,7 +359,7 @@ function TutorWorkspace({
             {tutor.sessions.map((chat) => (
               <li
                 key={chat.id}
-                className={`flex items-center gap-1 rounded-md py-1 ${tutor.threadId === chat.id ? "bg-primary-tint" : ""}`}
+                className={`flex items-center gap-1 rounded-md py-1 ${tutor.threadId === chat.id ? "bg-border-soft" : ""}`}
               >
                 <button
                   disabled={busy}
@@ -433,7 +433,7 @@ function TutorWorkspace({
                   {tutor.selected.map((doc) => (
                     <span
                       key={doc.id}
-                      className="inline-flex max-w-full items-center gap-1 rounded-md bg-primary-tint px-2 py-1 text-xs text-primary"
+                      className="inline-flex max-w-full items-center gap-1 rounded-md bg-border-soft px-2 py-1 text-xs text-navy"
                     >
                       <span className="truncate" title={doc.title}>
                         {doc.title}
@@ -466,7 +466,7 @@ function TutorWorkspace({
                   .map((doc) => (
                     <li key={doc.id}>
                       <label
-                        className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors hover:bg-bg ${isSelected(doc.id) ? "border-primary/40 bg-primary-tint" : "border-border-soft"}`}
+                        className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors hover:bg-bg ${isSelected(doc.id) ? "border-navy bg-border-soft" : "border-border-soft"}`}
                       >
                         <input
                           type="checkbox"

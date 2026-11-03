@@ -146,7 +146,7 @@ export function TopicFilter({
                   onClick={() => onChange(selected ? selectedIds.filter((id) => id !== topic.id) : [...selectedIds, topic.id])}
                   className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors ${
                     selected
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-navy bg-border-soft text-navy"
                       : "border-border bg-surface text-muted-foreground hover:border-primary hover:text-foreground"
                   }`}
                 >

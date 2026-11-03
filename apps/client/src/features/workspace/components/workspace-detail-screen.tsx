@@ -811,7 +811,7 @@ function Overview({
       <Card className="overflow-hidden">
         <div
           className={`flex items-center justify-center bg-no-repeat ${
-            detail.coverUrl ? "bg-border-soft" : "bg-primary-tint"
+            "bg-border-soft"
           } ${
             detail.coverHeight === "compact"
               ? "h-24 sm:h-28"
@@ -2517,7 +2517,7 @@ function MemberDetailDialog({
                         {data.recentActivities.map((activity) => (
                           <li
                             key={activity.id}
-                            className="border-l-2 border-primary/30 pl-3 text-xs text-text-muted"
+                            className="border-l-2 border-border pl-3 text-xs text-text-muted"
                           >
                             {activity.action}
                             <span className="block text-text-faint">
@@ -2867,7 +2867,7 @@ function SettingsPanel({
           </form>
         </Card>
         <OwnershipTransferCard slug={detail.slug} members={members} />
-        <Card className="border-primary/30 p-5">
+        <Card className="border-border p-5">
           <div className="flex items-center gap-2">
             <Archive className="h-4 w-4 text-text-muted" />
             <h2 className="text-sm font-bold text-navy">Lưu trữ nhóm</h2>

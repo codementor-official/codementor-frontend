@@ -95,7 +95,7 @@ function HistoryMenu({
           {sessions.map((session) => (
             <div
               key={session.id}
-              className={`group flex items-center gap-1 rounded-md px-1 ${session.id === activeId ? "bg-primary/5" : ""}`}
+              className={`group flex items-center gap-1 rounded-md px-1 ${session.id === activeId ? "bg-border-soft" : ""}`}
             >
               <button
                 type="button"

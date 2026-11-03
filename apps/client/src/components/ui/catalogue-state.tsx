@@ -47,7 +47,7 @@ export function CatalogueEmpty({
 
 export function CatalogueError({ message }: { message: string }) {
   return (
-    <Card className="border-dashed border-primary/30 p-10 text-center">
+    <Card className="border-dashed border-border p-10 text-center">
       <p className="text-sm font-semibold text-navy">Không tải được dữ liệu</p>
       <p className="mt-1 text-xs text-text-muted">{message}</p>
       <p className="mt-2 text-2xs text-text-faint">

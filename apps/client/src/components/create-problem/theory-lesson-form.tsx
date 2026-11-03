@@ -151,7 +151,7 @@ function LessonPreview({
   return (
     <article className="rounded-md border border-border bg-bg p-5">
       <div className="mb-2 flex flex-wrap items-center gap-3">
-        <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary">
+        <span className="rounded-full bg-border-soft px-2.5 py-1 text-xs font-semibold text-navy">
           {draft.chapter || "Chưa đặt chương"}
         </span>
         <span className="flex items-center gap-1.5 text-xs text-text-muted">
@@ -162,7 +162,7 @@ function LessonPreview({
       {draft.summary && <p className="mt-1.5 text-sm text-text-muted">{draft.summary}</p>}
 
       {objectives.length > 0 && (
-        <div className="mt-4 rounded-md border border-primary/20 bg-primary-tint p-4">
+        <div className="mt-4 rounded-md bg-border-soft p-4">
           <p className="mb-2 flex items-center gap-2 text-sm font-bold text-navy">
             <Trophy className="h-4 w-4 text-text-muted" /> Sau bài này bạn có thể
           </p>

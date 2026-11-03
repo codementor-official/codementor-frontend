@@ -51,7 +51,7 @@ export function CodeyHistoryMenu() {
           setOpen(!open);
         }}
         className={`flex size-7 items-center justify-center rounded-md transition-colors ${
-          open ? "bg-primary-tint text-primary" : "text-text-muted hover:bg-bg hover:text-navy"
+          open ? "bg-border-soft text-navy" : "text-text-muted hover:bg-bg hover:text-navy"
         }`}
       >
         <History aria-hidden="true" className="size-3.5" />
@@ -71,7 +71,7 @@ export function CodeyHistoryMenu() {
               <div
                 key={session.id}
                 className={`group flex items-center gap-1 rounded-md px-1 ${
-                  session.id === threadId ? "bg-primary-tint/50" : ""
+                  session.id === threadId ? "bg-border-soft" : ""
                 }`}
               >
                 <button

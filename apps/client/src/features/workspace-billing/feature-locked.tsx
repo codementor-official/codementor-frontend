@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 export function FeatureLockedCard({ title, body, owner }: { title: string; body: string; owner: boolean }) {
   return (
     <Card className="flex flex-col items-center gap-3 border-dashed p-8 text-center">
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-tint">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-border-soft">
         <Sparkles className="h-5 w-5 text-text-muted" aria-hidden />
       </span>
       <div>

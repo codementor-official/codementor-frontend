@@ -29,7 +29,7 @@ export function OnboardingOptionGrid({
               type="button"
               onClick={() => onToggle(option.value)}
               className={`flex items-center gap-3 rounded-lg border p-3.5 text-left transition-colors ${
-                selected ? "border-primary bg-primary-tint" : "border-border bg-surface hover:border-navy"
+                selected ? "border-navy bg-border-soft" : "border-border bg-surface hover:border-navy"
               }`}
             >
               <option.icon className={`h-5 w-5 shrink-0 ${selected ? "text-primary" : "text-text-faint"}`} />

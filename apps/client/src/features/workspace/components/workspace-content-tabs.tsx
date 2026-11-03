@@ -256,7 +256,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
     <div className="space-y-4">
       {quota.dialog}
       {canApprove && pendingCount > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-border-soft px-4 py-3">
           <Clock3 className="h-4 w-4 text-text-muted" />
           <p className="min-w-0 flex-1 text-sm font-medium text-navy">
             Có {pendingCount} tài liệu đang chờ duyệt.
@@ -324,7 +324,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
         )}
       </div>
       {detail.currentMembership.role !== "owner" && canUpload && (
-        <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-text-muted">
+        <p className="rounded-md bg-border-soft px-3 py-2 text-xs text-text-muted">
           Tài liệu do thành viên tải lên sẽ hiển thị sau khi Chủ nhóm duyệt.
         </p>
       )}
@@ -337,7 +337,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
           {data.items.map((doc) => (
             <Card
               key={doc.id}
-              className="flex cursor-pointer flex-wrap items-center gap-3 p-4 transition hover:border-primary/40"
+              className="flex cursor-pointer flex-wrap items-center gap-3 p-4 transition hover:border-text-faint"
               onClick={() => void preview(doc)}
             >
               <FileText className="h-5 w-5 text-text-faint" />
@@ -1068,11 +1068,11 @@ export function WorkspaceExercisesTab({
         </Card>
       )}
       {!canEditAny && !canAssign && reminders.length > 0 && (
-        <Card className="border-primary/30 p-4">
+        <Card className="border-border p-4">
           <div className="mb-3 flex items-center gap-2">
             <Clock3 className="h-4 w-4 text-text-muted" />
             <h2 className="text-sm font-bold text-navy">Cần hoàn thành</h2>
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+            <span className="rounded-full bg-border-soft px-2 py-0.5 text-xs font-semibold text-navy">
               {reminders.length}
             </span>
           </div>
@@ -1082,7 +1082,7 @@ export function WorkspaceExercisesTab({
                 key={item.id}
                 type="button"
                 onClick={() => setDetailId(item.id)}
-                className="flex items-center gap-3 rounded-md border border-border-soft p-3 text-left hover:border-primary/40"
+                className="flex items-center gap-3 rounded-md border border-border-soft p-3 text-left hover:border-text-faint"
               >
                 <AlertTriangle
                   className={`h-4 w-4 shrink-0 ${isOverdue(item.dueAt) ? "text-danger" : "text-primary"}`}
@@ -1234,7 +1234,7 @@ export function WorkspaceExercisesTab({
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold text-navy">{ex.title}</p>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${ex.isAssignedToMe ? "bg-primary/10 text-primary" : "bg-border-soft text-text-muted"}`}
+                    className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${ex.isAssignedToMe ? "bg-navy text-on-ink" : "bg-border-soft text-text-muted"}`}
                   >
                     {canEditAny || canAssign
                       ? `${ex.assignedCount} người được giao`

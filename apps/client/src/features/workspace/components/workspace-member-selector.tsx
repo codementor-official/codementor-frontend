@@ -54,7 +54,7 @@ export function WorkspaceMemberSelector({
         >
           Xóa lựa chọn
         </button>
-        <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+        <span className="rounded-full bg-border-soft px-2 py-1 text-xs font-semibold text-navy">
           {selectedIds.length}/{members.length} đã chọn
         </span>
         <label className="relative ml-auto min-w-52 flex-1 sm:max-w-xs">
@@ -75,7 +75,7 @@ export function WorkspaceMemberSelector({
             <label
               key={member.id}
               className={`flex h-8 min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-xs transition-colors ${
-                checked ? "bg-primary/10 text-navy" : "hover:bg-border-soft/60"
+                checked ? "bg-border-soft text-navy" : "hover:bg-border-soft/60"
               }`}
             >
               <input

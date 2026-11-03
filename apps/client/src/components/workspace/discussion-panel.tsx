@@ -455,7 +455,7 @@ export function DiscussionPanel({
                 <span>· Đã sửa</span>
               )}
               {selected.language && (
-                <span className="rounded-full bg-primary-tint px-2 py-0.5 text-primary">
+                <span className="rounded-full bg-border-soft px-2 py-0.5 text-navy">
                   {selected.language}
                 </span>
               )}
@@ -690,14 +690,14 @@ export function DiscussionPanel({
                     type="button"
                     key={item.id}
                     onClick={() => void openDetail(item)}
-                    className="block w-full rounded-lg border border-border p-3 text-left transition-colors hover:border-primary/40 hover:bg-bg"
+                    className="block w-full rounded-lg border border-border p-3 text-left transition-colors hover:border-text-faint hover:bg-bg"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="min-w-0 truncate text-sm font-semibold text-navy">
                         {item.title}
                       </span>
                       {item.language && (
-                        <span className="shrink-0 rounded-full bg-primary-tint px-2 py-0.5 text-2xs text-primary">
+                        <span className="shrink-0 rounded-full bg-border-soft px-2 py-0.5 text-2xs text-navy">
                           {item.language}
                         </span>
                       )}

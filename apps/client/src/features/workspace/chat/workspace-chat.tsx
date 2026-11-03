@@ -359,7 +359,7 @@ function MessageRow({
         <div
           className={`max-w-full rounded-xl border px-3 py-2 text-sm leading-relaxed ${
             mine
-              ? "border-primary/30 bg-primary-tint text-navy"
+              ? "border-navy bg-border-soft text-navy"
               : "border-border bg-surface text-text-muted"
           }`}
         >

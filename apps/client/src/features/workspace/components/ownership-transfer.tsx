@@ -146,7 +146,7 @@ export function OwnershipOfferBanner({ slug, onAccepted }: { slug: string; onAcc
   }
 
   return (
-    <div role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary-tint p-4 text-sm text-text">
+    <div role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-border-soft p-4 text-sm text-text">
       {quota.dialog}
       <Crown className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
       <p className="min-w-0 flex-1">

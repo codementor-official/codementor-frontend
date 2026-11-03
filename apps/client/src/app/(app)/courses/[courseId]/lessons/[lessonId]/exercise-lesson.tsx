@@ -135,7 +135,7 @@ export function ExerciseLesson({
         </a>
 
         {enrolled && done && (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-primary-tint px-3 py-2 text-xs font-semibold text-primary">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-border-soft px-3 py-2 text-xs font-semibold text-navy">
             <Check className="h-3.5 w-3.5" /> Đã hoàn thành
           </span>
         )}

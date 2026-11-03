@@ -320,7 +320,7 @@ export function SolveWorkspace({
                       targetId={exerciseId}
                     />
                   )}
-                  <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">
+                  <span className="rounded-full bg-border-soft px-2.5 py-1 text-xs font-bold text-navy">
                     +{xpReward} XP
                   </span>
                 </div>
@@ -860,7 +860,7 @@ function WorkspaceBody({
             aria-pressed={aiVisible}
             className={`flex h-8 w-8 items-center justify-center rounded-md ${
               aiVisible
-                ? "bg-primary-tint text-primary"
+                ? "bg-border-soft text-navy"
                 : "text-text-muted hover:bg-bg hover:text-navy"
             }`}
           >

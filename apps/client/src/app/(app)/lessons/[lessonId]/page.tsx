@@ -19,7 +19,7 @@ export default async function LessonPage({
       <BreadcrumbTitle slug={lessonId} title={lesson.title} />
 
       <div className="mb-2 flex flex-wrap items-center gap-3">
-        <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary">
+        <span className="rounded-full bg-border-soft px-2.5 py-1 text-xs font-semibold text-navy">
           {lesson.chapter}
         </span>
         <span className="flex items-center gap-1.5 text-xs text-text-muted">
@@ -33,7 +33,7 @@ export default async function LessonPage({
       <h1 className="text-3xl font-bold tracking-tight text-navy">{lesson.title}</h1>
       <p className="mt-1.5 text-sm text-text-muted">{lesson.summary}</p>
 
-      <Card className="mt-5 border-primary/20 bg-primary-tint p-4 shadow-none">
+      <Card className="mt-5 bg-border-soft p-4 shadow-none">
         <p className="mb-2 flex items-center gap-2 text-sm font-bold text-navy">
           <Trophy className="h-4 w-4 text-text-muted" /> Sau bài này bạn có thể
         </p>

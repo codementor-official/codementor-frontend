@@ -264,7 +264,7 @@ function TagChip({
       aria-pressed={active}
       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-navy focus-visible:outline-none ${
         active
-          ? "border-primary bg-primary-tint text-primary"
+          ? "border-navy bg-border-soft text-navy"
           : "border-border bg-surface text-text-muted hover:border-navy/20 hover:text-navy"
       }`}
       onClick={onClick}

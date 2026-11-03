@@ -47,10 +47,10 @@ const TYPE_META: Record<BookmarkTarget, {
   icon: ComponentType<{ className?: string }>;
   accent: string;
 }> = {
-  COURSE: { label: "Khóa học", icon: BookOpen, accent: "bg-primary-tint text-primary" },
+  COURSE: { label: "Khóa học", icon: BookOpen, accent: "bg-border-soft text-navy" },
   ROADMAP: { label: "Lộ trình", icon: Map, accent: "bg-border-soft text-navy" },
-  EXERCISE: { label: "Bài tập", icon: Dumbbell, accent: "bg-success-tint text-success" },
-  POST: { label: "Bài viết", icon: FileText, accent: "bg-warning/10 text-warning" },
+  EXERCISE: { label: "Bài tập", icon: Dumbbell, accent: "bg-border-soft text-navy" },
+  POST: { label: "Bài viết", icon: FileText, accent: "bg-border-soft text-navy" },
 };
 
 const savedDate = new Intl.DateTimeFormat("vi-VN", {
@@ -250,7 +250,7 @@ function SavedCard({ item, removing, onRemove }: {
   const Icon = meta.icon;
   const available = item.available !== false;
   return (
-    <Card className="group flex min-h-[19rem] flex-col overflow-hidden transition-colors hover:border-primary/35">
+    <Card className="group flex min-h-[19rem] flex-col overflow-hidden transition-colors hover:border-text-faint">
       <div className="relative flex h-32 items-center justify-center overflow-hidden bg-bg">
         {item.coverImageUrl ? (
           <Image
@@ -284,7 +284,7 @@ function SavedCard({ item, removing, onRemove }: {
           </span>
           <div className="flex items-center gap-1.5">
             {available && (
-              <Link href={hrefOf(item)} className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-semibold text-primary hover:bg-primary-tint">
+              <Link href={hrefOf(item)} className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-semibold text-primary hover:bg-border-soft">
                 Mở <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             )}

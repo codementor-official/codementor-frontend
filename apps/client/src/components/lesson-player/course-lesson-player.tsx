@@ -68,7 +68,7 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
           {isVideo ? (
             <div className="relative flex aspect-video min-h-70 items-center justify-center overflow-hidden bg-navy">
               <Image src="/illustrations/video-lesson.svg" alt="" fill sizes="(min-width: 1024px) 70vw, 100vw" className="object-contain opacity-65" />
-              <div className="absolute inset-0 bg-linear-to-br from-navy/65 via-navy/20 to-primary/35" />
+              <div className="absolute inset-0 bg-ink-fixed/40" />
               <div className="relative z-10 text-center text-on-ink">
                 <button type="button" aria-label="Phát video minh họa" className="mx-auto mb-4 flex h-15 w-15 items-center justify-center rounded-full bg-surface text-primary shadow-lg transition-colors hover:bg-bg">
                   <Play className="ml-0.5 h-6 w-6 fill-current" />
@@ -78,9 +78,9 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
               </div>
             </div>
           ) : (
-            <div className="flex min-h-70 items-center justify-center bg-linear-to-br from-primary-tint via-surface to-bg p-8 text-center">
+            <div className="flex min-h-70 items-center justify-center bg-border-soft p-8 text-center">
               <div>
-                <div className="mx-auto mb-3 flex h-13 w-13 items-center justify-center rounded-full bg-primary text-on-ink"><FileText className="h-6 w-6" /></div>
+                <div className="mx-auto mb-3 flex h-13 w-13 items-center justify-center rounded-full bg-navy text-on-ink"><FileText className="h-6 w-6" /></div>
                 <p className="text-sm font-bold text-navy">{isPractice ? "Không gian thực hành" : "Bài đọc có hướng dẫn"}</p>
                 <p className="mt-1 text-xs text-text-muted">Đọc yêu cầu và theo dõi checklist bên dưới.</p>
                 {isPractice && <Link href={lessonTargetHref(roadmapSlug, course, lesson)} className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-on-ink hover:bg-primary-hover">Mở khung làm bài <ChevronRight className="h-4 w-4" /></Link>}
@@ -90,14 +90,14 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
 
           <div className="mx-auto max-w-4xl px-5 py-7 sm:px-8 lg:px-10">
             <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-text-faint">
-              <span className="rounded-full bg-primary-tint px-2.5 py-1 font-semibold text-primary">Chương {location.chapterIndex + 1}</span>
+              <span className="rounded-full bg-border-soft px-2.5 py-1 font-semibold text-navy">Chương {location.chapterIndex + 1}</span>
               <span className="flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" /> {formatMinutes(lesson.durationMinutes)}</span>
               {lesson.isCompleted && <span className="flex items-center gap-1 text-primary"><CheckCircle2 className="h-3.5 w-3.5" /> Đã hoàn thành</span>}
             </div>
             <h1 className="mb-2 text-2xl font-bold text-navy sm:text-3xl">{lesson.title}</h1>
             <p className="mb-6 text-sm leading-relaxed text-text-muted">{content.summary}</p>
 
-            <section className="mb-6 rounded-lg border border-primary/20 bg-primary-tint p-4">
+            <section className="mb-6 rounded-lg bg-border-soft p-4">
               <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-navy"><Trophy className="h-4 w-4 text-text-muted" /> Sau bài này bạn có thể</h2>
               <ul className="space-y-1.5 text-sm text-text-muted">
                 {content.objectives.map((objective) => <li key={objective} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />{objective}</li>)}
@@ -153,7 +153,7 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
                   {chapter.lessons.map((chapterLesson) => {
                     const active = chapterLesson.id === lesson.id;
                     const row = <><span className="mt-0.5 shrink-0">{lessonIcon(chapterLesson)}</span><span className={`min-w-0 flex-1 text-xs leading-relaxed ${active ? "font-semibold text-primary" : "text-text"}`}>{chapterLesson.title}</span><span className="shrink-0 text-2xs text-text-faint">{formatMinutes(chapterLesson.durationMinutes)}</span></>;
-                    return chapterLesson.isLocked ? <div key={chapterLesson.id} className="flex gap-2 px-4 py-2.5 opacity-55">{row}</div> : <Link key={chapterLesson.id} href={lessonTargetHref(roadmapSlug, course, chapterLesson)} className={`flex gap-2 px-4 py-2.5 hover:bg-bg ${active ? "bg-primary-tint" : ""}`}>{row}</Link>;
+                    return chapterLesson.isLocked ? <div key={chapterLesson.id} className="flex gap-2 px-4 py-2.5 opacity-55">{row}</div> : <Link key={chapterLesson.id} href={lessonTargetHref(roadmapSlug, course, chapterLesson)} className={`flex gap-2 px-4 py-2.5 hover:bg-bg ${active ? "bg-border-soft font-semibold" : ""}`}>{row}</Link>;
                   })}
                 </div>
               </details>

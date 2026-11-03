@@ -360,7 +360,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                 {/* Completion is a status line, not a button. It used to replace the action
                   * entirely, which left a finished learner with no way back into the lessons. */}
                 {completed && (
-                  <p className="mb-2.5 flex items-center gap-1.5 rounded-md bg-primary-tint px-3 py-2 text-xs font-semibold text-primary">
+                  <p className="mb-2.5 flex items-center gap-1.5 rounded-md bg-border-soft px-3 py-2 text-xs font-semibold text-navy">
                     <Trophy className="h-4 w-4 shrink-0" /> Đã hoàn thành khóa học
                   </p>
                 )}

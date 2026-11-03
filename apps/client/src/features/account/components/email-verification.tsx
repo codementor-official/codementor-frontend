@@ -25,7 +25,7 @@ export function EmailVerificationBanner() {
   const pathname = usePathname();
   if (status !== "authenticated" || user?.emailVerified !== false || pathname === "/profile") return null;
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-primary/25 bg-primary-tint px-6 py-2.5 text-xs text-navy">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border bg-border-soft px-6 py-2.5 text-xs text-navy">
       <MailWarning className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
       <span>Email chưa xác thực. Bạn chưa thể nhận email nhắc học và thông báo.</span>
       <Link href="/profile?tab=settings#email-verification" className="font-semibold text-primary underline underline-offset-4">Xác thực email</Link>

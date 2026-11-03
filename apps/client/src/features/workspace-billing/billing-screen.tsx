@@ -364,7 +364,7 @@ function Notices({ overview, usage, renewHref }: { overview: SubscriptionOvervie
   return (
     <div className="mb-4 space-y-2">
       {notices.map((n) => (
-        <div key={n.key} role="status" className="flex flex-wrap items-start gap-3 rounded-lg border border-primary/30 bg-primary-tint p-4 text-sm text-text">
+        <div key={n.key} role="status" className="flex flex-wrap items-start gap-3 rounded-lg border border-border bg-border-soft p-4 text-sm text-text">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
           <p className="min-w-0 flex-1">{n.text}</p>
           {n.action && (

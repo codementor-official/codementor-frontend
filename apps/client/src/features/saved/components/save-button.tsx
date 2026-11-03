@@ -70,8 +70,8 @@ export function SaveButton({
       aria-pressed={saved}
       onClick={() => void toggle()}
       className={compact
-        ? `rounded-md p-2 transition-colors ${saved ? "bg-primary-tint text-primary" : "text-text-faint hover:bg-bg hover:text-navy"}`
-        : `inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold transition-colors ${saved ? "border-primary/30 bg-primary-tint text-primary" : "text-navy hover:bg-bg"}`}
+        ? `rounded-md p-2 transition-colors ${saved ? "bg-border-soft text-navy" : "text-text-faint hover:bg-bg hover:text-navy"}`
+        : `inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold transition-colors ${saved ? "border-navy bg-border-soft text-primary" : "text-navy hover:bg-bg"}`}
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bookmark className="h-4 w-4" fill={saved ? "currentColor" : "none"} />}
       {!compact && (saved ? "Đã lưu" : "Lưu")}

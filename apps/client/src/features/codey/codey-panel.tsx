@@ -51,7 +51,7 @@ export function CodeyPanel() {
           onClick={toggleMascot}
           className={`flex size-7 items-center justify-center rounded-md transition-colors ${
             mascotVisible
-              ? "bg-primary-tint text-primary"
+              ? "bg-border-soft text-navy"
               : "text-text-muted hover:bg-bg hover:text-navy"
           }`}
         >
