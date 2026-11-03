@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, RefreshCw, Target } from 'lucide-react';
+import { SquaresFourIcon as LayoutDashboard, ArrowsClockwiseIcon as RefreshCw, TargetIcon as Target } from '@phosphor-icons/react/ssr';
 import { StatStrip } from '@codementor/ui';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';

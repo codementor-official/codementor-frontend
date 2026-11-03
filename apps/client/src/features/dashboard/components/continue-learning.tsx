@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Map } from 'lucide-react';
+import { BookOpenIcon as BookOpen, MapTrifoldIcon as Map } from '@phosphor-icons/react/ssr';
 import { Card } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import type { LearningDashboard } from '../types';

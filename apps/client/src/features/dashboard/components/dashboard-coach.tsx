@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, CheckCircle2, Eye, Loader2, Pin, PinOff, Sparkles, Target } from 'lucide-react';
+import { ArrowUpRightIcon as ArrowUpRight, CheckCircleIcon as CheckCircle2, EyeIcon as Eye, CircleNotchIcon as Loader2, PushPinIcon as Pin, PushPinSlashIcon as PinOff, SparkleIcon as Sparkles, TargetIcon as Target } from '@phosphor-icons/react/ssr';
 import { SideDrawer, useToast } from '@codementor/ui';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

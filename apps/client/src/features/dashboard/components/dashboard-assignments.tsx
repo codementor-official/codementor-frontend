@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { CheckCircleIcon as CheckCircle2, ArrowUpRightIcon as ArrowUpRight } from '@phosphor-icons/react/ssr';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { DashboardData } from '../dashboard-service';
