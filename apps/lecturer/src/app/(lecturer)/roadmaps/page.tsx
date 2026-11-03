@@ -4,7 +4,7 @@ import { ReviewFlag, ReviewNotice, RemovalPendingNotice } from "@/components/pag
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Archive, BookOpen, FileText, Pencil, Plus, RotateCcw, Route, Send, Trash2, Undo2 } from "lucide-react";
+import { ArchiveIcon as Archive, BookOpenIcon as BookOpen, FileTextIcon as FileText, PencilSimpleIcon as Pencil, PlusIcon as Plus, ArrowCounterClockwiseIcon as RotateCcw, PathIcon as Route, PaperPlaneRightIcon as Send, TrashIcon as Trash2, ArrowUUpLeftIcon as Undo2 } from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {

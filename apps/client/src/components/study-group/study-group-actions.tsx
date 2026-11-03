@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, Plus, X } from "lucide-react";
+import { KeyIcon as KeyRound, PlusIcon as Plus, XIcon as X } from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Loader2 } from "lucide-react";
+import { BellIcon as Bell, CircleNotchIcon as Loader2 } from "@phosphor-icons/react/ssr";
 
 /** Quá số này thì con số không còn giúp gì, chỉ làm vỡ hình tròn của badge. */
 const BADGE_CAP = 9;

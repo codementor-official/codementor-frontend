@@ -3,16 +3,16 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft,
-  Braces,
-  Code2,
-  FileText,
-  ListChecks,
-  Loader2,
-  Play,
-  RotateCcw,
-  SquareTerminal,
-} from "lucide-react";
+  ArrowLeftIcon as ArrowLeft,
+  BracketsCurlyIcon as Braces,
+  CodeIcon as Code2,
+  FileTextIcon as FileText,
+  ListChecksIcon as ListChecks,
+  CircleNotchIcon as Loader2,
+  PlayIcon as Play,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  TerminalWindowIcon as SquareTerminal,
+} from "@phosphor-icons/react/ssr";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";

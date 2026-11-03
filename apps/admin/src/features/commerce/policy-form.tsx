@@ -10,7 +10,7 @@ import {
   useFieldErrors,
   useToast,
 } from "@codementor/ui";
-import { Clock3, ShieldCheck } from "lucide-react";
+import { ClockIcon as Clock3, ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/ssr";
 import { vnd } from "./api";
 import { inputClassName } from "./form-style";
 import type { CommercePolicy } from "@codementor/types";
@@ -114,7 +114,7 @@ export function PolicyForm({
   return (
     <Card className="space-y-5 p-5">
       <h2 className="flex items-center gap-2 font-semibold">
-        <ShieldCheck className="size-5 text-primary" /> Chính sách doanh thu
+        <ShieldCheck className="size-5 text-muted-foreground" /> Chính sách doanh thu
       </h2>
       <p className="text-sm text-muted-foreground">
         Đơn đã tạo giữ nguyên giá, tỷ lệ và thời gian giữ đã lưu. Phí cổng do
@@ -136,7 +136,7 @@ export function PolicyForm({
       </Field>
       <section className="rounded-lg border bg-muted/30 p-4">
         <h3 className="mb-2 flex items-center gap-2 font-semibold">
-          <Clock3 className="size-4 text-primary" /> Thời gian giữ doanh thu
+          <Clock3 className="size-4 text-muted-foreground" /> Thời gian giữ doanh thu
         </h3>
         <p className="mb-3 text-sm text-muted-foreground">
           Chính sách hiện tại:{" "}

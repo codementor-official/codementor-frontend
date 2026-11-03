@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone, type FileRejection } from "react-dropzone";
-import { Clipboard, FolderOpen, Link2, UploadCloud } from "lucide-react";
+import { ClipboardIcon as Clipboard, FolderOpenIcon as FolderOpen, LinkSimpleIcon as Link2, CloudArrowUpIcon as UploadCloud } from "@phosphor-icons/react/ssr";
 import { Button, Input, Modal, SegmentedTabs } from "@codementor/ui";
 
 export type MediaKind = "image" | "video";

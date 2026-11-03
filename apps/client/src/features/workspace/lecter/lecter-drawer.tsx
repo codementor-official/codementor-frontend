@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { History, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { ClockCounterClockwiseIcon as History, PlusIcon as Plus, SparkleIcon as Sparkles, TrashIcon as Trash2, XIcon as X } from "@phosphor-icons/react/ssr";
 import { SideDrawer, useToast } from "@codementor/ui";
 import type { ExerciseDraft } from "@codementor/solve";
 import { CopilotChat, CopilotKitProvider, useAgent } from "@copilotkit/react-core/v2";
@@ -26,7 +26,7 @@ function Welcome() {
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-5 pb-28 text-center">
       <div className="max-w-sm">
-        <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-border-soft text-navy">
           <Sparkles aria-hidden="true" className="size-6" />
         </span>
         <p className="text-sm font-semibold text-navy">Bắt đầu từ tài liệu của nhóm</p>

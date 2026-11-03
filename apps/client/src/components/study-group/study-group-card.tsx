@@ -1,4 +1,4 @@
-import { Crown, UsersRound } from "lucide-react";
+import { CrownIcon as Crown, UsersThreeIcon as UsersRound } from "@phosphor-icons/react/ssr";
 import { EntityCard } from "@/components/entity-card";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Badge } from "@/components/ui/badge";

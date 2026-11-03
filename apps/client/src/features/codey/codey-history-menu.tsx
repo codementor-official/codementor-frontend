@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { History, Trash2 } from "lucide-react";
+import { ClockCounterClockwiseIcon as History, TrashIcon as Trash2 } from "@phosphor-icons/react/ssr";
 import { formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import { useCodey } from "./session-store";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, Tags, X } from "lucide-react";
+import { CheckIcon as Check, CaretDownIcon as ChevronDown, TagIcon as Tags, XIcon as X } from "@phosphor-icons/react/ssr";
 import type { CatalogueTopicSummary } from "@/types/catalogue";
 
 const VISIBLE_TOPIC_LIMIT = 8;
@@ -70,7 +70,7 @@ export function TopicFilter({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex h-8 items-center gap-1.5 text-xs font-semibold text-foreground">
-          <Tags className="h-3.5 w-3.5 text-primary" />
+          <Tags className="h-3.5 w-3.5 text-text-muted" />
           {label}
         </span>
         {selectedIds.length > 0 && (

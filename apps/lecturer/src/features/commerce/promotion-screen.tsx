@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BadgePercent, Layers3, Search } from "lucide-react";
+import { SealPercentIcon as BadgePercent, StackSimpleIcon as Layers3, MagnifyingGlassIcon as Search } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import type { CoursePromotionProduct } from "@codementor/types";
 import {

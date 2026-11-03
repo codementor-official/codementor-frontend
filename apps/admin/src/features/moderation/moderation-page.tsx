@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, BadgePercent, CheckCheck, ShieldCheck, Undo2, XCircle } from "lucide-react";
+import { ArchiveIcon as Archive, SealPercentIcon as BadgePercent, ChecksIcon as CheckCheck, ShieldCheckIcon as ShieldCheck, ArrowUUpLeftIcon as Undo2, XCircleIcon as XCircle } from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { Button, ConfirmButton, CourseCover, formatVndPrice, ManagePage, RejectDialogButton, Select, StatusBadge, useUrlState } from "@codementor/ui";

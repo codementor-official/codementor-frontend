@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { MagnifyingGlassIcon as Search, UsersIcon as Users } from "@phosphor-icons/react/ssr";
 import type { WorkspaceMember } from "../types";
 
 export function WorkspaceMemberSelector({

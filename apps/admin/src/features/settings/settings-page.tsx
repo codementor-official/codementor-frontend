@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type ReactNode } from "react";
-import { Settings } from "lucide-react";
+import { GearIcon as Settings } from "@phosphor-icons/react/ssr";
 import { Card, CardContent, CardHeader, InfoHint, PageHeader, RefreshButton } from "@codementor/ui";
 import { AiConfigCard } from "@/features/ai-operations/ai-operations-page";
 import { useAdminApi } from "@/features/auth/admin-api";

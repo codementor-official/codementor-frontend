@@ -8,7 +8,7 @@ import type {
   RevenueReport,
 } from "@codementor/types";
 import { Button, Modal, PageHeader, RevenueOverview, downloadRevenueReportXlsx } from "@codementor/ui";
-import { ChartNoAxesCombined, CircleHelp, RefreshCw } from "lucide-react";
+import { ChartLineUpIcon as ChartNoAxesCombined, QuestionIcon as CircleHelp, ArrowsClockwiseIcon as RefreshCw } from "@phosphor-icons/react/ssr";
 import { printDocument } from "@codementor/utils";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { commerceAdminApi as api, vnd } from "./api";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { EyeOff, Lock, TriangleAlert } from "lucide-react";
+import { EyeSlashIcon as EyeOff, LockIcon as Lock, WarningIcon as TriangleAlert } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { Field, ReasonButton, SideDrawer, StatusBadge, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd, toBytes, usagePercent } from "@codementor/utils";

@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 interface PageHeaderProps {
   title: string;
   /** One sentence. If it needs two, the page is doing two things. */
   description?: string;
   /** Square tile left of the title — the same anchor on every screen. */
-  icon?: LucideIcon;
+  icon?: PhosphorIcon;
   /** Sits between the title and the action — where a screen's tab strip belongs, so it
    * shares this row instead of stacking a third bordered block above it. */
   center?: ReactNode;
@@ -23,7 +23,7 @@ export function PageHeader({ title, description, icon: Icon, center, action }: P
     <header className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
       <div className="flex min-w-0 flex-1 basis-72 items-center gap-2.5">
         {Icon && (
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
             <Icon aria-hidden="true" className="size-4.5" />
           </span>
         )}

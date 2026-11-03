@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Gem } from "lucide-react";
+import { DiamondIcon as Gem } from "@phosphor-icons/react/ssr";
 import { PageHeader, SegmentedTabs, useUrlState } from "@codementor/ui";
 import { OverviewTab } from "./overview-tab";
 import { PlansTab } from "./plans-tab";

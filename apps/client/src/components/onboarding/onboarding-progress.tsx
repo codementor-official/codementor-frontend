@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { CheckIcon as Check } from "@phosphor-icons/react/ssr";
 
 export function OnboardingProgress({ current, total }: { current: number; total: number }) {
   return (

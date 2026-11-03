@@ -5,23 +5,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import {
-  Asterisk,
-  BookOpen,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Code2,
-  FileText,
-  Layers,
-  Loader2,
-  Lock,
-  PlayCircle,
-  Plus,
-  RotateCcw,
-  Trophy,
-  Unlock,
-} from "lucide-react";
+  AsteriskIcon as Asterisk,
+  BookOpenIcon as BookOpen,
+  CheckIcon as Check,
+  CaretDownIcon as ChevronDown,
+  CaretUpIcon as ChevronUp,
+  ClockIcon as Clock,
+  CodeIcon as Code2,
+  FileTextIcon as FileText,
+  StackIcon as Layers,
+  CircleNotchIcon as Loader2,
+  LockIcon as Lock,
+  PlayCircleIcon as PlayCircle,
+  PlusIcon as Plus,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  TrophyIcon as Trophy,
+  LockOpenIcon as Unlock,
+} from "@phosphor-icons/react/ssr";
 import { CourseCover, StatStrip } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
@@ -230,7 +230,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
                           const body = (
                             <>
                               {state?.status === "completed" ? (
-                                <Check className="h-4 w-4 shrink-0 text-primary" />
+                                <Check className="h-4 w-4 shrink-0 text-text-muted" />
                               ) : locked ? (
                                 <Lock className="h-4 w-4 shrink-0 text-text-faint" />
                               ) : (
@@ -418,7 +418,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
 
           <Card className="p-4">
             <h2 className="mb-2 flex items-center gap-1.5 text-sm font-bold text-navy">
-              <BookOpen className="h-4 w-4 text-primary" /> Thông tin
+              <BookOpen className="h-4 w-4 text-text-muted" /> Thông tin
             </h2>
             <dl className="flex flex-col gap-2 text-xs">
               <div className="flex justify-between gap-2">

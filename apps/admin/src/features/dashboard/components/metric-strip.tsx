@@ -1,4 +1,4 @@
-import { FileText, GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { FileTextIcon as FileText, GraduationCapIcon as GraduationCap, ShieldCheckIcon as ShieldCheck, UsersIcon as Users } from "@phosphor-icons/react/ssr";
 import { Card } from "@codementor/ui";
 
 /**

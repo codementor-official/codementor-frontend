@@ -4,19 +4,19 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType }
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Bookmark,
-  BookOpen,
-  CalendarDays,
-  Dumbbell,
-  ExternalLink,
-  FileText,
-  Grid2X2,
-  List,
-  Loader2,
-  Map,
-  SearchX,
-  Trash2,
-} from "lucide-react";
+  BookmarkSimpleIcon as Bookmark,
+  BookOpenIcon as BookOpen,
+  CalendarBlankIcon as CalendarDays,
+  BarbellIcon as Dumbbell,
+  ArrowSquareOutIcon as ExternalLink,
+  FileTextIcon as FileText,
+  GridFourIcon as Grid2X2,
+  ListIcon as List,
+  CircleNotchIcon as Loader2,
+  MapTrifoldIcon as Map,
+  MagnifyingGlassMinusIcon as SearchX,
+  TrashIcon as Trash2,
+} from "@phosphor-icons/react/ssr";
 import { FilterBar, SegmentedTabs, Select, useToast, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -354,7 +354,7 @@ function RemoveButton({ removing, title, onClick }: { removing: boolean; title: 
 function EmptyState({ filtered }: { filtered: boolean }) {
   return (
     <Card className="border-dashed px-6 py-14 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-tint text-primary">{filtered ? <SearchX className="h-6 w-6" /> : <Bookmark className="h-6 w-6" />}</div>
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-border-soft text-navy">{filtered ? <SearchX className="h-6 w-6" /> : <Bookmark className="h-6 w-6" />}</div>
       <h2 className="mt-4 text-base font-bold text-navy">{filtered ? "Không tìm thấy nội dung phù hợp" : "Thư viện của bạn đang trống"}</h2>
       <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-text-muted">{filtered ? "Hãy thử từ khóa khác hoặc chuyển về tab Tất cả." : "Nhấn biểu tượng Lưu ở nội dung bạn quan tâm để có thể quay lại nhanh từ đây."}</p>
       {!filtered && (

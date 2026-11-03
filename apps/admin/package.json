@@ -17,7 +17,7 @@
     "@codementor/utils": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "jose": "^6.2.8",
-    "lucide-react": "^1.28.0",
+    "@phosphor-icons/react": "^2.1.10",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",

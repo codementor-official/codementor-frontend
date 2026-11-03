@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { Activity, CheckCircle2, Inbox, MailWarning, Radio, ServerCrash } from "lucide-react";
+import { PulseIcon as Activity, CheckCircleIcon as CheckCircle2, TrayIcon as Inbox, EnvelopeSimpleIcon as MailWarning, BroadcastIcon as Radio, CloudWarningIcon as ServerCrash } from "@phosphor-icons/react/ssr";
 import { Card, CardContent, CardHeader, PageHeader, RefreshButton, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, useSummary } from "@codementor/ui";

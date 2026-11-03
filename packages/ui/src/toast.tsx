@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { CheckCircle2, Info, TriangleAlert, X } from "lucide-react";
+import { CheckCircleIcon as CheckCircle2, InfoIcon as Info, WarningIcon as TriangleAlert, XIcon as X } from "@phosphor-icons/react/ssr";
 
 type ToastTone = "success" | "error" | "info";
 

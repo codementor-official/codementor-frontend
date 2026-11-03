@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import {
-  Compass,
-  Crown,
-  Layers3,
-  SearchX,
-  UsersRound,
-  type LucideIcon,
-} from "lucide-react";
+  CompassIcon as Compass,
+  CrownIcon as Crown,
+  StackSimpleIcon as Layers3,
+  MagnifyingGlassMinusIcon as SearchX,
+  UsersThreeIcon as UsersRound,
+} from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { ApiClientError } from "@codementor/api-client";
 import { FilterBar, SegmentedTabs, StatStrip, useToast } from "@codementor/ui";
 import { Card } from "@/components/ui/card";
@@ -24,7 +24,7 @@ type Scope = "all" | "mine" | "owned" | "joined" | "public";
 
 const SCOPE_META: Record<
   Scope,
-  { label: string; title: string; hint: string; icon: LucideIcon }
+  { label: string; title: string; hint: string; icon: PhosphorIcon }
 > = {
   all: {
     label: "Tất cả",
@@ -66,7 +66,7 @@ function GroupSection({
   emptyMessage,
   onRequestJoin,
 }: {
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   title: string;
   hint: string;
   groups: StudyGroup[];

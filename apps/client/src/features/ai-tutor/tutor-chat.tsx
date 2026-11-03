@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Bot, FileText, Lightbulb, Loader2, Plus, Send, Square } from "lucide-react";
+import { BookOpenIcon as BookOpen, RobotIcon as Bot, FileTextIcon as FileText, LightbulbIcon as Lightbulb, CircleNotchIcon as Loader2, PlusIcon as Plus, PaperPlaneRightIcon as Send, SquareIcon as Square } from "@phosphor-icons/react/ssr";
 import { FieldError, fieldA11y, Modal } from "@codementor/ui";
 import { length } from "@codementor/utils";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ export function TutorChat({
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4">
         <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
           <span className="flex size-8 items-center justify-center rounded-full bg-primary-tint">
-            <Bot className="size-4 text-primary" />
+            <Bot className="size-4 text-text-muted" />
           </span>
           Trò chuyện với trợ lý
         </h2>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, ChevronLeft, ChevronRight, Circle, Code2, FileText, Lock, PlayCircle } from "lucide-react";
+import { CheckIcon as Check, CaretLeftIcon as ChevronLeft, CaretRightIcon as ChevronRight, CircleIcon as Circle, CodeIcon as Code2, FileTextIcon as FileText, LockIcon as Lock, PlayCircleIcon as PlayCircle } from "@phosphor-icons/react/ssr";
 import type { ReactNode } from "react";
 import { isLessonLocked } from "@/lib/lesson-unlock";
 import type { CourseDetail, CourseLesson, LessonProgress } from "@/types/catalogue";
@@ -144,7 +144,7 @@ export function LessonShell({
             const row = (
               <span className="flex items-center gap-2">
                 {done ? (
-                  <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <Check className="h-3.5 w-3.5 shrink-0 text-text-muted" />
                 ) : locked ? (
                   <Lock className="h-3.5 w-3.5 shrink-0 text-text-faint" />
                 ) : (

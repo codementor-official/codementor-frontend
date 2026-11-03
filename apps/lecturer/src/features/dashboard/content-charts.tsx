@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Layers } from "lucide-react";
+import { BookOpenIcon as BookOpen, StackIcon as Layers } from "@phosphor-icons/react/ssr";
 import {
   Bar,
   BarChart,

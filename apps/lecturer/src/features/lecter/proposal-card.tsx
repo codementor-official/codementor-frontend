@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Check, Loader2, TriangleAlert, X } from "lucide-react";
+import { CheckIcon as Check, CircleNotchIcon as Loader2, WarningIcon as TriangleAlert, XIcon as X } from "@phosphor-icons/react/ssr";
 import { Button, useToast } from "@codementor/ui";
 import { ApiClientError } from "@codementor/api-client";
 import { api, type WriteCheck } from "@/lib/api";

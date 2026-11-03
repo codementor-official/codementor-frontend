@@ -3,19 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  AlertCircle,
-  BookOpen,
-  Braces,
-  CheckCircle2,
-  ChevronDown,
-  Clock3,
-  FileText,
-  LayoutDashboard,
-  Lightbulb,
-  Loader2,
-  PencilLine,
-  Route,
-} from "lucide-react";
+  WarningCircleIcon as AlertCircle,
+  BookOpenIcon as BookOpen,
+  BracketsCurlyIcon as Braces,
+  CheckCircleIcon as CheckCircle2,
+  CaretDownIcon as ChevronDown,
+  ClockIcon as Clock3,
+  FileTextIcon as FileText,
+  SquaresFourIcon as LayoutDashboard,
+  LightbulbIcon as Lightbulb,
+  CircleNotchIcon as Loader2,
+  PencilSimpleLineIcon as PencilLine,
+  PathIcon as Route,
+} from "@phosphor-icons/react/ssr";
 import { PageHeader, StatusBadge } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
 import { useAuth } from "@/providers/auth-provider";

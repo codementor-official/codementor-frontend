@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeftIcon as ArrowLeft } from "@phosphor-icons/react/ssr";
 import type { ReactNode } from "react";
 import { SegmentedTabs, type SegmentedTabOption } from "@codementor/ui";
 

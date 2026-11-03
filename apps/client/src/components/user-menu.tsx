@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { LogOut, UserRound } from "lucide-react";
+import { SignOutIcon as LogOut, UserCircleIcon as UserRound } from "@phosphor-icons/react/ssr";
 import { ThemePicker } from "@/components/theme-picker";
 import { useAuth } from "@/providers/auth-provider";
 

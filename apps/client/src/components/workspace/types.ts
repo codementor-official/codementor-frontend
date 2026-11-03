@@ -1,12 +1,12 @@
 import {
-  Bot,
-  Code2,
-  FileText,
-  History,
-  ListChecks,
-  MessageSquare,
-  SquareTerminal,
-} from "lucide-react";
+  RobotIcon as Bot,
+  CodeIcon as Code2,
+  FileTextIcon as FileText,
+  ClockCounterClockwiseIcon as History,
+  ListChecksIcon as ListChecks,
+  ChatCenteredTextIcon as MessageSquare,
+  TerminalWindowIcon as SquareTerminal,
+} from "@phosphor-icons/react/ssr";
 import type { PaneState, PanesState, TabMetaMap } from "@codementor/ui";
 
 /** Closed union so this screen's `switch` over tab content stays exhaustive. */

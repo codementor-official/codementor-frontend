@@ -1,6 +1,6 @@
 "use client";
 
-import { UsersRound } from "lucide-react";
+import { UsersThreeIcon as UsersRound } from "@phosphor-icons/react/ssr";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader } from "@codementor/ui";
 

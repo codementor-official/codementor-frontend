@@ -3,14 +3,14 @@ import { apiErrorMessage } from "@codementor/api-client";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  CircleHelp,
-  Download,
-  Eye,
-  Printer,
-  RefreshCw,
-  ShieldCheck,
-  Wallet,
-} from "lucide-react";
+  QuestionIcon as CircleHelp,
+  DownloadSimpleIcon as Download,
+  EyeIcon as Eye,
+  PrinterIcon as Printer,
+  ArrowsClockwiseIcon as RefreshCw,
+  ShieldCheckIcon as ShieldCheck,
+  WalletIcon as Wallet,
+} from "@phosphor-icons/react/ssr";
 import {
   Button,
   Card,
@@ -261,7 +261,7 @@ export function CommerceScreen() {
       <ReconciliationSummary refreshing={loading || busy} />
       <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="flex max-w-3xl items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
             <ShieldCheck className="size-5" />
           </span>
           <div>
@@ -895,7 +895,7 @@ function HelpStep({
 }) {
   return (
     <div className="flex gap-3">
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-foreground">
         {number}
       </span>
       <div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CaretRightIcon as ChevronRight } from "@phosphor-icons/react/ssr";
 import { RoadmapPrice } from "@/components/roadmap-price";
 import { FIELD_LABEL, LEVEL_OPTIONS } from "@/lib/catalogue/level";
 import type { RoadmapSummary } from "@/types/catalogue";

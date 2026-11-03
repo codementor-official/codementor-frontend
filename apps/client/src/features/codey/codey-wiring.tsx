@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { z } from "zod";
-import { Code2, ListChecks } from "lucide-react";
+import { CodeIcon as Code2, ListChecksIcon as ListChecks } from "@phosphor-icons/react/ssr";
 import { useAgentContext, useFrontendTool } from "@copilotkit/react-core/v2";
 import { showValue } from "@codementor/solve";
 import type { Problem } from "@/data/sample-problem";

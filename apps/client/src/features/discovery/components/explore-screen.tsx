@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, Compass, Dumbbell, FileText, LayoutGrid, Map, Users, type LucideIcon } from "lucide-react";
+import { BookOpenIcon as BookOpen, CompassIcon as Compass, BarbellIcon as Dumbbell, FileTextIcon as FileText, SquaresFourIcon as LayoutGrid, MapTrifoldIcon as Map, UsersIcon as Users } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { FilterBar, Select, useUrlState } from "@codementor/ui";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
 import { CourseCard } from "@/components/course-card";
@@ -262,7 +263,7 @@ function mergeUnique<T extends { id: string }>(current: T[], incoming: T[]): T[]
   return [...current, ...incoming.filter((item) => !seen.has(item.id))];
 }
 
-function DiscoverySection({ title, icon: Icon, href, children }: { title: string; icon: LucideIcon; href: string; children: ReactNode }) {
+function DiscoverySection({ title, icon: Icon, href, children }: { title: string; icon: PhosphorIcon; href: string; children: ReactNode }) {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between gap-3">

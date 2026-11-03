@@ -4,16 +4,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {
-  GraduationCap,
-  Lock,
-  Plus,
-  ShieldCheck,
-  UserPlus,
-  UserRound,
-  Unlock,
-  Users,
-  UserX,
-} from "lucide-react";
+  GraduationCapIcon as GraduationCap,
+  LockIcon as Lock,
+  PlusIcon as Plus,
+  ShieldCheckIcon as ShieldCheck,
+  UserPlusIcon as UserPlus,
+  UserCircleIcon as UserRound,
+  LockOpenIcon as Unlock,
+  UsersIcon as Users,
+  UserMinusIcon as UserX,
+} from "@phosphor-icons/react/ssr";
 import { Button, ManagePage, RejectDialogButton, Select, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { CreateUserModal } from "@/features/users/components/create-user-modal";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CircleCheck, Clock, Eye, Pencil, Plus, Save, Trophy, X } from "lucide-react";
+import { CheckCircleIcon as CircleCheck, ClockIcon as Clock, EyeIcon as Eye, PencilSimpleIcon as Pencil, PlusIcon as Plus, FloppyDiskIcon as Save, TrophyIcon as Trophy, XIcon as X } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { TheoryLessonDraft } from "@/types/problem-draft";
@@ -164,12 +164,12 @@ function LessonPreview({
       {objectives.length > 0 && (
         <div className="mt-4 rounded-md border border-primary/20 bg-primary-tint p-4">
           <p className="mb-2 flex items-center gap-2 text-sm font-bold text-navy">
-            <Trophy className="h-4 w-4 text-primary" /> Sau bài này bạn có thể
+            <Trophy className="h-4 w-4 text-text-muted" /> Sau bài này bạn có thể
           </p>
           <ul className="flex flex-col gap-1.5">
             {objectives.map((objective) => (
               <li key={objective} className="flex items-start gap-2 text-sm text-text">
-                <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
                 {objective}
               </li>
             ))}

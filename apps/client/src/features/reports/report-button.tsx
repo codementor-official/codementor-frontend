@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ApiClientError } from "@codementor/api-client";
-import { Flag, Loader2 } from "lucide-react";
+import { FlagIcon as Flag, CircleNotchIcon as Loader2 } from "@phosphor-icons/react/ssr";
 import { CharCount, FieldError, fieldA11y, Modal, useFieldErrors, useToast } from "@codementor/ui";
 import { length } from "@codementor/utils";
 import { api } from "@/lib/api";

@@ -10,28 +10,27 @@ import Youtube from "@tiptap/extension-youtube";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common, createLowlight } from "lowlight";
 import {
-  AlignCenter,
-  AlignJustify,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Code2,
-  Heading1,
-  Heading2,
-  Heading3,
-  ImagePlus,
-  Italic,
-  Link2,
-  Link2Off,
-  List,
-  ListOrdered,
-  Quote,
-  Redo2,
-  Underline,
-  Undo2,
-  // lucide-react v1 dropped brand marks, so the YouTube action wears a generic video icon.
-  Video,
-} from "lucide-react";
+  TextAlignCenterIcon as AlignCenter,
+  TextAlignJustifyIcon as AlignJustify,
+  TextAlignLeftIcon as AlignLeft,
+  TextAlignRightIcon as AlignRight,
+  TextBIcon as Bold,
+  CodeIcon as Code2,
+  TextHOneIcon as Heading1,
+  TextHTwoIcon as Heading2,
+  TextHThreeIcon as Heading3,
+  ImageSquareIcon as ImagePlus,
+  TextItalicIcon as Italic,
+  LinkSimpleIcon as Link2,
+  LinkSimpleBreakIcon as Link2Off,
+  ListIcon as List,
+  ListNumbersIcon as ListOrdered,
+  QuotesIcon as Quote,
+  ArrowUUpRightIcon as Redo2,
+  TextUnderlineIcon as Underline,
+  ArrowUUpLeftIcon as Undo2,
+  YoutubeLogoIcon,
+} from "@phosphor-icons/react/ssr";
 import { MediaInsertModal, type MediaKind } from "./media-insert-modal";
 import { FileVideo } from "./video-node";
 import "highlight.js/styles/github-dark.css";
@@ -224,7 +223,7 @@ function Toolbar({
         <ImagePlus className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton label="Chèn video" onClick={() => onInsertMedia("video")}>
-        <Video className="h-4 w-4" />
+        <YoutubeLogoIcon className="h-4 w-4" />
       </ToolbarButton>
 
       <Divider />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Check, Code2, ExternalLink, Loader2 } from "lucide-react";
+import { CheckIcon as Check, CodeIcon as Code2, ArrowSquareOutIcon as ExternalLink, CircleNotchIcon as Loader2 } from "@phosphor-icons/react/ssr";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import type { ExerciseDetail, LessonProgress } from "@/types/catalogue";

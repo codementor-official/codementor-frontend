@@ -1,10 +1,11 @@
-import { FileUp, HardDrive, Sparkles, UsersRound, LayoutGrid, type LucideIcon } from "lucide-react";
+import { FileArrowUpIcon as FileUp, HardDriveIcon as HardDrive, SparkleIcon as Sparkles, UsersThreeIcon as UsersRound, SquaresFourIcon as LayoutGrid } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { BillingCycle, Entitlements, FeatureDefinition, SubscriptionState } from "@codementor/types";
 import { formatBytes, formatLimit } from "@codementor/utils";
 
 export interface LimitRow {
   key: keyof Omit<Entitlements, "features">;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   label: string;
   value: string;
   /** Card wording: `strong` is emphasised, `rest` completes the phrase. */

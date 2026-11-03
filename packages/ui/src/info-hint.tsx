@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Info } from "lucide-react";
+import { InfoIcon as Info } from "@phosphor-icons/react/ssr";
 
 /** Bề rộng tối đa của bảng chú thích, và khoảng chừa hai mép màn hình. */
 const WIDTH = 256;

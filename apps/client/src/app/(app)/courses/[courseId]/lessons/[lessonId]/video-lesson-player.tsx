@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { InfoHint, Modal, useToast } from "@codementor/ui";
 import { attachPlayer, formatDuration, type ResolvedVideo, type VideoController } from "@codementor/utils";
-import { PlayCircle, RotateCcw } from "lucide-react";
+import { PlayCircleIcon as PlayCircle, ArrowCounterClockwiseIcon as RotateCcw } from "@phosphor-icons/react/ssr";
 import {
   REQUIRED_WATCH_RATIO,
   isResumable,

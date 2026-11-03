@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Archive, FileClock, Globe, Lock, Network, RotateCcw, UserMinus, Users } from "lucide-react";
+import { ArchiveIcon as Archive, ClockCounterClockwiseIcon as FileClock, GlobeIcon as Globe, LockIcon as Lock, GraphIcon as Network, ArrowCounterClockwiseIcon as RotateCcw, UserMinusIcon as UserMinus, UsersIcon as Users } from "@phosphor-icons/react/ssr";
 import {
   Button,
   DetailMeta,

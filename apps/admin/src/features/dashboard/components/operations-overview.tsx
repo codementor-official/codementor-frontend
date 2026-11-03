@@ -1,4 +1,4 @@
-import { History } from "lucide-react";
+import { ClockCounterClockwiseIcon as History } from "@phosphor-icons/react/ssr";
 import { Card, CardContent, CardHeader } from "@codementor/ui";
 import type { AuditLogEntry } from "@/lib/api";
 

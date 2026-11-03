@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button, Modal, ReasonField } from "@codementor/ui";
-import { Download, Printer } from "lucide-react";
+import { DownloadSimpleIcon as Download, PrinterIcon as Printer } from "@phosphor-icons/react/ssr";
 import { inputClassName } from "./form-style";
 import { COMMERCE_INCOME_STATUS, COMMERCE_STATUS, type PurchaseDetail } from "@codementor/types";
 import { vnd } from "./api";

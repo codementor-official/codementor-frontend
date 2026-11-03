@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { BadgeCheck, CalendarClock, Check, CircleDashed, CreditCard, ShieldCheck, Wallet } from "lucide-react";
+import { SealCheckIcon as BadgeCheck, CalendarDotsIcon as CalendarClock, CheckIcon as Check, CircleDashedIcon as CircleDashed, CreditCardIcon as CreditCard, ShieldCheckIcon as ShieldCheck, WalletIcon as Wallet } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { InfoHint, useToast } from "@codementor/ui";
 import { annualSaving, formatVnDate, formatVnd } from "@codementor/utils";

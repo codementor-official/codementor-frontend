@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, BellRing, CalendarClock, CreditCard, EyeOff, Lock, Receipt, ShieldCheck, Sparkles } from "lucide-react";
+import { WarningIcon as AlertTriangle, ArrowUpRightIcon as ArrowUpRight, BellRingingIcon as BellRing, CalendarDotsIcon as CalendarClock, CreditCardIcon as CreditCard, EyeSlashIcon as EyeOff, LockIcon as Lock, ReceiptIcon as Receipt, ShieldCheckIcon as ShieldCheck, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { ServerPagination, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";

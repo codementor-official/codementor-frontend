@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { XIcon as X } from "@phosphor-icons/react/ssr";
 
 const widthClasses = {
   sm: "max-w-md",

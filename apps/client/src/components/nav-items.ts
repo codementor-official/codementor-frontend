@@ -1,17 +1,17 @@
 import {
-  BookOpen,
-  Bookmark,
-  Receipt,
-  Bot,
-  Compass,
-  Dumbbell,
-  FilePlus2,
-  LayoutGrid,
-  Map,
-  Newspaper,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+  BookOpenIcon as BookOpen,
+  BookmarkSimpleIcon as Bookmark,
+  ReceiptIcon as Receipt,
+  RobotIcon as Bot,
+  CompassIcon as Compass,
+  BarbellIcon as Dumbbell,
+  FilePlusIcon as FilePlus2,
+  SquaresFourIcon as LayoutGrid,
+  MapTrifoldIcon as Map,
+  NewspaperIcon as Newspaper,
+  UsersIcon as Users,
+} from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 /**
  * AUTHORING — pending a product decision.
@@ -30,7 +30,7 @@ import {
  */
 export const createAction = { href: "/create-problem", label: "Tạo bài tập", icon: FilePlus2 };
 
-export const navItems: { href: string; label: string; icon: LucideIcon }[] = [
+export const navItems: { href: string; label: string; icon: PhosphorIcon }[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutGrid },
   { href: "/explore", label: "Khám phá", icon: Compass },
   { href: "/courses", label: "Khóa học", icon: BookOpen },

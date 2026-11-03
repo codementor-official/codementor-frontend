@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KeyRound, User } from "lucide-react";
+import { KeyIcon as KeyRound, UserIcon as User } from "@phosphor-icons/react/ssr";
 import { accountConsoleUrl } from "@codementor/auth";
 import { ProfileForm } from "@/features/profile/profile-form";
 import type { UserProfile } from "@/features/profile/types";
@@ -85,7 +85,7 @@ export default function ProfilePage() {
           </aside>
           <aside className="rounded-lg border border-border bg-card p-4">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <KeyRound aria-hidden="true" className="size-4 text-primary" /> Đăng nhập & bảo mật
+              <KeyRound aria-hidden="true" className="size-4 text-muted-foreground" /> Đăng nhập & bảo mật
             </h2>
             <p className="text-sm text-muted-foreground">
               Đổi email, mật khẩu hoặc bật xác thực hai bước tại{" "}

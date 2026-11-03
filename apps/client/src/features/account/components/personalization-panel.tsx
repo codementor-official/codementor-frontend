@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bell, BrainCircuit, CalendarDays, RotateCcw, Sparkles, Target } from "lucide-react";
+import { BellIcon as Bell, BrainIcon as BrainCircuit, CalendarBlankIcon as CalendarDays, ArrowCounterClockwiseIcon as RotateCcw, SparkleIcon as Sparkles, TargetIcon as Target } from "@phosphor-icons/react/ssr";
 import { api } from "@/lib/api";
 import { onboardingSteps } from "@/data/onboarding-steps";
 import type { UserLearningPreferences } from "@/features/account/types";
@@ -94,11 +94,11 @@ export function PersonalizationPanel() {
   return (
     <div className="space-y-5">
       <Card className="overflow-hidden">
-        <div className="border-b border-border-soft p-5"><h2 className="flex items-center gap-2 text-base font-bold text-navy"><BrainCircuit className="h-5 w-5 text-primary" /> Trung tâm cá nhân hóa</h2><p className="mt-1 text-xs leading-relaxed text-text-muted">Các lựa chọn dưới đây quyết định nội dung được ưu tiên, lịch nhắc và dữ liệu AI Coach được phép phân tích.</p></div>
+        <div className="border-b border-border-soft p-5"><h2 className="flex items-center gap-2 text-base font-bold text-navy"><BrainCircuit className="h-5 w-5 text-text-muted" /> Trung tâm cá nhân hóa</h2><p className="mt-1 text-xs leading-relaxed text-text-muted">Các lựa chọn dưới đây quyết định nội dung được ưu tiên, lịch nhắc và dữ liệu AI Coach được phép phân tích.</p></div>
         <div className="grid divide-y divide-border-soft sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <div className="p-4"><Target className="mb-2 h-4 w-4 text-primary" /><p className="text-sm font-semibold text-navy">Đề xuất phù hợp hơn</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Xếp hạng khóa học, lộ trình và bài tập theo mục tiêu của bạn.</p></div>
-          <div className="p-4"><CalendarDays className="mb-2 h-4 w-4 text-primary" /><p className="text-sm font-semibold text-navy">Giữ lịch học đều</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Các ngày và khung giờ đã lưu được dùng cho nhắc học.</p></div>
-          <div className="p-4"><Sparkles className="mb-2 h-4 w-4 text-primary" /><p className="text-sm font-semibold text-navy">AI theo quyền của bạn</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Chỉ phân tích khi bạn bật cá nhân hóa và chủ động yêu cầu.</p></div>
+          <div className="p-4"><Target className="mb-2 h-4 w-4 text-text-muted" /><p className="text-sm font-semibold text-navy">Đề xuất phù hợp hơn</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Xếp hạng khóa học, lộ trình và bài tập theo mục tiêu của bạn.</p></div>
+          <div className="p-4"><CalendarDays className="mb-2 h-4 w-4 text-text-muted" /><p className="text-sm font-semibold text-navy">Giữ lịch học đều</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Các ngày và khung giờ đã lưu được dùng cho nhắc học.</p></div>
+          <div className="p-4"><Sparkles className="mb-2 h-4 w-4 text-text-muted" /><p className="text-sm font-semibold text-navy">AI theo quyền của bạn</p><p className="mt-1 text-xs leading-relaxed text-text-muted">Chỉ phân tích khi bạn bật cá nhân hóa và chủ động yêu cầu.</p></div>
         </div>
       </Card>
       {error && <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
@@ -136,7 +136,7 @@ export function PersonalizationPanel() {
       ))}
 
       <Card className="p-5 sm:p-6">
-        <h2 className="flex items-center gap-2 text-base font-bold text-navy"><CalendarDays className="h-4 w-4 text-primary" /> Lịch học trong tuần</h2>
+        <h2 className="flex items-center gap-2 text-base font-bold text-navy"><CalendarDays className="h-4 w-4 text-text-muted" /> Lịch học trong tuần</h2>
         <p className="mt-1 text-xs text-text-muted">Nhắc vào giờ bắt đầu của từng ngày đã chọn, theo múi giờ {user?.timezone ?? "Asia/Ho_Chi_Minh"}. Bấm Lưu cá nhân hóa để áp dụng.</p>
         <p className="mt-1 text-xs text-text-faint">Hệ thống kiểm tra mỗi phút, gửi bù tối đa 5 phút khi xử lý chậm và chỉ nhắc một lần mỗi ngày. Lịch đã quá 5 phút sẽ áp dụng từ tuần sau.</p>
         <div className="mt-4 grid gap-2 lg:grid-cols-2">
@@ -156,7 +156,7 @@ export function PersonalizationPanel() {
       </Card>
 
       <Card className="p-5 sm:p-6">
-        <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Bell className="h-4 w-4 text-primary" /> Nhắc học theo lịch</h2>
+        <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Bell className="h-4 w-4 text-text-muted" /> Nhắc học theo lịch</h2>
         <div className="mt-3 divide-y divide-border-soft">
           <div className="flex items-center gap-4 py-4"><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-navy">Cho phép nhắc theo lịch</p><p className="mt-1 text-xs text-text-faint">Nhận thông báo trong app theo lịch đã lưu. Để nhận email, hãy xác thực email và bật Thông báo qua email cùng Email học tập trong tab Cài đặt.</p></div><Toggle checked={draft.remindersEnabled} onChange={() => setDraft({ ...draft, remindersEnabled: !draft.remindersEnabled })} label="Nhắc học" /></div>
           {draft.remindersEnabled && <div className="flex flex-wrap items-center justify-between gap-3 py-4">

@@ -4,23 +4,23 @@ import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle,
-  Check,
-  Clock3,
-  Copy,
-  Download,
-  Eye,
-  FileText,
-  Flag,
-  Loader2,
-  Plus,
-  RotateCcw,
-  Sparkles,
-  Trash2,
-  Upload,
-  Users,
-  X,
-} from "lucide-react";
+  WarningIcon as AlertTriangle,
+  CheckIcon as Check,
+  ClockIcon as Clock3,
+  CopyIcon as Copy,
+  DownloadSimpleIcon as Download,
+  EyeIcon as Eye,
+  FileTextIcon as FileText,
+  FlagIcon as Flag,
+  CircleNotchIcon as Loader2,
+  PlusIcon as Plus,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  SparkleIcon as Sparkles,
+  TrashIcon as Trash2,
+  UploadSimpleIcon as Upload,
+  UsersIcon as Users,
+  XIcon as X,
+} from "@phosphor-icons/react/ssr";
 import { CharCount, FieldError, fieldA11y, ReasonField, Select, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
 import { collectAllPages, csvDateTime, integer, length, reason as reasonRule, search as searchRule, toNumber } from "@codementor/utils";
 import { Button } from "@/components/ui/button";
@@ -257,7 +257,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
       {quota.dialog}
       {canApprove && pendingCount > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
-          <Clock3 className="h-4 w-4 text-primary" />
+          <Clock3 className="h-4 w-4 text-text-muted" />
           <p className="min-w-0 flex-1 text-sm font-medium text-navy">
             Có {pendingCount} tài liệu đang chờ duyệt.
           </p>
@@ -638,7 +638,7 @@ function DocumentPreviewDialog({
     >
       <Card className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden">
         <div className="sticky top-0 z-10 flex shrink-0 flex-wrap items-start gap-3 border-b border-border-soft bg-surface p-4">
-          <FileText className="mt-0.5 h-5 w-5 text-primary" />
+          <FileText className="mt-0.5 h-5 w-5 text-text-muted" />
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-base font-bold text-navy">
               {document.title}
@@ -1070,7 +1070,7 @@ export function WorkspaceExercisesTab({
       {!canEditAny && !canAssign && reminders.length > 0 && (
         <Card className="border-primary/30 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <Clock3 className="h-4 w-4 text-primary" />
+            <Clock3 className="h-4 w-4 text-text-muted" />
             <h2 className="text-sm font-bold text-navy">Cần hoàn thành</h2>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {reminders.length}
@@ -2240,7 +2240,7 @@ export function WorkspaceAssignmentsTab({
 function Loading() {
   return (
     <div className="flex justify-center p-10">
-      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
     </div>
   );
 }

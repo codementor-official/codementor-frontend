@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
-  Archive,
-  Check,
-  Eye,
-  RotateCcw,
-  Save,
-  Send,
-  Undo2,
-} from "lucide-react";
+  ArchiveIcon as Archive,
+  CheckIcon as Check,
+  EyeIcon as Eye,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  FloppyDiskIcon as Save,
+  PaperPlaneRightIcon as Send,
+  ArrowUUpLeftIcon as Undo2,
+} from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import {
   BreadcrumbTitle,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Play, Save, Send, TriangleAlert, Undo2 } from "lucide-react";
+import { PlayIcon as Play, FloppyDiskIcon as Save, PaperPlaneRightIcon as Send, WarningIcon as TriangleAlert, ArrowUUpLeftIcon as Undo2 } from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import {
   BreadcrumbTitle,

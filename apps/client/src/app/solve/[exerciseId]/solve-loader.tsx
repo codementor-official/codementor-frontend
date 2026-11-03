@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { CircleNotchIcon as Loader2 } from "@phosphor-icons/react/ssr";
 import { api } from "@/lib/api";
 import { problemFromExercise } from "@/lib/exercise/problem-from-exercise";
 import type { Problem } from "@/data/sample-problem";

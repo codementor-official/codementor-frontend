@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpenIcon as BookOpen } from "@phosphor-icons/react/ssr";
 
 export function CourseCover({
   src,
@@ -15,7 +15,7 @@ export function CourseCover({
   const [failed, setFailed] = useState(false);
   return (
     <span
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-primary ${className}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground ${className}`}
     >
       {src && !failed ? (
         // Remote object-storage URLs are resolved at runtime, so Next/Image cannot know

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import { Eye, Pencil, Play, Plus, Save, X } from "lucide-react";
+import { EyeIcon as Eye, PencilSimpleIcon as Pencil, PlayIcon as Play, PlusIcon as Plus, FloppyDiskIcon as Save, XIcon as X } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type {

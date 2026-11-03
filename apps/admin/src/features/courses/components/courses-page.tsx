@@ -2,19 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Archive,
-  BookOpen,
-  CheckCheck,
-  Clock,
-  Globe,
-  PencilLine,
-  RotateCcw,
-  Star,
-  Trash2,
-  Undo2,
-  UserCheck,
-  XCircle,
-} from "lucide-react";
+  ArchiveIcon as Archive,
+  BookOpenIcon as BookOpen,
+  ChecksIcon as CheckCheck,
+  ClockIcon as Clock,
+  GlobeIcon as Globe,
+  PencilSimpleLineIcon as PencilLine,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  StarIcon as Star,
+  TrashIcon as Trash2,
+  ArrowUUpLeftIcon as Undo2,
+  UserCheckIcon as UserCheck,
+  XCircleIcon as XCircle,
+} from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@codementor/types";

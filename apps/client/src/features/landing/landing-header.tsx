@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { ListIcon as Menu } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 

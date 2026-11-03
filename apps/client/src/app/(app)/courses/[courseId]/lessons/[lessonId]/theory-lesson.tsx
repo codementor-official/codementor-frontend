@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { CheckIcon as Check, CircleNotchIcon as Loader2 } from "@phosphor-icons/react/ssr";
 import { resolveVideo } from "@codementor/utils";
 import { Card } from "@/components/ui/card";
 import { REQUIRED_WATCH_RATIO } from "@/lib/video-progress";
@@ -122,7 +122,7 @@ export function TheoryLesson({
             <ul className="flex flex-col gap-1.5">
               {content.objectives.map((objective) => (
                 <li key={objective} className="flex gap-2 text-xs leading-relaxed text-text">
-                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> {objective}
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-text-muted" /> {objective}
                 </li>
               ))}
             </ul>

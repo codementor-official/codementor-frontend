@@ -2,7 +2,7 @@
 
 import { useCallback, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowUpRight, BookOpen, Code2, Map as MapIcon, Newspaper } from "lucide-react";
+import { ArrowUpRightIcon as ArrowUpRight, BookOpenIcon as BookOpen, CodeIcon as Code2, MapTrifoldIcon as MapIcon, NewspaperIcon as Newspaper } from "@phosphor-icons/react/ssr";
 import { Card } from "@/components/ui/card";
 import { CourseCard } from "@/components/course-card";
 import { EntityCard } from "@/components/entity-card";

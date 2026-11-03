@@ -4,7 +4,7 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BookOpen, ExternalLink, FileText, GripVertical, ListTree, Plus, Trash2 } from "lucide-react";
+import { BookOpenIcon as BookOpen, ArrowSquareOutIcon as ExternalLink, FileTextIcon as FileText, DotsSixVerticalIcon as GripVertical, TreeStructureIcon as ListTree, PlusIcon as Plus, TrashIcon as Trash2 } from "@phosphor-icons/react/ssr";
 import {
   Button,
   DetailMeta,

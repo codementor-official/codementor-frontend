@@ -2,21 +2,21 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
-  Check,
-  ChevronUp,
-  ExternalLink,
-  LoaderCircle,
-  MessageCircle,
-  Link2,
-  Paperclip,
-  Minimize2,
-  Pencil,
-  Send,
-  Trash2,
-  Wifi,
-  WifiOff,
-  X,
-} from "lucide-react";
+  CheckIcon as Check,
+  CaretUpIcon as ChevronUp,
+  ArrowSquareOutIcon as ExternalLink,
+  CircleNotchIcon as LoaderCircle,
+  ChatCircleIcon as MessageCircle,
+  LinkSimpleIcon as Link2,
+  PaperclipIcon as Paperclip,
+  ArrowsInIcon as Minimize2,
+  PencilSimpleIcon as Pencil,
+  PaperPlaneRightIcon as Send,
+  TrashIcon as Trash2,
+  WifiHighIcon as Wifi,
+  WifiSlashIcon as WifiOff,
+  XIcon as X,
+} from "@phosphor-icons/react/ssr";
 import { FieldError, fieldA11y, Modal } from "@codementor/ui";
 import { length } from "@codementor/utils";
 import { BrandLogo } from "@/components/brand-logo";
@@ -103,7 +103,7 @@ export function WorkspaceChatTab({
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
         <div>
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-4 w-4 text-primary" />
+            <MessageCircle className="h-4 w-4 text-text-muted" />
             <h2 className="text-sm font-bold text-navy">Chat nhóm</h2>
             <Badge tone="neutral">{detail.memberCount} thành viên</Badge>
           </div>
@@ -562,7 +562,7 @@ function ChatLoading() {
 function ChatEmpty({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`flex flex-col items-center justify-center text-center text-text-faint ${compact ? "h-full" : "min-h-64"}`}>
-      <MessageCircle className="mb-2 h-8 w-8 text-primary/60" />
+      <MessageCircle className="mb-2 h-8 w-8 text-text-muted/60" />
       <p className="text-sm font-semibold text-navy">Bắt đầu cuộc trao đổi</p>
       <p className="mt-1 max-w-sm text-xs">Hỏi bài, chia sẻ tài liệu hoặc nhắc lịch học của nhóm.</p>
     </div>

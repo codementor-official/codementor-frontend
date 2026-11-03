@@ -1,4 +1,4 @@
-import { Bot, Code2, FlaskConical, MessagesSquare, Sparkles } from "lucide-react";
+import { RobotIcon as Bot, CodeIcon as Code2, FlaskIcon as FlaskConical, ChatsCircleIcon as MessagesSquare, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 
 const POINTS = [
@@ -31,7 +31,7 @@ export function LandingPractice() {
         <ul className="divide-y divide-on-ink-fixed/10 overflow-hidden rounded-lg border border-on-ink-fixed/15">
           {POINTS.map((point) => (
             <li key={point.title} className="flex items-start gap-4 px-5 py-4">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-on-ink-fixed/10 text-primary-fixed">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-on-ink-fixed/10 text-on-ink-fixed">
                 <point.icon className="size-5" aria-hidden />
               </span>
               <span className="min-w-0">

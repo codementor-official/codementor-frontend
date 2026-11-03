@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Braces,
-  Check,
-  FileText,
-  Info,
-  MousePointerClick,
-  Search,
-  Upload,
-  Video,
-} from "lucide-react";
+  BracketsCurlyIcon as Braces,
+  CheckIcon as Check,
+  FileTextIcon as FileText,
+  InfoIcon as Info,
+  CursorClickIcon as MousePointerClick,
+  MagnifyingGlassIcon as Search,
+  UploadSimpleIcon as Upload,
+  VideoCameraIcon as Video,
+} from "@phosphor-icons/react/ssr";
 import { RichTextEditor } from "@codementor/editor";
 import {
   attachPlayer,
@@ -978,7 +978,7 @@ function ExercisePicker({
                   <StatusBadge tone={STATUS_TONES[exercise.status]}>
                     {STATUS_LABELS[exercise.status]}
                   </StatusBadge>
-                  {active && <Check aria-hidden="true" className="size-4 shrink-0 text-primary" />}
+                  {active && <Check aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />}
                 </button>
               </li>
             );

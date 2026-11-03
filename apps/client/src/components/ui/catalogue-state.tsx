@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 
 /**
@@ -32,7 +32,7 @@ export function CatalogueEmpty({
   title,
   description,
 }: {
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   title: string;
   description: string;
 }) {

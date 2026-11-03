@@ -1,4 +1,4 @@
-import { AlertCircle } from "lucide-react";
+import { WarningCircleIcon as AlertCircle } from "@phosphor-icons/react/ssr";
 
 /**
  * Hai trạng thái mà quản trị viên đã đọc nội dung rồi trả về kèm lý do. Cùng một danh

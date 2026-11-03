@@ -1,11 +1,12 @@
-import { BookOpen, Code2, type LucideIcon } from "lucide-react";
+import { BookOpenIcon as BookOpen, CodeIcon as Code2 } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 export type ProblemTabKey = "code" | "theory";
 
 export interface ProblemTab {
   key: ProblemTabKey;
   label: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
 }
 
 // Quiz and essay authoring had tabs but no form — they rendered a dashed placeholder box.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { History, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Plus, Trash2 } from "lucide-react";
+import { ClockCounterClockwiseIcon as History, DotsThreeIcon as MoreHorizontal, SidebarSimpleIcon as PanelLeftClose, SidebarSimpleIcon as PanelLeftOpen, PlusIcon as Plus, TrashIcon as Trash2 } from "@phosphor-icons/react/ssr";
 import { Button, ConfirmButton, useToast } from "@codementor/ui";
 import { api } from "@/lib/api";
 

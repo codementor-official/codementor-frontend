@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Map as MapIcon } from "lucide-react";
+import { CircleNotchIcon as Loader2, MapTrifoldIcon as MapIcon } from "@phosphor-icons/react/ssr";
 import { StatStrip, formatVndPrice } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";

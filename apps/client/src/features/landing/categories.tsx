@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Binary, Blocks, BrainCircuit, Database, Globe, Server, type LucideIcon } from "lucide-react";
+import { BinaryIcon as Binary, CubeIcon as Blocks, BrainIcon as BrainCircuit, DatabaseIcon as Database, GlobeIcon as Globe, HardDrivesIcon as Server } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { CourseSummary } from "@/types/catalogue";
 import { LandingSection } from "./section";
 import { topicCategories } from "./data";
 
-const ICONS: Record<string, LucideIcon> = {
+const ICONS: Record<string, PhosphorIcon> = {
   foundations: Blocks,
   web: Globe,
   systems: Server,
@@ -32,7 +33,7 @@ export function LandingCategories({ courses }: { courses: CourseSummary[] }) {
                 href={category.href}
                 className="flex h-full items-start gap-4 rounded-lg border border-border bg-surface p-5 transition-colors hover:border-text-faint"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-navy">
                   <Icon className="size-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">

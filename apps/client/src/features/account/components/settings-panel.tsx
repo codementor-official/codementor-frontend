@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Eye, MessageCircle, MonitorSmartphone, RotateCcw, ShieldCheck } from "lucide-react";
+import { BellIcon as Bell, EyeIcon as Eye, ChatCircleIcon as MessageCircle, DevicesIcon as MonitorSmartphone, ArrowCounterClockwiseIcon as RotateCcw, ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/ssr";
 import { api } from "@/lib/api";
 import { useThemeStore } from "@/lib/store/theme-store";
 import type { UserSettings } from "@/features/account/types";
@@ -123,7 +123,7 @@ export function SettingsPanel() {
       {error && <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
       <div className="grid gap-5 xl:grid-cols-2">
         <Card className="p-5 sm:p-6">
-          <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Bell className="h-4 w-4 text-primary" /> Thông báo</h2>
+          <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Bell className="h-4 w-4 text-text-muted" /> Thông báo</h2>
           <div className="mt-3 divide-y divide-border-soft">
             <SettingRow title="Thông báo qua email" description="Nhận những cập nhật quan trọng qua email." checked={draft.emailNotifications} onChange={() => patch("emailNotifications", !draft.emailNotifications)} />
             <SettingRow title="Hoạt động nhóm học tập" description="Thông báo trong ứng dụng về bài tập, tài liệu, chat và thay đổi thành viên. Các lựa chọn email bên dưới được áp dụng riêng." checked={draft.workspaceNotifications} onChange={() => patch("workspaceNotifications", !draft.workspaceNotifications)} />
@@ -148,7 +148,7 @@ export function SettingsPanel() {
         </Card>
 
         <Card className="p-5 sm:p-6">
-          <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Eye className="h-4 w-4 text-primary" /> Quyền riêng tư</h2>
+          <h2 className="flex items-center gap-2 text-base font-bold text-navy"><Eye className="h-4 w-4 text-text-muted" /> Quyền riêng tư</h2>
           <div className="mt-3 divide-y divide-border-soft">
             <SettingRow title="Hồ sơ công khai" description="Cho thành viên khác xem hồ sơ và thành tích công khai của bạn." checked={draft.publicProfile} onChange={() => patch("publicProfile", !draft.publicProfile)} />
             <SettingRow title="Hiển thị tiến độ học tập" description="Cho phép hiển thị tổng quan bài đã giải, XP và chuỗi hoạt động." checked={draft.showLearningProgress} onChange={() => patch("showLearningProgress", !draft.showLearningProgress)} />
@@ -159,7 +159,7 @@ export function SettingsPanel() {
 
       <div className="grid gap-5 xl:grid-cols-2">
         <Card className="p-5 sm:p-6">
-          <h2 className="flex items-center gap-2 text-base font-bold text-navy"><MonitorSmartphone className="h-4 w-4 text-primary" /> Giao diện</h2>
+          <h2 className="flex items-center gap-2 text-base font-bold text-navy"><MonitorSmartphone className="h-4 w-4 text-text-muted" /> Giao diện</h2>
           <p className="mt-1 text-xs text-text-faint">Lựa chọn được đồng bộ theo tài khoản và áp dụng ngay trên thiết bị này.</p>
           <div className="mt-4 grid grid-cols-3 gap-2">
             {(["light", "dark", "system"] as const).map((theme) => (
@@ -174,7 +174,7 @@ export function SettingsPanel() {
           <p className="flex items-center gap-1.5 text-2xs text-text-faint"><MessageCircle className="h-3.5 w-3.5" /> Nếu đóng nút chat ở góc màn hình, bạn có thể bật lại tại đây.</p>
         </Card>
         <Card className="p-5 sm:p-6">
-          <h2 className="flex items-center gap-2 text-base font-bold text-navy"><ShieldCheck className="h-4 w-4 text-primary" /> Tài khoản & bảo mật</h2>
+          <h2 className="flex items-center gap-2 text-base font-bold text-navy"><ShieldCheck className="h-4 w-4 text-text-muted" /> Tài khoản & bảo mật</h2>
           <p className="mt-2 text-sm leading-relaxed text-text-muted">Mật khẩu, xác thực đa yếu tố và phiên đăng nhập do Keycloak quản lý. CodeMentor không lưu bản sao mật khẩu trong Profile.</p>
         </Card>
       </div>

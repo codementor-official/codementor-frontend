@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Bot, Map, ShieldCheck, UsersRound } from "lucide-react";
+import { ChartBarIcon as BarChart3, BookOpenIcon as BookOpen, RobotIcon as Bot, MapTrifoldIcon as Map, ShieldCheckIcon as ShieldCheck, UsersThreeIcon as UsersRound } from "@phosphor-icons/react/ssr";
 import { LandingSection } from "./section";
 
 // Mỗi dòng ứng với một tính năng đang chạy trong app, không phải lời hứa chung chung.

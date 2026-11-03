@@ -1,27 +1,27 @@
 import {
-  Activity,
-  ChartNoAxesCombined,
-  BadgePercent,
-  BookOpen,
-  Bot,
-  Braces,
-  Flag,
-  Gem,
-  LayoutDashboard,
-  Network,
-  Newspaper,
-  Route,
-  ScrollText,
-  Settings,
-  ShieldCheck,
-  Users,
-  Wallet,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  PulseIcon as Activity,
+  ChartLineUpIcon as ChartNoAxesCombined,
+  SealPercentIcon as BadgePercent,
+  BookOpenIcon as BookOpen,
+  RobotIcon as Bot,
+  BracketsCurlyIcon as Braces,
+  FlagIcon as Flag,
+  DiamondIcon as Gem,
+  SquaresFourIcon as LayoutDashboard,
+  GraphIcon as Network,
+  NewspaperIcon as Newspaper,
+  PathIcon as Route,
+  ScrollIcon as ScrollText,
+  GearIcon as Settings,
+  ShieldCheckIcon as ShieldCheck,
+  UsersIcon as Users,
+  WalletIcon as Wallet,
+} from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 export interface AdminNavItem {
   href: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   label: string;
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Loader2, Search } from "lucide-react";
+import { CheckIcon as Check, CircleNotchIcon as Loader2, MagnifyingGlassIcon as Search } from "@phosphor-icons/react/ssr";
 import { Modal, StatusBadge } from "@codementor/ui";
 import { LEVEL_LABELS } from "@codementor/types";
 import {
@@ -208,7 +208,7 @@ export function AttachPicker({
                       {STATUS_LABELS[row.status]}
                     </StatusBadge>
                   )}
-                  {attached && <Check aria-hidden="true" className="size-4 shrink-0 text-primary" />}
+                  {attached && <Check aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />}
                 </button>
               </li>
             );

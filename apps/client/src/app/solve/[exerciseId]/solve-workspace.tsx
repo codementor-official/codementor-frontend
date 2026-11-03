@@ -6,14 +6,14 @@ import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
 import {
-  ArrowLeft,
-  Bot,
-  Braces,
-  Loader2,
-  PartyPopper,
-  Play,
-  RotateCcw,
-} from "lucide-react";
+  ArrowLeftIcon as ArrowLeft,
+  RobotIcon as Bot,
+  BracketsCurlyIcon as Braces,
+  CircleNotchIcon as Loader2,
+  ConfettiIcon as PartyPopper,
+  PlayIcon as Play,
+  ArrowCounterClockwiseIcon as RotateCcw,
+} from "@phosphor-icons/react/ssr";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
 import { UserMenu } from "@/components/user-menu";
 import {

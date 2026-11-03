@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { History } from "lucide-react";
+import { ClockCounterClockwiseIcon as History } from "@phosphor-icons/react/ssr";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi, type AuditLogEntry } from "@/lib/api";
 import type { ContentKind } from "./types";
@@ -41,7 +41,7 @@ export function ModerationHistory({ kind, id }: { kind: ContentKind; id: string 
   return (
     <section className="mt-6">
       <div className="mb-3 flex items-center gap-2">
-        <History aria-hidden="true" className="size-4 shrink-0 text-primary" />
+        <History aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
         <h3 className="text-xs font-bold tracking-wide uppercase">Lịch sử kiểm duyệt</h3>
         <span aria-hidden="true" className="h-px flex-1 bg-border" />
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Users } from "lucide-react";
+import { UsersIcon as Users } from "@phosphor-icons/react/ssr";
 import { useToast } from "@codementor/ui";
 import { Card } from "@/components/ui/card";
 import { CatalogueEmpty } from "@/components/ui/catalogue-state";

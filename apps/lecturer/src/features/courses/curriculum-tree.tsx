@@ -18,7 +18,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Braces, ChevronDown, ChevronRight, FileText, GripVertical, PlayCircle, Plus, Trash2, Unlock } from "lucide-react";
+import { BracketsCurlyIcon as Braces, CaretDownIcon as ChevronDown, CaretRightIcon as ChevronRight, FileTextIcon as FileText, DotsSixVerticalIcon as GripVertical, PlayCircleIcon as PlayCircle, PlusIcon as Plus, TrashIcon as Trash2, LockOpenIcon as Unlock } from "@phosphor-icons/react/ssr";
 import { Button, Modal } from "@codementor/ui";
 import {
   DropIndicator,

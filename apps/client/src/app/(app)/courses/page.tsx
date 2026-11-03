@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpenIcon as BookOpen } from "@phosphor-icons/react/ssr";
 import { FilterBar, Select, SegmentedTabs, StatStrip, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { CourseCard } from "@/components/course-card";

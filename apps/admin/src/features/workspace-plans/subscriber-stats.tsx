@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AlarmClock, BadgeDollarSign, CreditCard, Hourglass, ShieldAlert } from "lucide-react";
+import { AlarmIcon as AlarmClock, CurrencyCircleDollarIcon as BadgeDollarSign, CreditCardIcon as CreditCard, HourglassIcon as Hourglass, ShieldWarningIcon as ShieldAlert } from "@phosphor-icons/react/ssr";
 import { Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, InfoHint } from "@codementor/ui";
 import { formatVnd } from "@codementor/utils";

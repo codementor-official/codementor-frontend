@@ -2,19 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Archive,
-  Braces,
-  CheckCheck,
-  Clock,
-  Flame,
-  Gauge,
-  PencilLine,
-  RotateCcw,
-  Signal,
-  Trash2,
-  Undo2,
-  XCircle,
-} from "lucide-react";
+  ArchiveIcon as Archive,
+  BracketsCurlyIcon as Braces,
+  ChecksIcon as CheckCheck,
+  ClockIcon as Clock,
+  FireIcon as Flame,
+  GaugeIcon as Gauge,
+  PencilSimpleLineIcon as PencilLine,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  CellSignalFullIcon as Signal,
+  TrashIcon as Trash2,
+  ArrowUUpLeftIcon as Undo2,
+  XCircleIcon as XCircle,
+} from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { DIFFICULTIES, DIFFICULTY_LABELS, STATUS_LABELS, STATUS_TONES } from "@codementor/solve";

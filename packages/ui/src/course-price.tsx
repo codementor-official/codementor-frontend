@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Sparkles, TicketPercent } from "lucide-react";
+import { SparkleIcon as Sparkles, TicketIcon as TicketPercent } from "@phosphor-icons/react/ssr";
 
 export function formatVndPrice(value: number) {
   return value <= 0

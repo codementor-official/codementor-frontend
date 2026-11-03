@@ -20,7 +20,6 @@ const nextConfig: NextConfig = {
       "@codementor/ui",
       "@codementor/editor",
       "@codementor/solve",
-      "lucide-react",
     ],
   },
   // Keep already visited tabs warm during development. The default eviction window is too

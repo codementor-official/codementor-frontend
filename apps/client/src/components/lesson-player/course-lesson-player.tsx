@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock3, FileText, Lock, Play, PlayCircle, Trophy } from "lucide-react";
+import { CheckCircleIcon as CheckCircle2, CaretDownIcon as ChevronDown, CaretLeftIcon as ChevronLeft, CaretRightIcon as ChevronRight, CircleIcon as Circle, ClockIcon as Clock3, FileTextIcon as FileText, LockIcon as Lock, PlayIcon as Play, PlayCircleIcon as PlayCircle, TrophyIcon as Trophy } from "@phosphor-icons/react/ssr";
 import { getLessonContent } from "@/data/lesson-content";
 import { formatMinutes, getChapterDurationMinutes } from "@/lib/roadmap/roadmap-stats";
 import type { Chapter, Course, Lesson } from "@/types/roadmap";
@@ -21,7 +21,7 @@ function lessonTargetHref(roadmapSlug: string, course: Course, lesson: Lesson) {
 
 function lessonIcon(lesson: Lesson) {
   if (lesson.isLocked) return <Lock className="h-3.5 w-3.5 text-text-faint" />;
-  if (lesson.isCompleted) return <CheckCircle2 className="h-3.5 w-3.5 text-primary" />;
+  if (lesson.isCompleted) return <CheckCircle2 className="h-3.5 w-3.5 text-text-muted" />;
   return lesson.type === "video" ? <PlayCircle className="h-3.5 w-3.5 text-text-muted" /> : <Circle className="h-3.5 w-3.5 text-text-faint" />;
 }
 
@@ -98,9 +98,9 @@ export function CourseLessonPlayer({ roadmapSlug, course, lessonId }: { roadmapS
             <p className="mb-6 text-sm leading-relaxed text-text-muted">{content.summary}</p>
 
             <section className="mb-6 rounded-lg border border-primary/20 bg-primary-tint p-4">
-              <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-navy"><Trophy className="h-4 w-4 text-primary" /> Sau bài này bạn có thể</h2>
+              <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-navy"><Trophy className="h-4 w-4 text-text-muted" /> Sau bài này bạn có thể</h2>
               <ul className="space-y-1.5 text-sm text-text-muted">
-                {content.objectives.map((objective) => <li key={objective} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{objective}</li>)}
+                {content.objectives.map((objective) => <li key={objective} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />{objective}</li>)}
               </ul>
             </section>
 

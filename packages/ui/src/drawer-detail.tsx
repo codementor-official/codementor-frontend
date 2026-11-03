@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 /**
  * Loads the full record for whatever row the drawer is showing.
@@ -105,7 +105,7 @@ export function DetailSection({
   children,
 }: {
   title: string;
-  icon?: LucideIcon;
+  icon?: PhosphorIcon;
   children: ReactNode;
 }) {
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import type { DragEvent, ReactNode } from "react";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { ArrowsOutIcon as Maximize2, ArrowsInIcon as Minimize2 } from "@phosphor-icons/react/ssr";
 import type { PaneId, TabKind } from "./types";
 import { TabBar } from "./tab-bar";
 import { useWorkspace } from "./workspace-context";

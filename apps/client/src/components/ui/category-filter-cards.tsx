@@ -1,10 +1,10 @@
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 export interface CategoryFilterOption {
   value: string;
   label: string;
   description: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
 }
 
 /** Kaggle's "All Competitions / Featured / Hackathons..." row — a bordered card per category

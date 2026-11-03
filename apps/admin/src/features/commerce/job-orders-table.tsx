@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Eye } from "lucide-react";
+import { EyeIcon as Eye } from "@phosphor-icons/react/ssr";
 import { Button, ServerPagination } from "@codementor/ui";
 import {
   COMMERCE_STATUS,

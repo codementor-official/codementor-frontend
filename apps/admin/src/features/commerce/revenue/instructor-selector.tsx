@@ -1,7 +1,7 @@
 "use client";
 import { useDeferredValue, useEffect, useId, useRef, useState } from "react";
 import type { RevenueInstructor } from "@codementor/types";
-import { Check, ChevronDown, Search, Users } from "lucide-react";
+import { CheckIcon as Check, CaretDownIcon as ChevronDown, MagnifyingGlassIcon as Search, UsersIcon as Users } from "@phosphor-icons/react/ssr";
 
 export function InstructorSelector({
   instructors,
@@ -154,7 +154,7 @@ export function InstructorSelector({
                   </span>
                 </span>
                 {value === i.id && (
-                  <Check className="size-4 shrink-0 text-primary" />
+                  <Check className="size-4 shrink-0 text-muted-foreground" />
                 )}
               </button>
             ))}

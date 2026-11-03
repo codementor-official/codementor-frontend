@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { SignOutIcon as LogOut } from "@phosphor-icons/react/ssr";
 import { AppTopbar, Breadcrumb, NotificationBell, ThemeMenu, useBreadcrumbTitles } from "@codementor/ui";
 import type { NotificationSource } from "@codementor/ui";
 import { breadcrumbFor } from "@/components/navigation/route-meta";

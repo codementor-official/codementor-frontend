@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { ImageIcon as ImageIcon, CircleNotchIcon as Loader2, UploadSimpleIcon as Upload, XIcon as X } from "@phosphor-icons/react/ssr";
 import { RichTextEditor } from "@codementor/editor";
 import { CharCount } from "@codementor/ui";
 import {

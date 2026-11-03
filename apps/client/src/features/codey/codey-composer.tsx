@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUpIcon as ArrowUp } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 
 /** Trần chiều cao: quá mức này thì textarea tự cuộn, không đẩy khung chat ra khỏi màn hình. */

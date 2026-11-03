@@ -1,4 +1,4 @@
-import { BookOpen, CheckCircle2, Lock } from "lucide-react";
+import { BookOpenIcon as BookOpen, CheckCircleIcon as CheckCircle2, LockIcon as Lock } from "@phosphor-icons/react/ssr";
 import { EntityCard } from "@/components/entity-card";
 import { Badge } from "@/components/ui/badge";
 import { levelToDifficulty } from "@/lib/catalogue/level";

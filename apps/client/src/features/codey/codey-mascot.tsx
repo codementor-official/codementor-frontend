@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { X } from "lucide-react";
+import { XIcon as X } from "@phosphor-icons/react/ssr";
 import { useWorkspace } from "@codementor/ui";
 import type { MascotState } from "./types";
 import { useCodey } from "./session-store";

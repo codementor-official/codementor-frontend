@@ -1,4 +1,4 @@
-import { CreditCard, Users } from "lucide-react";
+import { CreditCardIcon as CreditCard, UsersIcon as Users } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { RecommendedGroups } from "@/components/study-group/recommended-groups";

@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { XIcon as X } from "@phosphor-icons/react/ssr";
 import type { PaneId, TabKind } from "./types";
 import { useWorkspace } from "./workspace-context";
 

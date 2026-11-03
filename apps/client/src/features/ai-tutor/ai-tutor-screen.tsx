@@ -9,18 +9,18 @@ import {
 } from "react";
 import Link from "next/link";
 import {
-  BookOpen,
-  ChevronRight,
-  FileText,
-  History,
-  Lightbulb,
-  ListChecks,
-  Search,
-  Sparkles,
-  Trash2,
-  WandSparkles,
-  X,
-} from "lucide-react";
+  BookOpenIcon as BookOpen,
+  CaretRightIcon as ChevronRight,
+  FileTextIcon as FileText,
+  ClockCounterClockwiseIcon as History,
+  LightbulbIcon as Lightbulb,
+  ListChecksIcon as ListChecks,
+  MagnifyingGlassIcon as Search,
+  SparkleIcon as Sparkles,
+  TrashIcon as Trash2,
+  MagicWandIcon as WandSparkles,
+  XIcon as X,
+} from "@phosphor-icons/react/ssr";
 import { ConfirmButton, FieldError, fieldA11y, Select, useToast } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import { PageHeader } from "@/components/page-header";
@@ -346,7 +346,7 @@ function TutorWorkspace({
         </Card>
         <Card className="p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
-            <History className="size-4 text-primary" />
+            <History className="size-4 text-text-muted" />
             Hội thoại của bạn
           </h2>
           <p className="mb-3 mt-1 text-xs text-text-muted">
@@ -400,7 +400,7 @@ function TutorWorkspace({
       <aside className="order-1 min-w-0 space-y-4">
         <Card className="p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
-            <FileText className="size-4 text-primary" />
+            <FileText className="size-4 text-text-muted" />
             Tài liệu học cùng AI
           </h2>
           <p className="mb-4 mt-1 text-xs leading-relaxed text-text-muted">
@@ -529,7 +529,7 @@ function TutorWorkspace({
         </Card>
         <Card className="p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
-            <WandSparkles className="size-4 text-primary" />
+            <WandSparkles className="size-4 text-text-muted" />
             Tạo bài luyện tập với AI
           </h2>
           <p className="mb-3 mt-1 text-xs leading-relaxed text-text-muted">

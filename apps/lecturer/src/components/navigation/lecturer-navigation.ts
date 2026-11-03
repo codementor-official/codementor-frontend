@@ -1,20 +1,20 @@
 import {
-  BookOpen,
-  BadgePercent,
-  Braces,
-  FileText,
-  LayoutDashboard,
-  Newspaper,
-  Route,
-  Sparkles,
-  User,
-  Wallet,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  BookOpenIcon as BookOpen,
+  SealPercentIcon as BadgePercent,
+  BracketsCurlyIcon as Braces,
+  FileTextIcon as FileText,
+  SquaresFourIcon as LayoutDashboard,
+  NewspaperIcon as Newspaper,
+  PathIcon as Route,
+  SparkleIcon as Sparkles,
+  UserIcon as User,
+  WalletIcon as Wallet,
+} from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 export interface LecturerNavItem {
   href: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   label: string;
 }
 

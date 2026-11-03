@@ -2,21 +2,21 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardCopy,
-  Code2,
-  Lightbulb,
-  Loader2,
-  MessageCircle,
-  Pencil,
-  Plus,
-  Search,
-  Send,
-  ThumbsUp,
-  Trash2,
-} from "lucide-react";
+  ArrowLeftIcon as ArrowLeft,
+  CaretLeftIcon as ChevronLeft,
+  CaretRightIcon as ChevronRight,
+  CopyIcon as ClipboardCopy,
+  CodeIcon as Code2,
+  LightbulbIcon as Lightbulb,
+  CircleNotchIcon as Loader2,
+  ChatCircleIcon as MessageCircle,
+  PencilSimpleIcon as Pencil,
+  PlusIcon as Plus,
+  MagnifyingGlassIcon as Search,
+  PaperPlaneRightIcon as Send,
+  ThumbsUpIcon as ThumbsUp,
+  TrashIcon as Trash2,
+} from "@phosphor-icons/react/ssr";
 import { CharCount, FieldError, fieldA11y, useFieldErrors, useToast } from "@codementor/ui";
 import { length, search as searchRule } from "@codementor/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -358,7 +358,7 @@ export function DiscussionPanel({
         {formMode ? (
           <div className="space-y-3">
             <div className="rounded-lg border border-border bg-bg p-3 text-xs leading-5 text-text-muted">
-              <Lightbulb size={15} className="mr-1 inline text-primary" />
+              <Lightbulb size={15} className="mr-1 inline text-text-muted" />
               Một lời giải hữu ích nên nêu ý tưởng, độ phức tạp và trường hợp
               biên. Chỉ chia sẻ code bạn muốn công khai.
             </div>
@@ -518,7 +518,7 @@ export function DiscussionPanel({
                 Bình luận ({selected.commentCount})
               </h3>
               {commentsLoading ? (
-                <Loader2 size={18} className="mt-4 animate-spin text-primary" />
+                <Loader2 size={18} className="mt-4 animate-spin text-text-muted" />
               ) : comments.length ? (
                 <div className="mt-3 space-y-2">
                   {comments.map((entry) => (
@@ -645,11 +645,11 @@ export function DiscussionPanel({
             </div>
             {loading ? (
               <div className="flex justify-center py-16">
-                <Loader2 className="animate-spin text-primary" size={20} />
+                <Loader2 className="animate-spin text-text-muted" size={20} />
               </div>
             ) : !data?.items.length ? (
               <div className="mt-4 rounded-lg border border-border bg-bg p-6 text-center">
-                <MessageCircle className="mx-auto text-primary" size={26} />
+                <MessageCircle className="mx-auto text-text-muted" size={26} />
                 <h3 className="mt-3 text-sm font-semibold text-navy">
                   {search || languageFilter
                     ? "Không tìm thấy lời giải phù hợp"
@@ -758,7 +758,7 @@ export function DiscussionPanel({
             )}
             <div className="mt-4 rounded-lg border border-border-soft bg-bg p-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-navy">
-                <Lightbulb size={15} className="text-primary" /> Viết lời giải
+                <Lightbulb size={15} className="text-text-muted" /> Viết lời giải
                 dễ hiểu
               </div>
               <p className="mt-1 text-xs leading-5 text-text-muted">

@@ -4,20 +4,20 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType }
 import Image from "next/image";
 import Link from "next/link";
 import {
-  BookOpen,
-  Compass,
-  Dumbbell,
-  FileText,
-  Flame,
-  Globe,
-  LayoutGrid,
-  Newspaper,
-  Sparkles,
-  Star,
-  Target,
-  Trophy,
-  Users,
-} from "lucide-react";
+  BookOpenIcon as BookOpen,
+  CompassIcon as Compass,
+  BarbellIcon as Dumbbell,
+  FileTextIcon as FileText,
+  FireIcon as Flame,
+  GlobeIcon as Globe,
+  SquaresFourIcon as LayoutGrid,
+  NewspaperIcon as Newspaper,
+  SparkleIcon as Sparkles,
+  StarIcon as Star,
+  TargetIcon as Target,
+  TrophyIcon as Trophy,
+  UsersIcon as Users,
+} from "@phosphor-icons/react/ssr";
 import { FilterBar, Select, useUrlState } from "@codementor/ui";
 import { CategoryFilterCards, type CategoryFilterOption } from "@/components/ui/category-filter-cards";
 import { CourseCard } from "@/components/course-card";
@@ -266,13 +266,13 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="flex min-w-0 flex-col gap-5">
-              {showProblems && <><section><SectionTitle icon={hasPersonalizedContent(suggestedExercises) ? Sparkles : Star} title={hasPersonalizedContent(suggestedExercises) ? "Bài luyện tập dành cho bạn" : "Bài luyện tập phổ biến"} href="/practice" fillIcon={!hasPersonalizedContent(suggestedExercises)} />{exerciseList.length === 0 ? <EmptySearch label="bài luyện tập" query={search} /> : <Card className="overflow-hidden">{exerciseList.map(({ item: exercise, reason }) => <ProblemRow key={exercise.id} tile="</>" title={exercise.title} meta={reason ?? `Tác giả: ${exercise.authorName ?? "CodeMentor"}`} difficulty={exerciseDifficulty(exercise.difficulty)} href={`/solve/${exercise.id}`} />)}</Card>}</section><section><div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy"><Target className="h-4 w-4 text-primary" /> Chủ đề đề xuất cho bạn</div><p className="mb-3 text-xs text-text-faint">{preferences?.adaptiveRecommendations && preferences.completedAt && (preferences.interestedFields.length || preferences.interestedTechnologies.length) ? "Từ sở thích học tập đã lưu của bạn" : "Chủ đề đang có nội dung mới trên hệ thống"}</p><div className="flex flex-wrap gap-2">{topics.length ? topics.map((topic) => <button key={topic} type="button" onClick={() => { setSearch(topic); setCategory("all"); }} className="rounded-md border border-border bg-surface px-3.5 py-2 text-sm font-medium text-navy transition-colors hover:border-primary hover:text-primary">{topic}</button>) : <span className="text-sm text-text-faint">Chưa có chủ đề phù hợp.</span>}</div></section></>}
+              {showProblems && <><section><SectionTitle icon={hasPersonalizedContent(suggestedExercises) ? Sparkles : Star} title={hasPersonalizedContent(suggestedExercises) ? "Bài luyện tập dành cho bạn" : "Bài luyện tập phổ biến"} href="/practice" fillIcon={!hasPersonalizedContent(suggestedExercises)} />{exerciseList.length === 0 ? <EmptySearch label="bài luyện tập" query={search} /> : <Card className="overflow-hidden">{exerciseList.map(({ item: exercise, reason }) => <ProblemRow key={exercise.id} tile="</>" title={exercise.title} meta={reason ?? `Tác giả: ${exercise.authorName ?? "CodeMentor"}`} difficulty={exerciseDifficulty(exercise.difficulty)} href={`/solve/${exercise.id}`} />)}</Card>}</section><section><div className="mb-1 flex items-center gap-1.5 text-base font-bold text-navy"><Target className="h-4 w-4 text-text-muted" /> Chủ đề đề xuất cho bạn</div><p className="mb-3 text-xs text-text-faint">{preferences?.adaptiveRecommendations && preferences.completedAt && (preferences.interestedFields.length || preferences.interestedTechnologies.length) ? "Từ sở thích học tập đã lưu của bạn" : "Chủ đề đang có nội dung mới trên hệ thống"}</p><div className="flex flex-wrap gap-2">{topics.length ? topics.map((topic) => <button key={topic} type="button" onClick={() => { setSearch(topic); setCategory("all"); }} className="rounded-md border border-border bg-surface px-3.5 py-2 text-sm font-medium text-navy transition-colors hover:border-primary hover:text-primary">{topic}</button>) : <span className="text-sm text-text-faint">Chưa có chủ đề phù hợp.</span>}</div></section></>}
 
             </div>
 
             {showCommunity && <div className="flex min-w-0 flex-col gap-4">
-              <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Trophy className="h-4 w-4 text-primary" /> Bảng xếp hạng XP</div>{leaderboard.length ? <div className="flex flex-col gap-3">{leaderboard.map((learner, index) => <div key={learner.id} className="flex items-center gap-2.5"><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-2xs font-bold ${index < 3 ? "bg-primary text-on-ink" : "bg-border-soft text-navy"}`}>{index + 1}</span><div className="min-w-0 flex-1"><div className="truncate text-xs font-semibold text-navy">{learner.displayName}</div><div className="text-2xs text-text-faint">{learner.solvedCount} bài đã giải</div></div><span className="shrink-0 text-xs font-bold text-primary">{formatXp(learner.xp)} XP</span></div>)}</div> : <p className="text-xs text-text-faint">Chưa có dữ liệu xếp hạng.</p>}</Card>
-              <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Globe className="h-4 w-4 text-primary" /> Nhóm công khai nổi bật</div>{communityItems.length ? <div className="flex flex-col gap-4">{communityItems.map((item) => <Link key={item.id} href={item.href} className="flex items-start gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-primary"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft text-navy"><item.icon className="h-4 w-4" /></div><div className="min-w-0"><div className="mb-0.5 line-clamp-2 text-sm font-semibold text-navy">{item.title}</div><div className="text-xs text-text-faint">{item.meta}</div></div></Link>)}</div> : <p className="text-xs text-text-faint">Chưa có nhóm công khai phù hợp.</p>}<Link href="/workspace?tab=public" className="mt-4 block rounded-md border border-border py-2.5 text-center text-xs font-semibold text-navy hover:bg-bg">Xem tất cả nhóm công khai →</Link></Card>
+              <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Trophy className="h-4 w-4 text-text-muted" /> Bảng xếp hạng XP</div>{leaderboard.length ? <div className="flex flex-col gap-3">{leaderboard.map((learner, index) => <div key={learner.id} className="flex items-center gap-2.5"><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-2xs font-bold ${index < 3 ? "bg-primary text-on-ink" : "bg-border-soft text-navy"}`}>{index + 1}</span><div className="min-w-0 flex-1"><div className="truncate text-xs font-semibold text-navy">{learner.displayName}</div><div className="text-2xs text-text-faint">{learner.solvedCount} bài đã giải</div></div><span className="shrink-0 text-xs font-bold text-primary">{formatXp(learner.xp)} XP</span></div>)}</div> : <p className="text-xs text-text-faint">Chưa có dữ liệu xếp hạng.</p>}</Card>
+              <Card className="h-fit p-4"><div className="mb-3.5 flex items-center gap-1.5 text-sm font-bold text-navy"><Globe className="h-4 w-4 text-text-muted" /> Nhóm công khai nổi bật</div>{communityItems.length ? <div className="flex flex-col gap-4">{communityItems.map((item) => <Link key={item.id} href={item.href} className="flex items-start gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-primary"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-border-soft text-navy"><item.icon className="h-4 w-4" /></div><div className="min-w-0"><div className="mb-0.5 line-clamp-2 text-sm font-semibold text-navy">{item.title}</div><div className="text-xs text-text-faint">{item.meta}</div></div></Link>)}</div> : <p className="text-xs text-text-faint">Chưa có nhóm công khai phù hợp.</p>}<Link href="/workspace?tab=public" className="mt-4 block rounded-md border border-border py-2.5 text-center text-xs font-semibold text-navy hover:bg-bg">Xem tất cả nhóm công khai →</Link></Card>
             </div>}
           </div>
         </>

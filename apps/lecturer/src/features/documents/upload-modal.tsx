@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDropzone, type FileRejection } from "react-dropzone";
-import { FileText, UploadCloud, X } from "lucide-react";
+import { FileTextIcon as FileText, CloudArrowUpIcon as UploadCloud, XIcon as X } from "@phosphor-icons/react/ssr";
 import { Button, Modal } from "@codementor/ui";
 import { formatSize } from "./types";
 

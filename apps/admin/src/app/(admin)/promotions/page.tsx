@@ -1,4 +1,4 @@
-import { BadgePercent } from "lucide-react";
+import { SealPercentIcon as BadgePercent } from "@phosphor-icons/react/ssr";
 import { PageHeader } from "@codementor/ui";
 import { PromotionManager } from "@/features/commerce/promotion-manager";
 

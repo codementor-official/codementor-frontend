@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Badge, DifficultyBadge, type Difficulty } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -27,7 +27,7 @@ export interface EntityCardProps {
   coverImage?: string;
   coverFit?: "cover" | "contain";
   coverPosition?: "top" | "center" | "bottom";
-  kind?: { icon: LucideIcon; label: string };
+  kind?: { icon: PhosphorIcon; label: string };
   title: string;
   description: string;
   difficulty?: Difficulty;

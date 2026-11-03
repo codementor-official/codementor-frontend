@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock, Printer, RefreshCw, XCircle } from "lucide-react";
+import { CheckCircleIcon as CheckCircle2, ClockIcon as Clock, PrinterIcon as Printer, ArrowsClockwiseIcon as RefreshCw, XCircleIcon as XCircle } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { useToast } from "@codementor/ui";
 import type { WorkspaceOrderDetail } from "@codementor/types";
@@ -76,7 +76,7 @@ export function CheckoutResultScreen() {
             {paid ? (
               <CheckCircle2 className="h-10 w-10 shrink-0 text-success" aria-hidden />
             ) : pending || order.status === "review" ? (
-              <Clock className="h-10 w-10 shrink-0 text-primary" aria-hidden />
+              <Clock className="h-10 w-10 shrink-0 text-text-muted" aria-hidden />
             ) : (
               <XCircle className="h-10 w-10 shrink-0 text-danger" aria-hidden />
             )}

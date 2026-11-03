@@ -1,5 +1,5 @@
 "use client";
-import { Download } from "lucide-react";
+import { DownloadSimpleIcon as Download } from "@phosphor-icons/react/ssr";
 import { Button, Modal } from "@codementor/ui";
 import {
   COMMERCE_STATUS,

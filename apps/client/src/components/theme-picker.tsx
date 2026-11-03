@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { MonitorIcon as Monitor, MoonIcon as Moon, SunIcon as Sun } from "@phosphor-icons/react/ssr";
 import {
   applyTheme,
   useThemeStore,

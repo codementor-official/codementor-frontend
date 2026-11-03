@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { FileText, Loader2, Plus } from "lucide-react";
+import { FileTextIcon as FileText, CircleNotchIcon as Loader2, PlusIcon as Plus } from "@phosphor-icons/react/ssr";
 import { FieldError, fieldA11y, useToast } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import { Pagination } from "@/components/ui/pagination";

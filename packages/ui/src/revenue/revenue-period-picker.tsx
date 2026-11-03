@@ -1,7 +1,7 @@
 "use client";
 import { useId, useState } from "react";
 import type { RevenueDateRange, RevenueReport } from "@codementor/types";
-import { CalendarDays } from "lucide-react";
+import { CalendarBlankIcon as CalendarDays } from "@phosphor-icons/react/ssr";
 import { Button } from "../button";
 import { Modal } from "../modal";
 import { revenueDate } from "./format";

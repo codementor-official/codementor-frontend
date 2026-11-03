@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ComponentProps, type ReactNode } from "react";
-import { TriangleAlert } from "lucide-react";
+import { WarningIcon as TriangleAlert } from "@phosphor-icons/react/ssr";
 import { Button } from "./button";
 import { Modal } from "./modal";
 

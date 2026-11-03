@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Info, Save, Send, Tags, TriangleAlert, Undo2 } from "lucide-react";
+import { InfoIcon as Info, FloppyDiskIcon as Save, PaperPlaneRightIcon as Send, TagIcon as Tags, WarningIcon as TriangleAlert, ArrowUUpLeftIcon as Undo2 } from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import {
   DndContext,

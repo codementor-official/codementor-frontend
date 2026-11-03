@@ -27,7 +27,7 @@
     "@codementor/utils": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "exceljs": "4.4.0",
-    "lucide-react": "^1.28.0",
+    "@phosphor-icons/react": "^2.1.10",
     "react-resizable-panels": "^4.12.2",
     "recharts": "^3.10.1",
     "socket.io-client": "^4.8.3"

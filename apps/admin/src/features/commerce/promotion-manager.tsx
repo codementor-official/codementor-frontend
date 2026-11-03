@@ -5,7 +5,7 @@ import { apiErrorMessage } from "@codementor/api-client";
 import { CONTENT_STATUS_LABELS, type CoursePromotionProduct } from "@codementor/types";
 import { Button, Card, CourseCover, CoursePrice, Field, fieldA11y, Modal, ReasonField, ServerPagination, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
 import { promotion as promotionRule, reason as reasonRule, toNumber } from "@codementor/utils";
-import { Layers3, Search, Sparkles } from "lucide-react";
+import { StackSimpleIcon as Layers3, MagnifyingGlassIcon as Search, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { commerceAdminApi as api } from "./api";
 import { inputClassName } from "./form-style";

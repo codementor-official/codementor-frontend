@@ -6,7 +6,7 @@ import {
   RevenueTrendChart,
   type RevenueMetric,
 } from "@codementor/ui";
-import { ArrowRight } from "lucide-react";
+import { ArrowRightIcon as ArrowRight } from "@phosphor-icons/react/ssr";
 
 export function SystemRevenueOverview({
   report,
