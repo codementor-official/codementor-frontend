@@ -2,16 +2,16 @@
 
 import type { ReactNode } from "react";
 import {
-  Check,
-  FileText,
-  ListChecks,
-  Loader2,
-  Play,
-  Search,
-  Sparkles,
-  Tags,
-  TriangleAlert,
-} from "lucide-react";
+  CheckIcon as Check,
+  FileTextIcon as FileText,
+  ListChecksIcon as ListChecks,
+  CircleNotchIcon as Loader2,
+  PlayIcon as Play,
+  MagnifyingGlassIcon as Search,
+  SparkleIcon as Sparkles,
+  TagIcon as Tags,
+  WarningIcon as TriangleAlert,
+} from "@phosphor-icons/react/ssr";
 import { useRenderTool } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 
@@ -43,7 +43,7 @@ function ToolRow({
           failed ? (
             <TriangleAlert aria-hidden="true" className="size-4 text-danger" />
           ) : (
-            <Check aria-hidden="true" className="size-4 text-primary" />
+            <Check aria-hidden="true" className="size-4 text-text-muted" />
           )
         ) : (
           <Loader2 aria-hidden="true" className="size-4 animate-spin" />

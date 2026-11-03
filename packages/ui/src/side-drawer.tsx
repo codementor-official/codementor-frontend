@@ -6,7 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { GripVertical, X } from "lucide-react";
+import { DotsSixVerticalIcon as GripVertical, XIcon as X } from "@phosphor-icons/react/ssr";
 
 /** Hẹp hơn mức này thì trình soạn thảo trong drawer xuống dòng vỡ hết. */
 const MIN_WIDTH = 420;

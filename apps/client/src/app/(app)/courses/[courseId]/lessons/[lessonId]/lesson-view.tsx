@@ -4,7 +4,7 @@ import { useToast } from "@codementor/ui";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Home, Loader2, PartyPopper } from "lucide-react";
+import { HouseIcon as Home, CircleNotchIcon as Loader2, ConfettiIcon as PartyPopper } from "@phosphor-icons/react/ssr";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";

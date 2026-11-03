@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { CommerceOrder, WalletSummary } from "@codementor/types";
 import { formatHoldingPeriod } from "@codementor/utils";
-import { ChevronDown, Clock3 } from "lucide-react";
+import { CaretDownIcon as ChevronDown, ClockIcon as Clock3 } from "@phosphor-icons/react/ssr";
 import { Card } from "@codementor/ui";
 import { vnd } from "./api";
 
@@ -30,7 +30,7 @@ export function HoldingExplanation({ wallet }: { wallet: WalletSummary }) {
     <Card>
       <details className="group p-4">
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 font-semibold [&::-webkit-details-marker]:hidden">
-          <Clock3 className="size-4 shrink-0 text-primary" />
+          <Clock3 className="size-4 shrink-0 text-muted-foreground" />
           <span>Tiền đang giữ & thời điểm có thể rút</span>
           <span className="ml-auto text-sm tabular-nums">
             {vnd(wallet.balances.pending ?? 0)}

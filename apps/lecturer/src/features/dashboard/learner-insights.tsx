@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { BadgeCheck, GraduationCap, Star, UserPlus, Users, Wallet } from "lucide-react";
+import { SealCheckIcon as BadgeCheck, GraduationCapIcon as GraduationCap, StarIcon as Star, UserPlusIcon as UserPlus, UsersIcon as Users, WalletIcon as Wallet } from "@phosphor-icons/react/ssr";
 import { Card, CardContent, CardHeader, DailyBarCard, KpiStrip, SegmentedTabs, useSummary } from "@codementor/ui";
 import { api, type LecturerInsights } from "@/lib/api";
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { InfoHint } from "@codementor/ui";
 
 /**
@@ -14,7 +14,7 @@ export function CardHeading({
   action,
   className = "",
 }: {
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   title: string;
   /** Mô tả thẻ. Vào tooltip thay vì một đoạn xám luôn hiện dưới tiêu đề. */
   hint?: string;

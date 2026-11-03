@@ -1,4 +1,4 @@
-import { ArrowRight, Code2 } from "lucide-react";
+import { ArrowRightIcon as ArrowRight, CodeIcon as Code2 } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import type { LandingData } from "./data";
 import { HeroStudio } from "./hero-studio";

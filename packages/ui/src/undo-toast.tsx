@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Undo2 } from "lucide-react";
+import { ArrowUUpLeftIcon as Undo2 } from "@phosphor-icons/react/ssr";
 
 /** Đủ lâu để đọc xong dòng thông báo và bấm hoàn tác, không lâu tới mức người dùng quên mất nó còn ở đó. */
 const DEFAULT_DURATION_MS = 6000;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Bot, FileText, Lightbulb, Loader2, Plus, Send, Square } from "lucide-react";
+import { BookOpenIcon as BookOpen, RobotIcon as Bot, FileTextIcon as FileText, LightbulbIcon as Lightbulb, CircleNotchIcon as Loader2, PlusIcon as Plus, PaperPlaneRightIcon as Send, SquareIcon as Square } from "@phosphor-icons/react/ssr";
 import { FieldError, fieldA11y, Modal } from "@codementor/ui";
 import { length } from "@codementor/utils";
 import { Button } from "@/components/ui/button";
@@ -73,8 +73,8 @@ export function TutorChat({
     <Card className="order-1 flex h-[calc(100dvh-10rem)] min-h-[36rem] min-w-0 flex-col overflow-hidden lg:sticky lg:top-0 lg:h-[calc(100dvh-10.5rem)] lg:min-h-0">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4">
         <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
-          <span className="flex size-8 items-center justify-center rounded-full bg-primary-tint">
-            <Bot className="size-4 text-primary" />
+          <span className="flex size-8 items-center justify-center rounded-full bg-border-soft">
+            <Bot className="size-4 text-text-muted" />
           </span>
           Trò chuyện với trợ lý
         </h2>
@@ -127,7 +127,7 @@ export function TutorChat({
                 setInput(item.prompt);
                 composerRef.current?.focus();
               }}
-              className="rounded-full border border-border bg-bg px-3 py-1.5 text-xs font-medium text-text transition-colors hover:border-primary hover:bg-primary-tint disabled:opacity-50"
+              className="rounded-full border border-border bg-bg px-3 py-1.5 text-xs font-medium text-text transition-colors hover:border-text-faint hover:bg-border-soft disabled:opacity-50"
             >
               {item.title}
             </button>
@@ -252,7 +252,7 @@ function GroundedAnswer({ turn, onCite }: { turn: TutorTurn; onCite: (citation: 
                 key={source.sourceId}
                 type="button"
                 onClick={() => onCite(source)}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-primary-tint px-2 py-1 text-left text-xs text-primary transition-colors hover:bg-border-soft"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-border-soft px-2 py-1 text-left text-xs text-navy transition-colors hover:bg-border-soft"
               >
                 <FileText className="size-3 shrink-0" />
                 <span className="break-words">
@@ -271,7 +271,7 @@ function GroundedAnswer({ turn, onCite }: { turn: TutorTurn; onCite: (citation: 
 
 function Supplemental({ content }: { content: string }) {
   return (
-    <section className="space-y-2 rounded-lg border border-primary/20 bg-primary-tint p-3">
+    <section className="space-y-2 rounded-lg border border-border bg-bg p-3">
       <h3 className="flex items-center gap-1.5 text-xs font-semibold text-primary">
         <Lightbulb className="size-3.5" />
         Giải thích & mở rộng

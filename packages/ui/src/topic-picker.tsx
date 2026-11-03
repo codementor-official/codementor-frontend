@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Loader2, Plus, X } from "lucide-react";
+import { CircleNotchIcon as Loader2, PlusIcon as Plus, XIcon as X } from "@phosphor-icons/react/ssr";
 import { length, slugify } from "@codementor/utils";
 import { Button } from "./button";
 

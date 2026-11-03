@@ -2,7 +2,7 @@
 import { apiErrorMessage } from "@codementor/api-client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreditCard } from "lucide-react";
+import { CreditCardIcon as CreditCard } from "@phosphor-icons/react/ssr";
 import { CoursePrice, useToast } from "@codementor/ui";
 import type { CommerceConfig, PaymentMethod } from "@codementor/types";
 import { Button } from "@/components/ui/button";

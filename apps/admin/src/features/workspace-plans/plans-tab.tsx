@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FilePenLine, History, Pencil, Plus, Rocket, ShieldCheck } from "lucide-react";
+import { NotePencilIcon as FilePenLine, ClockCounterClockwiseIcon as History, PencilSimpleIcon as Pencil, PlusIcon as Plus, RocketLaunchIcon as Rocket, ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { Button, Card, ConfirmButton, Field, Modal, SideDrawer, StatusBadge, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";

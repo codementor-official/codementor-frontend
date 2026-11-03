@@ -3,33 +3,33 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Activity,
-  Archive,
-  BarChart3,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  CalendarDays,
-  ClipboardCheck,
-  ClipboardList,
-  Copy,
-  Download,
-  FileText,
-  Flame,
-  Image as ImageIcon,
-  KeyRound,
-  LogOut,
-  MessageCircle,
-  RotateCcw,
-  Save,
-  Search,
-  Settings,
-  ShieldCheck,
-  Target,
-  TrendingUp,
-  Users,
-  X,
-} from "lucide-react";
+  PulseIcon as Activity,
+  ArchiveIcon as Archive,
+  ChartBarIcon as BarChart3,
+  CheckCircleIcon as CheckCircle2,
+  CaretDownIcon as ChevronDown,
+  CaretUpIcon as ChevronUp,
+  CalendarBlankIcon as CalendarDays,
+  ClipboardTextIcon as ClipboardCheck,
+  ClipboardTextIcon as ClipboardList,
+  CopyIcon as Copy,
+  DownloadSimpleIcon as Download,
+  FileTextIcon as FileText,
+  FireIcon as Flame,
+  ImageIcon as ImageIcon,
+  KeyIcon as KeyRound,
+  SignOutIcon as LogOut,
+  ChatCircleIcon as MessageCircle,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  FloppyDiskIcon as Save,
+  MagnifyingGlassIcon as Search,
+  GearIcon as Settings,
+  ShieldCheckIcon as ShieldCheck,
+  TargetIcon as Target,
+  TrendUpIcon as TrendingUp,
+  UsersIcon as Users,
+  XIcon as X,
+} from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import { CharCount, FieldError, fieldA11y, Modal, ReasonField, Select, StatStrip, useFieldErrors, useToast, useUrlState } from "@codementor/ui";
 import { collectAllPages, csvDateTime, dateRange, length, reason as reasonRule, search as searchRule } from "@codementor/utils";
@@ -500,7 +500,7 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
             className="h-12 w-12 shrink-0 rounded-lg object-cover"
           />
         ) : (
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-tint font-mono text-sm font-bold text-primary">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-border-soft font-mono text-sm font-bold text-navy">
             {initialsOf(detail.name)}
           </span>
         )}
@@ -811,7 +811,7 @@ function Overview({
       <Card className="overflow-hidden">
         <div
           className={`flex items-center justify-center bg-no-repeat ${
-            detail.coverUrl ? "bg-border-soft" : "bg-primary-tint"
+            "bg-border-soft"
           } ${
             detail.coverHeight === "compact"
               ? "h-24 sm:h-28"
@@ -970,7 +970,7 @@ function Overview({
                     Số hoạt động mỗi ngày trong 4 tuần.
                   </p>
                 </div>
-                <Activity className="h-5 w-5 text-primary" />
+                <Activity className="h-5 w-5 text-text-muted" />
               </div>
               <MiniTrend points={overview.activityTrend} />
             </Card>
@@ -1419,7 +1419,7 @@ function Progress({
                 Join, tạo bài, upload tài liệu, thông báo và submission.
               </p>
             </div>
-            <Activity className="h-5 w-5 text-primary" />
+            <Activity className="h-5 w-5 text-text-muted" />
           </div>
           <MiniTrend points={overview.activityTrend} />
         </Card>
@@ -2378,7 +2378,7 @@ function MemberDetailDialog({
                 </div>
                 <Card className="p-4">
                   <div className="flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-primary" />
+                    <Flame className="h-4 w-4 text-text-muted" />
                     <h3 className="text-sm font-bold text-navy">
                       Mức độ hoạt động (12 tuần)
                     </h3>
@@ -2408,7 +2408,7 @@ function MemberDetailDialog({
                   data.overrides && (
                     <Card className="p-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        <ShieldCheck className="h-4 w-4 text-text-muted" />
                         <div className="min-w-0 flex-1">
                           <h3 className="text-sm font-bold text-navy">
                             Quyền hiệu lực
@@ -2517,7 +2517,7 @@ function MemberDetailDialog({
                         {data.recentActivities.map((activity) => (
                           <li
                             key={activity.id}
-                            className="border-l-2 border-primary/30 pl-3 text-xs text-text-muted"
+                            className="border-l-2 border-border pl-3 text-xs text-text-muted"
                           >
                             {activity.action}
                             <span className="block text-text-faint">
@@ -2867,9 +2867,9 @@ function SettingsPanel({
           </form>
         </Card>
         <OwnershipTransferCard slug={detail.slug} members={members} />
-        <Card className="border-primary/30 p-5">
+        <Card className="border-border p-5">
           <div className="flex items-center gap-2">
-            <Archive className="h-4 w-4 text-primary" />
+            <Archive className="h-4 w-4 text-text-muted" />
             <h2 className="text-sm font-bold text-navy">Lưu trữ nhóm</h2>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-text-faint">

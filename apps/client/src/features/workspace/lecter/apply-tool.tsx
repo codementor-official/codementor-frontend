@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Check, ChevronRight, Loader2, X } from "lucide-react";
+import { WarningIcon as AlertTriangle, CheckIcon as Check, CaretRightIcon as ChevronRight, CircleNotchIcon as Loader2, XIcon as X } from "@phosphor-icons/react/ssr";
 import { useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -224,7 +224,7 @@ export function LecterApplyTool() {
           return (
             <div className="my-2 flex items-center gap-2 rounded-lg border border-border-soft bg-surface px-3 py-2 text-xs text-text-muted">
               {outcome === "applied" ? (
-                <Check aria-hidden="true" className="size-3.5 text-primary" />
+                <Check aria-hidden="true" className="size-3.5 text-text-muted" />
               ) : (
                 <X aria-hidden="true" className="size-3.5" />
               )}

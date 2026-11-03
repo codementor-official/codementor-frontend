@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { Card } from "./card";
 
 export interface Kpi {
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   label: string;
   /** `null` = không lấy được số. Hiện "—", không hiện 0: số thiếu khác số bằng không. */
   value: number | null;

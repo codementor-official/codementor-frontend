@@ -3,19 +3,19 @@ import { apiErrorMessage } from "@codementor/api-client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft,
-  ArrowUpRight,
-  BookOpen,
-  CalendarDays,
-  CheckCircle2,
-  CreditCard,
-  Download,
-  Printer,
-  Receipt,
-  RefreshCw,
-  Search,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  ArrowLeftIcon as ArrowLeft,
+  ArrowUpRightIcon as ArrowUpRight,
+  BookOpenIcon as BookOpen,
+  CalendarBlankIcon as CalendarDays,
+  CheckCircleIcon as CheckCircle2,
+  CreditCardIcon as CreditCard,
+  DownloadSimpleIcon as Download,
+  PrinterIcon as Printer,
+  ReceiptIcon as Receipt,
+  ArrowsClockwiseIcon as RefreshCw,
+  MagnifyingGlassIcon as Search,
+} from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import {
   COMMERCE_STATUS,
   type CommercePage,
@@ -320,7 +320,7 @@ export function PurchasesScreen({ orderId }: { orderId?: string }) {
   );
 }
 
-function InvoiceMeta({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+function InvoiceMeta({ icon: Icon, label, value }: { icon: PhosphorIcon; label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border-soft p-3.5">
       <div className="flex items-center gap-2 text-xs font-medium text-text-muted">

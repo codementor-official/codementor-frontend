@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { CheckIcon as Check } from "@phosphor-icons/react/ssr";
 import type { OnboardingFieldConfig } from "@/data/onboarding-steps";
 
 export function OnboardingOptionGrid({
@@ -29,7 +29,7 @@ export function OnboardingOptionGrid({
               type="button"
               onClick={() => onToggle(option.value)}
               className={`flex items-center gap-3 rounded-lg border p-3.5 text-left transition-colors ${
-                selected ? "border-primary bg-primary-tint" : "border-border bg-surface hover:border-navy"
+                selected ? "border-navy bg-border-soft" : "border-border bg-surface hover:border-navy"
               }`}
             >
               <option.icon className={`h-5 w-5 shrink-0 ${selected ? "text-primary" : "text-text-faint"}`} />
@@ -41,7 +41,7 @@ export function OnboardingOptionGrid({
                   <span className="mt-0.5 block text-xs text-text-faint">{option.description}</span>
                 )}
               </span>
-              {selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
+              {selected && <Check className="h-4 w-4 shrink-0 text-text-muted" />}
             </button>
           );
         })}

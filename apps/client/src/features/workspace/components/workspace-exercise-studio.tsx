@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles } from "lucide-react";
+import { CircleNotchIcon as Loader2, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import {
   ExerciseBriefForm,
   ExerciseCodeForm,

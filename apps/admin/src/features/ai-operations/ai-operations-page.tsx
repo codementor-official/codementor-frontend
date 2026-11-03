@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Ban, Bot, Coins, MessagesSquare, Settings2, TriangleAlert, Zap } from "lucide-react";
+import { ProhibitIcon as Ban, RobotIcon as Bot, CoinsIcon as Coins, ChatsCircleIcon as MessagesSquare, GearSixIcon as Settings2, WarningIcon as TriangleAlert, LightningIcon as Zap } from "@phosphor-icons/react/ssr";
 import {
   Card,
   CardContent,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { ListIcon as Menu } from "@phosphor-icons/react/ssr";
 import type { ReactNode } from "react";
 
 /**

@@ -1,4 +1,4 @@
-import { AlertTriangle, CircleCheck, Info, OctagonAlert } from "lucide-react";
+import { WarningIcon as AlertTriangle, CheckCircleIcon as CircleCheck, InfoIcon as Info, WarningOctagonIcon as OctagonAlert } from "@phosphor-icons/react/ssr";
 import type { UsageLevel } from "@codementor/types";
 import { usagePercent } from "@codementor/utils";
 

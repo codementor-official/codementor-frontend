@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {
-  CalendarDays,
-  Clock,
-  ScrollText,
-  ShieldCheck,
-} from "lucide-react";
+  CalendarBlankIcon as CalendarDays,
+  ClockIcon as Clock,
+  ScrollIcon as ScrollText,
+  ShieldCheckIcon as ShieldCheck,
+} from "@phosphor-icons/react/ssr";
 import { DetailMeta, DetailRow, DetailSection, FieldError, fieldA11y, ManagePage, Select, StatusBadge } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import { useAdminApi } from "@/features/auth/admin-api";

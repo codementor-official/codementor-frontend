@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
-import { FileText, Loader2, X } from "lucide-react";
+import { FileTextIcon as FileText, CircleNotchIcon as Loader2, XIcon as X } from "@phosphor-icons/react/ssr";
 import { CopilotChatInput } from "@copilotkit/react-core/v2";
 import { useToast } from "@codementor/ui";
 import { MAX_ATTACHMENTS, prepareDocument, serializeAttachments } from "./attach";

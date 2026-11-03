@@ -6,7 +6,7 @@ import {
   RevenueBreakdownChart,
   ServerPagination,
 } from "@codementor/ui";
-import { Download } from "lucide-react";
+import { DownloadSimpleIcon as Download } from "@phosphor-icons/react/ssr";
 import { downloadCsv } from "@codementor/utils";
 import { vnd } from "../api";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings2 } from "lucide-react";
+import { GearSixIcon as Settings2 } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 
 /**

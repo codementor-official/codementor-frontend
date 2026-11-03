@@ -4,7 +4,7 @@ import { LandingCategories } from "@/features/landing/categories";
 import { LandingFeaturedCourses } from "@/features/landing/featured-courses";
 import { LandingLearningPaths } from "@/features/landing/learning-paths";
 import { LandingPractice } from "@/features/landing/practice";
-import { LandingBenefits } from "@/features/landing/benefits";
+import { LandingPrograms } from "@/features/landing/programs";
 import { LandingArticles } from "@/features/landing/latest-articles";
 import { LandingCta } from "@/features/landing/cta";
 import { LandingFooter } from "@/features/landing/landing-footer";
@@ -20,11 +20,11 @@ export default async function LandingPage() {
       <LandingHeader />
       <main>
         <LandingHero {...data} />
+        <LandingPrograms />
         <LandingCategories courses={data.courses} />
         <LandingFeaturedCourses courses={data.courses} />
         <LandingLearningPaths roadmaps={data.roadmaps} />
         <LandingPractice />
-        <LandingBenefits />
         <LandingArticles articles={data.articles} />
         <LandingCta />
       </main>

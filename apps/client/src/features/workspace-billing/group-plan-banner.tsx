@@ -1,4 +1,4 @@
-import { EyeOff, Lock, TriangleAlert } from "lucide-react";
+import { EyeSlashIcon as EyeOff, LockIcon as Lock, WarningIcon as TriangleAlert } from "@phosphor-icons/react/ssr";
 import type { GroupPlan, OverageReason } from "@codementor/types";
 import { formatVnDate } from "@codementor/utils";
 import { Button } from "@/components/ui/button";

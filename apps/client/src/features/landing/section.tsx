@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRightIcon as ArrowRight } from "@phosphor-icons/react/ssr";
 
 /** Khung chung của mọi section landing: cùng bề rộng, cùng nhịp dọc, cùng kiểu tiêu đề. */
 export function LandingSection({

@@ -1,4 +1,4 @@
-import { LayoutGrid, List } from "lucide-react";
+import { SquaresFourIcon as LayoutGrid, ListIcon as List } from "@phosphor-icons/react/ssr";
 
 export type ViewMode = "table" | "grid";
 

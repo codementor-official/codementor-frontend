@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import {
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  ImageIcon,
-  Inbox,
-  Loader2,
-  MessageSquare,
-  PlayCircle,
-} from "lucide-react";
+  BookOpenIcon as BookOpen,
+  CaretDownIcon as ChevronDown,
+  CaretRightIcon as ChevronRight,
+  FileTextIcon as FileText,
+  ImageIcon as ImageIcon,
+  TrayIcon as Inbox,
+  CircleNotchIcon as Loader2,
+  ChatCenteredTextIcon as MessageSquare,
+  PlayCircleIcon as PlayCircle,
+} from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import { resolveVideo } from "@codementor/utils";
 import { CourseCover, StatusBadge } from "@codementor/ui";
@@ -108,7 +108,7 @@ export function ContentPreview({ item }: { item: QueueItem }) {
           <div className="mb-1.5 flex items-center gap-2">
             <MessageSquare
               aria-hidden="true"
-              className="size-4 shrink-0 text-primary"
+              className="size-4 shrink-0 text-muted-foreground"
             />
             <h3 className="text-xs font-bold tracking-wide uppercase">
               Ghi chú của tác giả

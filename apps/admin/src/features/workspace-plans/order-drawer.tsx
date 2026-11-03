@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { ArrowsClockwiseIcon as RefreshCw } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { Button, ReasonButton, SideDrawer, StatusBadge, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";

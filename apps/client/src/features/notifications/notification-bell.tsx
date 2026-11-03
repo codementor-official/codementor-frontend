@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Loader2 } from "lucide-react";
+import { BellIcon as Bell, CircleNotchIcon as Loader2 } from "@phosphor-icons/react/ssr";
 import { formatRelativeTime } from "@/lib/study-group/study-group-stats";
 import type { AppNotification } from "@/types/notification";
 import { useAuth } from "@/providers/auth-provider";

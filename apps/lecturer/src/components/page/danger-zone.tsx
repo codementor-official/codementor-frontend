@@ -1,4 +1,4 @@
-import { Trash2, TriangleAlert } from "lucide-react";
+import { TrashIcon as Trash2, WarningIcon as TriangleAlert } from "@phosphor-icons/react/ssr";
 import { ConfirmButton } from "@codementor/ui";
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Gauge } from "lucide-react";
+import { GaugeIcon as Gauge } from "@phosphor-icons/react/ssr";
 import { Modal } from "@codementor/ui";
 import { formatBytes } from "@codementor/utils";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ function QuotaDialog({ shown, onClose }: { shown: Shown | null; onClose: () => v
       }
     >
       <div className="flex gap-3">
-        <Gauge className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
+        <Gauge className="mt-0.5 h-5 w-5 shrink-0 text-text-muted" aria-hidden />
         <div className="min-w-0 space-y-2 text-sm leading-relaxed text-text">
           <p>{copy.body}</p>
           {copy.figures && (

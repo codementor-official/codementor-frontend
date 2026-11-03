@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { BookOpen, Code2, FileText, Sparkles } from "lucide-react";
+import { BookOpenIcon as BookOpen, CodeIcon as Code2, FileTextIcon as FileText, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { useToast } from "@codementor/ui";
@@ -47,7 +47,7 @@ function NoCursor() {
 function WelcomeContent() {
   return (
     <div className="w-full max-w-xl">
-        <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-muted text-foreground">
           <Sparkles aria-hidden="true" className="size-7" />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">

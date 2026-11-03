@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Loader2, Newspaper, Search, X } from "lucide-react";
+import { SealCheckIcon as BadgeCheck, CircleNotchIcon as Loader2, NewspaperIcon as Newspaper, MagnifyingGlassIcon as Search, XIcon as X } from "@phosphor-icons/react/ssr";
 import { FieldError, fieldA11y, useUrlState } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import { api } from "@/lib/api";
@@ -264,7 +264,7 @@ function TagChip({
       aria-pressed={active}
       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-navy focus-visible:outline-none ${
         active
-          ? "border-primary bg-primary-tint text-primary"
+          ? "border-navy bg-border-soft text-navy"
           : "border-border bg-surface text-text-muted hover:border-navy/20 hover:text-navy"
       }`}
       onClick={onClick}
@@ -289,7 +289,7 @@ function ArticleRow({ article }: { article: ArticleSummary }) {
             <span className="truncate text-sm font-semibold text-navy">
               {article.authorName ?? "CodeMentor"}
             </span>
-            <BadgeCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+            <BadgeCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-text-muted" />
           </div>
           <div className="flex items-center gap-1">
             <SaveButton compact targetType="POST" targetId={article.id} targetRef={article.slug} />

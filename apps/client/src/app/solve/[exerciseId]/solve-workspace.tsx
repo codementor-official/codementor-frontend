@@ -6,14 +6,14 @@ import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Group, Panel } from "react-resizable-panels";
 import {
-  ArrowLeft,
-  Bot,
-  Braces,
-  Loader2,
-  PartyPopper,
-  Play,
-  RotateCcw,
-} from "lucide-react";
+  ArrowLeftIcon as ArrowLeft,
+  RobotIcon as Bot,
+  BracketsCurlyIcon as Braces,
+  CircleNotchIcon as Loader2,
+  ConfettiIcon as PartyPopper,
+  PlayIcon as Play,
+  ArrowCounterClockwiseIcon as RotateCcw,
+} from "@phosphor-icons/react/ssr";
 import { ProblemPicker } from "@/components/workspace/problem-picker";
 import { UserMenu } from "@/components/user-menu";
 import {
@@ -320,7 +320,7 @@ export function SolveWorkspace({
                       targetId={exerciseId}
                     />
                   )}
-                  <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary">
+                  <span className="rounded-full bg-border-soft px-2.5 py-1 text-xs font-bold text-navy">
                     +{xpReward} XP
                   </span>
                 </div>
@@ -860,7 +860,7 @@ function WorkspaceBody({
             aria-pressed={aiVisible}
             className={`flex h-8 w-8 items-center justify-center rounded-md ${
               aiVisible
-                ? "bg-primary-tint text-primary"
+                ? "bg-border-soft text-navy"
                 : "text-text-muted hover:bg-bg hover:text-navy"
             }`}
           >

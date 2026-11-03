@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpenCheck, Eye, EyeOff, Sparkles } from "lucide-react";
+import { BookOpenTextIcon as BookOpenCheck, EyeIcon as Eye, EyeSlashIcon as EyeOff, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import { AccountSuspendedNotice, Button, Input } from "@codementor/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { useAuth } from "@/providers/auth-provider";
@@ -60,7 +60,7 @@ export function LoginForm({
         <div className="hidden min-h-[570px] flex-col justify-between bg-primary/5 p-10 lg:flex">
           <BrandLogo showName size={42} />
           <div>
-            <div className="mb-7 flex size-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary"><BookOpenCheck className="size-8" aria-hidden="true" /></div>
+            <div className="mb-7 flex size-16 items-center justify-center rounded-2xl border bg-muted text-foreground"><BookOpenCheck className="size-8" aria-hidden="true" /></div>
             <h2 className="max-w-sm text-3xl font-bold tracking-tight">Nơi ý tưởng trở thành bài học.</h2>
             <p className="mt-4 max-w-sm text-sm leading-7 text-muted-foreground">Soạn khóa học, xây dựng bài tập và đồng hành cùng học viên trong một không gian làm việc liền mạch.</p>
           </div>

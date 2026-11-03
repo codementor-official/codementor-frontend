@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, Code2, FileText, Loader2, Plus, Route, Upload, X } from "lucide-react";
+import { BookOpenIcon as BookOpen, CodeIcon as Code2, FileTextIcon as FileText, CircleNotchIcon as Loader2, PlusIcon as Plus, PathIcon as Route, UploadSimpleIcon as Upload, XIcon as X } from "@phosphor-icons/react/ssr";
 import { CopilotChatInput } from "@copilotkit/react-core/v2";
 import { useToast } from "@codementor/ui";
 import { DocumentUploadModal } from "@/features/documents/upload-modal";

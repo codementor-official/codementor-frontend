@@ -5,19 +5,19 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Archive,
-  BookOpen,
-  FileText,
-  ListTree,
-  Pencil,
-  BadgePercent,
-  Plus,
-  RotateCcw,
-  Send,
-  Trash2,
-  TriangleAlert,
-  Undo2,
-} from "lucide-react";
+  ArchiveIcon as Archive,
+  BookOpenIcon as BookOpen,
+  FileTextIcon as FileText,
+  TreeStructureIcon as ListTree,
+  PencilSimpleIcon as Pencil,
+  SealPercentIcon as BadgePercent,
+  PlusIcon as Plus,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  PaperPlaneRightIcon as Send,
+  TrashIcon as Trash2,
+  WarningIcon as TriangleAlert,
+  ArrowUUpLeftIcon as Undo2,
+} from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {

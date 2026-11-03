@@ -18,7 +18,7 @@ import {
   type SortingState,
   type Table as TanstackTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsUpDown, Inbox } from "lucide-react";
+import { ArrowDownIcon as ArrowDown, ArrowUpIcon as ArrowUp, CaretLeftIcon as ChevronLeft, CaretRightIcon as ChevronRight, CaretUpDownIcon as ChevronsUpDown, TrayIcon as Inbox } from "@phosphor-icons/react/ssr";
 import { useUrlState } from "./use-url-state";
 
 /** Ticks the header/row checkboxes. Native input so keyboard + indeterminate come free. */

@@ -1,4 +1,4 @@
-import { Check, Flame } from "lucide-react";
+import { CheckIcon as Check, FireIcon as Flame } from "@phosphor-icons/react/ssr";
 import { Card } from "@/components/ui/card";
 
 /**
@@ -21,7 +21,7 @@ export function StreakCard({
     <Card className="p-4">
       <div className="mb-3.5 flex items-baseline justify-between">
         <span className="flex items-center gap-1.5 text-sm font-bold text-navy">
-          <Flame className="h-4 w-4 text-primary" /> Chuỗi ngày
+          <Flame className="h-4 w-4 text-text-muted" /> Chuỗi ngày
         </span>
         <span className="text-base font-bold text-primary">{current} ngày</span>
       </div>

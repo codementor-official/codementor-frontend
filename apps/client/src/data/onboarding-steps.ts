@@ -1,32 +1,32 @@
 import {
-  Award,
-  BookOpen,
-  Briefcase,
-  Clock,
-  Code2,
-  Database,
-  FileText,
-  GraduationCap,
-  Hammer,
-  HelpCircle,
-  Layers3,
-  LayoutGrid,
-  Server,
-  Smartphone,
-  Sprout,
-  Trophy,
-  UserCheck,
-  Users,
-  Video,
-  type LucideIcon,
-} from "lucide-react";
+  MedalIcon as Award,
+  BookOpenIcon as BookOpen,
+  BriefcaseIcon as Briefcase,
+  ClockIcon as Clock,
+  CodeIcon as Code2,
+  DatabaseIcon as Database,
+  FileTextIcon as FileText,
+  GraduationCapIcon as GraduationCap,
+  HammerIcon as Hammer,
+  QuestionIcon as HelpCircle,
+  StackSimpleIcon as Layers3,
+  SquaresFourIcon as LayoutGrid,
+  HardDrivesIcon as Server,
+  DeviceMobileIcon as Smartphone,
+  PlantIcon as Sprout,
+  TrophyIcon as Trophy,
+  UserCheckIcon as UserCheck,
+  UsersIcon as Users,
+  VideoCameraIcon as Video,
+} from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { LearningPreference } from "@/types/learning-preference";
 
 export interface OnboardingOption {
   value: string;
   label: string;
   description?: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
 }
 
 export type OnboardingSelectionType = "single" | "multi";

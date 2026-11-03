@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useId, useState } from "react";
-import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { CaretDownIcon as ChevronDown, MagnifyingGlassIcon as Search, SlidersHorizontalIcon as SlidersHorizontal } from "@phosphor-icons/react/ssr";
 import { search as searchRule } from "@codementor/utils";
 import { FieldError, fieldA11y } from "./field";
 

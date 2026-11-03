@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown } from "lucide-react";
+import { CheckIcon as Check, CaretDownIcon as ChevronDown } from "@phosphor-icons/react/ssr";
 
 /**
  * Bộ chọn ngôn ngữ ở thanh tiêu đề của trình soạn code.
@@ -104,7 +104,7 @@ export function LanguageDropdown({
                   }`}
                 >
                   <Check
-                    className={`size-3 shrink-0 text-primary ${option === language ? "opacity-100" : "opacity-0"}`}
+                    className={`size-3 shrink-0 text-muted-foreground ${option === language ? "opacity-100" : "opacity-0"}`}
                   />
                   {show(option)}
                 </button>

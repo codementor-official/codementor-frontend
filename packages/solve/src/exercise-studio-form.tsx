@@ -3,23 +3,23 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  Braces,
-  ChevronDown,
-  Eye,
-  FileText,
-  FlaskConical,
-  Info,
-  Languages,
-  Loader2,
-  Pencil,
-  Plus,
-  Scale,
-  Sparkles,
-  Wand2,
-  Workflow,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+  BracketsCurlyIcon as Braces,
+  CaretDownIcon as ChevronDown,
+  EyeIcon as Eye,
+  FileTextIcon as FileText,
+  FlaskIcon as FlaskConical,
+  InfoIcon as Info,
+  TranslateIcon as Languages,
+  CircleNotchIcon as Loader2,
+  PencilSimpleIcon as Pencil,
+  PlusIcon as Plus,
+  ScalesIcon as Scale,
+  SparkleIcon as Sparkles,
+  MagicWandIcon as Wand2,
+  FlowArrowIcon as Workflow,
+  XIcon as X,
+} from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Button, Card, Field, FieldError as FieldErrorText, fieldA11y, Select, TopicPicker } from "@codementor/ui";
@@ -548,7 +548,7 @@ function SignatureCard({
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <Braces aria-hidden="true" className="size-4 shrink-0 text-primary" />
+          <Braces aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
           Chữ ký hàm
           <InfoHint text="Tên hàm, tham số và kiểu trả về mà học viên phải viết. Học viên chỉ điền thân hàm; mã khởi tạo và test case đều sinh theo chữ ký này." />
         </h2>
@@ -1169,7 +1169,7 @@ export function ExerciseCodeForm({
           <h2 className="flex items-center gap-2 text-sm font-semibold">
             <FlaskConical
               aria-hidden="true"
-              className="size-4 shrink-0 text-primary"
+              className="size-4 shrink-0 text-muted-foreground"
             />
             Test case
             <InfoHint
@@ -1523,7 +1523,7 @@ function CardHeading({
   action,
   className = "",
 }: {
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   title: string;
   hint?: string;
   action?: ReactNode;

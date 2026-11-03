@@ -2,14 +2,14 @@
 
 import { useCallback, useState } from "react";
 import {
-  AlertTriangle,
-  Braces,
-  CheckCheck,
-  Cpu,
-  MemoryStick,
-  Send,
-  Timer,
-} from "lucide-react";
+  WarningIcon as AlertTriangle,
+  BracketsCurlyIcon as Braces,
+  ChecksIcon as CheckCheck,
+  CpuIcon as Cpu,
+  MemoryIcon as MemoryStick,
+  PaperPlaneRightIcon as Send,
+  TimerIcon as Timer,
+} from "@phosphor-icons/react/ssr";
 import { LANGUAGES, VERDICT_LABELS } from "@codementor/solve";
 import {
   Card,

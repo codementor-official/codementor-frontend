@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, Lock, Mail, UserRound } from "lucide-react";
+import { EyeIcon as Eye, EyeSlashIcon as EyeOff, CircleNotchIcon as Loader2, LockIcon as Lock, EnvelopeIcon as Mail, UserCircleIcon as UserRound } from "@phosphor-icons/react/ssr";
 import { resetPasswordUrl } from "@codementor/auth";
 import { ACCOUNT_SUSPENDED, AccountSuspendedNotice, FieldError, fieldA11y, Input, useFieldErrors } from "@codementor/ui";
 import { email, length, required } from "@codementor/utils";

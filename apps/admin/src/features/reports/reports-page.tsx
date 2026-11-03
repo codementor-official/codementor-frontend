@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
-import { Flag } from "lucide-react";
+import { FlagIcon as Flag } from "@phosphor-icons/react/ssr";
 import { ManagePage, Select, StatusBadge, useUrlState } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import {

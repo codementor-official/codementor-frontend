@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiClientError } from "@codementor/api-client";
 import {
-  ExternalLink,
-  History,
-  Loader2,
-  ShieldAlert,
-  Undo2,
-  UserRound,
-} from "lucide-react";
+  ArrowSquareOutIcon as ExternalLink,
+  ClockCounterClockwiseIcon as History,
+  CircleNotchIcon as Loader2,
+  ShieldWarningIcon as ShieldAlert,
+  ArrowUUpLeftIcon as Undo2,
+  UserCircleIcon as UserRound,
+} from "@phosphor-icons/react/ssr";
 import {
   Button,
   Modal,

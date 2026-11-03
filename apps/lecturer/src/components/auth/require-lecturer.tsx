@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, ShieldAlert } from "lucide-react";
+import { ArrowsClockwiseIcon as RefreshCw, ShieldWarningIcon as ShieldAlert } from "@phosphor-icons/react/ssr";
 import { hasAnyRole } from "@codementor/auth";
 import { Button } from "@codementor/ui";
 import { useAuth } from "@/providers/auth-provider";

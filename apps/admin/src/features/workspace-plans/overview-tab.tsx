@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlarmClock, CircleAlert, CreditCard, Hourglass, SearchCheck, UserRound } from "lucide-react";
+import { AlarmIcon as AlarmClock, WarningCircleIcon as CircleAlert, CreditCardIcon as CreditCard, HourglassIcon as Hourglass, ListMagnifyingGlassIcon as SearchCheck, UserCircleIcon as UserRound } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { Card, InfoHint } from "@codementor/ui";
 import { formatBytes, formatVnDate, formatVnd, usagePercent } from "@codementor/utils";

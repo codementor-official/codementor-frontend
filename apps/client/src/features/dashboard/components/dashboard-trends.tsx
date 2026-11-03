@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CalendarDays } from 'lucide-react';
+import { CalendarBlankIcon as CalendarDays } from '@phosphor-icons/react/ssr';
 import { SegmentedTabs } from '@codementor/ui';
 import { Card } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress-bar';

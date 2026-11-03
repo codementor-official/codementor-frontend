@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Upload, X } from "lucide-react";
+import { CircleNotchIcon as Loader2, UploadSimpleIcon as Upload, XIcon as X } from "@phosphor-icons/react/ssr";
 import { CourseCover } from "@codementor/ui";
 import type { ArticleCoverUpload, ArticleCoverUploadConfig } from "@/features/articles/types";
 import { Field, inputClassName } from "./field";

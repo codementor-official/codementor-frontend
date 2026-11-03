@@ -2,7 +2,7 @@
 import { useState, type ReactNode } from "react";
 import type { RevenueDateRange, RevenueReport } from "@codementor/types";
 import { COMMERCE_STATUS } from "@codementor/types";
-import { Download, RotateCcw } from "lucide-react";
+import { DownloadSimpleIcon as Download, ArrowCounterClockwiseIcon as RotateCcw } from "@phosphor-icons/react/ssr";
 import { Button } from "./button";
 import { Modal } from "./modal";
 import { useToast } from "./toast";

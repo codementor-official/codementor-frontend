@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { CaretDownIcon as ChevronDown } from "@phosphor-icons/react/ssr";
 
 export interface SelectOption {
   value: string;

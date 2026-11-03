@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Download, RefreshCw } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { DownloadSimpleIcon as Download, ArrowsClockwiseIcon as RefreshCw } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { Button } from "./button";
 import { DataTable, TablePagination, useDataTable, useFittedPageSize } from "./data-table";
@@ -17,7 +17,7 @@ export interface ManagePageProps<TData> {
   title: string;
   description?: string;
   /** Square tile beside the title — see `PageHeader`. */
-  icon?: LucideIcon;
+  icon?: PhosphorIcon;
   /** The one primary action for this screen, rendered beside the title. */
   action?: ReactNode;
   /** Dải số liệu tổng quan giữa tiêu đề và thanh lọc. Bảng tự co số dòng theo phần còn lại. */

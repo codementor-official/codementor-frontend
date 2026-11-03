@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Check, Code2, ExternalLink, Loader2 } from "lucide-react";
+import { CheckIcon as Check, CodeIcon as Code2, ArrowSquareOutIcon as ExternalLink, CircleNotchIcon as Loader2 } from "@phosphor-icons/react/ssr";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import type { ExerciseDetail, LessonProgress } from "@/types/catalogue";
@@ -135,7 +135,7 @@ export function ExerciseLesson({
         </a>
 
         {enrolled && done && (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-primary-tint px-3 py-2 text-xs font-semibold text-primary">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-border-soft px-3 py-2 text-xs font-semibold text-navy">
             <Check className="h-3.5 w-3.5" /> Đã hoàn thành
           </span>
         )}

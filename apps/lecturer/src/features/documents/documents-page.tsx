@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, FileText, RefreshCw, Trash2, Upload } from "lucide-react";
+import { DownloadSimpleIcon as Download, FileTextIcon as FileText, ArrowsClockwiseIcon as RefreshCw, TrashIcon as Trash2, UploadSimpleIcon as Upload } from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {

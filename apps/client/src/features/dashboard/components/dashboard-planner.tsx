@@ -1,4 +1,4 @@
-import { Clock3, Flame, Target } from 'lucide-react';
+import { ClockIcon as Clock3, FireIcon as Flame, TargetIcon as Target } from '@phosphor-icons/react/ssr';
 import { Card } from '@/components/ui/card';
 import type { DashboardData } from '../dashboard-service';
 import { DashboardCardHeader, DashboardUnavailable } from './dashboard-section';
@@ -40,8 +40,8 @@ export function DashboardPlanner({ data, onRetry }: { data: DashboardData; onRet
       </div>
 
       <div className="mt-3 grid gap-3 border-t border-border-soft pt-3 sm:grid-cols-2 xl:grid-cols-1">
-        <div className="flex min-w-0 items-center gap-3"><Clock3 className="h-4 w-4 shrink-0 text-primary" /><div className="min-w-0"><p className="text-xs font-semibold text-navy">Buổi tiếp theo</p>{nextSlot?.slot ? <p className="mt-0.5 truncate text-xs text-text-muted">{nextSlot.offset === 0 ? 'Hôm nay' : nextSlot.offset === 1 ? 'Ngày mai' : nextSlot.day.label}, {nextSlot.slot.startTime} · {nextSlot.slot.durationMinutes} phút</p> : <p className="mt-0.5 truncate text-xs text-text-muted">Chưa có lịch trong tuần</p>}</div></div>
-        <div className="flex min-w-0 items-center gap-3"><Flame className="h-4 w-4 shrink-0 text-primary" /><div className="min-w-0"><p className="text-xs font-semibold text-navy">Chuỗi giải bài</p><p className="mt-0.5 truncate text-xs text-text-muted">{data.stats ? `${data.stats.currentStreakDays} ngày · kỷ lục ${data.stats.longestStreakDays}` : 'Chưa tải được dữ liệu'}</p></div></div>
+        <div className="flex min-w-0 items-center gap-3"><Clock3 className="h-4 w-4 shrink-0 text-text-muted" /><div className="min-w-0"><p className="text-xs font-semibold text-navy">Buổi tiếp theo</p>{nextSlot?.slot ? <p className="mt-0.5 truncate text-xs text-text-muted">{nextSlot.offset === 0 ? 'Hôm nay' : nextSlot.offset === 1 ? 'Ngày mai' : nextSlot.day.label}, {nextSlot.slot.startTime} · {nextSlot.slot.durationMinutes} phút</p> : <p className="mt-0.5 truncate text-xs text-text-muted">Chưa có lịch trong tuần</p>}</div></div>
+        <div className="flex min-w-0 items-center gap-3"><Flame className="h-4 w-4 shrink-0 text-text-muted" /><div className="min-w-0"><p className="text-xs font-semibold text-navy">Chuỗi giải bài</p><p className="mt-0.5 truncate text-xs text-text-muted">{data.stats ? `${data.stats.currentStreakDays} ngày · kỷ lục ${data.stats.longestStreakDays}` : 'Chưa tải được dữ liệu'}</p></div></div>
       </div>
     </div>}
   </Card>;

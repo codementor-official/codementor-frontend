@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CreditCard, Lock, TicketPercent } from "lucide-react";
+import { CreditCardIcon as CreditCard, LockIcon as Lock, TicketIcon as TicketPercent } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { useToast } from "@codementor/ui";
 import { formatVnDate, formatVnd } from "@codementor/utils";

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 export function PageHeader({
   title,
@@ -10,7 +10,7 @@ export function PageHeader({
   title: string;
   subtitle?: string;
   /** Square tile left of the title — gives every page the same anchor instead of bare text. */
-  icon?: LucideIcon;
+  icon?: PhosphorIcon;
   /** Right-aligned action(s) on the same row as the title, e.g. a primary button or sort control. */
   actions?: ReactNode;
 }) {
@@ -18,7 +18,7 @@ export function PageHeader({
     <div className="mb-4 flex items-start justify-between gap-4">
       <div className="flex min-w-0 items-start gap-3">
         {Icon && (
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-tint text-primary">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-border-soft text-navy">
             <Icon className="h-5 w-5" />
           </span>
         )}

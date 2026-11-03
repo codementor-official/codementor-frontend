@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { CaretLeftIcon as ChevronLeft, CaretRightIcon as ChevronRight, MagnifyingGlassIcon as Search } from "@phosphor-icons/react/ssr";
 import { inputClassName } from "@/components/form/field";
 
 /**

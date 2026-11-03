@@ -9,18 +9,18 @@ import {
 } from "react";
 import Link from "next/link";
 import {
-  BookOpen,
-  ChevronRight,
-  FileText,
-  History,
-  Lightbulb,
-  ListChecks,
-  Search,
-  Sparkles,
-  Trash2,
-  WandSparkles,
-  X,
-} from "lucide-react";
+  BookOpenIcon as BookOpen,
+  CaretRightIcon as ChevronRight,
+  FileTextIcon as FileText,
+  ClockCounterClockwiseIcon as History,
+  LightbulbIcon as Lightbulb,
+  ListChecksIcon as ListChecks,
+  MagnifyingGlassIcon as Search,
+  SparkleIcon as Sparkles,
+  TrashIcon as Trash2,
+  MagicWandIcon as WandSparkles,
+  XIcon as X,
+} from "@phosphor-icons/react/ssr";
 import { ConfirmButton, FieldError, fieldA11y, Select, useToast } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import { PageHeader } from "@/components/page-header";
@@ -328,7 +328,7 @@ function TutorWorkspace({
                 key={tool.title}
                 disabled={busy}
                 onClick={() => suggest(tool.prompt)}
-                className="group flex w-full items-center gap-3 rounded-lg border border-border-soft p-3 text-left transition-colors hover:border-primary hover:bg-primary-tint disabled:opacity-50"
+                className="group flex w-full items-center gap-3 rounded-lg border border-border-soft p-3 text-left transition-colors hover:border-text-faint hover:bg-bg disabled:opacity-50"
               >
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-bg text-primary">
                   <tool.icon className="size-4" />
@@ -346,7 +346,7 @@ function TutorWorkspace({
         </Card>
         <Card className="p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
-            <History className="size-4 text-primary" />
+            <History className="size-4 text-text-muted" />
             Hội thoại của bạn
           </h2>
           <p className="mb-3 mt-1 text-xs text-text-muted">
@@ -359,7 +359,7 @@ function TutorWorkspace({
             {tutor.sessions.map((chat) => (
               <li
                 key={chat.id}
-                className={`flex items-center gap-1 rounded-md py-1 ${tutor.threadId === chat.id ? "bg-primary-tint" : ""}`}
+                className={`flex items-center gap-1 rounded-md py-1 ${tutor.threadId === chat.id ? "bg-border-soft" : ""}`}
               >
                 <button
                   disabled={busy}
@@ -400,7 +400,7 @@ function TutorWorkspace({
       <aside className="order-1 min-w-0 space-y-4">
         <Card className="p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
-            <FileText className="size-4 text-primary" />
+            <FileText className="size-4 text-text-muted" />
             Tài liệu học cùng AI
           </h2>
           <p className="mb-4 mt-1 text-xs leading-relaxed text-text-muted">
@@ -433,7 +433,7 @@ function TutorWorkspace({
                   {tutor.selected.map((doc) => (
                     <span
                       key={doc.id}
-                      className="inline-flex max-w-full items-center gap-1 rounded-md bg-primary-tint px-2 py-1 text-xs text-primary"
+                      className="inline-flex max-w-full items-center gap-1 rounded-md bg-border-soft px-2 py-1 text-xs text-navy"
                     >
                       <span className="truncate" title={doc.title}>
                         {doc.title}
@@ -466,7 +466,7 @@ function TutorWorkspace({
                   .map((doc) => (
                     <li key={doc.id}>
                       <label
-                        className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors hover:bg-bg ${isSelected(doc.id) ? "border-primary/40 bg-primary-tint" : "border-border-soft"}`}
+                        className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors hover:bg-bg ${isSelected(doc.id) ? "border-navy bg-border-soft" : "border-border-soft"}`}
                       >
                         <input
                           type="checkbox"
@@ -529,7 +529,7 @@ function TutorWorkspace({
         </Card>
         <Card className="p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-navy">
-            <WandSparkles className="size-4 text-primary" />
+            <WandSparkles className="size-4 text-text-muted" />
             Tạo bài luyện tập với AI
           </h2>
           <p className="mb-3 mt-1 text-xs leading-relaxed text-text-muted">

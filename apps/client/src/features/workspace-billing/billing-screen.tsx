@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, BellRing, CalendarClock, CreditCard, EyeOff, Lock, Receipt, ShieldCheck, Sparkles } from "lucide-react";
+import { WarningIcon as AlertTriangle, ArrowUpRightIcon as ArrowUpRight, BellRingingIcon as BellRing, CalendarDotsIcon as CalendarClock, CreditCardIcon as CreditCard, EyeSlashIcon as EyeOff, LockIcon as Lock, ReceiptIcon as Receipt, ShieldCheckIcon as ShieldCheck, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { ServerPagination, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";
@@ -364,7 +364,7 @@ function Notices({ overview, usage, renewHref }: { overview: SubscriptionOvervie
   return (
     <div className="mb-4 space-y-2">
       {notices.map((n) => (
-        <div key={n.key} role="status" className="flex flex-wrap items-start gap-3 rounded-lg border border-primary/30 bg-primary-tint p-4 text-sm text-text">
+        <div key={n.key} role="status" className="flex flex-wrap items-start gap-3 rounded-lg border border-border bg-border-soft p-4 text-sm text-text">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
           <p className="min-w-0 flex-1">{n.text}</p>
           {n.action && (

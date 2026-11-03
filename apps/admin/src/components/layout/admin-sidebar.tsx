@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/ssr";
 import { AppSidebar } from "@codementor/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { adminNavigation } from "@/components/navigation/admin-navigation";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { FileText } from "lucide-react";
+import { FileTextIcon as FileText } from "@phosphor-icons/react/ssr";
 import { useFrontendTool } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 import { useLecterContext } from "./context";

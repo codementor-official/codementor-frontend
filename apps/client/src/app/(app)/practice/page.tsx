@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Clock3, Code2, FileCode2, Target } from "lucide-react";
+import { ArrowRightIcon as ArrowRight, CheckCircleIcon as CheckCircle2, ClockIcon as Clock3, CodeIcon as Code2, FileCodeIcon as FileCode2, TargetIcon as Target } from "@phosphor-icons/react/ssr";
 import { FilterBar, Select, StatStrip, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { StreakCard } from "@/components/streak-card";
@@ -48,9 +48,9 @@ function ExerciseRow({ item, number }: { item: ExerciseSummary; number: number }
       <span className="hidden w-7 shrink-0 text-right text-xs tabular-nums text-text-faint md:block">{number}</span>
       <span className={`hidden h-8 w-8 shrink-0 items-center justify-center rounded-md sm:flex ${
         item.progressStatus === "solved"
-          ? "bg-success/10 text-success"
+          ? "bg-navy text-on-ink"
           : item.progressStatus === "attempted"
-            ? "bg-primary/10 text-primary"
+            ? "bg-border-soft text-navy"
             : "bg-muted text-muted-foreground"
       }`} title={item.progressStatus === "solved" ? "Đã giải" : item.progressStatus === "attempted" ? "Đang làm" : "Chưa giải"}>
         {item.progressStatus === "solved" ? <CheckCircle2 className="h-4 w-4" /> : item.progressStatus === "attempted" ? <Clock3 className="h-4 w-4" /> : <FileCode2 className="h-4 w-4" />}
@@ -380,7 +380,7 @@ export default function PracticePage() {
           />
           <Card className="p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-              <Target className="h-4 w-4 text-primary" /> Tiến độ của bạn
+              <Target className="h-4 w-4 text-text-muted" /> Tiến độ của bạn
             </h2>
             <dl className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between gap-3">
@@ -399,8 +399,8 @@ export default function PracticePage() {
               </div>
             </dl>
           </Card>
-          {attemptedItems.length > 0 && <Card className="overflow-hidden"><div className="border-b border-border-soft p-4"><h2 className="flex items-center gap-2 text-sm font-bold text-foreground"><Clock3 className="h-4 w-4 text-primary" /> Tiếp tục bài đang làm</h2><p className="mt-1 text-xs text-text-muted">Các bài bạn đã nộp nhưng chưa đạt.</p></div><ul className="divide-y divide-border-soft">{attemptedItems.map((item) => <li key={item.id}><Link href={`/solve/${item.id}`} className="group flex items-center gap-2 px-4 py-3 hover:bg-bg"><span className="min-w-0 flex-1 truncate text-xs font-semibold text-navy group-hover:text-primary">{item.title}</span><ArrowRight className="h-3.5 w-3.5 text-text-faint" /></Link></li>)}</ul></Card>}
-          {focusTopics.length > 0 && <Card className="p-4"><h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-foreground"><Target className="h-4 w-4 text-primary" /> Chủ đề nên tiếp tục</h2><p className="mb-3 text-xs leading-relaxed text-text-muted">Ưu tiên từ lịch sử làm bài và ngân hàng hiện có.</p><div className="space-y-2">{focusTopics.map((topic) => <Link key={topic.id} href={`/practice?topic=${encodeURIComponent(topic.slug)}`} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 hover:border-primary"><span className="min-w-0 flex-1 truncate text-xs font-semibold text-navy">{topic.name}</span><span className="text-2xs text-text-muted">{topic.solved ?? 0}/{topic.count}</span><ArrowRight className="h-3.5 w-3.5 text-text-faint" /></Link>)}</div></Card>}
+          {attemptedItems.length > 0 && <Card className="overflow-hidden"><div className="border-b border-border-soft p-4"><h2 className="flex items-center gap-2 text-sm font-bold text-foreground"><Clock3 className="h-4 w-4 text-text-muted" /> Tiếp tục bài đang làm</h2><p className="mt-1 text-xs text-text-muted">Các bài bạn đã nộp nhưng chưa đạt.</p></div><ul className="divide-y divide-border-soft">{attemptedItems.map((item) => <li key={item.id}><Link href={`/solve/${item.id}`} className="group flex items-center gap-2 px-4 py-3 hover:bg-bg"><span className="min-w-0 flex-1 truncate text-xs font-semibold text-navy group-hover:text-primary">{item.title}</span><ArrowRight className="h-3.5 w-3.5 text-text-faint" /></Link></li>)}</ul></Card>}
+          {focusTopics.length > 0 && <Card className="p-4"><h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-foreground"><Target className="h-4 w-4 text-text-muted" /> Chủ đề nên tiếp tục</h2><p className="mb-3 text-xs leading-relaxed text-text-muted">Ưu tiên từ lịch sử làm bài và ngân hàng hiện có.</p><div className="space-y-2">{focusTopics.map((topic) => <Link key={topic.id} href={`/practice?topic=${encodeURIComponent(topic.slug)}`} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 hover:border-primary"><span className="min-w-0 flex-1 truncate text-xs font-semibold text-navy">{topic.name}</span><span className="text-2xs text-text-muted">{topic.solved ?? 0}/{topic.count}</span><ArrowRight className="h-3.5 w-3.5 text-text-faint" /></Link>)}</div></Card>}
         </aside>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRightIcon as ArrowRight } from "@phosphor-icons/react/ssr";
 import { StatusBadge, buttonClassName } from "@codementor/ui";
 import {
   CONTENT_STATUS_LABELS,

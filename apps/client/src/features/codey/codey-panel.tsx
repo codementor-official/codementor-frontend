@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import { Bot, Check, Loader2, Plus } from "lucide-react";
+import { RobotIcon as Bot, CheckIcon as Check, CircleNotchIcon as Loader2, PlusIcon as Plus } from "@phosphor-icons/react/ssr";
 import { CodeyComposer } from "./codey-composer";
 import { CodeyHistoryMenu } from "./codey-history-menu";
 import { TOOL_LABELS } from "./codey-wiring";
@@ -51,7 +51,7 @@ export function CodeyPanel() {
           onClick={toggleMascot}
           className={`flex size-7 items-center justify-center rounded-md transition-colors ${
             mascotVisible
-              ? "bg-primary-tint text-primary"
+              ? "bg-border-soft text-navy"
               : "text-text-muted hover:bg-bg hover:text-navy"
           }`}
         >

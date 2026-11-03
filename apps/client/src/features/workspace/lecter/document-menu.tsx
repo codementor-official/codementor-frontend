@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { FileText, Loader2, Plus } from "lucide-react";
+import { FileTextIcon as FileText, CircleNotchIcon as Loader2, PlusIcon as Plus } from "@phosphor-icons/react/ssr";
 import { FieldError, fieldA11y, useToast } from "@codementor/ui";
 import { search as searchRule } from "@codementor/utils";
 import { Pagination } from "@/components/ui/pagination";
@@ -156,7 +156,7 @@ export function LecterDocumentMenu({
                       key={document.id}
                       role="menuitemcheckbox"
                       aria-checked={checked}
-                      className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-xs hover:bg-bg ${checked ? "bg-primary/5" : ""}`}
+                      className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-xs hover:bg-bg ${checked ? "bg-border-soft" : ""}`}
                     >
                       <input
                         type="checkbox"

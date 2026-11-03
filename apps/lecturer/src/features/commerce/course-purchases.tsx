@@ -17,7 +17,7 @@ import {
   formatHoldingPeriod,
 } from "@codementor/utils";
 import { holdingDeadline, OrderHoldingHint } from "./holding-explanation";
-import { Download, Eye, Printer } from "lucide-react";
+import { DownloadSimpleIcon as Download, EyeIcon as Eye, PrinterIcon as Printer } from "@phosphor-icons/react/ssr";
 import { earningsApi, vnd } from "./api";
 
 export function CoursePurchases({ courseId }: { courseId: string }) {

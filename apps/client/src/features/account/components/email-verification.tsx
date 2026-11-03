@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MailWarning, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { EnvelopeSimpleIcon as MailWarning, ArrowsClockwiseIcon as RefreshCw, PaperPlaneRightIcon as Send, ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import { useToast } from "@codementor/ui";
 import { useAuth } from "@/providers/auth-provider";
@@ -25,8 +25,8 @@ export function EmailVerificationBanner() {
   const pathname = usePathname();
   if (status !== "authenticated" || user?.emailVerified !== false || pathname === "/profile") return null;
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-primary/25 bg-primary-tint px-6 py-2.5 text-xs text-navy">
-      <MailWarning className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border bg-border-soft px-6 py-2.5 text-xs text-navy">
+      <MailWarning className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
       <span>Email chưa xác thực. Bạn chưa thể nhận email nhắc học và thông báo.</span>
       <Link href="/profile?tab=settings#email-verification" className="font-semibold text-primary underline underline-offset-4">Xác thực email</Link>
     </div>
@@ -119,7 +119,7 @@ function VerificationPanel() {
   return (
     <Card id="email-verification" className="mb-5 scroll-mt-5 p-4 sm:p-5">
       <div className="flex flex-wrap items-start gap-3">
-        <span className="rounded-lg bg-primary-tint p-2 text-primary"><Icon className="h-5 w-5" aria-hidden="true" /></span>
+        <span className="rounded-lg bg-border-soft p-2 text-navy"><Icon className="h-5 w-5" aria-hidden="true" /></span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-bold text-navy">Xác thực email</h2>

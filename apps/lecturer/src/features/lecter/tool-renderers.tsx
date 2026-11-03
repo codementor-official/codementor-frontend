@@ -2,16 +2,16 @@
 
 import type { ReactNode } from "react";
 import {
-  Check,
-  FileText,
-  ListChecks,
-  Loader2,
-  Play,
-  Search,
-  Sparkles,
-  Tags,
-  TriangleAlert,
-} from "lucide-react";
+  CheckIcon as Check,
+  FileTextIcon as FileText,
+  ListChecksIcon as ListChecks,
+  CircleNotchIcon as Loader2,
+  PlayIcon as Play,
+  MagnifyingGlassIcon as Search,
+  SparkleIcon as Sparkles,
+  TagIcon as Tags,
+  WarningIcon as TriangleAlert,
+} from "@phosphor-icons/react/ssr";
 import { useDefaultRenderTool, useRenderTool } from "@copilotkit/react-core/v2";
 import { z } from "zod";
 

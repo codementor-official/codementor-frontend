@@ -5,21 +5,21 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Archive,
-  BookOpen,
-  Braces,
-  FileText,
-  FlaskConical,
-  GitFork,
-  Languages,
-  Pencil,
-  Plus,
-  RotateCcw,
-  Send,
-  Trash2,
-  Undo2,
-  TriangleAlert,
-} from "lucide-react";
+  ArchiveIcon as Archive,
+  BookOpenIcon as BookOpen,
+  BracketsCurlyIcon as Braces,
+  FileTextIcon as FileText,
+  FlaskIcon as FlaskConical,
+  GitForkIcon as GitFork,
+  TranslateIcon as Languages,
+  PencilSimpleIcon as Pencil,
+  PlusIcon as Plus,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  PaperPlaneRightIcon as Send,
+  TrashIcon as Trash2,
+  ArrowUUpLeftIcon as Undo2,
+  WarningIcon as TriangleAlert,
+} from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Button,

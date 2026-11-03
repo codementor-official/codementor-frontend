@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { Map as MapIcon } from "lucide-react";
+import { MapTrifoldIcon as MapIcon } from "@phosphor-icons/react/ssr";
 import { FilterBar, Select, StatStrip, useUrlState } from "@codementor/ui";
 import { PageHeader } from "@/components/page-header";
 import { EntityCard } from "@/components/entity-card";

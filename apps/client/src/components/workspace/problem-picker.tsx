@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { CaretDownIcon as ChevronDown } from "@phosphor-icons/react/ssr";
 import { api } from "@/lib/api";
 import type { Problem } from "@/data/sample-problem";
 import type { ExerciseSummary } from "@/types/catalogue";

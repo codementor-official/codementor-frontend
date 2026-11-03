@@ -13,10 +13,10 @@ export function LandingCta() {
           </p>
           <Button href="/workspace/pricing" variant="outline" className="mt-5 h-10">Xem bảng giá nhóm</Button>
         </div>
-        <div className="rounded-xl border border-primary/30 bg-primary-tint p-8">
-          <span className="rounded-sm bg-primary px-2 py-0.5 text-2xs font-bold text-on-ink">Miễn phí</span>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight text-navy">Bắt đầu với một khóa miễn phí</h2>
-          <p className="mt-2 text-base leading-7 text-text">Tạo tài khoản trong một phút, không cần thẻ thanh toán.</p>
+        <div className="rounded-xl bg-ink-fixed p-8 text-on-ink-fixed">
+          <span className="rounded-sm bg-on-ink-fixed/10 px-2 py-0.5 text-2xs font-bold">Miễn phí</span>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight">Bắt đầu với một khóa miễn phí</h2>
+          <p className="mt-2 text-base leading-7 text-on-ink-fixed/75">Tạo tài khoản trong một phút, không cần thẻ thanh toán.</p>
           <Button href="/signup" className="mt-5 h-10">Đăng ký miễn phí</Button>
         </div>
       </div>

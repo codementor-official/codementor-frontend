@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TriangleAlert } from "lucide-react";
+import { WarningIcon as TriangleAlert } from "@phosphor-icons/react/ssr";
 import { Button, Modal } from "@codementor/ui";
 
 /**

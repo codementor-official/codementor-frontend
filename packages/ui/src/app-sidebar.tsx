@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { SidebarSimpleIcon as PanelLeftClose, SidebarSimpleIcon as PanelLeftOpen, XIcon as X } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 
 export interface AppNavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   /**
    * Số việc đang chờ ở màn hình đó. `0` hoặc bỏ trống thì không vẽ gì.
    *

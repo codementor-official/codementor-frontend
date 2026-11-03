@@ -3,13 +3,13 @@ import { apiErrorMessage } from "@codementor/api-client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  Download,
-  Wallet,
-  RefreshCw,
-  CircleHelp,
-  Eye,
-  Printer,
-} from "lucide-react";
+  DownloadSimpleIcon as Download,
+  WalletIcon as Wallet,
+  ArrowsClockwiseIcon as RefreshCw,
+  QuestionIcon as CircleHelp,
+  EyeIcon as Eye,
+  PrinterIcon as Printer,
+} from "@phosphor-icons/react/ssr";
 import {
   Button,
   Card,
@@ -583,7 +583,7 @@ function Guide({
 }) {
   return (
     <div className="flex gap-3">
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-foreground">
         {number}
       </span>
       <div>

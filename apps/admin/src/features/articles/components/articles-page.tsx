@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Archive,
-  Ban,
-  CheckCheck,
-  Clock,
-  ExternalLink,
-  Globe,
-  Newspaper,
-  PencilLine,
-  Plus,
-  RotateCcw,
-  XCircle,
-} from "lucide-react";
+  ArchiveIcon as Archive,
+  ProhibitIcon as Ban,
+  ChecksIcon as CheckCheck,
+  ClockIcon as Clock,
+  ArrowSquareOutIcon as ExternalLink,
+  GlobeIcon as Globe,
+  NewspaperIcon as Newspaper,
+  PencilSimpleLineIcon as PencilLine,
+  PlusIcon as Plus,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  XCircleIcon as XCircle,
+} from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { Button, FieldError, fieldA11y, ManagePage, Modal, ReasonButton, RejectDialogButton, Select, StatusBadge, useFieldErrors, useToast, useUrlState } from "@codementor/ui";

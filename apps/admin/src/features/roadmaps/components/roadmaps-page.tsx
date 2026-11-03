@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Archive,
-  CheckCheck,
-  Clock,
-  Globe,
-  PencilLine,
-  RotateCcw,
-  Route,
-  Trash2,
-  Undo2,
-  UserCheck,
-  XCircle,
-} from "lucide-react";
+  ArchiveIcon as Archive,
+  ChecksIcon as CheckCheck,
+  ClockIcon as Clock,
+  GlobeIcon as Globe,
+  PencilSimpleLineIcon as PencilLine,
+  ArrowCounterClockwiseIcon as RotateCcw,
+  PathIcon as Route,
+  TrashIcon as Trash2,
+  ArrowUUpLeftIcon as Undo2,
+  UserCheckIcon as UserCheck,
+  XCircleIcon as XCircle,
+} from "@phosphor-icons/react/ssr";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import {

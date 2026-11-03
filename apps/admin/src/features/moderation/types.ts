@@ -1,5 +1,5 @@
-import { BookOpen, Braces, Newspaper, Route } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { BookOpenIcon as BookOpen, BracketsCurlyIcon as Braces, NewspaperIcon as Newspaper, PathIcon as Route } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 /**
  * Bốn loại nội dung đi qua cùng một vòng duyệt, và bốn service khác nhau sở hữu chúng.
@@ -19,7 +19,7 @@ export const CONTENT_KINDS: ContentKind[] = [
 
 interface KindMeta {
   label: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   /** Đường đọc hàng chờ. Bài viết nằm dưới `/manage` vì đó là không gian soạn thảo. */
   queuePath: string;
   /** Đường đọc chi tiết, dùng để dựng bản xem trước trước khi duyệt. */

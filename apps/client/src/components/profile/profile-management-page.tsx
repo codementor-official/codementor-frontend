@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, AtSign, Award, BookOpenCheck, CalendarDays, Camera, CheckCircle2, Clock3, GitBranch, Globe2, Mail, Pencil, Save, Trophy, UserRound, Zap } from "lucide-react";
+import { PulseIcon as Activity, AtIcon as AtSign, MedalIcon as Award, BookOpenTextIcon as BookOpenCheck, CalendarBlankIcon as CalendarDays, CameraIcon as Camera, CheckCircleIcon as CheckCircle2, ClockIcon as Clock3, GitBranchIcon as GitBranch, GlobeHemisphereWestIcon as Globe2, EnvelopeIcon as Mail, PencilSimpleIcon as Pencil, FloppyDiskIcon as Save, TrophyIcon as Trophy, UserCircleIcon as UserRound, LightningIcon as Zap } from "@phosphor-icons/react/ssr";
 import { api } from "@/lib/api";
 import type { AccountProfile, UserActivityCalendar, UserActivityEntry, UserLearningPreferences, UserLearningStats } from "@/features/account/types";
 import { SettingsPanel } from "@/features/account/components/settings-panel";
@@ -143,14 +143,14 @@ function RecentActivity({ items }: { items: UserActivityEntry[] }) {
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-5 py-4">
-        <Activity className="h-4 w-4 text-primary" />
+        <Activity className="h-4 w-4 text-text-muted" />
         <h2 className="font-bold text-navy">Hoạt động gần đây</h2>
       </div>
       {items.length > 0 ? (
         <div className="divide-y divide-border-soft p-3">
           {items.map((item, index) => (
             <div key={`${item.kind}-${item.occurredAt}-${index}`} className="flex items-center gap-3 rounded-md px-3 py-3 even:bg-bg">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-tint text-primary">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-border-soft text-navy">
                 {item.kind === "exercise_solved" || item.kind === "course_completed" ? <CheckCircle2 className="h-4 w-4" /> : <BookOpenCheck className="h-4 w-4" />}
               </span>
               <div className="min-w-0 flex-1">
@@ -296,7 +296,7 @@ function ProfilePanel() {
           </Card>
 
           <Card className="p-5">
-            <div className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-primary" /><h3 className="text-sm font-bold text-navy">Lịch học cá nhân</h3></div>
+            <div className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-text-muted" /><h3 className="text-sm font-bold text-navy">Lịch học cá nhân</h3></div>
             <div className="mt-4 flex flex-wrap gap-1.5">
               {(preferences?.schedule ?? []).map((slot) => <span key={slot.weekday} title={slot.enabled ? `${slot.startTime} · ${slot.durationMinutes} phút` : "Không học"} className={`flex h-8 w-8 items-center justify-center rounded-md text-2xs font-bold ${slot.enabled ? "bg-primary text-on-ink" : "bg-bg text-text-faint"}`}>{WEEKDAY_LABELS[slot.weekday]}</span>)}
             </div>
@@ -319,13 +319,13 @@ function ProfilePanel() {
               </Card>
 
               <Card className="relative min-h-48 overflow-hidden p-5">
-                <Award className="absolute -right-4 -bottom-6 h-36 w-36 text-primary/10" />
+                <Award className="absolute -right-4 -bottom-6 h-36 w-36 text-text-muted/10" />
                 <p className="text-xs text-text-muted">Thành tích học tập</p>
                 <div className="mt-2 flex items-baseline gap-2"><b className="text-3xl text-navy">{activity.activeDays}</b><span className="text-sm text-text-muted">ngày hoạt động</span></div>
                 <div className="relative mt-5 space-y-3 text-xs">
-                  <span className="flex items-center gap-2 text-text-muted"><Trophy className="h-4 w-4 text-primary" />Mốc tiếp theo: <b className="text-navy">{nextMilestone} bài</b></span>
-                  <span className="flex items-center gap-2 text-text-muted"><Zap className="h-4 w-4 text-primary" />Tiến độ tới mốc: <b className="text-navy">{solvedPercent}%</b></span>
-                  <span className="flex items-center gap-2 text-text-muted"><CalendarDays className="h-4 w-4 text-primary" />Hoàn thành gần nhất: <b className="text-navy">{stats.lastSolvedOn ? new Date(stats.lastSolvedOn).toLocaleDateString("vi-VN") : "Chưa có"}</b></span>
+                  <span className="flex items-center gap-2 text-text-muted"><Trophy className="h-4 w-4 text-text-muted" />Mốc tiếp theo: <b className="text-navy">{nextMilestone} bài</b></span>
+                  <span className="flex items-center gap-2 text-text-muted"><Zap className="h-4 w-4 text-text-muted" />Tiến độ tới mốc: <b className="text-navy">{solvedPercent}%</b></span>
+                  <span className="flex items-center gap-2 text-text-muted"><CalendarDays className="h-4 w-4 text-text-muted" />Hoàn thành gần nhất: <b className="text-navy">{stats.lastSolvedOn ? new Date(stats.lastSolvedOn).toLocaleDateString("vi-VN") : "Chưa có"}</b></span>
                 </div>
               </Card>
             </div>

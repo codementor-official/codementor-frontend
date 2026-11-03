@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { ChevronRight } from "lucide-react";
+import { CaretRightIcon as ChevronRight } from "@phosphor-icons/react/ssr";
 
 export interface BreadcrumbItem {
   label: string;

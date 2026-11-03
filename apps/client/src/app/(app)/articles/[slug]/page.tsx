@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
-import { Clock3, Lightbulb, Loader2 } from "lucide-react";
+import { ClockIcon as Clock3, LightbulbIcon as Lightbulb, CircleNotchIcon as Loader2 } from "@phosphor-icons/react/ssr";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { RecommendedArticles } from "@/components/recommendation/recommended";
@@ -76,7 +76,7 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
         <header className="border-b border-border pb-7">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-text-faint">
             {article.tagName && (
-              <span className="rounded-sm bg-primary-tint px-2 py-1 font-bold tracking-wide text-primary uppercase">
+              <span className="rounded-sm bg-border-soft px-2 py-1 font-bold tracking-wide text-navy uppercase">
                 {article.tagName}
               </span>
             )}
@@ -135,8 +135,8 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
         />
 
         {article.takeaway && (
-          <Card className="mt-9 flex gap-3 border-primary/20 bg-primary-tint p-5">
-            <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <Card className="mt-9 flex gap-3 bg-border-soft p-5 shadow-none">
+            <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-text-muted" />
             <div>
               <h2 className="text-sm font-bold text-navy">Điểm cần nhớ</h2>
               <p className="mt-1 text-sm leading-relaxed text-text">{article.takeaway}</p>

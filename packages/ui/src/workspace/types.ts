@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 /**
  * Pane and tab identifiers are plain strings.
@@ -14,7 +14,7 @@ export type TabKind = string;
 
 export interface TabMeta {
   label: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
   /** Colour applied to the icon while its tab is active. */
   iconClassName?: string;
   closable?: boolean;

@@ -2,21 +2,21 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
-  AlertCircle,
-  BookOpen,
-  CheckCircle2,
-  Flame,
-  GraduationCap,
-  Loader2,
-  LogIn,
-  LogOut,
-  Route,
-  Trophy,
-  Flag,
-  PenLine,
-  ShoppingCart,
-  UsersRound,
-} from "lucide-react";
+  WarningCircleIcon as AlertCircle,
+  BookOpenIcon as BookOpen,
+  CheckCircleIcon as CheckCircle2,
+  FireIcon as Flame,
+  GraduationCapIcon as GraduationCap,
+  CircleNotchIcon as Loader2,
+  SignInIcon as LogIn,
+  SignOutIcon as LogOut,
+  PathIcon as Route,
+  TrophyIcon as Trophy,
+  FlagIcon as Flag,
+  PencilLineIcon as PenLine,
+  ShoppingCartIcon as ShoppingCart,
+  UsersThreeIcon as UsersRound,
+} from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import { SegmentedTabs } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";

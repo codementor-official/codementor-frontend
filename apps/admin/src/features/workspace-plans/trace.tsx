@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { CheckIcon as Check, CopyIcon as Copy } from "@phosphor-icons/react/ssr";
 import type { AuditEntry } from "@codementor/types";
 
 export type PlansTab = "overview" | "plans" | "subscribers" | "orders" | "coupons" | "settings" | "audit";

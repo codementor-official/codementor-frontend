@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartNoAxesCombined } from "lucide-react";
+import { ChartLineUpIcon as ChartNoAxesCombined } from "@phosphor-icons/react/ssr";
 import {
   Area,
   CartesianGrid,
