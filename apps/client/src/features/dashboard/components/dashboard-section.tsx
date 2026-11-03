@@ -26,3 +26,17 @@ export function DashboardEmpty({ text, href, action, className = '' }: { text: s
 export function DashboardUnavailable({ onRetry, className = '' }: { onRetry: () => void; className?: string }) {
   return <Card className={`border-dashed p-5 ${className}`} role="status"><p className="text-sm text-text-muted">Phần này chưa tải được. Bạn vẫn có thể sử dụng các phần còn lại.</p><Button size="sm" variant="outline" className="mt-3" onClick={onRetry}>Thử lại</Button></Card>;
 }
+
+/** Tiêu đề nằm TRONG thẻ (viền dưới), cho các thẻ đứng riêng: tiêu đề đi cùng nội dung của nó. */
+export function DashboardCardHeader({ title, description, href, action = 'Xem tất cả', children }: {
+  title: string; description?: string; href?: string; action?: string; children?: ReactNode;
+}) {
+  return <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-4 py-3">
+    <div className="min-w-0 flex-1">
+      <h2 className="text-sm font-semibold text-navy">{title}</h2>
+      {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
+    </div>
+    {children}
+    {href && <Link href={href} className="shrink-0 text-xs font-semibold text-primary hover:underline">{action}</Link>}
+  </div>;
+}

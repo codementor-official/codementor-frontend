@@ -75,35 +75,6 @@ export function topicCategories(courses: CourseSummary[]): TopicCategory[] {
     });
 }
 
-export interface TopicItem {
-  id: string;
-  slug: string;
-  category: string;
-  name: string;
-  courseCount: number;
-  href: string;
-}
-
-/**
- * Chủ đề thật trên các khóa đang mở, nhiều khóa nhất đứng trước, chia hai dải: kiến thức thuật
- * toán và phần còn lại (ngôn ngữ, công nghệ, nền tảng). Một dải quá ngắn thì gộp làm một.
- */
-export function topicRails(courses: CourseSummary[]): TopicItem[][] {
-  const byId = new Map<string, TopicItem>();
-  for (const course of courses) {
-    for (const topic of course.topics ?? []) {
-      const item = byId.get(topic.id) ?? { id: topic.id, slug: topic.slug, category: topic.category, name: topic.name, courseCount: 0, href: `/courses?topics=${topic.id}` };
-      item.courseCount += 1;
-      byId.set(topic.id, item);
-    }
-  }
-  const all = [...byId.values()].sort((a, b) => b.courseCount - a.courseCount || a.name.localeCompare(b.name, "vi"));
-  const algorithms = all.filter((t) => t.category === "algorithms");
-  const rest = all.filter((t) => t.category !== "algorithms");
-  if (algorithms.length < 4 || rest.length < 4) return all.length ? [all] : [];
-  return [rest, algorithms];
-}
-
 const LEVEL_ORDER = ["none", "basic", "intermediate", "experienced"];
 
 /** Lộ trình xếp theo trình độ đầu vào; mỗi nhóm một bậc. Không suy ra thứ tự học giữa các lộ trình. */

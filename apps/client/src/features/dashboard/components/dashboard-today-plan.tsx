@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { ArrowUpRight, CheckCircle2, ListChecks } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import type { DashboardAction } from '../dashboard-priority';
+import { DashboardCardHeader } from './dashboard-section';
 
 const KIND_LABEL: Record<DashboardAction['kind'], string> = {
   assignment: 'Bài nhóm',
@@ -13,29 +14,18 @@ const KIND_LABEL: Record<DashboardAction['kind'], string> = {
 };
 
 export function DashboardTodayPlan({ items }: { items: DashboardAction[] }) {
-  return <section className="flex min-w-0 flex-col">
-    <div className="mb-3">
-      <h2 className="flex items-center gap-2 text-base font-bold text-navy"><ListChecks className="h-4 w-4 text-primary" /> Công việc cần ưu tiên</h2>
-      <p className="mt-1 text-xs text-text-muted">Tối đa ba việc tiếp theo, xếp sau ưu tiên chính theo hạn nộp và tiến độ thực tế.</p>
-    </div>
-    <Card className="flex-1 overflow-hidden">
-      {items.length === 0 ? <div className="flex items-center gap-3 p-5">
-        <CheckCircle2 className="h-6 w-6 shrink-0 text-success" />
-        <div><p className="text-sm font-semibold text-navy">Chưa có việc bổ sung cần xử lý</p><p className="mt-1 text-xs text-text-muted">Hoàn thành ưu tiên chính hoặc khám phá nội dung mới khi bạn sẵn sàng.</p></div>
-      </div> : <>
-        <div className="hidden grid-cols-[minmax(0,1fr)_88px_104px_auto] items-center gap-3 border-b border-border-soft bg-bg px-4 py-2.5 text-2xs font-semibold text-text-muted sm:grid">
-          <span>Công việc</span><span>Loại</span><span>Ưu tiên</span><span className="text-right">Thao tác</span>
-        </div>
-        <ol className="divide-y divide-border-soft">{items.map((item) => {
-          const priority = item.status === 'Quá hạn' ? 'Khẩn cấp' : item.kind === 'coach' ? 'Đề xuất AI' : 'Theo tiến độ';
-          return <li key={item.id}><Link href={item.href} className="grid min-w-0 items-center gap-3 px-4 py-3.5 transition-colors duration-150 hover:bg-bg sm:grid-cols-[minmax(0,1fr)_88px_104px_auto]">
-            <span className="min-w-0"><span className="block truncate text-sm font-semibold text-navy">{item.title}</span><span className="mt-1 block truncate text-xs text-text-muted">{item.reason}</span></span>
-            <span className="text-xs font-medium text-text-muted">{KIND_LABEL[item.kind]}</span>
-            <Badge tone={item.status === 'Quá hạn' ? 'danger' : item.kind === 'coach' ? 'ai' : 'neutral'} className="w-fit">{priority}</Badge>
-            <span className="flex items-center justify-end gap-1 text-xs font-semibold whitespace-nowrap text-primary">{item.cta}<ArrowUpRight className="h-3.5 w-3.5" /></span>
-          </Link></li>;
-        })}</ol>
-      </>}
-    </Card>
-  </section>;
+  return <Card className="overflow-hidden">
+    <DashboardCardHeader title="Công việc cần ưu tiên" description="Tối đa ba việc tiếp theo, xếp theo hạn nộp và tiến độ thực tế." />
+    {items.length === 0 ? <div className="flex items-center gap-3 p-4">
+      <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
+      <div><p className="text-sm font-semibold text-navy">Chưa có việc bổ sung cần xử lý</p><p className="mt-0.5 text-xs text-text-muted">Hoàn thành ưu tiên chính hoặc khám phá nội dung mới khi bạn sẵn sàng.</p></div>
+    </div> : <ol className="divide-y divide-border-soft">{items.map((item) => {
+      const overdue = item.status === 'Quá hạn';
+      return <li key={item.id}><Link href={item.href} className="flex min-w-0 items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-bg">
+        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-navy">{item.title}</span><span className="mt-0.5 block truncate text-xs text-text-muted">{KIND_LABEL[item.kind]} · {item.reason}</span></span>
+        {(overdue || item.kind === 'coach') && <Badge tone={overdue ? 'danger' : 'ai'} className="shrink-0">{overdue ? 'Quá hạn' : 'Đề xuất AI'}</Badge>}
+        <span className="shrink-0 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-navy">{item.cta}</span>
+      </Link></li>;
+    })}</ol>}
+  </Card>;
 }
