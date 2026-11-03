@@ -65,11 +65,10 @@ export function LearningDashboardScreen() {
             <DashboardNextAction data={data} coach={coach.data} />
             <DashboardTodayPlan items={today} />
           </div>
-          {/* Cột phải tối đa hai thẻ, mỗi thẻ có hành động riêng (DESIGN-SYSTEM.md › Stats). */}
-          <div className="min-w-0 space-y-5">
-            <DashboardPlanner data={data} onRetry={reload} />
-            <DashboardCoach data={coach.data} isLoading={coach.isLoading} error={coach.error} reload={coach.reload} onDataChange={coach.replaceData} />
-          </div>
+          <DashboardPlanner data={data} onRetry={reload} />
+        </div>
+        <div className="mt-5">
+          <DashboardCoach data={coach.data} isLoading={coach.isLoading} error={coach.error} reload={coach.reload} onDataChange={coach.replaceData} />
         </div>
         <div className="mt-7 space-y-7">
           <DashboardTrends data={data} onRetry={reload} />

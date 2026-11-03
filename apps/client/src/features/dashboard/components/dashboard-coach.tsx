@@ -75,11 +75,15 @@ export function DashboardCoach({ data, isLoading, error, reload, onDataChange }:
       <DashboardCardHeader title="AI Coach" description="Riêng tư · Chỉ chạy khi bạn yêu cầu">
         {applied && <span className="shrink-0 rounded-sm bg-border-soft px-2 py-0.5 text-2xs font-bold text-navy">Đang áp dụng</span>}
       </DashboardCardHeader>
-      <div className="space-y-3 p-4">
+      <div className="grid gap-4 p-4 lg:grid-cols-2">
+        <div className="min-w-0 space-y-3">
         <p className="line-clamp-4 text-sm leading-relaxed text-text">{applied && firstStep ? `Bạn đang ưu tiên “${firstStep.title}”. ${insight?.summary ?? ''}` : insight?.summary ?? 'AI Coach phân tích mục tiêu, nội dung đang học và hoạt động gần đây khi bạn yêu cầu. Hệ thống không tự tạo số liệu hoặc tự đánh dấu hoàn thành.'}</p>
         {insight?.focus && <p className="rounded-md bg-border-soft px-3 py-2 text-xs leading-relaxed text-text"><strong className="text-navy">Trọng tâm:</strong> {insight.focus}</p>}
+        </div>
+        <div className="flex min-w-0 flex-col gap-3">
         {insight?.steps.length ? <ol className="space-y-2.5">{insight.steps.slice(0, 3).map((step, index) => <li key={`${step.href}-${index}`} className="flex min-w-0 gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-2xs font-bold text-on-ink">{index + 1}</span><div className="min-w-0"><p className="truncate text-xs font-semibold text-navy">{step.title}</p><p className="mt-0.5 line-clamp-1 text-2xs text-text-muted">{step.reason}</p></div></li>)}</ol> : null}
-        <Button size="sm" variant={insight ? 'outline' : 'primary'} onClick={() => setDrawerOpen(true)}>{insight ? 'Mở kế hoạch học tập' : 'Tạo phân tích'} <ArrowUpRight className="h-4 w-4" /></Button>
+        <Button size="sm" className="w-fit" variant={insight ? 'outline' : 'primary'} onClick={() => setDrawerOpen(true)}>{insight ? 'Mở kế hoạch học tập' : 'Tạo phân tích'} <ArrowUpRight className="h-4 w-4" /></Button>
+        </div>
       </div>
     </Card>
 
