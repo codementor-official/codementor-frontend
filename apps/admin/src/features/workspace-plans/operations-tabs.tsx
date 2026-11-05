@@ -11,6 +11,7 @@ import { inputClassName } from "@/features/commerce/form-style";
 import { plansApi, type CouponInput } from "./api";
 import { actionLabel } from "./overview-tab";
 import { AuditSubject, CopyCode, TraceLink, useTrace } from "./trace";
+import { usePaged } from "./paged";
 
 export const ORDER_TONE: Record<WorkspaceOrder["status"], "success" | "warning" | "danger" | "neutral"> = {
   pending: "warning",
@@ -158,6 +159,7 @@ export function CouponsTab() {
   }, [request]);
 
   const planName = (id: string) => plans.find((p) => p.id === id)?.onSale?.name ?? "gói đã xoá";
+  const paged = usePaged(coupons, 20);
   const live = coupons?.filter((c) => couponStatus(c).label === "Đang áp dụng").length ?? 0;
   const redeemed = coupons?.reduce((sum, c) => sum + c.redeemed, 0) ?? 0;
 
@@ -201,7 +203,7 @@ export function CouponsTab() {
           </thead>
           <tbody>
             {coupons === null && <tr><td colSpan={7} className="px-3 py-6"><div className="h-4 animate-pulse rounded bg-muted" /></td></tr>}
-            {coupons?.map((c) => {
+            {paged.rows.map((c) => {
               const status = couponStatus(c);
               const scope = [
                 c.plan_ids?.length ? c.plan_ids.map(planName).join(", ") : "Mọi gói",
@@ -244,6 +246,7 @@ export function CouponsTab() {
             {coupons?.length === 0 && <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Chưa có mã giảm giá.</td></tr>}
           </tbody>
         </table>
+        {paged.footer}
       </Card>
       {creating && <CouponDialog plans={plans} onClose={() => setCreating(false)} onCreated={async () => { setCreating(false); await load(); }} />}
     </div>

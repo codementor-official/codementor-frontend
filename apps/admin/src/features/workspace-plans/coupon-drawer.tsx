@@ -11,6 +11,7 @@ import { plansApi } from "./api";
 import { ORDER_LABEL, ORDER_TONE, couponStatus } from "./operations-tabs";
 import { Section } from "./order-drawer";
 import { CopyCode, TraceLink, useTrace } from "./trace";
+import { usePaged } from "./paged";
 
 const REDEMPTION: Record<string, string> = { reserved: "Đang giữ chỗ", redeemed: "Đã dùng", released: "Đã trả lại" };
 const toLocal = (iso: string) => {
@@ -25,6 +26,7 @@ export function CouponDrawer({ couponId, onClose, onChanged }: { couponId: strin
   const toast = useToast();
   const trace = useTrace();
   const [data, setData] = useState<CouponDetail | null>(null);
+  const redemptionPage = usePaged(data?.redemptions, 10);
   const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [editing, setEditing] = useState(false);
   const load = useCallback(() => plansApi.coupon(request, couponId).then(setData).catch((e) => toast.error(apiErrorMessage(e))), [request, couponId, toast]);
@@ -84,7 +86,7 @@ export function CouponDrawer({ couponId, onClose, onChanged }: { couponId: strin
                 <tr><th className="py-1 font-medium">Thời gian</th><th className="font-medium">Người dùng</th><th className="font-medium">Đơn</th><th className="text-right font-medium">Giảm</th><th className="pl-3 font-medium">Trạng thái</th></tr>
               </thead>
               <tbody>
-                {data!.redemptions.map((r) => (
+                {redemptionPage.rows.map((r) => (
                   <tr key={r.order.id} className="border-t">
                     <td className="py-1">{formatVnDate(r.at, true)}</td>
                     <td><TraceLink onClick={() => trace.openUser(r.user.id)}>{r.user.name}</TraceLink></td>
@@ -99,6 +101,7 @@ export function CouponDrawer({ couponId, onClose, onChanged }: { couponId: strin
                 {data!.redemptions.length === 0 && <tr><td colSpan={5} className="py-3 text-muted-foreground">Chưa có ai dùng mã này.</td></tr>}
               </tbody>
             </table>
+            {redemptionPage.footer}
           </Section>
         </div>
       )}

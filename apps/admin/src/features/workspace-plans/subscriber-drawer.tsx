@@ -13,6 +13,7 @@ import { KIND, ORDER_LABEL, ORDER_TONE } from "./operations-tabs";
 import { Section } from "./order-drawer";
 import { STATE } from "./subscribers-tab";
 import { TraceLink, useTrace } from "./trace";
+import { usePaged } from "./paged";
 
 const SOURCE: Record<string, string> = { free: "gói Free", paid: "gói đã trả", grace: "đang ân hạn" };
 const END_REASON: Record<string, string> = {
@@ -66,6 +67,8 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
   const open = detail?.subscriptions.find((s) => !s.endedAt);
   const affected = usage?.groups.filter((g) => g.overLimitReasons.length) ?? [];
   // A refunded order's term no longer counts; marked so the list of terms doesn't read as paid time.
+  const groupPage = usePaged(usage && [...affected, ...usage.groups.filter((g) => !g.overLimitReasons.length)], 10);
+  const orderPage = usePaged(detail?.orders, 10);
   const refunded = new Set(detail?.orders.filter((o) => o.status === "refunded").map((o) => o.id));
   return (
     <SideDrawer open onClose={onClose} width="wide" title={detail?.user.name ?? "Người dùng"} description={detail?.user.email}>
@@ -129,12 +132,13 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
                 </div>
               </div>
               {usage.groups.length > 0 && (
+                <>
                 <table className="mt-3 w-full text-xs">
                   <thead className="text-left text-muted-foreground">
                     <tr><th className="py-1 font-medium">Nhóm sở hữu ({usage.groups.length})</th><th className="font-medium">Thành viên</th><th className="font-medium">Dung lượng</th><th className="font-medium">Tình trạng</th></tr>
                   </thead>
                   <tbody>
-                    {[...affected, ...usage.groups.filter((g) => !g.overLimitReasons.length)].map((g) => (
+                    {groupPage.rows.map((g) => (
                       <tr key={g.id} className="border-t">
                         <td className="py-1">
                           <a className="text-primary hover:underline" href={`/workspaces?q=${encodeURIComponent(g.slug)}`}>{g.name}</a>
@@ -149,6 +153,8 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
                     ))}
                   </tbody>
                 </table>
+                {groupPage.footer}
+                </>
               )}
             </Section>
           )}
@@ -185,9 +191,12 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
             </ul>
           </Section>
 
-          <Section title={`Giao dịch (${detail.orders.length})`}>
+          <Section
+            title={`Giao dịch (${detail.orders.length}${detail.orders.length >= 50 ? "+" : ""})`}
+            hint={detail.orders.length >= 50 ? "Chỉ hiện 50 giao dịch gần nhất; xem đủ ở tab Giao dịch (tìm theo email)." : undefined}
+          >
             <ul className="divide-y rounded-md border">
-              {detail.orders.map((o) => (
+              {orderPage.rows.map((o) => (
                 <li key={o.id}>
                   <button type="button" className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left hover:bg-muted/50" onClick={() => trace.openOrder(o.id)}>
                     <span className="w-32 text-xs text-muted-foreground">{formatVnDate(o.createdAt, true)}</span>
@@ -202,6 +211,7 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
               ))}
               {detail.orders.length === 0 && <li className="px-3 py-2 text-muted-foreground">Không có giao dịch.</li>}
             </ul>
+            {orderPage.footer}
           </Section>
 
           <Adjustments detail={detail} userId={userId} act={act} />
