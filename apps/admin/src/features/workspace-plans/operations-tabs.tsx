@@ -121,7 +121,7 @@ export function OrdersTab() {
             {data?.items.length === 0 && <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Không có giao dịch.</td></tr>}
           </tbody>
         </table>
-        {data && data.total > data.limit && (
+        {data && data.total > 0 && (
           <div className="border-t px-3 py-2">
             <ServerPagination page={data.page} total={data.total} pageSize={data.limit} onPageChange={setPage} />
           </div>
@@ -159,7 +159,7 @@ export function CouponsTab() {
   }, [request]);
 
   const planName = (id: string) => plans.find((p) => p.id === id)?.onSale?.name ?? "gói đã xoá";
-  const paged = usePaged(coupons, 20);
+  const paged = usePaged(coupons, 20, true);
   const live = coupons?.filter((c) => couponStatus(c).label === "Đang áp dụng").length ?? 0;
   const redeemed = coupons?.reduce((sum, c) => sum + c.redeemed, 0) ?? 0;
 
@@ -601,7 +601,7 @@ export function AuditTab() {
             {data?.items.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Chưa có mục nào.</td></tr>}
           </tbody>
         </table>
-        {data && data.total > data.limit && (
+        {data && data.total > 0 && (
           <div className="border-t px-3 py-2">
             <ServerPagination page={data.page} total={data.total} pageSize={data.limit} onPageChange={setPage} />
           </div>
