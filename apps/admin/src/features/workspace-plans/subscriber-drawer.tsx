@@ -189,7 +189,10 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
                   <button type="button" className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left hover:bg-muted/50" onClick={() => trace.openOrder(o.id)}>
                     <span className="w-32 text-xs text-muted-foreground">{formatVnDate(o.createdAt, true)}</span>
                     <span>{KIND[o.kind]} {o.planName} · {o.billingCycle === "year" ? "năm" : "tháng"}</span>
-                    <span className="ml-auto font-medium">{formatVnd(o.amountVnd)}</span>
+                    <span className="ml-auto text-right font-medium">
+                      {formatVnd(o.amountVnd)}
+                      {o.status === "refunded" && o.refundedVnd !== null && <span className="block text-xs font-normal text-muted-foreground">đã hoàn {formatVnd(o.refundedVnd)}</span>}
+                    </span>
                     <StatusBadge tone={ORDER_TONE[o.status]}>{ORDER_LABEL[o.status]}</StatusBadge>
                   </button>
                 </li>

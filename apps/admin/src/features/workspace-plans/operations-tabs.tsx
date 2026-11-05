@@ -110,7 +110,10 @@ export function OrdersTab() {
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right font-medium">{formatVnd(o.amountVnd)}</td>
+                <td className="px-3 py-2 text-right font-medium">
+                  {formatVnd(o.amountVnd)}
+                  {o.status === "refunded" && o.refundedVnd !== null && <span className="block text-xs font-normal text-muted-foreground">đã hoàn {formatVnd(o.refundedVnd)}</span>}
+                </td>
                 <td className="px-3 py-2"><StatusBadge tone={ORDER_TONE[o.status]}>{ORDER_LABEL[o.status]}</StatusBadge></td>
               </tr>
             ))}
@@ -473,6 +476,8 @@ const DETAIL_LABEL: Record<string, string> = {
   perUserLimit: "Lượt mỗi người",
   startsAt: "Bắt đầu",
   amountVnd: "Số tiền",
+  paidVnd: "Đã trả",
+  policyVnd: "Theo chính sách",
   amount: "Mức",
   gatewayReference: "Mã cổng thanh toán",
   paidThrough: "Kỳ đến",

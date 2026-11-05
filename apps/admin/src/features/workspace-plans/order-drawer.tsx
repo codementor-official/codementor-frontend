@@ -103,6 +103,7 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
                   variant="danger"
                   disabled={refundVnd <= 0 || customInvalid}
                   title={`Ghi nhận hoàn ${formatVnd(refundVnd)}?`}
+                  confirmLabel={`Ghi nhận hoàn ${formatVnd(refundVnd)}`}
                   description={`Hoàn trên cổng thanh toán trước, rồi mới ghi nhận ở đây; sổ cái được bù trừ đúng số tiền này. ${order.refundEffect ? REFUND_EFFECT[order.refundEffect] : ""}${order.creditVnd > 0 ? ` Phần ${formatVnd(order.creditVnd)} trừ từ gói cũ không phải tiền mặt nên không hoàn.` : ""}`}
                   placeholder="Lý do · mã hoàn tiền trên cổng (nếu có)"
                   onConfirm={(reason) =>
@@ -125,12 +126,14 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
                   <span className="text-muted-foreground">Theo chính sách:</span>
                   <span className="text-base font-semibold">{formatVnd(policyVnd)}</span>
                   <span className="text-xs text-muted-foreground">
-                    {usage
-                      ? `đã trả ${formatVnd(order.amountVnd)} · đã dùng ${usage.used}/${usage.total} ngày (${formatVnDate(order.term!.startsAt)} – ${formatVnDate(order.term!.endsAt)})`
-                      : `đã trả ${formatVnd(order.amountVnd)} · đơn chưa tạo kỳ nào`}
+                    {policyVnd === 0
+                      ? `đã trả ${formatVnd(order.amountVnd)} · kỳ đã hết, hoặc gói đã chuyển sang gói khác và phần chưa dùng đã trừ vào đơn sau`
+                      : usage
+                        ? `đã trả ${formatVnd(order.amountVnd)} · đã dùng ${usage.used}/${usage.total} ngày (${formatVnDate(order.term!.startsAt)} – ${formatVnDate(order.term!.endsAt)})`
+                        : `đã trả ${formatVnd(order.amountVnd)} · đơn chưa tạo kỳ nào`}
                   </span>
                 </p>
-                <p>{REFUND_EFFECT[order.refundEffect]}</p>
+                {policyVnd > 0 && <p>{REFUND_EFFECT[order.refundEffect]}</p>}
                 <label className="block text-xs">
                   <span className="text-muted-foreground">Hoàn số tiền khác (ngoài chính sách, để trống nếu theo chính sách)</span>
                   <input

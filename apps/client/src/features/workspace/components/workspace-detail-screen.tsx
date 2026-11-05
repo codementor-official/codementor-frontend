@@ -1261,7 +1261,7 @@ function Progress({
         icon={TrendingUp}
         label="Hoàn thành"
         value={overview.assignments.completionRate}
-        note={`${overview.assignments.completed}/${overview.assignments.total} assignment · đơn vị %`}
+        note={`${overview.assignments.completed}/${overview.assignments.total} bài được giao · đơn vị %`}
       />
       <StatCard
         icon={ClipboardCheck}
