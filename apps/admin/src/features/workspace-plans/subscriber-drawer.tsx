@@ -65,6 +65,8 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
 
   const open = detail?.subscriptions.find((s) => !s.endedAt);
   const affected = usage?.groups.filter((g) => g.overLimitReasons.length) ?? [];
+  // A refunded order's term no longer counts; marked so the list of terms doesn't read as paid time.
+  const refunded = new Set(detail?.orders.filter((o) => o.status === "refunded").map((o) => o.id));
   return (
     <SideDrawer open onClose={onClose} width="wide" title={detail?.user.name ?? "Người dùng"} description={detail?.user.email}>
       {!detail ? (
@@ -108,8 +110,8 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
                 </p>
                 <ol className="mt-2 grid gap-1 text-xs sm:grid-cols-3">
                   <li>Phát hiện: <strong>{formatVnDate(usage.overage.overSince, true)}</strong></li>
-                  <li>Chỉ đọc từ: <strong>{formatVnDate(usage.overage.readOnlyAt)}</strong></li>
-                  <li>Tạm ẩn từ: <strong>{formatVnDate(usage.overage.hiddenAt)}</strong></li>
+                  <li>Chỉ đọc từ: <strong>{formatVnDate(usage.overage.readOnlyAt, true)}</strong></li>
+                  <li>Tạm ẩn từ: <strong>{formatVnDate(usage.overage.hiddenAt, true)}</strong></li>
                 </ol>
               </section>
             );
@@ -170,8 +172,9 @@ export function SubscriberDrawer({ userId, onClose, onChanged }: { userId: strin
                   <Limits e={s.entitlements} />
                   <ul className="mt-2 space-y-0.5 text-xs">
                     {s.terms.map((t) => (
-                      <li key={t.orderId}>
-                        Kỳ {formatVnDate(t.startsAt)} – {formatVnDate(t.endsAt)} ·{" "}
+                      <li key={t.orderId} className={refunded.has(t.orderId) ? "text-muted-foreground" : undefined}>
+                        Kỳ {formatVnDate(t.startsAt)} – {formatVnDate(t.endsAt)}
+                        {refunded.has(t.orderId) && " · đã hoàn, không còn tính"} ·{" "}
                         <TraceLink onClick={() => trace.openOrder(t.orderId)}>xem đơn</TraceLink>
                       </li>
                     ))}

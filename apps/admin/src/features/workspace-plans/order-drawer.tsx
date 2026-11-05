@@ -9,7 +9,7 @@ import type { AdminOrderDetail, RefundEffect } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { plansApi } from "./api";
 import { actionLabel } from "./overview-tab";
-import { KIND, ORDER_LABEL, ORDER_TONE } from "./operations-tabs";
+import { KIND, ORDER_LABEL, ORDER_TONE, auditSummary } from "./operations-tabs";
 import { TraceLink, useTrace } from "./trace";
 
 const PROVIDER: Record<string, string> = { vnpay: "VNPAY", momo: "MoMo", mock: "Thử nghiệm" };
@@ -88,7 +88,7 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
             <StatusBadge tone={ORDER_TONE[order.status]}>{ORDER_LABEL[order.status]}</StatusBadge>
             <span className="text-2xl font-semibold">{formatVnd(order.amountVnd)}</span>
             {order.status === "refunded" && order.refundedVnd !== null && (
-              <span className="text-muted-foreground">đã hoàn {formatVnd(order.refundedVnd)}</span>
+              <span className="text-muted-foreground">đã trả · đã hoàn <strong className="text-foreground">{formatVnd(order.refundedVnd)}</strong>, giữ lại {formatVnd(order.amountVnd - order.refundedVnd)}</span>
             )}
             <span className="text-muted-foreground">{order.mode === "sandbox" ? "Cổng thử nghiệm (sandbox)" : "Thanh toán giả lập"}</span>
             <div className="ml-auto flex gap-2">
@@ -237,15 +237,16 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
 
           <Section title="Diễn biến">
             <ol className="space-y-2 border-l pl-4">
-              {order.history.map((h, i) => (
-                <li key={i}>
-                  <p className="font-medium">{actionLabel(h.action)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatVnDate(h.at, true)} · {h.actor ?? "Hệ thống"}
-                    {typeof h.details === "object" && h.details && "reason" in h.details ? ` · ${String((h.details as { reason: unknown }).reason)}` : ""}
-                  </p>
-                </li>
-              ))}
+              {order.history.map((h, i) => {
+                const summary = auditSummary(h.details);
+                return (
+                  <li key={i}>
+                    <p className="font-medium">{actionLabel(h.action)}</p>
+                    <p className="text-xs text-muted-foreground">{formatVnDate(h.at, true)} · {h.actor ?? "Hệ thống"}</p>
+                    {summary.length > 0 && <p className="text-xs text-muted-foreground">{summary.join(" · ")}</p>}
+                  </li>
+                );
+              })}
             </ol>
             {order.subscriptionId && (
               <p className="mt-2 text-xs text-muted-foreground">

@@ -478,6 +478,7 @@ const DETAIL_LABEL: Record<string, string> = {
   amountVnd: "Số tiền",
   paidVnd: "Đã trả",
   policyVnd: "Theo chính sách",
+  effect: "Hệ quả",
   amount: "Mức",
   gatewayReference: "Mã cổng thanh toán",
   paidThrough: "Kỳ đến",
@@ -505,6 +506,9 @@ const VALUE_LABEL: Record<string, string> = {
   upgrade: "nâng cấp",
   month: "tháng",
   year: "năm",
+  end_subscription: "gói kết thúc, về Free",
+  drop_future_term: "huỷ kỳ trả trước, kỳ đang dùng giữ nguyên",
+  money_only: "chỉ hoàn tiền, gói không đổi",
   ...STAGE_LABEL,
 };
 
@@ -517,7 +521,7 @@ function auditValue(key: string, value: unknown, d: Record<string, unknown>): st
 }
 
 /** The readable part of an entry: known scalar fields, and for settings what changed. */
-function auditSummary(details: unknown): string[] {
+export function auditSummary(details: unknown): string[] {
   if (!details || typeof details !== "object") return [];
   const d = details as Record<string, unknown>;
   if (d.before && d.after && typeof d.before === "object" && typeof d.after === "object") {
