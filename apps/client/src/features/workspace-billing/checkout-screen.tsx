@@ -258,7 +258,8 @@ export function CheckoutScreen() {
               <Lock className="h-4 w-4" /> {paying ? "Đang chuyển sang cổng thanh toán…" : `Thanh toán ${formatVnd(s.amountVnd)}`}
             </Button>
             <p className="mt-2 text-center text-xs text-text-muted">
-              Gói chỉ được kích hoạt sau khi cổng thanh toán xác nhận giao dịch.
+              Gói chỉ được kích hoạt sau khi cổng thanh toán xác nhận giao dịch. Nếu hoàn tiền, bạn nhận lại phần thời gian chưa
+              dùng của kỳ (qua nửa kỳ hoàn một nửa); mức hoàn hiện ở trang Gói &amp; thanh toán.
             </p>
           </Card>
         </div>

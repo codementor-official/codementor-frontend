@@ -16,6 +16,7 @@ import type {
   DraftVersionInput,
   PlanCatalog,
   PlanVersion,
+  RefundEffect,
   StorageOverview,
   SubscriberDetail,
   SubscriberRow,
@@ -81,8 +82,12 @@ export const plansApi = {
     call<BillingPage<WorkspaceOrder & { buyer: { id: string; name: string; email: string } }>>(r, `${base}/orders?${query(p)}`),
   order: (r: Request, id: string) => call<AdminOrderDetail>(r, `${base}/orders/${id}`),
   reconcile: (r: Request, id: string) => call<WorkspaceOrder>(r, `${base}/orders/${id}/reconcile`, "POST"),
-  refund: (r: Request, id: string, reason: string, gatewayReference?: string) =>
-    call<{ refunded: true; endedSubscription: boolean }>(r, `${base}/orders/${id}/refund`, "POST", { reason, ...(gatewayReference ? { gatewayReference } : {}) }),
+  /** Omit `amountVnd` to refund the policy amount (unused share of the term). */
+  refund: (r: Request, id: string, reason: string, amountVnd?: number) =>
+    call<{ refunded: true; amountVnd: number; effect: RefundEffect; endedSubscription: boolean }>(r, `${base}/orders/${id}/refund`, "POST", {
+      reason,
+      ...(amountVnd ? { amountVnd } : {}),
+    }),
   coupons: (r: Request) => call<WorkspaceCoupon[]>(r, `${base}/coupons`),
   createCoupon: (r: Request, body: CouponInput) => call<{ id: string }>(r, `${base}/coupons`, "POST", { ...body }),
   coupon: (r: Request, id: string) => call<CouponDetail>(r, `${base}/coupons/${id}`),

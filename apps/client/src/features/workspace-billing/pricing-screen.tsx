@@ -381,7 +381,7 @@ const emptyEntitlements = { maxOwnedGroups: 0, maxMembersPerGroup: 0, maxStorage
 function Explainer({ icon: Icon, title, children }: { icon: typeof ShieldCheck; title: string; children: React.ReactNode }) {
   return (
     <Card className="p-5">
-      <Icon className="h-5 w-5 text-primary" aria-hidden />
+      <Icon className="h-5 w-5 text-text-muted" aria-hidden />
       <h3 className="mt-3 font-semibold text-navy">{title}</h3>
       <p className="mt-1.5 text-sm leading-relaxed text-text-muted">{children}</p>
     </Card>

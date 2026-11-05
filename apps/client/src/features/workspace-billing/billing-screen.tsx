@@ -125,6 +125,7 @@ export function BillingScreen() {
                   thúc. Bạn sẽ thanh toán gói mới vào lúc đó.
                 </p>
               )}
+              {sub?.refundToday && sub.refundToday.terms.length > 0 && <RefundToday refund={sub.refundToday} />}
               <div className="mt-5 flex flex-wrap gap-2">
                 {sub?.renewable && !sub.hasQueuedTerm && (
                   <Button href={renewHref} size="sm">
@@ -261,7 +262,12 @@ export function BillingScreen() {
                       {KIND[o.kind]} {o.planName} · theo {CYCLE_LABEL[o.billingCycle]}
                       {o.coupon && <span className="ml-2 text-xs font-normal text-success">mã {o.coupon.code} −{formatVnd(o.discountVnd)}</span>}
                     </span>
-                    <span className="font-semibold text-navy">{formatVnd(o.amountVnd)}</span>
+                    <span className="text-right">
+                      <span className="block font-semibold text-navy">{formatVnd(o.amountVnd)}</span>
+                      {o.status === "refunded" && o.refundedVnd !== null && (
+                        <span className="block text-xs text-text-muted">đã hoàn {formatVnd(o.refundedVnd)}</span>
+                      )}
+                    </span>
                     <OrderStatus status={o.status} />
                     <span className="flex items-center gap-1 text-xs text-text-faint">Hoá đơn <ArrowUpRight className="h-4 w-4" aria-hidden /></span>
                   </Link>
@@ -398,7 +404,7 @@ export function LapsePolicy({ policy }: { policy: SubscriptionOverview["policy"]
         {steps.map((step, i) => (
           <li key={step.title} className="rounded-lg border border-border-soft p-3">
             <span className="flex items-center gap-2 text-xs font-semibold text-text-faint">
-              <step.icon className="h-4 w-4 text-primary" aria-hidden /> Bước {i + 1}
+              <step.icon className="h-4 w-4 text-text-muted" aria-hidden /> Bước {i + 1}
             </span>
             <p className="mt-1 text-sm font-semibold text-navy">{step.title}</p>
             <p className="mt-0.5 text-xs leading-relaxed text-text-muted">{step.body}</p>
@@ -406,6 +412,39 @@ export function LapsePolicy({ policy }: { policy: SubscriptionOverview["policy"]
         ))}
       </ol>
     </Card>
+  );
+}
+
+const DAY = 86_400_000;
+
+/** What the buyer would get back today, term by term, so the refund policy is never a surprise. */
+function RefundToday({ refund }: { refund: NonNullable<SubscriptionOverview["subscription"]>["refundToday"] }) {
+  return (
+    <div className="mt-4 rounded-md bg-border-soft p-3 text-sm">
+      <p className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="font-semibold text-navy">Nếu hoàn tiền hôm nay</span>
+        <span className="font-semibold text-navy">{formatVnd(refund.totalVnd)}</span>
+      </p>
+      <ul className="mt-1 space-y-0.5 text-xs text-text-muted">
+        {refund.terms.map((t) => {
+          const total = Math.round((Date.parse(t.endsAt) - Date.parse(t.startsAt)) / DAY);
+          // The server's amount is the unused share, so the days left follow from it without reading the clock here.
+          const left = t.paidVnd > 0 ? Math.round((total * t.refundableVnd) / t.paidVnd) : 0;
+          return (
+            <li key={t.orderId}>
+              Kỳ {formatVnDate(t.startsAt)} – {formatVnDate(t.endsAt)}: {formatVnd(t.refundableVnd)} trên {formatVnd(t.paidVnd)} đã trả
+              {t.refundableVnd === t.paidVnd ? " (chưa dùng, hoàn đủ)" : ` (còn khoảng ${left}/${total} ngày)`}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-2 text-xs leading-relaxed text-text-muted">
+        Hoàn theo phần thời gian chưa dùng: qua nửa kỳ thì hoàn một nửa, kỳ trả trước chưa bắt đầu hoàn đủ. Số tiền giảm dần mỗi
+        ngày. Muốn hoàn tiền, gửi yêu cầu tới{" "}
+        <a href="mailto:codementor.official@gmail.com" className="font-semibold text-navy underline">codementor.official@gmail.com</a>;
+        hoàn kỳ đang dùng thì gói kết thúc ngay và tài khoản về hạn mức Free, dữ liệu giữ nguyên.
+      </p>
+    </div>
   );
 }
 
