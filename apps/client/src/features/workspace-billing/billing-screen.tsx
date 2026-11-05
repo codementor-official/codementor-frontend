@@ -428,19 +428,19 @@ function RefundToday({ refund }: { refund: NonNullable<SubscriptionOverview["sub
       <ul className="mt-1 space-y-0.5 text-xs text-text-muted">
         {refund.terms.map((t) => {
           const total = Math.round((Date.parse(t.endsAt) - Date.parse(t.startsAt)) / DAY);
-          // The server's amount is the unused share, so the days left follow from it without reading the clock here.
+          // The server refunds paid × daysLeft / total (rounded down), so the days left follow exactly from the amount.
           const left = t.paidVnd > 0 ? Math.round((total * t.refundableVnd) / t.paidVnd) : 0;
           return (
             <li key={t.orderId}>
               Kỳ {formatVnDate(t.startsAt)} – {formatVnDate(t.endsAt)}: {formatVnd(t.refundableVnd)} trên {formatVnd(t.paidVnd)} đã trả
-              {t.refundableVnd === t.paidVnd ? " (chưa dùng, hoàn đủ)" : ` (còn khoảng ${left}/${total} ngày)`}
+              {t.refundableVnd === t.paidVnd ? " (chưa dùng, hoàn đủ)" : ` (còn ${left}/${total} ngày)`}
             </li>
           );
         })}
       </ul>
       <p className="mt-2 text-xs leading-relaxed text-text-muted">
-        Hoàn theo phần thời gian chưa dùng: qua nửa kỳ thì hoàn một nửa, kỳ trả trước chưa bắt đầu hoàn đủ. Số tiền giảm dần mỗi
-        ngày. Muốn hoàn tiền, gửi yêu cầu tới{" "}
+        Hoàn theo số ngày chưa dùng của kỳ: qua nửa kỳ thì hoàn một nửa, kỳ trả trước chưa bắt đầu hoàn đủ. Số tiền giảm mỗi
+        ngày một lần. Muốn hoàn tiền, gửi yêu cầu tới{" "}
         <a href="mailto:codementor.official@gmail.com" className="font-semibold text-navy underline">codementor.official@gmail.com</a>;
         hoàn kỳ đang dùng thì gói kết thúc ngay và tài khoản về hạn mức Free, dữ liệu giữ nguyên.
       </p>

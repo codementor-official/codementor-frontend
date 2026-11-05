@@ -29,12 +29,12 @@ const REFUND_EFFECT: Record<RefundEffect, string> = {
 const ACCOUNT: Record<string, string> = { clearing: "Tiền chờ đối soát", platform: "Doanh thu nền tảng" };
 const DAY = 86_400_000;
 
-/** Days of the term used so far and its length, for explaining the policy amount. */
+/** Days used and term length, by the same whole-day rule the backend refunds with. */
 function termUsage(term: { startsAt: string; endsAt: string }) {
-  const start = Date.parse(term.startsAt);
-  const total = Math.round((Date.parse(term.endsAt) - start) / DAY);
-  const used = Math.min(total, Math.max(0, Math.ceil((Date.now() - start) / DAY)));
-  return { used, total };
+  const end = Date.parse(term.endsAt);
+  const total = Math.round((end - Date.parse(term.startsAt)) / DAY);
+  const left = Math.min(total, Math.floor(Math.max(0, end - Date.now()) / DAY));
+  return { used: total - left, total };
 }
 
 /** One order end to end: who paid what for which terms, through which gateway, and what followed. */
@@ -101,7 +101,7 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
                 <ReasonButton
                   size="sm"
                   variant="danger"
-                  disabled={refundVnd <= 0 || customInvalid}
+                  disabled={refundVnd <= 0 || customInvalid || Boolean(order.refundBlockedBy)}
                   title={`Ghi nhận hoàn ${formatVnd(refundVnd)}?`}
                   confirmLabel={`Ghi nhận hoàn ${formatVnd(refundVnd)}`}
                   description={`Hoàn trên cổng thanh toán trước, rồi mới ghi nhận ở đây; sổ cái được bù trừ đúng số tiền này. ${order.refundEffect ? REFUND_EFFECT[order.refundEffect] : ""}${order.creditVnd > 0 ? ` Phần ${formatVnd(order.creditVnd)} trừ từ gói cũ không phải tiền mặt nên không hoàn.` : ""}`}
@@ -134,6 +134,13 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
                   </span>
                 </p>
                 {policyVnd > 0 && <p>{REFUND_EFFECT[order.refundEffect]}</p>}
+                {order.refundBlockedBy && (
+                  <p className="rounded-md bg-muted p-2 text-xs">
+                    Tài khoản còn một kỳ trả trước. Hoàn{" "}
+                    <TraceLink onClick={() => trace.openOrder(order.refundBlockedBy!)}>đơn {order.refundBlockedBy.slice(0, 8)}</TraceLink>{" "}
+                    trước, rồi mới hoàn kỳ đang dùng; nếu không, tiền kỳ trả trước sẽ không còn được hoàn.
+                  </p>
+                )}
                 <label className="block text-xs">
                   <span className="text-muted-foreground">Hoàn số tiền khác (ngoài chính sách, để trống nếu theo chính sách)</span>
                   <input

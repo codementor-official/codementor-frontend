@@ -318,6 +318,8 @@ export interface AdminOrderDetail extends WorkspaceOrder {
   refundEffect: RefundEffect | null;
   /** Policy amount if refunded now: the unused share of the term (0 when nothing is left). */
   refundableVnd: number | null;
+  /** A prepaid term on the same subscription that must be refunded first; refunding this order is refused until then. */
+  refundBlockedBy?: string | null;
   buyer: { id: string; name: string; email: string };
   quote: QuoteSnapshot;
   coupon: { code: string; id?: string; description?: string | null } | null;
