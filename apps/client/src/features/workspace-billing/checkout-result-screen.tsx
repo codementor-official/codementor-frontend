@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircleIcon as CheckCircle2, ClockIcon as Clock, PrinterIcon as Printer, ArrowsClockwiseIcon as RefreshCw, XCircleIcon as XCircle } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { useToast } from "@codementor/ui";
+import { formatVnDate } from "@codementor/utils";
 import type { WorkspaceOrderDetail } from "@codementor/types";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ export function CheckoutResultScreen() {
   const [order, setOrder] = useState<WorkspaceOrderDetail | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // A renewal paid while the current term still runs starts later: the limits do not change today.
+  const queued = order?.status === "paid" && order.term !== null && order.paidAt !== null && Date.parse(order.term.startsAt) > Date.parse(order.paidAt);
   const polls = useRef(0);
 
   const load = useCallback(() => {
@@ -81,8 +84,10 @@ export function CheckoutResultScreen() {
               <XCircle className="h-10 w-10 shrink-0 text-danger" aria-hidden />
             )}
             <div className="min-w-0 flex-1" aria-live="polite">
-              <h2 className="text-xl font-bold text-navy">{HEADLINE[order.status]}</h2>
-              <p className="mt-1 text-sm text-text-muted">{DETAIL[order.status]}</p>
+              <h2 className="text-xl font-bold text-navy">{queued ? "Đã gia hạn trước" : HEADLINE[order.status]}</h2>
+              <p className="mt-1 text-sm text-text-muted">
+                {queued ? `Kỳ mới bắt đầu ${formatVnDate(order.term!.startsAt)}, nối tiếp kỳ đang dùng; hạn mức hiện tại giữ nguyên.` : DETAIL[order.status]}
+              </p>
             </div>
             <OrderStatus status={order.status} />
           </div>
@@ -145,5 +150,5 @@ const DETAIL: Record<WorkspaceOrderDetail["status"], string> = {
   cancelled: "Không có khoản tiền nào được ghi nhận.",
   expired: "Giao dịch quá thời hạn thanh toán. Hãy tạo giao dịch mới nếu bạn vẫn muốn mua gói.",
   review: "Chúng tôi đã nhận tiền nhưng cần quản trị viên kiểm tra trước khi áp dụng. Bạn sẽ nhận thông báo khi có kết quả.",
-  refunded: "Khoản thanh toán đã được hoàn lại. Xem bên dưới gói của bạn thay đổi thế nào.",
+  refunded: "Giao dịch này đã được hoàn tiền. Số tiền hoàn và thay đổi của gói ở phần hoá đơn bên dưới.",
 };

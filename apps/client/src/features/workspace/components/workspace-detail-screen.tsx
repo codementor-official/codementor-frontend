@@ -810,9 +810,7 @@ function Overview({
     <div className="flex min-w-0 flex-col gap-5 overflow-x-clip pb-6">
       <Card className="overflow-hidden">
         <div
-          className={`flex items-center justify-center bg-no-repeat ${
-            "bg-border-soft"
-          } ${
+          className={`flex items-center justify-center bg-no-repeat bg-border-soft ${
             detail.coverHeight === "compact"
               ? "h-24 sm:h-28"
               : detail.coverHeight === "tall"
@@ -830,7 +828,7 @@ function Overview({
           }
         >
           {!detail.coverUrl && (
-            <span className="font-mono text-3xl font-bold text-primary">
+            <span className="font-mono text-3xl font-bold text-text-faint">
               {initialsOf(detail.name)}
             </span>
           )}
@@ -1261,7 +1259,7 @@ function Progress({
         icon={TrendingUp}
         label="Hoàn thành"
         value={overview.assignments.completionRate}
-        note={`${overview.assignments.completed}/${overview.assignments.total} assignment · đơn vị %`}
+        note={`${overview.assignments.completed}/${overview.assignments.total} bài được giao · đơn vị %`}
       />
       <StatCard
         icon={ClipboardCheck}

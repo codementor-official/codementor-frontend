@@ -21,7 +21,7 @@ export function GroupPlanBanner({ plan, owner }: { plan: GroupPlan; owner: boole
     notice: {
       icon: TriangleAlert,
       tone: "border-warning/40 bg-warning/10",
-      title: `Nhóm sẽ chuyển sang chỉ đọc từ ${formatVnDate(r.readOnlyAt)}`,
+      title: `Nhóm sẽ chuyển sang chỉ đọc từ ${formatVnDate(r.readOnlyAt, true)}`,
       body: owner
         ? `Lý do: ${why} (gói ${plan.name}). Nâng cấp hoặc dọn dẹp trước ngày này để nhóm hoạt động bình thường.`
         : `Lý do: ${why}. Mọi thứ vẫn hoạt động bình thường cho đến ngày này.`,
@@ -31,7 +31,7 @@ export function GroupPlanBanner({ plan, owner }: { plan: GroupPlan; owner: boole
       tone: "border-warning/40 bg-warning/10",
       title: "Nhóm đang ở chế độ chỉ đọc",
       body: owner
-        ? `Lý do: ${why} (gói ${plan.name}). Từ ${formatVnDate(r.hiddenAt)} thành viên sẽ không mở được nhóm. Dữ liệu không bị xoá.`
+        ? `Lý do: ${why} (gói ${plan.name}). Từ ${formatVnDate(r.hiddenAt, true)} thành viên sẽ không mở được nhóm. Dữ liệu không bị xoá.`
         : `Bạn vẫn xem, tải tài liệu và làm bài đã giao; chưa thêm được nội dung mới. Lý do: ${why}.`,
     },
     hidden: {

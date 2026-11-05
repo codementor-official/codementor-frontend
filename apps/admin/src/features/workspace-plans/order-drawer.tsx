@@ -9,7 +9,7 @@ import type { AdminOrderDetail, RefundEffect } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { plansApi } from "./api";
 import { actionLabel } from "./overview-tab";
-import { KIND, ORDER_LABEL, ORDER_TONE } from "./operations-tabs";
+import { KIND, ORDER_LABEL, ORDER_TONE, auditSummary } from "./operations-tabs";
 import { TraceLink, useTrace } from "./trace";
 
 const PROVIDER: Record<string, string> = { vnpay: "VNPAY", momo: "MoMo", mock: "Thử nghiệm" };
@@ -27,6 +27,15 @@ const REFUND_EFFECT: Record<RefundEffect, string> = {
   money_only: "Kỳ của đơn đã kết thúc hoặc gói đã đóng: chỉ hoàn tiền, gói hiện tại không đổi.",
 };
 const ACCOUNT: Record<string, string> = { clearing: "Tiền chờ đối soát", platform: "Doanh thu nền tảng" };
+const DAY = 86_400_000;
+
+/** Days used and term length, by the same whole-day rule the backend refunds with. */
+function termUsage(term: { startsAt: string; endsAt: string }) {
+  const end = Date.parse(term.endsAt);
+  const total = Math.round((end - Date.parse(term.startsAt)) / DAY);
+  const left = Math.min(total, Math.floor(Math.max(0, end - Date.now()) / DAY));
+  return { used: total - left, total };
+}
 
 /** One order end to end: who paid what for which terms, through which gateway, and what followed. */
 export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => void }) {
@@ -35,6 +44,8 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
   const trace = useTrace();
   const [order, setOrder] = useState<AdminOrderDetail | null>(null);
   const [error, setError] = useState("");
+  /** Amount typed by the admin; empty means the policy amount. */
+  const [customAmount, setCustomAmount] = useState("");
   const load = useCallback(
     () =>
       plansApi
@@ -61,6 +72,12 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
   }
 
   const q = order?.quote;
+  const custom = customAmount ? Number(customAmount) : null;
+  const customInvalid = custom !== null && order !== null && (!Number.isSafeInteger(custom) || custom < 1 || custom > order.amountVnd);
+  // An older backend sends no `refundableVnd`: fall back to the full amount it would refund.
+  const policyVnd = order ? (order.refundableVnd === undefined ? order.amountVnd : (order.refundableVnd ?? 0)) : 0;
+  const refundVnd = custom ?? policyVnd;
+  const usage = order?.term ? termUsage(order.term) : null;
   return (
     <SideDrawer open onClose={onClose} width="wide" title={order ? `${KIND[order.kind]} ${order.planName}` : "Giao dịch"} description={order ? `Mã đơn ${order.id}` : undefined}>
       {error && <p className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">{error}</p>}
@@ -70,6 +87,9 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
           <section className="flex flex-wrap items-center gap-3">
             <StatusBadge tone={ORDER_TONE[order.status]}>{ORDER_LABEL[order.status]}</StatusBadge>
             <span className="text-2xl font-semibold">{formatVnd(order.amountVnd)}</span>
+            {order.status === "refunded" && order.refundedVnd !== null && (
+              <span className="text-muted-foreground">đã trả · đã hoàn <strong className="text-foreground">{formatVnd(order.refundedVnd)}</strong>, giữ lại {formatVnd(order.amountVnd - order.refundedVnd)}</span>
+            )}
             <span className="text-muted-foreground">{order.mode === "sandbox" ? "Cổng thử nghiệm (sandbox)" : "Thanh toán giả lập"}</span>
             <div className="ml-auto flex gap-2">
               {(order.status === "pending" || order.status === "review") && order.mode !== "mock" && (
@@ -81,10 +101,17 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
                 <ReasonButton
                   size="sm"
                   variant="danger"
-                  title={`Ghi nhận hoàn ${formatVnd(order.amountVnd)}?`}
-                  description={`Chỉ ghi nhận sau khi đã hoàn tiền trên cổng thanh toán; sổ cái được bù trừ. ${order.refundEffect ? REFUND_EFFECT[order.refundEffect] : ""}${order.creditVnd > 0 ? ` Phần ${formatVnd(order.creditVnd)} trừ từ gói cũ không phải tiền mặt nên không hoàn.` : ""}`}
+                  disabled={refundVnd <= 0 || customInvalid || Boolean(order.refundBlockedBy)}
+                  title={`Ghi nhận hoàn ${formatVnd(refundVnd)}?`}
+                  confirmLabel={`Ghi nhận hoàn ${formatVnd(refundVnd)}`}
+                  description={`Hoàn trên cổng thanh toán trước, rồi mới ghi nhận ở đây; sổ cái được bù trừ đúng số tiền này. ${order.refundEffect ? REFUND_EFFECT[order.refundEffect] : ""}${order.creditVnd > 0 ? ` Phần ${formatVnd(order.creditVnd)} trừ từ gói cũ không phải tiền mặt nên không hoàn.` : ""}`}
                   placeholder="Lý do · mã hoàn tiền trên cổng (nếu có)"
-                  onConfirm={(reason) => run(() => plansApi.refund(request, order.id, reason), "Đã ghi nhận hoàn tiền")}
+                  onConfirm={(reason) =>
+                    run(async () => {
+                      await plansApi.refund(request, order.id, reason, custom ?? undefined);
+                      setCustomAmount("");
+                    }, `Đã ghi nhận hoàn ${formatVnd(refundVnd)}`)
+                  }
                 >
                   Hoàn tiền
                 </ReasonButton>
@@ -93,11 +120,40 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
           </section>
 
           {order.refundEffect && (
-            <Section title="Nếu hoàn tiền đơn này">
-              <p className="rounded-md border p-3">
-                {REFUND_EFFECT[order.refundEffect]}
-                {order.term && <span className="block text-xs text-muted-foreground">Kỳ của đơn: {formatVnDate(order.term.startsAt)} – {formatVnDate(order.term.endsAt)}</span>}
-              </p>
+            <Section title="Nếu hoàn tiền đơn này" hint="Chính sách: hoàn phần thời gian chưa dùng của kỳ. Kỳ chưa bắt đầu hoàn đủ; kỳ đã hết hoặc gói đã chuyển sang gói khác thì không còn gì để hoàn.">
+              <div className="space-y-3 rounded-md border p-3">
+                <p className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="text-muted-foreground">Theo chính sách:</span>
+                  <span className="text-base font-semibold">{formatVnd(policyVnd)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {policyVnd === 0
+                      ? `đã trả ${formatVnd(order.amountVnd)} · kỳ đã hết, hoặc gói đã chuyển sang gói khác và phần chưa dùng đã trừ vào đơn sau`
+                      : usage
+                        ? `đã trả ${formatVnd(order.amountVnd)} · đã dùng ${usage.used}/${usage.total} ngày (${formatVnDate(order.term!.startsAt)} – ${formatVnDate(order.term!.endsAt)})`
+                        : `đã trả ${formatVnd(order.amountVnd)} · đơn chưa tạo kỳ nào`}
+                  </span>
+                </p>
+                {policyVnd > 0 && <p>{REFUND_EFFECT[order.refundEffect]}</p>}
+                {order.refundBlockedBy && (
+                  <p className="rounded-md bg-muted p-2 text-xs">
+                    Tài khoản còn một kỳ trả trước. Hoàn{" "}
+                    <TraceLink onClick={() => trace.openOrder(order.refundBlockedBy!)}>đơn {order.refundBlockedBy.slice(0, 8)}</TraceLink>{" "}
+                    trước, rồi mới hoàn kỳ đang dùng; nếu không, tiền kỳ trả trước sẽ không còn được hoàn.
+                  </p>
+                )}
+                <label className="block text-xs">
+                  <span className="text-muted-foreground">Hoàn số tiền khác (ngoài chính sách, để trống nếu theo chính sách)</span>
+                  <input
+                    inputMode="numeric"
+                    value={customAmount}
+                    onChange={(e) => setCustomAmount(e.target.value.replace(/\D/g, ""))}
+                    placeholder={String(policyVnd)}
+                    className="mt-1 block h-8 w-48 rounded-md border bg-background px-2 text-sm"
+                    aria-invalid={customInvalid || undefined}
+                  />
+                  {customInvalid && <span className="mt-1 block text-destructive">Từ 1 ₫ đến {formatVnd(order.amountVnd)}.</span>}
+                </label>
+              </div>
             </Section>
           )}
 
@@ -181,15 +237,16 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
 
           <Section title="Diễn biến">
             <ol className="space-y-2 border-l pl-4">
-              {order.history.map((h, i) => (
-                <li key={i}>
-                  <p className="font-medium">{actionLabel(h.action)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatVnDate(h.at, true)} · {h.actor ?? "Hệ thống"}
-                    {typeof h.details === "object" && h.details && "reason" in h.details ? ` · ${String((h.details as { reason: unknown }).reason)}` : ""}
-                  </p>
-                </li>
-              ))}
+              {order.history.map((h, i) => {
+                const summary = auditSummary(h.details);
+                return (
+                  <li key={i}>
+                    <p className="font-medium">{actionLabel(h.action)}</p>
+                    <p className="text-xs text-muted-foreground">{formatVnDate(h.at, true)} · {h.actor ?? "Hệ thống"}</p>
+                    {summary.length > 0 && <p className="text-xs text-muted-foreground">{summary.join(" · ")}</p>}
+                  </li>
+                );
+              })}
             </ol>
             {order.subscriptionId && (
               <p className="mt-2 text-xs text-muted-foreground">

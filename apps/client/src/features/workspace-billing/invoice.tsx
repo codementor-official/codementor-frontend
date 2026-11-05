@@ -88,7 +88,12 @@ export function Invoice({ order }: { order: WorkspaceOrderDetail }) {
 
       {order.refund && (
         <div role="status" className="mt-4 rounded-md border border-border bg-surface p-3">
-          <p className="font-semibold text-navy">Đã hoàn tiền {formatVnd(q.amountVnd)} lúc {formatVnDate(order.refund.at, true)}</p>
+          <p className="font-semibold text-navy">Đã hoàn tiền {formatVnd(order.refundedVnd ?? q.amountVnd)} lúc {formatVnDate(order.refund.at, true)}</p>
+          {order.refundedVnd !== null && order.refundedVnd < q.amountVnd && (
+            <p className="mt-1 text-text-muted">
+              Hoàn phần thời gian chưa dùng của kỳ trên tổng {formatVnd(q.amountVnd)} đã thanh toán.
+            </p>
+          )}
           {order.refund.effect && <p className="mt-1 text-text-muted">{REFUND_EFFECT[order.refund.effect]}</p>}
           {q.creditVnd > 0 && (
             <p className="mt-1 text-xs text-text-muted">Phần {formatVnd(q.creditVnd)} trừ từ gói cũ không phải tiền mặt nên không được hoàn.</p>

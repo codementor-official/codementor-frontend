@@ -78,6 +78,8 @@ export interface WorkspaceOrder {
   discountVnd: number;
   creditVnd: number;
   amountVnd: number;
+  /** What was returned when the order was refunded; may be less than `amountVnd` (unused share of the term). */
+  refundedVnd: number | null;
   currency: "VND";
   coupon: { code: string } | null;
   entitlements: Entitlements;
@@ -123,6 +125,11 @@ export interface SubscriptionOverview {
     hasQueuedTerm: boolean;
     scheduledChange: null | { planId: string; planName: string | null; billingCycle: BillingCycle | null };
     suspendedReason: string | null;
+    /** What a refund would return today: the unused share of the running term, plus any prepaid term in full. */
+    refundToday: {
+      totalVnd: number;
+      terms: { orderId: string; startsAt: string; endsAt: string; paidVnd: number; refundableVnd: number }[];
+    };
   };
   pendingOrder: WorkspaceOrder | null;
   recentlyEnded: { planName: string; endedAt: string; reason: string | null } | null;
@@ -309,6 +316,10 @@ export interface AdminOrderDetail extends WorkspaceOrder {
   term: { startsAt: string; endsAt: string } | null;
   /** What a refund would do now; null when the order cannot be refunded. */
   refundEffect: RefundEffect | null;
+  /** Policy amount if refunded now: the unused share of the term (0 when nothing is left). */
+  refundableVnd: number | null;
+  /** A prepaid term on the same subscription that must be refunded first; refunding this order is refused until then. */
+  refundBlockedBy?: string | null;
   buyer: { id: string; name: string; email: string };
   quote: QuoteSnapshot;
   coupon: { code: string; id?: string; description?: string | null } | null;
