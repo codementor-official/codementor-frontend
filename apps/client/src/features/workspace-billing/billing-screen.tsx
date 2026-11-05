@@ -16,12 +16,16 @@ import { billingApi } from "./api";
 import { CYCLE_LABEL, STATE_LABEL, limitRows } from "./plan-presentation";
 import { UsageMeter } from "./usage-meter";
 
+const GROUPS_PER_PAGE = 5;
+
 export function BillingScreen() {
   const toast = useToast();
   const [overview, setOverview] = useState<SubscriptionOverview | null>(null);
   const [usage, setUsage] = useState<WorkspacePlanUsage | null>(null);
   const [orders, setOrders] = useState<BillingPage<WorkspaceOrder> | null>(null);
   const [page, setPage] = useState(1);
+  // An owner can hold dozens of groups; the meters page instead of pushing history off-screen.
+  const [groupPage, setGroupPage] = useState(1);
   const [error, setError] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
 
@@ -206,8 +210,9 @@ export function BillingScreen() {
                     Bạn chưa sở hữu nhóm nào. <Link href="/workspace" className="font-semibold text-primary">Tạo nhóm đầu tiên</Link>
                   </p>
                 ) : (
+                  <>
                   <ul className="mt-3 space-y-3">
-                    {usage.groups.map((g) => (
+                    {usage.groups.slice((groupPage - 1) * GROUPS_PER_PAGE, groupPage * GROUPS_PER_PAGE).map((g) => (
                       <li key={g.id}>
                         <UsageMeter
                           label={g.status === "archived" ? `${g.name} (đã lưu trữ)` : g.name}
@@ -228,6 +233,12 @@ export function BillingScreen() {
                       </li>
                     ))}
                   </ul>
+                  {usage.groups.length > GROUPS_PER_PAGE && (
+                    <div className="mt-3">
+                      <ServerPagination page={groupPage} total={usage.groups.length} pageSize={GROUPS_PER_PAGE} onPageChange={setGroupPage} />
+                    </div>
+                  )}
+                  </>
                 )}
               </div>
             </div>
