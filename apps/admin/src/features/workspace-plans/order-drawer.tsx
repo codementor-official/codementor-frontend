@@ -88,7 +88,7 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
             <StatusBadge tone={ORDER_TONE[order.status]}>{ORDER_LABEL[order.status]}</StatusBadge>
             <span className="text-2xl font-semibold">{formatVnd(order.amountVnd)}</span>
             {order.status === "refunded" && order.refundedVnd !== null && (
-              <span className="text-muted-foreground">đã trả · đã hoàn <strong className="text-foreground">{formatVnd(order.refundedVnd)}</strong>, giữ lại {formatVnd(order.amountVnd - order.refundedVnd)}</span>
+              <span className="text-muted-foreground">đã trả · đã hoàn <strong className="text-foreground">{formatVnd(order.refundedVnd)}</strong>{order.refundedVnd < order.amountVnd && `, giữ lại ${formatVnd(order.amountVnd - order.refundedVnd)}`}</span>
             )}
             <span className="text-muted-foreground">{order.mode === "sandbox" ? "Cổng thử nghiệm (sandbox)" : "Thanh toán giả lập"}</span>
             <div className="ml-auto flex gap-2">
@@ -104,7 +104,7 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
                   disabled={refundVnd <= 0 || customInvalid || Boolean(order.refundBlockedBy)}
                   title={`Ghi nhận hoàn ${formatVnd(refundVnd)}?`}
                   confirmLabel={`Ghi nhận hoàn ${formatVnd(refundVnd)}`}
-                  description={`Hoàn trên cổng thanh toán trước, rồi mới ghi nhận ở đây; sổ cái được bù trừ đúng số tiền này. ${order.refundEffect ? REFUND_EFFECT[order.refundEffect] : ""}${order.creditVnd > 0 ? ` Phần ${formatVnd(order.creditVnd)} trừ từ gói cũ không phải tiền mặt nên không hoàn.` : ""}`}
+                  description={`${order.mode === "sandbox" || order.mode === "mock" ? "Đơn qua cổng thử nghiệm: chỉ cần ghi nhận ở đây, không có tiền thật để hoàn" : "Hoàn trên cổng thanh toán trước, rồi mới ghi nhận ở đây"}; sổ cái được bù trừ đúng số tiền này. ${order.refundEffect ? REFUND_EFFECT[order.refundEffect] : ""}${order.creditVnd > 0 ? ` Phần ${formatVnd(order.creditVnd)} trừ từ gói cũ không phải tiền mặt nên không hoàn.` : ""}`}
                   placeholder="Lý do · mã hoàn tiền trên cổng (nếu có)"
                   onConfirm={(reason) =>
                     run(async () => {

@@ -31,6 +31,13 @@ export function CheckoutResultScreen() {
   const queued = order?.status === "paid" && order.term !== null && order.paidAt !== null && Date.parse(order.term.startsAt) > Date.parse(order.paidAt);
   const polls = useRef(0);
 
+  // The gateway appends its signed result (vnp_*) to the return URL. The page never reads it, so
+  // drop it from the address bar and history rather than leave a signature in shared links.
+  useEffect(() => {
+    if (orderId && window.location.search.includes("vnp_"))
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}?order=${encodeURIComponent(orderId)}`);
+  }, [orderId]);
+
   const load = useCallback(() => {
     if (!orderId) return;
     billingApi
