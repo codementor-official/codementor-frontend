@@ -114,7 +114,7 @@ export function PlansTab() {
               <VersionSummary label="Bản nháp" version={plan.draft} empty="Không có bản nháp" />
             </div>
 
-            <div className="mt-3 grid gap-3 border-t pt-3 md:grid-cols-3">
+            <div className="mt-4 grid border-t md:grid-cols-3 md:divide-x max-md:divide-y">
               {!plan.isDefault && (
                 <PlanControl
                   title="Bán hàng"
@@ -269,10 +269,10 @@ function VersionSummary({ label, version, empty }: { label: string; version: Pla
 /** One labelled group of plan controls: what it governs, where it stands now, and the action. */
 function PlanControl({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 rounded-md border p-3">
+    <div className="flex flex-col gap-2.5 py-3 md:px-4 md:first:pl-0 md:last:pr-0">
       <div>
-        <p className="text-xs font-semibold">{title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</p>
+        <p className="mt-1 text-sm">{hint}</p>
       </div>
       <div className="mt-auto">{children}</div>
     </div>
@@ -292,10 +292,7 @@ function SortOrder({ plan, onSave }: { plan: AdminPlan; onSave: (n: number) => v
         if (changed) onSave(n);
       }}
     >
-      <label htmlFor={id} className="sr-only">
-        Thứ tự của gói {plan.code}
-      </label>
-      <input id={id} className={`${inputClassName} h-8 w-16! py-1`} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))} />
+      <input id={id} aria-label={`Thứ tự của gói ${plan.code}`} className={`${inputClassName} h-8 w-16! py-1`} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))} />
       <Button size="sm" type="submit" disabled={!changed}>
         <FloppyDisk className="h-3.5 w-3.5" /> Lưu thứ tự
       </Button>
