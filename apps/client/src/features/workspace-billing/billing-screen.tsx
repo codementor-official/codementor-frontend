@@ -351,9 +351,9 @@ function Notices({ overview, usage, renewHref }: { overview: SubscriptionOvervie
     const when = !o
       ? `Nếu chưa xử lý, sau ${overview.policy.overageNoticeDays} ngày các nhóm vượt hạn mức sẽ chuyển sang chỉ đọc.`
       : o.stage === "notice"
-        ? `Từ ${formatVnDate(o.readOnlyAt)}, ${affected} nhóm vượt hạn mức sẽ chuyển sang chỉ đọc.`
+        ? `Từ ${formatVnDate(o.readOnlyAt, true)}, ${affected} nhóm vượt hạn mức sẽ chuyển sang chỉ đọc.`
         : o.stage === "read_only"
-          ? `${affected} nhóm đang chỉ đọc. Từ ${formatVnDate(o.hiddenAt)} các nhóm này sẽ tạm ẩn với thành viên.`
+          ? `${affected} nhóm đang chỉ đọc. Từ ${formatVnDate(o.hiddenAt, true)} các nhóm này sẽ tạm ẩn với thành viên.`
           : `${affected} nhóm đang tạm ẩn với thành viên. Dữ liệu vẫn được giữ nguyên.`;
     notices.push({
       key: "overage",

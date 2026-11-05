@@ -150,5 +150,5 @@ const DETAIL: Record<WorkspaceOrderDetail["status"], string> = {
   cancelled: "Không có khoản tiền nào được ghi nhận.",
   expired: "Giao dịch quá thời hạn thanh toán. Hãy tạo giao dịch mới nếu bạn vẫn muốn mua gói.",
   review: "Chúng tôi đã nhận tiền nhưng cần quản trị viên kiểm tra trước khi áp dụng. Bạn sẽ nhận thông báo khi có kết quả.",
-  refunded: "Khoản thanh toán đã được hoàn lại. Xem bên dưới gói của bạn thay đổi thế nào.",
+  refunded: "Giao dịch này đã được hoàn tiền. Số tiền hoàn và thay đổi của gói ở phần hoá đơn bên dưới.",
 };
