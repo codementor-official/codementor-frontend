@@ -144,13 +144,13 @@ export function ReportTab() {
             <tr>
               <th className="px-3 py-2 font-medium">Gói</th>
               <th className="px-3 py-2 font-medium">Loại</th>
-              <th className="px-3 py-2 text-right font-medium">Giá tháng</th>
-              <th className="px-3 py-2 text-right font-medium">Đang dùng</th>
-              <th className="px-3 py-2 text-right font-medium">Mới / Gia hạn / Nâng cấp</th>
-              <th className="px-3 py-2 text-right font-medium">Tiền thu</th>
-              <th className="px-3 py-2 text-right font-medium">Đã hoàn</th>
-              <th className="px-3 py-2 text-right font-medium">Thuần</th>
-              <th className="px-3 py-2 text-right font-medium">Tỷ trọng</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Giá tháng</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Đang dùng</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Mới / Gia hạn / Nâng cấp</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Tiền thu</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Đã hoàn</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Thuần</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Tỷ trọng</th>
             </tr>
           </thead>
           <tbody>
@@ -164,13 +164,13 @@ export function ReportTab() {
                   </span>
                 </td>
                 <td className="px-3 py-2"><StatusBadge tone={PRICING[p.pricing].tone}>{PRICING[p.pricing].label}</StatusBadge></td>
-                <td className="px-3 py-2 text-right">{p.monthlyPriceVnd === null ? "—" : formatVnd(p.monthlyPriceVnd)}</td>
-                <td className="px-3 py-2 text-right">{p.activeAccounts.toLocaleString("vi-VN")}</td>
-                <td className="px-3 py-2 text-right text-muted-foreground">{p.newSubscriptions} / {p.renewals} / {p.upgrades}</td>
-                <td className="px-3 py-2 text-right">{formatVnd(p.grossVnd)}</td>
-                <td className="px-3 py-2 text-right text-muted-foreground">{p.refundedVnd ? formatVnd(p.refundedVnd) : "—"}</td>
-                <td className="px-3 py-2 text-right font-medium">{formatVnd(p.netVnd)}</td>
-                <td className="px-3 py-2 text-right text-muted-foreground">{t?.netVnd ? `${Math.round((p.netVnd / t.netVnd) * 100)}%` : "—"}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{p.monthlyPriceVnd === null ? "—" : formatVnd(p.monthlyPriceVnd)}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{p.activeAccounts.toLocaleString("vi-VN")}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap text-muted-foreground">{p.newSubscriptions} / {p.renewals} / {p.upgrades}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{formatVnd(p.grossVnd)}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap text-muted-foreground">{p.refundedVnd ? formatVnd(p.refundedVnd) : "—"}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap font-medium">{formatVnd(p.netVnd)}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap text-muted-foreground">{t?.netVnd ? `${Math.round((p.netVnd / t.netVnd) * 100)}%` : "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -183,10 +183,10 @@ export function ReportTab() {
           <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
             <tr>
               <th className="px-3 py-2 font-medium">Kỳ</th>
-              <th className="px-3 py-2 text-right font-medium">Thanh toán</th>
-              <th className="px-3 py-2 text-right font-medium">Tiền thu</th>
-              <th className="px-3 py-2 text-right font-medium">Đã hoàn</th>
-              <th className="px-3 py-2 text-right font-medium">Thuần</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Thanh toán</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Tiền thu</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Đã hoàn</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Thuần</th>
               <th className="w-1/4 px-3 py-2 font-medium"><span className="sr-only">Biểu đồ</span></th>
             </tr>
           </thead>
@@ -194,9 +194,9 @@ export function ReportTab() {
             {data?.series.map((s) => (
               <tr key={s.bucket} className="border-t">
                 <td className="px-3 py-1.5">{bucketLabel(data.bucket, s.bucket)}</td>
-                <td className="px-3 py-1.5 text-right text-muted-foreground">{s.payments}{s.refunds ? ` · ${s.refunds} hoàn` : ""}</td>
-                <td className="px-3 py-1.5 text-right">{s.grossVnd ? formatVnd(s.grossVnd) : "—"}</td>
-                <td className="px-3 py-1.5 text-right text-muted-foreground">{s.refundedVnd ? formatVnd(s.refundedVnd) : "—"}</td>
+                <td className="px-3 py-1.5 text-right whitespace-nowrap text-muted-foreground">{s.payments}{s.refunds ? ` · ${s.refunds} hoàn` : ""}</td>
+                <td className="px-3 py-1.5 text-right whitespace-nowrap">{s.grossVnd ? formatVnd(s.grossVnd) : "—"}</td>
+                <td className="px-3 py-1.5 text-right whitespace-nowrap text-muted-foreground">{s.refundedVnd ? formatVnd(s.refundedVnd) : "—"}</td>
                 <td className={`px-3 py-1.5 text-right font-medium ${s.netVnd < 0 ? "text-destructive" : ""}`}>{s.netVnd ? formatVnd(s.netVnd) : "—"}</td>
                 <td className="px-3 py-1.5" aria-hidden>
                   <div className="h-2 rounded-full bg-muted">
@@ -219,8 +219,8 @@ export function ReportTab() {
               <th className="px-3 py-2 font-medium">Thanh toán lúc</th>
               <th className="px-3 py-2 font-medium">Người mua</th>
               <th className="px-3 py-2 font-medium">Nội dung</th>
-              <th className="px-3 py-2 text-right font-medium">Thu trong kỳ</th>
-              <th className="px-3 py-2 text-right font-medium">Hoàn trong kỳ</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Thu trong kỳ</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap font-medium">Hoàn trong kỳ</th>
               <th className="px-3 py-2 font-medium">Trạng thái</th>
             </tr>
           </thead>
@@ -233,8 +233,8 @@ export function ReportTab() {
                   {KIND[o.kind]} {o.planName} · {o.billingCycle === "year" ? "năm" : "tháng"}
                   {o.coupon && <span className="block text-xs text-muted-foreground">Mã {o.coupon} · giảm {formatVnd(o.discountVnd)}</span>}
                 </td>
-                <td className="px-3 py-2 text-right">{o.collectedInPeriodVnd ? formatVnd(o.collectedInPeriodVnd) : "—"}</td>
-                <td className="px-3 py-2 text-right text-muted-foreground">{o.refundedInPeriodVnd ? formatVnd(o.refundedInPeriodVnd) : "—"}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{o.collectedInPeriodVnd ? formatVnd(o.collectedInPeriodVnd) : "—"}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap text-muted-foreground">{o.refundedInPeriodVnd ? formatVnd(o.refundedInPeriodVnd) : "—"}</td>
                 <td className="px-3 py-2"><StatusBadge tone={ORDER_TONE[o.status]}>{ORDER_LABEL[o.status]}</StatusBadge></td>
               </tr>
             ))}
