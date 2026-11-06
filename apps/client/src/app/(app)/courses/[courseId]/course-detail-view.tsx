@@ -30,6 +30,7 @@ import { RecommendedCourses } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { commerceApi } from "@/features/commerce/api";
 import { PurchaseButton } from "@/features/commerce/purchase-button";
+import { CertificateSection } from "@/features/certificates/certificate-section";
 import type { CourseOffer } from "@codementor/types";
 import { consumeCourseCelebration, markCourseCelebrated } from "@/lib/course-celebration";
 import { useAuth } from "@/providers/auth-provider";
@@ -441,6 +442,8 @@ export function CourseDetailView({ courseId, viaRoadmapId }: { courseId: string;
           </Card>
         </aside>
       </div>
+
+      <CertificateSection subject="course" subjectId={courseId} />
 
       {/* `excludeId`: service chỉ loại khóa học viên ĐÃ ghi danh, nên trang chi tiết của
           một khóa chưa ghi danh sẽ tự đề xuất chính nó. */}

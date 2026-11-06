@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { SaveButton } from "@/features/saved/components/save-button";
 import { ReportButton } from "@/features/reports/report-button";
 import { CourseCard } from "@/components/course-card";
+import { CertificateSection } from "@/features/certificates/certificate-section";
 import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { commerceApi } from "@/features/commerce/api";
@@ -317,6 +318,8 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
           </Card>
         </aside>
       </div>
+
+      <CertificateSection subject="roadmap" subjectId={roadmap.id} />
 
       {skip && (
         <Modal

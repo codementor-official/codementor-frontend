@@ -14,8 +14,12 @@ import {
 } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { certificatesApi, type CertificateTemplate } from "@/lib/api";
+import { IssuedCertificates } from "./issued-certificates";
 
-const TABS = [{ value: "default", label: "Mẫu mặc định" }];
+const TABS = [
+  { value: "issued", label: "Đã cấp" },
+  { value: "default", label: "Mẫu mặc định" },
+];
 
 /**
  * Chứng chỉ của nền tảng. Mẫu mặc định áp cho mọi khóa học và lộ trình chưa gắn mẫu riêng,
@@ -28,6 +32,7 @@ export function CertificatesPage() {
   const [design, setDesign] = useState<CertificateDesign | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"issued" | "default">("issued");
 
   useEffect(() => {
     certificatesApi.templates(request).then(
@@ -64,15 +69,16 @@ export function CertificatesPage() {
         icon={Certificate}
         title="Chứng chỉ"
         description="Mẫu mặc định áp cho mọi khóa học và lộ trình chưa gắn mẫu riêng. Chứng chỉ đã cấp không đổi theo."
-        center={<SegmentedTabs options={TABS} value="default" onChange={() => undefined} />}
+        center={<SegmentedTabs options={TABS} value={tab} onChange={(next) => setTab(next as "issued" | "default")} />}
         action={
-          <Button onClick={() => void save()} disabled={saving || !design || validateCertificateDesign(design).errors.length > 0}>
+          tab === "default" && <Button onClick={() => void save()} disabled={saving || !design || validateCertificateDesign(design).errors.length > 0}>
             {saving ? "Đang lưu..." : "Lưu mẫu mặc định"}
           </Button>
         }
       />
       {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
-      {design && template && (
+      {tab === "issued" && <IssuedCertificates />}
+      {tab === "default" && design && template && (
         <div className="mt-4">
           <CertificateDesignForm value={design} onChange={setDesign} onUpload={upload} />
         </div>

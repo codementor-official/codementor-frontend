@@ -1,5 +1,6 @@
 import {
   BookOpenIcon as BookOpen,
+  CertificateIcon as Certificate,
   BookmarkSimpleIcon as Bookmark,
   ReceiptIcon as Receipt,
   RobotIcon as Bot,
@@ -40,5 +41,6 @@ export const navItems: { href: string; label: string; icon: PhosphorIcon }[] = [
   { href: "/workspace", label: "Nhóm học tập", icon: Users },
   { href: "/saved", label: "Đã lưu", icon: Bookmark },
   { href: "/purchases", label: "Khóa học đã mua", icon: Receipt },
+  { href: "/my-certificates", label: "Chứng chỉ", icon: Certificate },
   { href: "/ai-tutor", label: "Trợ lý AI", icon: Bot },
 ];

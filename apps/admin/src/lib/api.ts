@@ -953,7 +953,27 @@ interface PresignedUpload {
   publicUrl: string;
 }
 
+export interface AdminCertificate {
+  id: string;
+  code: string;
+  subject: "course" | "roadmap";
+  subjectId: string;
+  recipientName: string;
+  email: string | null;
+  data: { subjectTitle: string };
+  issuedAt: string;
+  revokedAt: string | null;
+  revokeReason: string | null;
+}
+
 export const certificatesApi = {
+  issued: (request: Request, query: { q?: string; page: number }) =>
+    unwrap<{ items: AdminCertificate[]; total: number }>(
+      request,
+      `/certificates/admin?page=${query.page}&limit=20${query.q ? `&q=${encodeURIComponent(query.q)}` : ""}`,
+    ),
+  revoke: (request: Request, id: string, reason: string) =>
+    unwrap<void>(request, `/certificates/${id}/revoke`, { method: "POST", body: { reason } }),
   templates: (request: Request) => unwrap<CertificateTemplate[]>(request, "/certificate-templates"),
   updateTemplate: (request: Request, id: string, body: { name: string; subject: null; design: CertificateDesign }) =>
     unwrap<CertificateTemplate>(request, `/certificate-templates/${id}`, { method: "PATCH", body }),
