@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { XIcon as X } from "@phosphor-icons/react/ssr";
 
 const widthClasses = {
@@ -13,6 +14,10 @@ const widthClasses = {
  * Overlay dialog. Closes on backdrop click and Escape, locks body scroll while open.
  * Kept deliberately small — it renders whatever children it's given rather than
  * prescribing a body layout.
+ *
+ * Portaled to `document.body`: rendered in place, a modal opened from a dropdown
+ * (`absolute z-10`) was trapped in that stacking context, so the header and the menu
+ * itself painted over the backdrop.
  */
 export function Modal({
   open,
@@ -43,11 +48,13 @@ export function Modal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
+
+  if (!open || !mounted) return null;
 
   // z-50 matches --z-modal. The --z-* tokens are documentation only — Tailwind doesn't
   // generate z utilities from them (onboarding-modal hardcodes the same value).
-  return (
+  return createPortal(
     <div
       className="animate-overlay-in fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-fixed/55 p-4 sm:p-6"
       onClick={onClose}
@@ -86,6 +93,9 @@ export function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
+
+const noopSubscribe = () => () => {};
