@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CircleNotchIcon as Loader2, MapTrifoldIcon as MapIcon } from "@phosphor-icons/react/ssr";
-import { StatStrip, formatVndPrice } from "@codementor/ui";
+import { Modal, StatStrip, formatVndPrice } from "@codementor/ui";
 import { BreadcrumbTitle } from "@/components/app-breadcrumb";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -16,7 +17,7 @@ import { RecommendedRoadmaps } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { commerceApi } from "@/features/commerce/api";
 import { summarizeRoadmapPricing } from "@/lib/catalogue/roadmap-pricing";
-import type { CourseDetail, RoadmapDetail, RoadmapProgress } from "@/types/catalogue";
+import type { CourseDetail, RoadmapCourseBlocker, RoadmapDetail, RoadmapProgress } from "@/types/catalogue";
 
 const LEVEL_LABEL: Record<string, string> = {
   none: "Chưa có nền",
@@ -34,7 +35,17 @@ const FIELD_LABEL: Record<string, string> = {
   foundation: "Nền tảng",
 };
 
+/** Khóa học viên định bỏ qua thứ tự để học, cùng các khóa bắt buộc phía trước chưa xong. */
+interface SkipRequest {
+  courseId: string;
+  position: number;
+  title: string;
+  blockers: RoadmapCourseBlocker[];
+}
+
 export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
+  const router = useRouter();
+  const [skip, setSkip] = useState<SkipRequest | null>(null);
   const [roadmap, setRoadmap] = useState<RoadmapDetail | null>(null);
   const [progress, setProgress] = useState<RoadmapProgress | null>(null);
   const [enrolling, setEnrolling] = useState(false);
@@ -206,7 +217,11 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
               {courses.map((course) => {
                 const detail = courseDetails.get(course.courseId);
                 const courseProgress = progressByCourse.get(course.courseId);
-                const available = !progress?.enrollment || Boolean(courseProgress?.isAvailable);
+                // Thứ tự là khóa mềm (ADR 0005): khóa nào cũng mở, nhưng bắt đầu một khóa khi
+                // còn khóa bắt buộc phía trước chưa xong thì hỏi lại một lần. Đã ghi danh rồi
+                // thì không hỏi nữa — họ đã chọn, hỏi mỗi lần vào chỉ là phiền.
+                const started = Boolean(courseProgress?.enrollmentStatus) && courseProgress?.enrollmentStatus !== "dropped";
+                const blockers = started ? [] : (courseProgress?.blockedBy ?? []);
                 return (
                   // Số thứ tự đứng NGOÀI thẻ, không đè lên thumbnail — layout ngang đặt
                   // thumbnail bên trái, thông tin bên phải, nên không còn chỗ nào để lồng số
@@ -241,17 +256,31 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                           durationHours: course.durationHours,
                         }}
                         tags={course.isOptional ? ["Tự chọn"] : []}
-                        state={
-                          !available
-                            ? "locked"
-                            : courseProgress?.enrollmentStatus === "completed"
-                              ? "completed"
-                              : undefined
+                        state={courseProgress?.enrollmentStatus === "completed" ? "completed" : undefined}
+                        note={
+                          blockers.length > 0
+                            ? `Nên học sau ${blockers.map((b) => `khóa ${b.position}`).join(", ")}`
+                            : undefined
                         }
                         // Chưa bắt đầu lộ trình thì không có tiến độ để nói, 0% chỉ là nhiễu.
                         progressPercent={progress?.enrollment ? courseProgress?.progressPercent : undefined}
                         owned={detail?.owned}
-                        href={available ? `/courses/${course.courseId}` : null}
+                        // `via` để trang khóa học ghi danh kèm lộ trình — backend dựa vào đó ghi
+                        // nhận lượt bỏ qua thứ tự cho báo cáo.
+                        href={`/courses/${course.courseId}?via=${roadmapId}`}
+                        onOpen={
+                          blockers.length > 0
+                            ? (event) => {
+                                event.preventDefault();
+                                setSkip({
+                                  courseId: course.courseId,
+                                  position: course.position,
+                                  title: course.title,
+                                  blockers,
+                                });
+                              }
+                            : undefined
+                        }
                       />
                     </div>
                   </li>
@@ -276,7 +305,7 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
                 : "Chưa có khóa học nào để bắt đầu."}
             </p>
             {courses.length > 0 && progress?.enrollment && (
-              <Link href={`/courses/${progress.courses.find((course) => course.isAvailable && course.enrollmentStatus !== "completed")?.courseId ?? courses[0].courseId}`} className="block rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover">
+              <Link href={`/courses/${progress.courses.find((course) => course.enrollmentStatus !== "completed")?.courseId ?? courses[0].courseId}?via=${roadmapId}`} className="block rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-on-ink transition-colors hover:bg-primary-hover">
                 Tiếp tục lộ trình
               </Link>
             )}
@@ -288,6 +317,44 @@ export function RoadmapDetailView({ roadmapId }: { roadmapId: string }) {
           </Card>
         </aside>
       </div>
+
+      {skip && (
+        <Modal
+          open
+          onClose={() => setSkip(null)}
+          title="Bỏ qua thứ tự lộ trình?"
+          width="sm"
+          footer={
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => router.push(`/courses/${skip.blockers[0].courseId}?via=${roadmapId}`)}
+              >
+                Học khóa {skip.blockers[0].position}
+              </Button>
+              <Button size="sm" onClick={() => router.push(`/courses/${skip.courseId}?via=${roadmapId}`)}>
+                Bỏ qua, học khóa {skip.position}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm leading-relaxed text-text">
+            Bạn chưa hoàn thành{" "}
+            {skip.blockers.map((b, i) => (
+              <span key={b.courseId}>
+                {i > 0 && ", "}
+                khóa {b.position} <strong>“{b.title}”</strong>
+              </span>
+            ))}
+            . Xác nhận bỏ qua để học khóa {skip.position} <strong>“{skip.title}”</strong>?
+          </p>
+          <p className="mt-2 text-xs text-text-muted">
+            Lộ trình được sắp để mỗi khóa dựa trên khóa trước nó. Bạn vẫn có thể quay lại học các khóa
+            đã bỏ qua bất cứ lúc nào.
+          </p>
+        </Modal>
+      )}
 
       {/* `excludeId`: service chỉ loại lộ trình học viên ĐÃ ghi danh, nên trang chi tiết
           của một lộ trình chưa ghi danh sẽ tự đề xuất chính nó. */}

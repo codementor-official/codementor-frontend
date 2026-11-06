@@ -1,6 +1,6 @@
-import { BookOpenIcon as BookOpen, LockIcon as Lock, SealCheckIcon as SealCheck } from "@phosphor-icons/react/ssr";
+import type { MouseEventHandler } from "react";
+import { BookOpenIcon as BookOpen, SealCheckIcon as SealCheck } from "@phosphor-icons/react/ssr";
 import { EntityCard } from "@/components/entity-card";
-import { Badge } from "@/components/ui/badge";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { levelToDifficulty } from "@/lib/catalogue/level";
 import { COURSE_COVER_FALLBACK } from "@/lib/cover-fallback";
@@ -33,10 +33,12 @@ export interface CourseCardProps {
   course: CourseCardData;
   /** `horizontal`: thumbnail trái, nội dung phải — dùng cho danh sách khóa trong lộ trình. */
   layout?: "vertical" | "horizontal";
-  /** Mặc định `/courses/{id}`; `null` để tắt link (khóa chưa mở trong lộ trình). */
+  /** Mặc định `/courses/{id}`; `null` để tắt link. */
   href?: string | null;
+  /** Bấm vào thẻ. `preventDefault()` để chặn điều hướng, ví dụ hỏi xác nhận bỏ qua thứ tự. */
+  onOpen?: MouseEventHandler<HTMLAnchorElement>;
   /** Trạng thái học của người đang xem. `undefined` = chưa ghi danh hoặc không biết. */
-  state?: "completed" | "locked";
+  state?: "completed";
   /** 0..100 tiến độ THẬT của người học trong khóa này. */
   progressPercent?: number;
   /** Người xem đã có quyền học: giá không còn là thông tin cho họ, nên ẩn đi. */
@@ -56,6 +58,7 @@ export function CourseCard({
   course,
   layout = "vertical",
   href,
+  onOpen,
   state,
   progressPercent,
   owned = false,
@@ -108,16 +111,10 @@ export function CourseCard({
           ? [{ label: "giờ", value: course.durationHours }]
           : []),
       ]}
-      badge={
-        state === "locked" ? (
-          <Badge tone="neutral" className="gap-1">
-            <Lock className="h-3 w-3" /> Đang khóa
-          </Badge>
-        ) : undefined
-      }
       note={note}
       footer={footer}
       href={href === null ? undefined : (href ?? `/courses/${course.id}`)}
+      onOpen={onOpen}
     />
   );
 }

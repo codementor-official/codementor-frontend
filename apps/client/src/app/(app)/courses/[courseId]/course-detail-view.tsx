@@ -67,7 +67,7 @@ function fireConfetti() {
   confetti({ particleCount: 60, spread: 100, origin: { y: 0.5 }, angle: 120, colors });
 }
 
-export function CourseDetailView({ courseId }: { courseId: string }) {
+export function CourseDetailView({ courseId, viaRoadmapId }: { courseId: string; viaRoadmapId?: string }) {
   const router = useRouter();
   const userId = useAuth().user?.id;
   const [course, setCourse] = useState<CourseDetail | null>(null);
@@ -121,7 +121,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
   const enroll = async () => {
     setEnrolling(true);
     try {
-      await api.courses.enroll(courseId);
+      await api.courses.enroll(courseId, viaRoadmapId);
       // Đăng ký xong là để học, nên đi thẳng vào bài đầu tiên. Ở lại trang này chỉ đổi một
       // cái nút rồi bắt người học tự tìm chỗ bấm tiếp.
       const first = course ? flatLessons(course)[0] : undefined;

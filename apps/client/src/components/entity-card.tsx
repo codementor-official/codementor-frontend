@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import Link from "next/link";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
@@ -41,6 +41,8 @@ export interface EntityCardProps {
   action?: ReactNode;
   /** When set, the entire card becomes a link (e.g. course tiles). Don't combine with `cta`. */
   href?: string;
+  /** Click on the whole-card link. Call `preventDefault()` to stop the navigation, e.g. to ask first. */
+  onOpen?: MouseEventHandler<HTMLAnchorElement>;
 }
 
 export function EntityCard({
@@ -64,6 +66,7 @@ export function EntityCard({
   cta,
   action,
   href,
+  onOpen,
 }: EntityCardProps) {
   const horizontal = layout === "horizontal";
 
@@ -203,7 +206,7 @@ export function EntityCard({
        * buttons, and a <button> inside an <a> is invalid markup that eats its own clicks.
        * Inside the Card so `interactive`'s hover still fires. */}
       {href && (
-        <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
+        <Link href={href} onClick={onOpen} className="absolute inset-0 z-0" aria-label={title} />
       )}
       {tileBlock}
       {bodyBlock}

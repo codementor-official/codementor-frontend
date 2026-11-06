@@ -171,8 +171,17 @@ export interface RoadmapProgress {
     durationHours: number | null;
     enrollmentStatus: "active" | "completed" | "paused" | "dropped" | null;
     progressPercent: number;
+    /** Luôn `true` từ ADR 0005 — thứ tự là khóa mềm, xem `blockedBy`. */
     isAvailable: boolean;
+    /** Khóa bắt buộc phía trước chưa xong. Rỗng ở lộ trình tự do. */
+    blockedBy: RoadmapCourseBlocker[];
   }>;
+}
+
+export interface RoadmapCourseBlocker {
+  courseId: string;
+  position: number;
+  title: string;
 }
 
 export interface CourseLesson {
