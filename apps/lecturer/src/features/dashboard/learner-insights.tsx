@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { SealCheckIcon as BadgeCheck, GraduationCapIcon as GraduationCap, StarIcon as Star, UserPlusIcon as UserPlus, UsersIcon as Users, WalletIcon as Wallet } from "@phosphor-icons/react/ssr";
+import { SealCheckIcon as BadgeCheck, CertificateIcon as Certificate, ClockCountdownIcon as Stalled, GraduationCapIcon as GraduationCap, StarIcon as Star, UserPlusIcon as UserPlus, UsersIcon as Users, WalletIcon as Wallet } from "@phosphor-icons/react/ssr";
 import { Card, CardContent, CardHeader, DailyBarCard, KpiStrip, SegmentedTabs, useSummary } from "@codementor/ui";
 import { api, type LecturerInsights } from "@/lib/api";
 
@@ -45,6 +45,8 @@ export function LearnerInsights() {
         metrics={[
           { icon: Users, label: "Đang học", value: data?.activeLearners ?? null },
           { icon: GraduationCap, label: "Đã học xong", value: data?.completedLearners ?? null },
+          { icon: Stalled, label: `Ngưng học (trong ${data?.inProgressLearners ?? 0} học dở)`, value: data?.stalledLearners ?? null },
+          { icon: Certificate, label: "Chứng chỉ đã cấp", value: data?.certificatesIssued ?? null },
           { icon: UserPlus, label: `Ghi danh mới (${days} ngày)`, value: data?.newEnrollments ?? null },
           { icon: Star, label: `Đánh giá TB (${data?.reviews ?? 0} lượt)`, value: data?.avgRating ?? null },
           { icon: BadgeCheck, label: `Tỉ lệ đạt % (${data?.submissions ?? 0} bài nộp)`, value: acceptRate },

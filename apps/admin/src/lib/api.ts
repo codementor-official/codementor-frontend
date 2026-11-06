@@ -1,6 +1,6 @@
 import type { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
-import type { CertificateDesign, UiNotification } from "@codementor/ui";
+import type { CertificateDesign, LearningReportData, UiNotification } from "@codementor/ui";
 import { KINDS } from "@/features/moderation/types";
 import type {
   ContentKind,
@@ -965,6 +965,12 @@ export interface AdminCertificate {
   revokedAt: string | null;
   revokeReason: string | null;
 }
+
+/** Báo cáo học tập toàn nền tảng (ADR 0005). Cùng endpoint giảng viên dùng, `scope=all`. */
+export const learningReportsApi = {
+  get: (request: Request, days: 7 | 30) =>
+    unwrap<LearningReportData>(request, `/learning-reports?scope=all&days=${days}`),
+};
 
 export const certificatesApi = {
   issued: (request: Request, query: { q?: string; page: number }) =>

@@ -1,6 +1,7 @@
 import {
   PulseIcon as Activity,
   ChartLineUpIcon as ChartNoAxesCombined,
+  ChartBarIcon as ChartBar,
   SealPercentIcon as BadgePercent,
   BookOpenIcon as BookOpen,
   CertificateIcon as Certificate,
@@ -51,6 +52,7 @@ export const adminNavigation: AdminNavGroup[] = [
       { href: "/courses", icon: BookOpen, label: "Khoá học" },
       { href: "/learning-paths", icon: Route, label: "Lộ trình học" },
       { href: "/certificates", icon: Certificate, label: "Chứng chỉ" },
+      { href: "/learning-reports", icon: ChartBar, label: "Báo cáo học tập" },
       { href: "/workspaces", icon: Network, label: "Nhóm học tập" },
       { href: "/commerce", icon: Wallet, label: "Giao dịch" },
       { href: "/revenue", icon: ChartNoAxesCombined, label: "Doanh thu hệ thống" },

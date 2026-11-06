@@ -107,3 +107,5 @@ export {
   validateDesign as validateCertificateDesign,
 } from "./certificate/design";
 export type { CertificateDesign, CertificateRawData } from "./certificate/design";
+export { LearningReport } from "./learning-report";
+export type { LearningReportData } from "./learning-report";

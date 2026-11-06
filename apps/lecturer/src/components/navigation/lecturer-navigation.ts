@@ -1,5 +1,6 @@
 import {
   BookOpenIcon as BookOpen,
+  ChartBarIcon as ChartBar,
   CertificateIcon as Certificate,
   SealPercentIcon as BadgePercent,
   BracketsCurlyIcon as Braces,
@@ -35,6 +36,7 @@ export const lecturerNavigation: LecturerNavGroup[] = [
     label: "Giảng dạy",
     items: [
       { href: "/dashboard", icon: LayoutDashboard, label: "Bảng điều khiển" },
+      { href: "/reports", icon: ChartBar, label: "Báo cáo học tập" },
       // Trên danh sách nội dung, không dưới: Lecter là chỗ bắt đầu soạn một bài mới, còn
       // ba mục kia là chỗ quản lý bài đã có.
       { href: "/lecter", icon: Sparkles, label: "Lecter" },
