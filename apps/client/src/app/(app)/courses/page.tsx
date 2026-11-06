@@ -22,7 +22,6 @@ import { MAX_PAGE_SIZE, type CourseSummary } from "@/types/catalogue";
 import type { CatalogueTopicSummary } from "@/types/catalogue";
 import { TopicFilter } from "@/features/practice/components/topic-filter";
 
-const TILE_TONE = ["navy", "primary"] as const;
 /**
  * Hai hàng đầy ở màn hình rộng (lưới 4 cột). Đặt 20 thì với catalogue cỡ hiện tại mọi thứ
  * lọt hết vào một trang, và thanh phân trang — vốn tự ẩn khi chỉ có một trang — không bao
@@ -141,11 +140,10 @@ export default function CoursesPage() {
           />
         ) : (
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {mine.items.map((course, index) => (
+            {mine.items.map((course) => (
               <li key={course.id}>
                 <CourseCard
                   course={{ ...course, id: course.courseId }}
-                  tileVariant={TILE_TONE[index % TILE_TONE.length]}
                   state={course.progressPercent >= 100 ? "completed" : undefined}
                   progressPercent={course.progressPercent}
                 />
@@ -246,10 +244,6 @@ export default function CoursesPage() {
             />
           </div>
 
-          {!search.trim() && level === "all" && priceRange === "all" && promotion === "all" && sort === "recommended" && selectedTopicIds.length === 0 && currentPage === 1 && <section className="mb-6" aria-label="Khóa học đề xuất">
-            <RecommendedCourses />
-          </section>}
-
           {isLoading ? (
             <CatalogueSkeleton />
           ) : error ? (
@@ -267,15 +261,14 @@ export default function CoursesPage() {
           ) : (
             <>
               <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {paginated.map((course, index) => {
+                {paginated.map((course) => {
                   const enrollment = byCourse[course.id]?.enrollment ?? null;
                   const enrolled = enrollment !== null && enrollment.status !== "dropped";
                   return (
                     <li key={course.id}>
                       <CourseCard
                         course={course}
-                        tags={(course.topics ?? []).slice(0, 3).map((topic) => topic.name)}
-                        tileVariant={TILE_TONE[index % TILE_TONE.length]}
+                        tags={(course.topics ?? []).map((topic) => topic.name)}
                         state={
                           enrolled && enrollment.progressPercent >= 100 ? "completed" : undefined
                         }
@@ -295,6 +288,12 @@ export default function CoursesPage() {
               />
             </>
           )}
+
+          {/* Đề xuất xếp SAU danh mục: người vào trang này đến để duyệt danh mục, đề xuất
+              là phần gợi thêm chứ không phải thứ chặn đường tới danh sách. */}
+          {!search.trim() && level === "all" && priceRange === "all" && promotion === "all" && sort === "recommended" && selectedTopicIds.length === 0 && currentPage === 1 && <section className="mt-10" aria-label="Khóa học đề xuất">
+            <RecommendedCourses />
+          </section>}
         </>
       )}
     </div>

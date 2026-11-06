@@ -1,15 +1,9 @@
-import { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import Link from "next/link";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
-import { Badge, DifficultyBadge, type Difficulty } from "@/components/ui/badge";
-import { ProgressBar } from "@/components/ui/progress-bar";
-
-const tileVariantClasses = {
-  ink: "bg-navy",
-  accent: "bg-accent",
-  primary: "bg-primary",
-} as const;
+import type { Difficulty } from "@/components/ui/badge";
+import { TagRow } from "@/components/ui/tag-row";
 
 export interface EntityCardStat {
   label: string;
@@ -17,11 +11,11 @@ export interface EntityCardStat {
 }
 
 export interface EntityCardProps {
-  tile: string;
-  tileVariant?: keyof typeof tileVariantClasses;
+  /** Chữ đặt giữa ô khi KHÔNG có ảnh bìa. Có ảnh bìa thì không vẽ gì đè lên ảnh. */
+  tile?: string;
   /** Taller tile for browse-grid contexts (roadmaps/courses); shorter for compact tiles. `lg` gives the thumbnail top billing. */
   tileHeight?: "sm" | "md" | "lg";
-  /** `horizontal`: thumbnail on the left, content on the right — for list-style contexts (roadmap course rows). Stacks when its container is narrow. Ignores `tileHeight`, `cta`, `action`; `progress` and `footer` (e.g. the price) render under the body. */
+  /** `horizontal`: thumbnail on the left, content on the right — for list-style contexts (roadmap course rows). Stacks when its container is narrow. Ignores `tileHeight`, `cta`, `action`; `footer` (e.g. the price) renders under the body. */
   layout?: "vertical" | "horizontal";
   eyebrow?: string;
   coverImage?: string;
@@ -37,7 +31,6 @@ export interface EntityCardProps {
   tags?: string[];
   /** Right-of-title or footer metadata, e.g. { label: "học viên", value: "1.2k" }. */
   stats?: EntityCardStat[];
-  progress?: number;
   /** Free-form note block (e.g. roadmap "matched reason"), rendered above the footer. */
   note?: string;
   /** Bordered footer row (e.g. participants/updated meta), pinned to the bottom of the card. */
@@ -48,11 +41,12 @@ export interface EntityCardProps {
   action?: ReactNode;
   /** When set, the entire card becomes a link (e.g. course tiles). Don't combine with `cta`. */
   href?: string;
+  /** Click on the whole-card link. Call `preventDefault()` to stop the navigation, e.g. to ask first. */
+  onOpen?: MouseEventHandler<HTMLAnchorElement>;
 }
 
 export function EntityCard({
   tile,
-  tileVariant = "ink",
   tileHeight = "md",
   layout = "vertical",
   eyebrow,
@@ -67,12 +61,12 @@ export function EntityCard({
   coverBadges,
   tags = [],
   stats = [],
-  progress,
   note,
   footer,
   cta,
   action,
   href,
+  onOpen,
 }: EntityCardProps) {
   const horizontal = layout === "horizontal";
 
@@ -127,16 +121,7 @@ export function EntityCard({
       {coverBadges && (
         <span className="absolute top-3 left-3 z-20 max-w-[calc(100%_-_1.5rem)]">{coverBadges}</span>
       )}
-      {!horizontal &&
-        (coverImage ? (
-          <span
-            className={`absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full text-2xs text-on-ink ring-2 ring-surface ${tileVariantClasses[tileVariant]}`}
-          >
-            {tile}
-          </span>
-        ) : (
-          tile
-        ))}
+      {!horizontal && !coverImage && tile}
     </div>
   );
 
@@ -157,16 +142,7 @@ export function EntityCard({
       >
         {description}
       </p>
-      {(difficulty || tags.length > 0) && (
-        <div className="flex flex-wrap gap-1.5">
-          {difficulty && <DifficultyBadge difficulty={difficulty} />}
-          {tags.map((t) => (
-            <Badge key={t} tone="neutral">
-              {t}
-            </Badge>
-          ))}
-        </div>
-      )}
+      <TagRow difficulty={difficulty} tags={tags} />
       {(kind || stats.length > 0) && (
         // Loại nội dung đứng cùng hàng số liệu, không treo thành nhãn viết hoa trên tiêu đề.
         // Từng mục `nowrap`: thẻ hẹp thì cả mục xuống dòng, không vỡ "2 thành / viên".
@@ -190,24 +166,18 @@ export function EntityCard({
           {note}
         </p>
       )}
-      {horizontal && (typeof progress === "number" || footer) && (
-        <div className="flex flex-col gap-2 pt-1">
-          {typeof progress === "number" && <ProgressBar value={progress} />}
-          {footer && (
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-soft pt-2 text-xs text-text-faint">
-              {footer}
-            </div>
-          )}
+      {horizontal && footer && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-soft pt-2.5 text-xs text-text-faint">
+          {footer}
         </div>
       )}
       {!horizontal &&
-        (typeof progress === "number" || footer || cta || action) && (
-          // Một khối ghim đáy cho cả tiến độ, giá, CTA: ghim từng phần riêng thì thẻ có thanh
-          // tiến độ và thẻ có giá ở cùng hàng không còn kết thúc ở cùng một đường.
+        (footer || cta || action) && (
+          // Một khối ghim đáy cho cả giá/tiến độ và CTA: ghim từng phần riêng thì các thẻ cùng
+          // hàng không còn kết thúc ở cùng một đường.
           <div className="mt-auto flex flex-col gap-2.5 pt-1">
-            {typeof progress === "number" && <ProgressBar value={progress} />}
             {footer && (
-              <div className="flex justify-between border-t border-border-soft pt-2.5 text-xs text-text-faint">
+              <div className="flex min-h-12 items-center justify-between border-t border-border-soft pt-2.5 text-xs text-text-faint">
                 {footer}
               </div>
             )}
@@ -236,7 +206,7 @@ export function EntityCard({
        * buttons, and a <button> inside an <a> is invalid markup that eats its own clicks.
        * Inside the Card so `interactive`'s hover still fires. */}
       {href && (
-        <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
+        <Link href={href} onClick={onOpen} className="absolute inset-0 z-0" aria-label={title} />
       )}
       {tileBlock}
       {bodyBlock}

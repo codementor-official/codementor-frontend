@@ -34,6 +34,7 @@ import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { Field, fieldA11y, inputClassName, textareaClassName } from "@/components/form/field";
 import { CoverImageField } from "@/components/form/cover-image-field";
+import { CertificateTemplateSelect } from "@/features/certificates/certificate-template-select";
 import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import { SortableOverlay } from "@/components/sortable";
 import { addCourse, CourseLibrary, PickedCourses, type PickedCourse } from "@/features/roadmaps/course-picker";
@@ -626,6 +627,10 @@ export default function RoadmapStudioPage() {
               options={tags}
               value={draft.tagIds}
             />
+          </div>
+
+          <div className="mt-4">
+            <CertificateTemplateSelect subject="roadmap" id={id} />
           </div>
         </Card>
 

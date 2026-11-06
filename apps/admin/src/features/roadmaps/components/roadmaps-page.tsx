@@ -5,6 +5,9 @@ import {
   ArchiveIcon as Archive,
   ChecksIcon as CheckCheck,
   ClockIcon as Clock,
+  ClockCountdownIcon as Stalled,
+  GraduationCapIcon as GraduationCap,
+  ShuffleIcon as Shuffle,
   GlobeIcon as Globe,
   PencilSimpleLineIcon as PencilLine,
   ArrowCounterClockwiseIcon as RotateCcw,
@@ -28,7 +31,7 @@ import { Button, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDia
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
-import { moderationApi, roadmapsApi, type AdminRoadmapListItem } from "@/lib/api";
+import { learningReportsApi, moderationApi, roadmapsApi, type AdminRoadmapListItem } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
 import { UpdatedRangeFilter, updatedRangeError } from "@/features/shared/updated-range-filter";
@@ -55,6 +58,7 @@ export function RoadmapsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const summary = useSummary(useCallback(() => roadmapsApi.summary(request), [request]));
+  const learning = useSummary(useCallback(() => learningReportsApi.get(request, 30), [request]));
 
   const rangeError = updatedRangeError(updatedFrom, updatedTo);
   const load = useCallback(async () => {
@@ -248,6 +252,9 @@ export function RoadmapsPage() {
             { icon: PencilLine, label: "Yêu cầu sửa", value: countOf(summary.data?.byStatus, "changes_requested") },
             { icon: Undo2, label: "Xin gỡ", value: summary.data?.removalRequested ?? null },
             { icon: UserCheck, label: "Lượt ghi danh", value: summary.data?.enrollments ?? null },
+            { icon: Stalled, label: "Đang học", value: learning.data ? learning.data.summary.roadmapEnrollments - learning.data.summary.roadmapsCompleted : null },
+            { icon: GraduationCap, label: "Hoàn thành", value: learning.data?.summary.roadmapsCompleted ?? null },
+            { icon: Shuffle, label: "Bỏ qua thứ tự", value: learning.data?.summary.outOfOrderStarts ?? null },
           ]}
         />
       }

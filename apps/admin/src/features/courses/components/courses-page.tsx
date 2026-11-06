@@ -5,7 +5,10 @@ import {
   ArchiveIcon as Archive,
   BookOpenIcon as BookOpen,
   ChecksIcon as CheckCheck,
+  CertificateIcon as Certificate,
   ClockIcon as Clock,
+  ClockCountdownIcon as Stalled,
+  GraduationCapIcon as GraduationCap,
   GlobeIcon as Globe,
   PencilSimpleLineIcon as PencilLine,
   ArrowCounterClockwiseIcon as RotateCcw,
@@ -21,7 +24,7 @@ import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } fro
 import { Button, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { coursesApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
+import { coursesApi, learningReportsApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
@@ -48,6 +51,8 @@ export function CoursesPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const summary = useSummary(useCallback(() => coursesApi.summary(request), [request]));
+  // Hoàn thành / học dở / chứng chỉ — cùng định nghĩa với trang Báo cáo học tập.
+  const learning = useSummary(useCallback(() => learningReportsApi.get(request, 30), [request]));
 
   const rangeError = updatedRangeError(updatedFrom, updatedTo);
   const load = useCallback(async () => {
@@ -240,6 +245,9 @@ export function CoursesPage() {
             { icon: Undo2, label: "Xin gỡ", value: summary.data?.removalRequested ?? null },
             { icon: UserCheck, label: "Lượt ghi danh", value: summary.data?.enrollments ?? null },
             { icon: Star, label: "Đánh giá TB", value: summary.data?.avgRating ?? null },
+            { icon: GraduationCap, label: `Hoàn thành (${learning.data?.summary.completionRate ?? 0}%)`, value: learning.data?.summary.completed ?? null },
+            { icon: Stalled, label: "Đang học dở", value: learning.data?.summary.inProgress ?? null },
+            { icon: Certificate, label: "Chứng chỉ đã cấp", value: learning.data?.summary.certificates ?? null },
           ]}
         />
       }

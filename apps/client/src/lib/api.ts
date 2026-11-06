@@ -1,4 +1,5 @@
 import { createApiClient } from "@codementor/api-client";
+import type { CertificateDesign, CertificateRawData } from "@codementor/ui";
 import type { ApiResponse } from "@codementor/types";
 import type {
   JudgeRunPayload,
@@ -175,6 +176,25 @@ export interface OwnershipOffer {
   forMe?: boolean;
 }
 
+export type CertificateSubject = "course" | "roadmap";
+
+/** Chứng chỉ đã cấp — `design` và `data` là ảnh chụp lúc cấp (ADR 0005). */
+export interface IssuedCertificate {
+  id: string;
+  code: string;
+  subject: CertificateSubject;
+  subjectId: string;
+  recipientName: string;
+  data: CertificateRawData;
+  design: CertificateDesign;
+  issuedAt: string;
+}
+
+export type CertificateStatus =
+  | { status: "locked"; progressPercent: number; preview: { design: CertificateDesign; data: CertificateRawData } }
+  | { status: "claimable"; preview: { design: CertificateDesign; data: CertificateRawData } }
+  | { status: "issued"; certificate: IssuedCertificate };
+
 export const api = {
   ai: {
     prepare: (slug: string, documentIds: string[]) =>
@@ -337,6 +357,16 @@ export const api = {
       unwrap<void>(`/roadmaps/${id}/enroll`, { method: "DELETE" }),
     progress: (id: string) =>
       unwrap<RoadmapProgress>(`/roadmaps/${id}/progress`),
+  },
+  certificates: {
+    status: (subject: CertificateSubject, id: string) =>
+      unwrap<CertificateStatus>(`/certificates/status/${subject}/${id}`),
+    claim: (subject: CertificateSubject, subjectId: string, recipientName: string) =>
+      unwrap<Extract<CertificateStatus, { status: "issued" }>>("/certificates", {
+        method: "POST",
+        body: { subject, subjectId, recipientName },
+      }),
+    mine: () => unwrap<IssuedCertificate[]>("/certificates/mine"),
   },
   courses: {
     catalogue: (params: CatalogueParams & { ids?: string } = {}) =>

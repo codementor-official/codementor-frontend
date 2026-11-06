@@ -227,7 +227,7 @@ export function ExploreScreen({ initialQuery = "" }: { initialQuery?: string }) 
           )}
           {show("roadmaps") && roadmaps.length > 0 && (
             <DiscoverySection title="Lộ trình học" icon={Map} href="/roadmaps">
-              {roadmaps.map((roadmap) => <EntityCard key={roadmap.id} tile={initials(roadmap.title)} tileVariant="primary" title={roadmap.title} description={`${roadmap.authorName ?? "CodeMentor"} · ${roadmap.field}`} tags={[roadmap.level]} stats={[{ label: "khóa", value: roadmap.courseCount }, { label: "giờ", value: roadmap.estimatedHours ?? 0 }]} href={`/roadmaps/${roadmap.id}`} />)}
+              {roadmaps.map((roadmap) => <EntityCard key={roadmap.id} tile={initials(roadmap.title)} title={roadmap.title} description={`${roadmap.authorName ?? "CodeMentor"} · ${roadmap.field}`} tags={[roadmap.level]} stats={[{ label: "khóa", value: roadmap.courseCount }, { label: "giờ", value: roadmap.estimatedHours ?? 0 }]} href={`/roadmaps/${roadmap.id}`} />)}
             </DiscoverySection>
           )}
           {show("exercises") && exercises.length > 0 && (

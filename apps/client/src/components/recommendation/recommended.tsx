@@ -67,8 +67,8 @@ export function RecommendedCourses({ excludeId, limit = 6, title }: { excludeId?
   if (!visible.length) return null;
   return <RecommendationFrame icon={BookOpen} title={title ?? (data.personalized ? "Khóa học dành cho bạn" : "Khóa học phổ biến")} personalized={data.personalized}>
     <ul className={GRID}>
-      {visible.map(({ item, recommendation }, i) => <li key={item.id}>
-        <CourseCard course={item} tileVariant={i % 2 === 0 ? "navy" : "primary"} note={recommendation.reasons[0]} />
+      {visible.map(({ item }) => <li key={item.id}>
+        <CourseCard course={item} />
       </li>)}
     </ul>
   </RecommendationFrame>;

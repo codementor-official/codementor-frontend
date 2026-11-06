@@ -28,7 +28,6 @@ import { TopicFilter } from "@/features/practice/components/topic-filter";
 
 /** Danh sách một lộ trình một dòng, nên sáu dòng là vừa một màn hình. */
 const PAGE_SIZE = 6;
-const TILE_TONE = ["ink", "primary"] as const;
 const CHIP_LIMIT = 3;
 
 function tileFor(title: string): string {
@@ -200,14 +199,13 @@ export default function RoadmapsPage() {
             * nghiệp, và thứ giúp chọn là mô tả cộng danh sách khóa bên trong — cả hai đều
             * không đọc nổi trong một ô hẹp bằng 1/4 màn hình. */}
           <ul className="flex flex-col gap-3">
-            {paginated.map((roadmap, index) => {
+            {paginated.map((roadmap) => {
               const detail = details.get(roadmap.id);
               return (
                 <li key={roadmap.id}>
                   <EntityCard
                     layout="horizontal"
                     tile={tileFor(roadmap.title)}
-                    tileVariant={TILE_TONE[index % TILE_TONE.length]}
                     coverImage={roadmap.coverImageUrl || roadmapCoverFallback(roadmap.field)}
                     kind={{ icon: MapIcon, label: FIELD_LABEL[roadmap.field] ?? roadmap.field }}
                     title={roadmap.title}

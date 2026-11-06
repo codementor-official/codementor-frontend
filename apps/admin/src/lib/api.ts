@@ -1,6 +1,6 @@
 import type { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
-import type { UiNotification } from "@codementor/ui";
+import type { CertificateDesign, LearningReportData, UiNotification } from "@codementor/ui";
 import { KINDS } from "@/features/moderation/types";
 import type {
   ContentKind,
@@ -934,4 +934,63 @@ export interface PlatformSettings {
 export const systemApi = {
   activity: (request: Request) => unwrap<SystemActivity>(request, "/system/activity"),
   settings: (request: Request) => unwrap<PlatformSettings>(request, "/system/settings"),
+};
+
+/** Mẫu chứng chỉ (ADR 0005). Admin chỉ sửa mẫu mặc định của nền tảng (`isDefault`). */
+export interface CertificateTemplate {
+  id: string;
+  name: string;
+  subject: "course" | "roadmap" | null;
+  design: CertificateDesign;
+  isDefault: boolean;
+  editable: boolean;
+  updatedAt: string;
+}
+
+interface PresignedUpload {
+  uploadUrl: string;
+  headers: Record<string, string>;
+  publicUrl: string;
+}
+
+export interface AdminCertificate {
+  id: string;
+  code: string;
+  subject: "course" | "roadmap";
+  subjectId: string;
+  recipientName: string;
+  email: string | null;
+  data: { subjectTitle: string };
+  issuedAt: string;
+  revokedAt: string | null;
+  revokeReason: string | null;
+}
+
+/** Báo cáo học tập toàn nền tảng (ADR 0005). Chỉ admin. */
+export const learningReportsApi = {
+  get: (request: Request, days: 7 | 30) =>
+    unwrap<LearningReportData>(request, `/learning-reports?days=${days}`),
+};
+
+export const certificatesApi = {
+  issued: (request: Request, query: { q?: string; page: number }) =>
+    unwrap<{ items: AdminCertificate[]; total: number }>(
+      request,
+      `/certificates/admin?page=${query.page}&limit=20${query.q ? `&q=${encodeURIComponent(query.q)}` : ""}`,
+    ),
+  revoke: (request: Request, id: string, reason: string) =>
+    unwrap<void>(request, `/certificates/${id}/revoke`, { method: "POST", body: { reason } }),
+  templates: (request: Request) => unwrap<CertificateTemplate[]>(request, "/certificate-templates"),
+  updateTemplate: (request: Request, id: string, body: { name: string; subject: null; design: CertificateDesign }) =>
+    unwrap<CertificateTemplate>(request, `/certificate-templates/${id}`, { method: "PATCH", body }),
+  /** Presign → PUT thẳng lên kho đối tượng → URL công khai để lưu vào thiết kế. */
+  uploadImage: async (request: Request, id: string, kind: "logo" | "signature", file: File) => {
+    const signed = await unwrap<PresignedUpload>(request, `/certificate-templates/${id}/asset-upload-url`, {
+      method: "POST",
+      body: { kind, filename: file.name, contentType: file.type, sizeBytes: file.size },
+    });
+    const response = await fetch(signed.uploadUrl, { method: "PUT", headers: signed.headers, body: file });
+    if (!response.ok) throw new Error(`Tải ảnh thất bại (${response.status})`);
+    return signed.publicUrl;
+  },
 };

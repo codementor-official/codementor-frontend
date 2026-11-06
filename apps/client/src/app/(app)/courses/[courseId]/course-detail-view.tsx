@@ -30,6 +30,7 @@ import { RecommendedCourses } from "@/components/recommendation/recommended";
 import { api } from "@/lib/api";
 import { commerceApi } from "@/features/commerce/api";
 import { PurchaseButton } from "@/features/commerce/purchase-button";
+import { CertificateSection } from "@/features/certificates/certificate-section";
 import type { CourseOffer } from "@codementor/types";
 import { consumeCourseCelebration, markCourseCelebrated } from "@/lib/course-celebration";
 import { useAuth } from "@/providers/auth-provider";
@@ -67,7 +68,7 @@ function fireConfetti() {
   confetti({ particleCount: 60, spread: 100, origin: { y: 0.5 }, angle: 120, colors });
 }
 
-export function CourseDetailView({ courseId }: { courseId: string }) {
+export function CourseDetailView({ courseId, viaRoadmapId }: { courseId: string; viaRoadmapId?: string }) {
   const router = useRouter();
   const userId = useAuth().user?.id;
   const [course, setCourse] = useState<CourseDetail | null>(null);
@@ -121,7 +122,7 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
   const enroll = async () => {
     setEnrolling(true);
     try {
-      await api.courses.enroll(courseId);
+      await api.courses.enroll(courseId, viaRoadmapId);
       // Đăng ký xong là để học, nên đi thẳng vào bài đầu tiên. Ở lại trang này chỉ đổi một
       // cái nút rồi bắt người học tự tìm chỗ bấm tiếp.
       const first = course ? flatLessons(course)[0] : undefined;
@@ -441,6 +442,8 @@ export function CourseDetailView({ courseId }: { courseId: string }) {
           </Card>
         </aside>
       </div>
+
+      <CertificateSection subject="course" subjectId={courseId} />
 
       {/* `excludeId`: service chỉ loại khóa học viên ĐÃ ghi danh, nên trang chi tiết của
           một khóa chưa ghi danh sẽ tự đề xuất chính nó. */}

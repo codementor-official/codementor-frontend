@@ -22,7 +22,7 @@ import type {
   VideoUploadConfig,
 } from "@/features/courses/types";
 import type { Article, ArticleCoverUpload, ArticleCoverUploadConfig, ArticleListItem } from "@/features/articles/types";
-import type { UiNotification } from "@codementor/ui";
+import type { CertificateDesign, UiNotification } from "@codementor/ui";
 
 /**
  * Trình duyệt chỉ gọi BFF cùng origin. BFF đọc phiên HttpOnly, gắn access token rồi mới
@@ -49,6 +49,39 @@ function query(params: Record<string, string | number | undefined>): string {
   }
   const encoded = search.toString();
   return encoded ? `?${encoded}` : "";
+}
+
+export interface CertificateTemplate {
+  id: string;
+  name: string;
+  subject: "course" | "roadmap" | null;
+  design: CertificateDesign;
+  /** Số khóa học + lộ trình đang gắn mẫu này. */
+  usage: number;
+  isDefault: boolean;
+  editable: boolean;
+  updatedAt: string;
+}
+
+// `type`, không `interface`: body của api-client nhận `Record<string, unknown>`, mà interface
+// không có index signature nên không gán được.
+export type CertificateTemplateInput = {
+  name: string;
+  subject: "course" | "roadmap" | null;
+  design: CertificateDesign;
+};
+
+/** Presign → PUT thẳng lên kho đối tượng → URL công khai để lưu vào thiết kế. */
+export async function uploadCertificateImage(templateId: string, kind: "logo" | "signature", file: File) {
+  const signed = await api.certificateTemplates.assetUploadUrl(templateId, {
+    kind,
+    filename: file.name,
+    contentType: file.type,
+    sizeBytes: file.size,
+  });
+  const response = await fetch(signed.uploadUrl, { method: "PUT", headers: signed.headers, body: file });
+  if (!response.ok) throw new Error(`Tải ảnh thất bại (${response.status})`);
+  return signed.publicUrl;
 }
 
 /** Chủ đề dùng chung cho bài viết và bài tập. */
@@ -78,6 +111,9 @@ export interface LecturerInsights {
   days: number;
   activeLearners: number;
   completedLearners: number;
+  inProgressLearners: number;
+  stalledLearners: number;
+  certificatesIssued: number;
   newEnrollments: number;
   avgRating: number | null;
   reviews: number;
@@ -368,6 +404,27 @@ export const api = {
    * Thông báo. Cùng API mà ứng dụng người học đọc — notification-service lọc theo đối
    * tượng nhận từ token, nên giảng viên chỉ thấy thông báo gửi cho mình hoặc cho tất cả.
    */
+  /** Mẫu chứng chỉ (ADR 0005). `subject: null` = dùng cho cả khóa học và lộ trình. */
+  certificateTemplates: {
+    list: () => unwrap<CertificateTemplate[]>("/certificate-templates"),
+    get: (id: string) => unwrap<CertificateTemplate>(`/certificate-templates/${id}`),
+    create: (body: CertificateTemplateInput) =>
+      unwrap<CertificateTemplate>("/certificate-templates", { method: "POST", body }),
+    update: (id: string, body: CertificateTemplateInput) =>
+      unwrap<CertificateTemplate>(`/certificate-templates/${id}`, { method: "PATCH", body }),
+    archive: (id: string) => unwrap<void>(`/certificate-templates/${id}`, { method: "DELETE" }),
+    assetUploadUrl: (
+      id: string,
+      body: { kind: "logo" | "signature"; filename: string; contentType: string; sizeBytes: number },
+    ) => unwrap<PresignedUpload>(`/certificate-templates/${id}/asset-upload-url`, { method: "POST", body }),
+    attached: (subject: "courses" | "roadmaps", id: string) =>
+      unwrap<{ templateId: string | null }>(`/${subject}/${id}/certificate-template`),
+    attach: (subject: "courses" | "roadmaps", id: string, templateId: string | null) =>
+      unwrap<{ templateId: string | null }>(`/${subject}/${id}/certificate-template`, {
+        method: "PUT",
+        body: { templateId },
+      }),
+  },
   notifications: {
     list: (params: { limit: number; before?: string }) =>
       unwrap<{ items: UiNotification[]; nextCursor: string | null }>(

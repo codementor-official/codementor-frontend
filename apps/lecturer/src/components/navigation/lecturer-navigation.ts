@@ -1,5 +1,6 @@
 import {
   BookOpenIcon as BookOpen,
+  CertificateIcon as Certificate,
   SealPercentIcon as BadgePercent,
   BracketsCurlyIcon as Braces,
   FileTextIcon as FileText,
@@ -42,6 +43,7 @@ export const lecturerNavigation: LecturerNavGroup[] = [
       // ngoài khóa học; nó được soạn trong studio khóa học, không phải một màn riêng.
       { href: "/roadmaps", icon: Route, label: "Lộ trình" },
       { href: "/courses", icon: BookOpen, label: "Khóa học" },
+      { href: "/certificates", icon: Certificate, label: "Chứng chỉ" },
       { href: "/promotions", icon: BadgePercent, label: "Khuyến mãi" },
       { href: "/exercises", icon: Braces, label: "Bài code" },
       { href: "/articles", icon: Newspaper, label: "Bài viết" },

@@ -248,7 +248,7 @@ export function ExploreLandingScreen({ initialQuery = "" }: { initialQuery?: str
               href="/courses"
             />
             {courseList.length === 0 ? <EmptySearch label="khóa học" query={search} /> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {courseList.map(({ item: course, reason }, index) => <CourseCard key={course.id} course={course} tileVariant={index % 2 ? "primary" : "navy"} note={reason} />)}
+              {courseList.map(({ item: course, reason }) => <CourseCard key={course.id} course={course} note={reason} />)}
             </div>}
           </section>}
 

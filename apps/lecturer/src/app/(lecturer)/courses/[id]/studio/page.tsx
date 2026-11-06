@@ -23,6 +23,7 @@ import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
 import { Field, fieldA11y, inputClassName, textareaClassName } from "@/components/form/field";
+import { CertificateTemplateSelect } from "@/features/certificates/certificate-template-select";
 import { CoverImageField } from "@/components/form/cover-image-field";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
@@ -701,6 +702,10 @@ export default function CourseStudioPage() {
                 options={tags}
                 value={meta.tagIds}
               />
+            </div>
+
+            <div className="mt-4">
+              <CertificateTemplateSelect subject="course" id={course.id} />
             </div>
           </Card>
 

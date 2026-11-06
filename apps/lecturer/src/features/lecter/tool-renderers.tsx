@@ -284,6 +284,50 @@ export function ToolRenderers() {
 
   useRenderTool(
     {
+      name: "list_certificate_templates",
+      parameters: z.object({}),
+      render: ({ status, result }) => (
+        <ToolRow
+          icon={<Search aria-hidden="true" className="size-3.5" />}
+          label="Xem các mẫu chứng chỉ"
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "read_certificate_template",
+      parameters: z.object({ template_id: z.string() }),
+      render: ({ status }) => (
+        <ToolRow icon={<Search aria-hidden="true" className="size-3.5" />} label="Đọc mẫu chứng chỉ" status={status} />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      name: "validate_certificate_design",
+      parameters: z.object({}),
+      render: ({ status, result }) => (
+        <ToolRow
+          icon={<ListChecks aria-hidden="true" className="size-3.5" />}
+          label="Kiểm thiết kế chứng chỉ trước khi lưu"
+          status={status}
+          detail={status === "complete" ? firstLine(result) : undefined}
+          failed={Boolean(result?.startsWith("CHƯA LƯU ĐƯỢC"))}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
       name: "read_document",
       parameters: z.object({ document_id: z.string() }),
       render: ({ status, result }) => (

@@ -27,12 +27,13 @@ import { ContentCreatedCard } from "./content-created-card";
  * studio, nên mọi chỗ đọc trạng thái hay dựng link đều phải rẽ theo `kind`.
  */
 export interface ContentTarget {
-  kind: "exercise" | "course" | "roadmap";
+  /** `certificate` = mẫu chứng chỉ (ADR 0005): không có studio, không qua duyệt nội dung. */
+  kind: "exercise" | "course" | "roadmap" | "certificate";
   /** Vắng với `create_*`: id chỉ có sau khi tạo, nằm trong `outcome`. */
   id?: string;
 }
 
-const STUDIO_SEGMENT: Record<ContentTarget["kind"], string> = {
+const STUDIO_SEGMENT: Record<Exclude<ContentTarget["kind"], "certificate">, string> = {
   exercise: "exercises",
   course: "courses",
   roadmap: "roadmaps",
@@ -42,9 +43,11 @@ export const CONTENT_KIND_LABELS: Record<ContentTarget["kind"], string> = {
   exercise: "Bài code",
   course: "Khóa học",
   roadmap: "Lộ trình",
+  certificate: "Mẫu chứng chỉ",
 };
 
 export function studioHref({ kind, id }: Required<ContentTarget>): string {
+  if (kind === "certificate") return `/certificates/${id}`;
   return `/${STUDIO_SEGMENT[kind]}/${id}/studio`;
 }
 
@@ -252,7 +255,8 @@ export function ProposalCard({
 
   const { kind, id } = target;
   useEffect(() => {
-    if (!id) return;
+    // Mẫu chứng chỉ không có trạng thái duyệt để đọc.
+    if (!id || kind === "certificate") return;
     let cancelled = false;
     const read =
       kind === "course"
