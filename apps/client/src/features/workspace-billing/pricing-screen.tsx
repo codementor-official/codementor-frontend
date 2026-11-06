@@ -122,7 +122,8 @@ export function PricingScreen() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* One row however many plans are on sale: cards share the width and scroll sideways past ~4. */}
+      <div className="-m-1 flex snap-x snap-mandatory gap-4 overflow-x-auto p-1 pb-3 [&>*]:min-w-[17rem] [&>*]:flex-1 [&>*]:snap-start">
         {catalog === null && !error
           ? Array.from({ length: 4 }, (_, i) => <PlanSkeleton key={i} />)
           : plans.map((plan) => (
@@ -142,6 +143,7 @@ export function PricingScreen() {
               />
             ))}
       </div>
+      {plans.length > 4 && <p className="mt-1 text-xs text-text-muted">Kéo ngang để xem đủ {plans.length} gói.</p>}
 
       {catalog && <Comparison catalog={catalog} />}
 
