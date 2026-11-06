@@ -38,7 +38,6 @@ export function StudyGroupCard({
       tile={group.tile}
       // Ink for every group: principle #11 keeps orange for meaning, so a grid of
       // tiles must not become a block of brand colour. Role is carried by the badge.
-      tileVariant="ink"
       tileHeight={
         group.coverHeight === "compact"
           ? "sm"

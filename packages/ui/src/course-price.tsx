@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SparkleIcon as Sparkles, TicketIcon as TicketPercent } from "@phosphor-icons/react/ssr";
+import { TicketIcon as TicketPercent } from "@phosphor-icons/react/ssr";
 
 export function formatVndPrice(value: number) {
   return value <= 0
@@ -42,17 +42,8 @@ export function CoursePriceBadges({
   discountPercent?: number;
   promotionLabel?: string | null;
 }): ReactNode {
-  if (priceVnd === 0) {
-    return (
-      <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/95 px-2.5 py-1.5 font-sans text-xs font-semibold leading-none text-foreground shadow-lg backdrop-blur-md">
-        <span className="flex size-6 items-center justify-center rounded-full bg-success/15 text-success">
-          <Sparkles aria-hidden="true" className="size-3.5" />
-        </span>
-        Học miễn phí
-      </span>
-    );
-  }
-  if (!discountPercent) return null;
+  // Khóa miễn phí không cần nhãn trên ảnh: chân thẻ đã ghi "Miễn phí".
+  if (priceVnd === 0 || !discountPercent) return null;
   return (
     <span
       className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-border/80 bg-card/95 p-1.5 pr-2 font-sans text-foreground shadow-lg backdrop-blur-md"

@@ -1,6 +1,7 @@
-import { BookOpenIcon as BookOpen, CheckCircleIcon as CheckCircle2, LockIcon as Lock } from "@phosphor-icons/react/ssr";
+import { BookOpenIcon as BookOpen, LockIcon as Lock, SealCheckIcon as SealCheck } from "@phosphor-icons/react/ssr";
 import { EntityCard } from "@/components/entity-card";
 import { Badge } from "@/components/ui/badge";
+import { ProgressRing } from "@/components/ui/progress-ring";
 import { levelToDifficulty } from "@/lib/catalogue/level";
 import { COURSE_COVER_FALLBACK } from "@/lib/cover-fallback";
 import { CoursePrice, CoursePriceBadges } from "@codementor/ui";
@@ -28,23 +29,10 @@ export interface CourseCardData {
   durationHours?: number | null;
 }
 
-const tileVariantMap = {
-  navy: "ink",
-  accent: "accent",
-  primary: "primary",
-} as const;
-
-/** Hai chữ cái đầu — dự phòng khi khóa học chưa có ảnh bìa. */
-function tileFor(title: string): string {
-  const words = title.trim().split(/\s+/);
-  return (words[0]?.[0] ?? "?").concat(words[1]?.[0] ?? "").toUpperCase();
-}
-
 export interface CourseCardProps {
   course: CourseCardData;
   /** `horizontal`: thumbnail trái, nội dung phải — dùng cho danh sách khóa trong lộ trình. */
   layout?: "vertical" | "horizontal";
-  tileVariant?: keyof typeof tileVariantMap;
   /** Mặc định `/courses/{id}`; `null` để tắt link (khóa chưa mở trong lộ trình). */
   href?: string | null;
   /** Trạng thái học của người đang xem. `undefined` = chưa ghi danh hoặc không biết. */
@@ -67,7 +55,6 @@ export interface CourseCardProps {
 export function CourseCard({
   course,
   layout = "vertical",
-  tileVariant = "navy",
   href,
   state,
   progressPercent,
@@ -75,15 +62,27 @@ export function CourseCard({
   tags = [],
   note,
 }: CourseCardProps) {
+  const done = state === "completed" || (progressPercent ?? 0) >= 100;
+  const unpaid = (course.priceVnd ?? 0) > 0 && !owned;
+  // Ô cuối thẻ chỉ một thứ. Khóa có phí chưa mua thì giá luôn thắng: người đã bắt đầu lộ
+  // trình vẫn phải thấy mình còn cần mua khóa nào.
+  const footer = unpaid ? (
+    <Price course={course} />
+  ) : progressPercent !== undefined || done ? (
+    <ProgressRing value={done ? 100 : (progressPercent ?? 0)} />
+  ) : owned ? (
+    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-navy">
+      <SealCheck aria-hidden="true" weight="fill" className="h-4 w-4 text-success" /> Đã sở hữu
+    </span>
+  ) : course.priceVnd !== undefined ? (
+    <Price course={course} />
+  ) : undefined;
+
   return (
     <EntityCard
       layout={layout}
-      tile={tileFor(course.title)}
-      tileVariant={tileVariantMap[tileVariant]}
       tileHeight="lg"
-      coverImage={
-        course.coverImageUrl || COURSE_COVER_FALLBACK
-      }
+      coverImage={course.coverImageUrl || COURSE_COVER_FALLBACK}
       kind={{ icon: BookOpen, label: course.authorName ?? "CodeMentor" }}
       coverBadges={owned || course.priceVnd === undefined ? undefined : (
         <CoursePriceBadges
@@ -114,18 +113,31 @@ export function CourseCard({
           <Badge tone="neutral" className="gap-1">
             <Lock className="h-3 w-3" /> Đang khóa
           </Badge>
-        ) : state === "completed" ? (
-          <Badge tone="success" className="gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Hoàn thành
-          </Badge>
         ) : undefined
       }
       note={note}
-      footer={owned || course.priceVnd === undefined ? undefined : (
-        <CoursePrice priceVnd={course.priceVnd} listPriceVnd={course.listPriceVnd} />
-      )}
-      progress={progressPercent}
+      footer={footer}
       href={href === null ? undefined : (href ?? `/courses/${course.id}`)}
+    />
+  );
+}
+
+/** Giá là thông tin quyết định mua, nên in to; giá gốc gạch ngang đứng cạnh. */
+function Price({ course }: { course: CourseCardData }) {
+  // Theme chỉ có hai màu (ink + cam), `text-success` ra màu ink — nên "Miễn phí" nổi bằng
+  // nhãn nền cam nhạt thay vì một màu xanh ngoài hệ.
+  if (!course.priceVnd) {
+    return (
+      <span className="rounded-md bg-primary-tint px-2.5 py-1 text-sm font-bold text-primary">
+        Miễn phí
+      </span>
+    );
+  }
+  return (
+    <CoursePrice
+      className="text-lg tabular-nums [&>span]:text-xs"
+      priceVnd={course.priceVnd ?? 0}
+      listPriceVnd={course.listPriceVnd}
     />
   );
 }
