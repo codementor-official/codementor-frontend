@@ -4,7 +4,7 @@ import { createContext, useContext, useState } from "react";
 import { CheckIcon as Check, CopyIcon as Copy } from "@phosphor-icons/react/ssr";
 import type { AuditEntry } from "@codementor/types";
 
-export type PlansTab = "overview" | "plans" | "subscribers" | "orders" | "coupons" | "settings" | "audit";
+export type PlansTab = "overview" | "report" | "plans" | "subscribers" | "orders" | "coupons" | "settings" | "audit";
 
 /**
  * One way to reach any detail from anywhere on the screen: a figure, a chart, an audit entry or

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { WarningIcon as AlertTriangle, ArrowUpRightIcon as ArrowUpRight, BellRingingIcon as BellRing, CalendarDotsIcon as CalendarClock, CreditCardIcon as CreditCard, EyeSlashIcon as EyeOff, LockIcon as Lock, ReceiptIcon as Receipt, ShieldCheckIcon as ShieldCheck, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
-import { ServerPagination, useToast } from "@codementor/ui";
+import { InfoHint, ServerPagination, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";
 import type { BillingPage, SubscriptionOverview, WorkspaceOrder, WorkspacePlanUsage } from "@codementor/types";
 import { PageHeader } from "@/components/page-header";
@@ -140,7 +140,7 @@ export function BillingScreen() {
                   {sub ? "Đổi gói" : "Nâng cấp"}
                 </Button>
                 {overview.state === "ACTIVE" && (
-                  <Button variant="ghost" size="sm" onClick={() => setConfirmCancel(true)}>
+                  <Button variant="outline" size="sm" className="border-danger/40! text-danger! hover:bg-danger/10!" onClick={() => setConfirmCancel(true)}>
                     Huỷ gia hạn
                   </Button>
                 )}
@@ -428,34 +428,31 @@ export function LapsePolicy({ policy }: { policy: SubscriptionOverview["policy"]
 
 const DAY = 86_400_000;
 
-/** What the buyer would get back today, term by term, so the refund policy is never a surprise. */
+/** What the buyer would get back today: one line, with the term-by-term detail behind an info icon. */
 function RefundToday({ refund }: { refund: NonNullable<SubscriptionOverview["subscription"]>["refundToday"] }) {
+  const terms = refund.terms.map((t) => {
+    const total = Math.round((Date.parse(t.endsAt) - Date.parse(t.startsAt)) / DAY);
+    // The server refunds paid × daysLeft / total (rounded down), so the days left follow exactly from the amount.
+    const left = t.paidVnd > 0 ? Math.round((total * t.refundableVnd) / t.paidVnd) : 0;
+    return `Kỳ ${formatVnDate(t.startsAt)} – ${formatVnDate(t.endsAt)}: ${formatVnd(t.refundableVnd)} / ${formatVnd(t.paidVnd)}${
+      t.refundableVnd === t.paidVnd ? " (chưa dùng, hoàn đủ)" : ` (còn ${left}/${total} ngày)`
+    }.`;
+  });
+  const hint = [
+    ...terms,
+    "Hoàn theo số ngày chưa dùng: qua nửa kỳ hoàn một nửa, kỳ trả trước chưa bắt đầu hoàn đủ; số tiền giảm mỗi ngày.",
+    "Hoàn kỳ đang dùng thì gói kết thúc ngay, tài khoản về Free, dữ liệu giữ nguyên.",
+  ].join(" ");
   return (
-    <div className="mt-4 rounded-md bg-border-soft p-3 text-sm">
-      <p className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="font-semibold text-navy">Nếu hoàn tiền hôm nay</span>
-        <span className="font-semibold text-navy">{formatVnd(refund.totalVnd)}</span>
-      </p>
-      <ul className="mt-1 space-y-0.5 text-xs text-text-muted">
-        {refund.terms.map((t) => {
-          const total = Math.round((Date.parse(t.endsAt) - Date.parse(t.startsAt)) / DAY);
-          // The server refunds paid × daysLeft / total (rounded down), so the days left follow exactly from the amount.
-          const left = t.paidVnd > 0 ? Math.round((total * t.refundableVnd) / t.paidVnd) : 0;
-          return (
-            <li key={t.orderId}>
-              Kỳ {formatVnDate(t.startsAt)} – {formatVnDate(t.endsAt)}: {formatVnd(t.refundableVnd)} trên {formatVnd(t.paidVnd)} đã trả
-              {t.refundableVnd === t.paidVnd ? " (chưa dùng, hoàn đủ)" : ` (còn ${left}/${total} ngày)`}
-            </li>
-          );
-        })}
-      </ul>
-      <p className="mt-2 text-xs leading-relaxed text-text-muted">
-        Hoàn theo số ngày chưa dùng của kỳ: qua nửa kỳ thì hoàn một nửa, kỳ trả trước chưa bắt đầu hoàn đủ. Số tiền giảm mỗi
-        ngày một lần. Muốn hoàn tiền, gửi yêu cầu tới{" "}
-        <a href="mailto:codementor.official@gmail.com" className="font-semibold text-navy underline">codementor.official@gmail.com</a>;
-        hoàn kỳ đang dùng thì gói kết thúc ngay và tài khoản về hạn mức Free, dữ liệu giữ nguyên.
-      </p>
-    </div>
+    <p className="mt-4 flex flex-wrap items-center gap-1.5 text-sm text-text-muted">
+      Hoàn lại nếu yêu cầu hôm nay:
+      <strong className="font-semibold text-navy">{formatVnd(refund.totalVnd)}</strong>
+      <InfoHint text={hint} />
+      <span className="text-xs">
+        · gửi yêu cầu tới{" "}
+        <a href="mailto:codementor.official@gmail.com" className="font-semibold text-navy underline">codementor.official@gmail.com</a>
+      </span>
+    </p>
   );
 }
 

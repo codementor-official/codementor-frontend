@@ -435,3 +435,63 @@ export interface StorageOverview {
     maxOwnedGroups: number;
   }[];
 }
+
+export type ReportBucket = "day" | "month" | "quarter" | "year";
+
+/** Ledger movements of a period or bucket: + payments collected, − refunds recorded. */
+export interface RevenueTally {
+  grossVnd: number;
+  refundedVnd: number;
+  netVnd: number;
+  payments: number;
+  refunds: number;
+  newSubscriptions: number;
+  renewals: number;
+  upgrades: number;
+}
+
+/** GET /workspace-billing/admin/reports/revenue — Vietnam time, both ends inclusive. */
+export interface WorkspaceRevenueReport {
+  from: string;
+  to: string;
+  bucket: ReportBucket;
+  generatedAt: string;
+  totals: RevenueTally & { discountVnd: number; creditVnd: number; payingAccounts: number; freeAccounts: number };
+  plans: (RevenueTally & {
+    planId: string;
+    code: string;
+    name: string;
+    pricing: "free" | "paid" | "unpublished";
+    status: "active" | "hidden" | "archived";
+    isDefault: boolean;
+    isPurchasable: boolean;
+    monthlyPriceVnd: number | null;
+    annualPriceVnd: number | null;
+    /** Accounts on the plan now (Free: every account without a paid plan). */
+    activeAccounts: number;
+    discountVnd: number;
+    creditVnd: number;
+  })[];
+  series: (RevenueTally & { bucket: string })[];
+  orders: {
+    id: string;
+    createdAt: string;
+    paidAt: string | null;
+    refundedAt: string | null;
+    status: WorkspaceOrderStatus;
+    kind: "new" | "renewal" | "upgrade";
+    billingCycle: BillingCycle;
+    planName: string;
+    buyer: { name: string; email: string };
+    listPriceVnd: number;
+    discountVnd: number;
+    creditVnd: number;
+    amountVnd: number;
+    refundedVnd: number | null;
+    coupon: string | null;
+    reference: string | null;
+    collectedInPeriodVnd: number;
+    refundedInPeriodVnd: number;
+  }[];
+  ordersTruncated: boolean;
+}

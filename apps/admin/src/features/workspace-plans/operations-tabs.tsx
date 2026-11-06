@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BellRingingIcon as BellRing, CalendarDotsIcon as CalendarClock, EyeIcon as Eye, EyeSlashIcon as EyeOff, LockIcon as Lock, ShieldCheckIcon as ShieldCheck, TicketIcon as TicketPercent } from "@phosphor-icons/react/ssr";
+import { BellRingingIcon as BellRing, CalendarDotsIcon as CalendarClock, EyeSlashIcon as EyeOff, LockIcon as Lock, ShieldCheckIcon as ShieldCheck, TicketIcon as TicketPercent } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
 import { Button, Card, ConfirmButton, Field, Modal, ServerPagination, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { formatVnDate, formatVnd } from "@codementor/utils";
@@ -363,101 +363,158 @@ export function SettingsTab() {
   const dirty = (Object.keys(form) as (keyof SettingsForm)[]).some((k) => n(k) !== saved[k]);
   const grace = stats?.byState.find((x) => x.state === "GRACE_PERIOD")?.count ?? 0;
   const over = stats?.overLimitOwners;
-  const day = (d: number) => (d === 0 ? "Ngày hết kỳ" : `Ngày ${d} sau khi hết kỳ`);
+  const g = n("graceDays");
+  const o = n("overageNoticeDays");
+  const r = n("overageReadOnlyDays");
 
-  const steps: { icon: typeof BellRing; when: string; title: string; body: string; field?: keyof SettingsForm; unit?: string; affected?: { count: number; label: string; go: () => void } }[] = [
-    { icon: BellRing, when: `${n("renewalReminderDays")} ngày trước khi hết kỳ`, title: "Nhắc gia hạn", body: "Chủ nhóm nhận thông báo nhắc gia hạn. Gói không tự trừ tiền.", field: "renewalReminderDays", unit: "ngày trước" },
-    { icon: ShieldCheck, when: day(0), title: "Ân hạn", body: "Chưa gia hạn vẫn giữ nguyên hạn mức và tính năng của gói trong số ngày này.", field: "graceDays", unit: "ngày", affected: { count: grace, label: "tài khoản đang ân hạn", go: () => trace.goTab("subscribers", { sState: "GRACE_PERIOD" }) } },
-    { icon: CalendarClock, when: day(n("graceDays")), title: "Về hạn mức Free · cảnh báo", body: "Nếu đang vượt hạn mức Free: mọi thứ vẫn hoạt động, chủ nhóm được báo trước ngày khoá.", field: "overageNoticeDays", unit: "ngày cảnh báo", affected: over && { count: over.notice, label: "chủ nhóm đang được cảnh báo", go: () => trace.goTab("subscribers") } },
-    { icon: Lock, when: day(n("graceDays") + n("overageNoticeDays")), title: "Chỉ đọc", body: "Nhóm vượt hạn mức: xem, tải tài liệu, làm bài đã giao, xoá bớt được; không tải lên, không tạo hay giao bài, không nhắn tin mới.", field: "overageReadOnlyDays", unit: "ngày chỉ đọc", affected: over && { count: over.readOnly, label: "chủ nhóm có nhóm chỉ đọc", go: () => trace.goTab("subscribers") } },
-    { icon: EyeOff, when: day(n("graceDays") + n("overageNoticeDays") + n("overageReadOnlyDays")), title: "Tạm ẩn", body: "Thành viên không mở được nhóm; chủ nhóm vẫn vào để dọn dẹp. Không có dữ liệu nào bị xoá.", affected: over && { count: over.hidden, label: "chủ nhóm có nhóm tạm ẩn", go: () => trace.goTab("subscribers") } },
-    { icon: Eye, when: "Bất kỳ lúc nào", title: "Mở lại ngay", body: "Gia hạn, nâng cấp, xoá bớt thành viên/tài liệu hoặc chuyển nhóm cho người khác." },
+  const fields: { key: keyof SettingsForm; label: string; unit: string; hint: string; affected?: { count: number; label: string; go: () => void } }[] = [
+    { key: "renewalReminderDays", label: "Nhắc gia hạn trước", unit: "ngày", hint: "Gói không tự trừ tiền: chủ nhóm được nhắc trước ngày hết kỳ." },
+    { key: "graceDays", label: "Ân hạn sau khi hết kỳ", unit: "ngày", hint: "Chưa gia hạn vẫn giữ nguyên hạn mức và tính năng của gói.", affected: { count: grace, label: "đang ân hạn", go: () => trace.goTab("subscribers", { sState: "GRACE_PERIOD" }) } },
+    { key: "overageNoticeDays", label: "Cảnh báo vượt hạn mức Free", unit: "ngày", hint: "Về Free mà đang vượt hạn mức: mọi thứ vẫn chạy, chủ nhóm được báo trước ngày khoá.", affected: over && { count: over.notice, label: "đang được cảnh báo", go: () => trace.goTab("subscribers") } },
+    { key: "overageReadOnlyDays", label: "Chỉ đọc trước khi tạm ẩn", unit: "ngày", hint: "Nhóm vượt hạn mức chỉ xem, tải, làm bài đã giao, xoá bớt; không tải lên, giao bài hay nhắn tin mới.", affected: over && { count: over.readOnly, label: "có nhóm chỉ đọc", go: () => trace.goTab("subscribers") } },
+  ];
+
+  const timeline: { icon: typeof BellRing; day: string; title: string; tone: string }[] = [
+    { icon: BellRing, day: `−${n("renewalReminderDays")}`, title: "Nhắc gia hạn", tone: "text-primary" },
+    { icon: ShieldCheck, day: "0", title: "Hết kỳ · ân hạn", tone: "text-success" },
+    { icon: CalendarClock, day: `+${g}`, title: "Về Free · cảnh báo", tone: "text-warning" },
+    { icon: Lock, day: `+${g + o}`, title: "Nhóm vượt mức chỉ đọc", tone: "text-warning" },
+    { icon: EyeOff, day: `+${g + o + r}`, title: "Tạm ẩn với thành viên", tone: "text-destructive" },
   ];
 
   return (
-    <Card className="p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold">Chính sách gia hạn và vượt hạn mức</h3>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Toàn bộ những gì xảy ra với một chủ nhóm không gia hạn, theo thứ tự. Sửa số ngày ngay trong từng bước; mốc thời gian
-            tính lại khi bạn gõ. Chỉ nhóm vượt hạn mức Free bị ảnh hưởng: nhóm ngoài số nhóm được giữ (giữ nhóm hoạt động gần nhất),
-            nhóm quá số thành viên, hoặc mọi nhóm nếu vượt dung lượng.
+    <div className="space-y-4">
+      <Card className="p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold">Gia hạn và vượt hạn mức</h3>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              Bốn số ngày quyết định chuyện gì xảy ra khi chủ nhóm không gia hạn. Chỉ nhóm vượt hạn mức Free bị ảnh hưởng; không dữ liệu nào bị xoá,
+              gia hạn hay dọn dẹp là mở lại ngay.
+            </p>
+          </div>
+          <p className="text-right text-xs text-muted-foreground">
+            Cập nhật {formatVnDate(saved.updatedAt, true)}{saved.updatedBy ? ` · ${saved.updatedBy}` : ""}
+            <br />Điều khoản {saved.termsVersion}
           </p>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Cập nhật {formatVnDate(saved.updatedAt, true)}{saved.updatedBy ? ` bởi ${saved.updatedBy}` : ""}
-          <br />Điều khoản {saved.termsVersion}
-        </p>
-      </div>
 
-      <ol className="mt-5 space-y-0">
-        {steps.map((step, i) => (
-          <li key={step.title} className="relative grid gap-3 pb-5 pl-10 last:pb-0 md:grid-cols-[minmax(0,1fr)_200px_220px] md:items-start">
-            {i < steps.length - 1 && <span className="absolute top-8 bottom-0 left-[15px] w-px bg-border" aria-hidden />}
-            <span className="absolute top-0 left-0 flex size-8 items-center justify-center rounded-full border bg-background"><step.icon className="size-4" aria-hidden /></span>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">{step.when}</p>
-              <p className="font-semibold">{step.title}</p>
-              <p className="text-sm text-muted-foreground">{step.body}</p>
-            </div>
-            <div>
-              {step.field && (
-                <label className="flex items-center gap-2 text-sm">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {fields.map((f) => {
+            const bad = invalid.includes(f.key);
+            const changed = n(f.key) !== saved[f.key];
+            return (
+              <div key={f.key} className={`rounded-lg border p-3 ${changed ? "border-primary/60 bg-primary/5" : ""}`}>
+                <label htmlFor={`set-${f.key}`} className="text-sm font-medium">{f.label}</label>
+                <div className="mt-2 flex items-center gap-2">
                   <input
-                    className={`${inputClassName} w-20! text-right`}
+                    id={`set-${f.key}`}
+                    className={`${inputClassName} w-20! text-right text-base font-semibold`}
                     inputMode="numeric"
-                    aria-label={`${step.title}: số ${step.unit}`}
-                    aria-invalid={invalid.includes(step.field)}
-                    value={form[step.field]}
-                    onChange={(e) => setForm({ ...form, [step.field!]: e.target.value.replace(/\D/g, "").slice(0, 3) })}
+                    aria-invalid={bad}
+                    aria-describedby={`set-${f.key}-hint`}
+                    value={form[f.key]}
+                    onChange={(e) => setForm({ ...form, [f.key]: e.target.value.replace(/\D/g, "").slice(0, 3) })}
                   />
-                  <span className="text-muted-foreground">{step.unit}</span>
-                </label>
-              )}
-              {step.field && (
-                <p className={`mt-1 text-xs ${invalid.includes(step.field) ? "text-destructive" : "text-muted-foreground"}`}>
-                  Cho phép {SETTING_RANGE[step.field][0]}–{SETTING_RANGE[step.field][1]}
-                </p>
-              )}
-            </div>
-            <div className="text-sm">
-              {step.affected && (
-                <button type="button" className="rounded-md border px-3 py-1.5 text-left hover:bg-muted" onClick={step.affected.go}>
-                  <span className="font-semibold">{step.affected.count}</span> <span className="text-muted-foreground">{step.affected.label} →</span>
-                </button>
-              )}
-            </div>
-          </li>
-        ))}
-      </ol>
+                  <span className="text-sm text-muted-foreground">{f.unit}</span>
+                  <span className={`ml-auto text-xs ${bad ? "text-destructive" : "text-muted-foreground"}`}>{SETTING_RANGE[f.key][0]}–{SETTING_RANGE[f.key][1]}</span>
+                </div>
+                <p id={`set-${f.key}-hint`} className="mt-2 text-xs text-muted-foreground">{f.hint}</p>
+                {f.affected && (
+                  <button type="button" className="mt-2 text-xs text-primary hover:underline" onClick={f.affected.go}>
+                    {f.affected.count} chủ nhóm {f.affected.label} →
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3 border-t pt-4">
-        <ConfirmButton
-          variant="default"
-          disabled={!dirty || invalid.length > 0}
-          title="Lưu chính sách Workspace?"
-          description="Áp dụng ngay cho mọi tài khoản, kể cả tài khoản đang ân hạn hoặc đang vượt hạn mức: ngày khoá và ngày ẩn được tính lại theo số ngày mới."
-          onConfirm={async () => {
-            try {
-              apply(await plansApi.updateSettings(request, {
-                graceDays: n("graceDays"),
-                renewalReminderDays: n("renewalReminderDays"),
-                overageNoticeDays: n("overageNoticeDays"),
-                overageReadOnlyDays: n("overageReadOnlyDays"),
-              }));
-              toast.success("Đã lưu chính sách");
-            } catch (e) {
-              toast.error(apiErrorMessage(e));
-            }
-          }}
-        >
-          Lưu thay đổi
-        </ConfirmButton>
-        {dirty && <Button variant="ghost" onClick={() => apply(saved)}>Hoàn tác</Button>}
-        {dirty && <span className="text-xs text-muted-foreground">Có thay đổi chưa lưu.</span>}
-      </div>
-    </Card>
+        <div className="mt-5">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Lộ trình theo ngày, tính từ ngày hết kỳ</p>
+          <ol className="mt-3 grid gap-3 sm:grid-cols-5">
+            {timeline.map((t, i) => (
+              <li key={t.title} className="relative flex items-center gap-2 sm:flex-col sm:items-start">
+                {i < timeline.length - 1 && <span className="absolute top-4 left-9 hidden h-px w-[calc(100%-2.25rem)] bg-border sm:block" aria-hidden />}
+                <span className={`flex size-8 shrink-0 items-center justify-center rounded-full border bg-background ${t.tone}`}><t.icon className="size-4" aria-hidden /></span>
+                <span>
+                  <span className="block text-xs text-muted-foreground">Ngày {t.day}</span>
+                  <span className="block text-sm font-medium">{t.title}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center gap-3 border-t pt-4">
+          <ConfirmButton
+            variant="default"
+            disabled={!dirty || invalid.length > 0}
+            title="Lưu chính sách Workspace?"
+            description="Áp dụng ngay cho mọi tài khoản, kể cả tài khoản đang ân hạn hoặc đang vượt hạn mức: ngày khoá và ngày ẩn được tính lại theo số ngày mới."
+            onConfirm={async () => {
+              try {
+                apply(await plansApi.updateSettings(request, {
+                  graceDays: n("graceDays"),
+                  renewalReminderDays: n("renewalReminderDays"),
+                  overageNoticeDays: n("overageNoticeDays"),
+                  overageReadOnlyDays: n("overageReadOnlyDays"),
+                }));
+                toast.success("Đã lưu chính sách");
+              } catch (e) {
+                toast.error(apiErrorMessage(e));
+              }
+            }}
+          >
+            Lưu thay đổi
+          </ConfirmButton>
+          {dirty && <Button variant="ghost" onClick={() => apply(saved)}>Hoàn tác</Button>}
+          <span className="text-xs text-muted-foreground">{dirty ? "Có thay đổi chưa lưu." : "Không có thay đổi."}</span>
+        </div>
+      </Card>
+
+      <Card className="overflow-x-auto">
+        <div className="border-b px-4 py-3">
+          <h3 className="text-sm font-semibold">Thông báo tự động</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Email gửi tới địa chỉ đã xác minh khi tài khoản còn bật nhận email; tắt từng loại email nhắc học tập hay nhóm không chặn email thanh toán. Bấm vào thông báo sẽ mở trang Gói &amp; thanh toán.
+          </p>
+        </div>
+        <table className="w-full min-w-[720px] text-sm">
+          <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+            <tr>
+              <th className="px-4 py-2 font-medium">Sự kiện</th>
+              <th className="px-4 py-2 font-medium">Gửi cho</th>
+              <th className="px-4 py-2 font-medium">Khi nào</th>
+              <th className="px-4 py-2 font-medium">Kênh</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { event: "Kích hoạt, gia hạn, nâng cấp gói", to: "Người mua", when: "Ngay khi cổng thanh toán xác nhận", email: true },
+              { event: "Thanh toán cần kiểm tra", to: "Người mua", when: "Khi đã trả tiền nhưng chưa áp dụng được tự động", email: true },
+              { event: "Hoàn tiền", to: "Người mua", when: "Khi quản trị viên hoàn tiền", email: true },
+              { event: "Nhắc gia hạn", to: "Chủ gói", when: `${n("renewalReminderDays")} ngày trước khi hết kỳ`, email: true },
+              { event: "Bắt đầu ân hạn", to: "Chủ gói", when: "Ngày hết kỳ chưa gia hạn", email: true },
+              { event: "Vượt hạn mức: cảnh báo, chỉ đọc, tạm ẩn", to: "Chủ nhóm", when: "Ở mỗi mốc của lộ trình trên", email: true },
+              { event: "Đơn mới, gia hạn, thanh toán cần kiểm tra", to: "Quản trị viên", when: "Ngay khi xảy ra", email: false },
+            ].map((row) => (
+              <tr key={row.event + row.to} className="border-t">
+                <td className="px-4 py-2 font-medium">{row.event}</td>
+                <td className="px-4 py-2 text-muted-foreground">{row.to}</td>
+                <td className="px-4 py-2 text-muted-foreground">{row.when}</td>
+                <td className="px-4 py-2">
+                  <span className="flex flex-wrap gap-1.5">
+                    <StatusBadge>Trong app</StatusBadge>
+                    {row.email && <StatusBadge tone="success">Email</StatusBadge>}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
   );
 }
 

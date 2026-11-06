@@ -22,6 +22,8 @@ import type {
   SubscriberRow,
   WorkspaceCoupon,
   WorkspaceOrder,
+  WorkspaceRevenueReport,
+  ReportBucket,
 } from "@codementor/types";
 
 type Request = ReturnType<typeof createApiClient>;
@@ -97,6 +99,8 @@ export const plansApi = {
   settings: (r: Request) => call<BillingSettings>(r, `${base}/settings`),
   updateSettings: (r: Request, body: Pick<BillingSettings, "graceDays" | "renewalReminderDays" | "overageNoticeDays" | "overageReadOnlyDays">) =>
     call<BillingSettings>(r, `${base}/settings`, "PUT", { ...body }),
+  revenueReport: (r: Request, p: { from: string; to: string; bucket: ReportBucket }) =>
+    call<WorkspaceRevenueReport>(r, `${base}/reports/revenue?${query(p)}`),
   audit: (r: Request, p: { page: number; limit: number; category?: AuditCategory }) =>
     call<BillingPage<AuditEntry>>(r, `${base}/audit?${query(p)}`),
 };
