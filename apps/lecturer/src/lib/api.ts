@@ -22,7 +22,7 @@ import type {
   VideoUploadConfig,
 } from "@/features/courses/types";
 import type { Article, ArticleCoverUpload, ArticleCoverUploadConfig, ArticleListItem } from "@/features/articles/types";
-import type { CertificateDesign, LearningReportData, UiNotification } from "@codementor/ui";
+import type { CertificateDesign, UiNotification } from "@codementor/ui";
 
 /**
  * Trình duyệt chỉ gọi BFF cùng origin. BFF đọc phiên HttpOnly, gắn access token rồi mới
@@ -404,8 +404,6 @@ export const api = {
    * Thông báo. Cùng API mà ứng dụng người học đọc — notification-service lọc theo đối
    * tượng nhận từ token, nên giảng viên chỉ thấy thông báo gửi cho mình hoặc cho tất cả.
    */
-  /** Báo cáo học tập trên nội dung của chính giảng viên (ADR 0005). */
-  learningReport: (days: 7 | 30) => unwrap<LearningReportData>(`/learning-reports?days=${days}`),
   /** Mẫu chứng chỉ (ADR 0005). `subject: null` = dùng cho cả khóa học và lộ trình. */
   certificateTemplates: {
     list: () => unwrap<CertificateTemplate[]>("/certificate-templates"),

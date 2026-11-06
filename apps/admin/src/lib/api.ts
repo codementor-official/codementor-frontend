@@ -966,10 +966,10 @@ export interface AdminCertificate {
   revokeReason: string | null;
 }
 
-/** Báo cáo học tập toàn nền tảng (ADR 0005). Cùng endpoint giảng viên dùng, `scope=all`. */
+/** Báo cáo học tập toàn nền tảng (ADR 0005). Chỉ admin. */
 export const learningReportsApi = {
   get: (request: Request, days: 7 | 30) =>
-    unwrap<LearningReportData>(request, `/learning-reports?scope=all&days=${days}`),
+    unwrap<LearningReportData>(request, `/learning-reports?days=${days}`),
 };
 
 export const certificatesApi = {
