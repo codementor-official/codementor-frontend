@@ -1001,7 +1001,7 @@ function Overview({
                 onClick={() => void exportActivities()}
               >
                 <Download className="h-3.5 w-3.5" />
-                Export CSV
+                Xuất CSV
               </Button>
             </div>
             {activityLoading ? (
@@ -1440,7 +1440,7 @@ function Progress({
                 onClick={exportProgress}
               >
                 <Download className="h-3.5 w-3.5" />
-                Export CSV
+                Xuất CSV
               </Button>
             </div>
             <div className="mt-4 grid gap-2 md:grid-cols-3">
@@ -2039,7 +2039,7 @@ function Members({
                 onClick={() => void exportMembers()}
               >
                 <Download className="h-3.5 w-3.5" />
-                Export CSV
+                Xuất CSV
               </Button>
             </div>
           </div>

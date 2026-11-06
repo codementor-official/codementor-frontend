@@ -1205,7 +1205,7 @@ export function WorkspaceExercisesTab({
             onClick={() => void exportExercises()}
           >
             <Download className="h-3.5 w-3.5" />
-            Export CSV
+            Xuất CSV
           </Button>
         </div>
       </div>
@@ -1786,7 +1786,7 @@ function ExerciseDetailDialog({
                           onClick={exportSubmissionHistory}
                         >
                           <Download className="h-3.5 w-3.5" />
-                          Export CSV
+                          Xuất CSV
                         </Button>
                         <Button
                           type="button"
@@ -2152,7 +2152,7 @@ export function WorkspaceAssignmentsTab({
           onClick={() => void exportAssignments()}
         >
           <Download className="h-3.5 w-3.5" />
-          Export CSV
+          Xuất CSV
         </Button>
       </div>
       {data.items.length === 0 ? (

@@ -60,7 +60,7 @@ export interface ManagePageProps<TData> {
    * Nạp lại đúng bảng này. Bỏ trống thì không có nút — màn nào không tự đọc dữ liệu
    * (danh sách tĩnh) thì một nút làm mới là lời hứa suông.
    *
-   * Ở ĐÂY chứ không ở từng màn, cùng lý do như nút "Xuất Excel" ngay bên cạnh: mọi bảng
+   * Ở ĐÂY chứ không ở từng màn, cùng lý do như nút "Xuất CSV" ngay bên cạnh: mọi bảng
    * quản trị đều dựng từ component này, nên thêm một bảng mới là có sẵn nút làm mới với
    * đúng vị trí, đúng trạng thái quay, đúng nhãn — không phải nhớ, và không thể lệch.
    *
@@ -187,14 +187,14 @@ export function ManagePage<TData>({
           <div className="flex flex-wrap items-center gap-2">
             {onRefresh && <RefreshButton onRefresh={onRefresh} />}
             <Button
-              aria-label="Xuất Excel"
+              aria-label="Xuất CSV"
               disabled={rows.length === 0}
               onClick={() => exportTableToCsv(table, exportFilename ?? slugify(title))}
               type="button"
               variant="outline"
             >
               <Download aria-hidden="true" className="size-4" />
-              <span className="hidden sm:inline">Xuất Excel</span>
+              <span className="hidden sm:inline">Xuất CSV</span>
             </Button>
             {action}
           </div>
