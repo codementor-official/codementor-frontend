@@ -24,6 +24,7 @@ import { HistoryRail } from "./history-rail";
 import { LecterHumanInTheLoop } from "./hitl";
 import { LecterCourseHumanInTheLoop } from "./hitl-course";
 import { LecterRoadmapHumanInTheLoop } from "./hitl-roadmap";
+import { LecterCertificateHumanInTheLoop } from "./hitl-certificate";
 import { LecterComposer } from "./lecter-composer";
 import { ToolRenderers } from "./tool-renderers";
 
@@ -210,6 +211,7 @@ export function LecterPage() {
       <LecterHumanInTheLoop />
       <LecterCourseHumanInTheLoop />
       <LecterRoadmapHumanInTheLoop />
+      <LecterCertificateHumanInTheLoop />
       <ChatPanel onRunEnd={reloadHistory} threadId={threadId} />
     </CopilotKitProvider>
   );
