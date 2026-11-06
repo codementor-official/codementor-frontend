@@ -84,6 +84,7 @@ export { RevenueBreakdownChart } from "./revenue/revenue-breakdown-chart";
 export type { RevenueSegment } from "./revenue/revenue-breakdown-chart";
 export { revenueReportCsvRows, revenueReportFilename } from "./revenue/report-csv";
 export { downloadRevenueReportXlsx } from "./revenue/report-xlsx";
+export { bucketLabel, downloadWorkspaceReportXlsx, buildWorkspaceReportWorkbook } from "./revenue/workspace-report-xlsx";
 export { auditCsv, ledgerCsv, ordersCsv, withdrawalsCsv } from "./commerce-csv";
 export type { CsvTable } from "./commerce-csv";
 export type { RevenueCsvOptions } from "./revenue/report-csv";

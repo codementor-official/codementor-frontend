@@ -2,11 +2,11 @@ import { COMMERCE_STATUS, type RevenueReport } from "@codementor/types";
 import type { Workbook, Worksheet } from "exceljs";
 import { revenueSummary, shareLabel, type RevenueCsvOptions } from "./report-csv";
 
-type ExcelJs = typeof import("exceljs");
-type Cell = string | number | Date | null;
+export type ExcelJs = typeof import("exceljs");
+export type Cell = string | number | Date | null;
 type Format = "vnd" | "int" | "percent" | "date" | "text";
 
-const BRAND = "FFEA580C"; // --primary của theme sáng
+export const BRAND = "FFEA580C"; // --primary của theme sáng
 const BRAND_TINT = "FFFFF1E8";
 const STRIPE = "FFF8FAFC";
 const BORDER = { style: "thin" as const, color: { argb: "FFE2E8F0" } };
@@ -18,18 +18,18 @@ const NUM_FMT: Record<Format, string | undefined> = {
   text: undefined,
 };
 
-const toDate = (iso: string) => {
+export const toDate = (iso: string) => {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d));
 };
-const viDate = (iso: string) => iso.split("-").reverse().join("/");
+export const viDate = (iso: string) => iso.split("-").reverse().join("/");
 /**
  * Excel không có múi giờ: ô ngày giờ hiện đúng các con số được ghi. ExcelJS ghi theo thành
  * phần UTC, nên dời +7 giờ để ô hiện giờ Việt Nam thay vì giờ UTC (lệch 7 tiếng).
  */
-const vietnamClock = (date: Date) => new Date(date.getTime() + 7 * 60 * 60 * 1000);
+export const vietnamClock = (date: Date) => new Date(date.getTime() + 7 * 60 * 60 * 1000);
 
-interface Column {
+export interface Column {
   header: string;
   format: Format;
   /** Dòng TỔNG cộng cột này bằng công thức SUM. */
@@ -42,7 +42,7 @@ interface Column {
  * dạng số theo cột, dòng TỔNG dùng công thức (người dùng sửa số vẫn tự cộng lại), cố định
  * tiêu đề và bật bộ lọc.
  */
-function table(sheet: Worksheet, startRow: number, columns: Column[], rows: Cell[][], totals = true) {
+export function table(sheet: Worksheet, startRow: number, columns: Column[], rows: Cell[][], totals = true) {
   const header = sheet.getRow(startRow);
   columns.forEach((column, index) => {
     const cell = header.getCell(index + 1);
@@ -97,7 +97,7 @@ function table(sheet: Worksheet, startRow: number, columns: Column[], rows: Cell
   if (rows.length) sheet.autoFilter = { from: { row: startRow, column: 1 }, to: { row: last, column: columns.length } };
 }
 
-function title(sheet: Worksheet, text: string, subtitle: string, span: number) {
+export function title(sheet: Worksheet, text: string, subtitle: string, span: number) {
   sheet.mergeCells(1, 1, 1, span);
   const head = sheet.getCell(1, 1);
   head.value = text;

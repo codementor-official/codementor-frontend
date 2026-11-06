@@ -3,7 +3,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { NotePencilIcon as FilePenLine, ClockCounterClockwiseIcon as History, PencilSimpleIcon as Pencil, PlusIcon as Plus, RocketLaunchIcon as Rocket, ShieldCheckIcon as ShieldCheck, ProhibitIcon as Prohibit, StorefrontIcon as Storefront, EyeIcon as Eye, EyeSlashIcon as EyeSlash, StarIcon as Star, FloppyDiskIcon as FloppyDisk } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Button, Card, ConfirmButton, Field, Modal, SideDrawer, StatusBadge, useToast } from "@codementor/ui";
+import { Button, Card, ConfirmButton, Field, InfoHint, Modal, SideDrawer, StatusBadge, useToast } from "@codementor/ui";
 import { formatBytes, formatLimit, formatVnDate, formatVnd } from "@codementor/utils";
 import type { AdminPlan, FeatureDefinition, PlanVersion } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
@@ -77,28 +77,41 @@ export function PlansTab() {
 
       {plans?.map((plan) => {
         const shown = plan.onSale ?? plan.draft;
+        const name = shown?.name ?? plan.code;
+        const state = visibility(plan);
         return (
-          <Card key={plan.id} className="p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
+          <Card key={plan.id} className="overflow-hidden">
+            <div className="flex flex-wrap items-start justify-between gap-3 p-4">
+              <div className="min-w-0 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base font-semibold">{shown?.name ?? plan.code}</h3>
-                  <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{plan.code}</code>
-                  <StatusBadge tone={plan.status === "active" ? "success" : "neutral"}>{STATUS[plan.status]}</StatusBadge>
-                  {plan.isDefault && <StatusBadge>Mặc định</StatusBadge>}
-                  {plan.isRecommended && <StatusBadge tone="warning">Đề xuất</StatusBadge>}
-                  {!plan.isDefault && <StatusBadge tone={plan.isPurchasable ? "success" : "neutral"}>{plan.isPurchasable ? "Đang bán" : "Ngừng bán"}</StatusBadge>}
+                  <h3 className="text-base font-semibold">{name}</h3>
+                  <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{plan.code}</code>
+                  {plan.isDefault && <StatusBadge>Gói mặc định</StatusBadge>}
+                  {plan.isRecommended && <StatusBadge tone="warning">Phổ biến nhất</StatusBadge>}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {plan.openSubscriptions} gói đang mở · thứ tự {plan.sortOrder}
+                <p className="flex items-center gap-2 text-sm">
+                  <span className={`size-2 shrink-0 rounded-full ${DOT[state.tone]}`} aria-hidden />
+                  <span className="font-medium">{state.label}</span>
+                  <span className="text-muted-foreground">· {plan.openSubscriptions} gói đang mở</span>
+                </p>
+                {shown && <Offer version={shown} draft={!plan.onSale} />}
+                <p className="flex flex-wrap items-center gap-1.5 pt-1 text-xs text-muted-foreground">
+                  <span>Phiên bản:</span>
+                  {plan.onSale && <VersionPill tone="success">v{plan.onSale.version} đang bán</VersionPill>}
+                  {plan.scheduled && (
+                    <VersionPill tone="warning">
+                      v{plan.scheduled.version} áp dụng {plan.scheduled.availableFrom ? formatVnDate(plan.scheduled.availableFrom, true) : "sắp tới"}
+                    </VersionPill>
+                  )}
+                  {plan.draft && <VersionPill tone="neutral">v{plan.draft.version} bản nháp</VersionPill>}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => setHistory(plan)}>
-                  <History className="h-3.5 w-3.5" /> Phiên bản
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setHistory(plan)}>
+                  <History className="h-3.5 w-3.5" /> Lịch sử
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setEditing({ plan, version: plan.draft ?? plan.onSale })}>
-                  <Pencil className="h-3.5 w-3.5" /> {plan.draft ? `Sửa tiếp bản nháp v${plan.draft.version}` : "Chỉnh sửa giá & hạn mức"}
+                  <Pencil className="h-3.5 w-3.5" /> {plan.draft ? `Sửa bản nháp v${plan.draft.version}` : "Sửa giá & hạn mức"}
                 </Button>
                 {plan.draft && (
                   <Button size="sm" onClick={() => setPublishing(plan)}>
@@ -108,25 +121,20 @@ export function PlansTab() {
               </div>
             </div>
 
-            <div className="mt-3 grid gap-3 lg:grid-cols-3">
-              <VersionSummary label="Đang bán" version={plan.onSale} empty="Chưa có phiên bản xuất bản" />
-              <VersionSummary label="Đã lên lịch" version={plan.scheduled} empty="Không có" />
-              <VersionSummary label="Bản nháp" version={plan.draft} empty="Không có bản nháp" />
-            </div>
+            {!plan.onSale && (
+              <p className="mx-4 mb-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+                Khách chưa thấy gói này: chưa có phiên bản nào được xuất bản. Bấm <strong>Xuất bản v{plan.draft?.version ?? 1}</strong> để đưa gói lên bảng giá.
+              </p>
+            )}
 
-            <div className="mt-4 grid border-t md:grid-cols-3 md:divide-x max-md:divide-y">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t bg-muted/30 px-4 py-2.5">
               {!plan.isDefault && (
-                <PlanControl
-                  title="Bán hàng"
-                  hint={plan.isPurchasable
-                    ? "Khách mua mới và nâng cấp lên gói này được."
-                    : "Khách không mua mới hay nâng cấp lên gói này được. Người đang dùng vẫn gia hạn được."}
-                >
+                <Setting label="Bán mới" hint="Ngừng bán: khách không mua mới hay nâng cấp lên gói này. Người đang dùng vẫn gia hạn được.">
                   {plan.isPurchasable ? (
                     <ConfirmButton
                       size="sm"
                       variant="outline"
-                      title={`Ngừng bán gói ${shown?.name ?? plan.code}?`}
+                      title={`Ngừng bán gói ${name}?`}
                       description={`Gói biến khỏi lựa chọn mua mới và nâng cấp. ${plan.openSubscriptions} gói đang mở vẫn dùng và gia hạn bình thường. Mở bán lại bất cứ lúc nào.`}
                       confirmLabel="Ngừng bán"
                       onConfirm={() => patch(plan, { isPurchasable: false }, "Đã ngừng bán gói")}
@@ -134,66 +142,64 @@ export function PlansTab() {
                       <Prohibit className="h-3.5 w-3.5" /> Ngừng bán
                     </ConfirmButton>
                   ) : (
-                    <Button size="sm" onClick={() => patch(plan, { isPurchasable: true, status: "active" }, "Đã mở bán gói")}>
+                    <Button size="sm" variant="outline" onClick={() => patch(plan, { isPurchasable: true, status: "active" }, "Đã mở bán gói")}>
                       <Storefront className="h-3.5 w-3.5" /> Mở bán
                     </Button>
                   )}
-                </PlanControl>
+                </Setting>
               )}
               {!plan.isDefault && (
-                <PlanControl
-                  title="Bảng giá công khai"
-                  hint={plan.status === "active" ? "Gói đang hiện trên bảng giá." : "Gói đang ẩn khỏi bảng giá (và vì vậy ngừng bán)."}
-                >
-                  <div className="flex flex-wrap gap-2">
-                    {plan.status === "active" ? (
-                      <ConfirmButton
-                        size="sm"
-                        variant="outline"
-                        title={`Ẩn gói ${shown?.name ?? plan.code} khỏi bảng giá?`}
-                        description="Gói không còn hiện trên bảng giá và ngừng bán luôn. Người đang dùng không bị ảnh hưởng."
-                        confirmLabel="Ẩn khỏi bảng giá"
-                        onConfirm={() => patch(plan, { status: "hidden", isPurchasable: false }, "Đã ẩn gói khỏi bảng giá")}
-                      >
-                        <EyeSlash className="h-3.5 w-3.5" /> Ẩn khỏi bảng giá
-                      </ConfirmButton>
-                    ) : (
-                      <Button size="sm" variant="outline" onClick={() => patch(plan, { status: "active" }, "Đã hiện gói trên bảng giá")}>
-                        <Eye className="h-3.5 w-3.5" /> Hiện trên bảng giá
-                      </Button>
-                    )}
-                    {!plan.isRecommended && plan.status === "active" && (
-                      <Button size="sm" variant="outline" onClick={() => patch(plan, { isRecommended: true }, "Đã đặt làm gói đề xuất")}>
-                        <Star className="h-3.5 w-3.5" /> Đặt làm “Phổ biến nhất”
-                      </Button>
-                    )}
-                  </div>
-                </PlanControl>
+                <Setting label="Bảng giá" hint="Ẩn: gói không còn hiện trên bảng giá và ngừng bán luôn. Người đang dùng không bị ảnh hưởng.">
+                  {plan.status === "active" ? (
+                    <ConfirmButton
+                      size="sm"
+                      variant="outline"
+                      title={`Ẩn gói ${name} khỏi bảng giá?`}
+                      description="Gói không còn hiện trên bảng giá và ngừng bán luôn. Người đang dùng không bị ảnh hưởng."
+                      confirmLabel="Ẩn khỏi bảng giá"
+                      onConfirm={() => patch(plan, { status: "hidden", isPurchasable: false }, "Đã ẩn gói khỏi bảng giá")}
+                    >
+                      <EyeSlash className="h-3.5 w-3.5" /> Ẩn
+                    </ConfirmButton>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => patch(plan, { status: "active" }, "Đã hiện gói trên bảng giá")}>
+                      <Eye className="h-3.5 w-3.5" /> Hiện
+                    </Button>
+                  )}
+                </Setting>
               )}
-              <PlanControl title="Thứ tự trên bảng giá" hint="Số nhỏ đứng trước. Lưu để áp dụng.">
+              {!plan.isDefault && plan.status === "active" && !plan.isRecommended && (
+                <Setting label="Nhãn" hint="Gói gắn nhãn “Phổ biến nhất” được làm nổi trên bảng giá.">
+                  <Button size="sm" variant="outline" onClick={() => patch(plan, { isRecommended: true }, "Đã đặt làm gói đề xuất")}>
+                    <Star className="h-3.5 w-3.5" /> Đặt “Phổ biến nhất”
+                  </Button>
+                </Setting>
+              )}
+              <Setting label="Thứ tự" hint="Vị trí trên bảng giá: số nhỏ đứng trước.">
                 <SortOrder plan={plan} onSave={(sortOrder) => patch(plan, { sortOrder }, "Đã đổi thứ tự")} />
-              </PlanControl>
+              </Setting>
+              {plan.draft && (
+                <div className="ml-auto">
+                  <ConfirmButton
+                    size="sm"
+                    variant="ghost"
+                    title="Bỏ bản nháp?"
+                    description={`Bản nháp v${plan.draft.version} của ${plan.draft.name} sẽ bị xoá. Phiên bản đang bán không đổi.`}
+                    onConfirm={async () => {
+                      try {
+                        await plansApi.discardDraft(request, plan.id);
+                        toast.success("Đã bỏ bản nháp");
+                        await load();
+                      } catch (e) {
+                        toast.error(apiErrorMessage(e));
+                      }
+                    }}
+                  >
+                    Bỏ bản nháp
+                  </ConfirmButton>
+                </div>
+              )}
             </div>
-            {plan.draft && (
-              <div className="mt-3 flex justify-end">
-                <ConfirmButton
-                  size="sm"
-                  title="Bỏ bản nháp?"
-                  description={`Bản nháp v${plan.draft.version} của ${plan.draft.name} sẽ bị xoá. Phiên bản đang bán không đổi.`}
-                  onConfirm={async () => {
-                    try {
-                      await plansApi.discardDraft(request, plan.id);
-                      toast.success("Đã bỏ bản nháp");
-                      await load();
-                    } catch (e) {
-                      toast.error(apiErrorMessage(e));
-                    }
-                  }}
-                >
-                  Bỏ bản nháp
-                </ConfirmButton>
-              </div>
-            )}
           </Card>
         );
       })}
@@ -232,49 +238,56 @@ export function PlansTab() {
   );
 }
 
-const STATUS: Record<AdminPlan["status"], string> = { active: "Hiển thị", hidden: "Đang ẩn", archived: "Lưu trữ" };
+type Tone = "success" | "warning" | "neutral";
+const DOT: Record<Tone, string> = { success: "bg-success", warning: "bg-warning", neutral: "bg-muted-foreground/50" };
 
-function VersionSummary({ label, version, empty }: { label: string; version: PlanVersion | null; empty: string }) {
+/** What a customer sees of the plan right now, in one line. */
+export function visibility(plan: Pick<AdminPlan, "isDefault" | "onSale" | "status" | "isPurchasable">): { label: string; tone: Tone } {
+  if (!plan.onSale) return { label: "Chưa xuất bản — khách chưa thấy", tone: "warning" };
+  if (plan.isDefault) return { label: "Gói mặc định của mọi tài khoản", tone: "success" };
+  if (plan.status !== "active") return { label: "Đang ẩn khỏi bảng giá — không bán mới", tone: "neutral" };
+  if (!plan.isPurchasable) return { label: "Hiện trên bảng giá — ngừng bán mới", tone: "neutral" };
+  return { label: "Đang bán trên bảng giá", tone: "success" };
+}
+
+function Offer({ version, draft }: { version: PlanVersion; draft: boolean }) {
+  const e = version.entitlements;
   return (
-    <div className="rounded-md border p-3 text-sm">
-      <p className="text-xs font-medium text-muted-foreground">
-        {label}
-        {version && ` · v${version.version}`}
+    <div>
+      <p className="text-lg font-semibold">
+        {version.monthlyPriceVnd ? <>{formatVnd(version.monthlyPriceVnd)}<span className="text-sm font-normal text-muted-foreground">/tháng</span></> : "Miễn phí"}
+        {version.annualPriceVnd !== null && version.monthlyPriceVnd > 0 && (
+          <span className="text-sm font-normal text-muted-foreground"> · {formatVnd(version.annualPriceVnd)}/năm</span>
+        )}
+        {draft && <span className="ml-2 text-xs font-normal text-warning">(giá ở bản nháp)</span>}
       </p>
-      {version ? (
-        <>
-          <p className="mt-1 font-semibold">
-            {version.monthlyPriceVnd ? formatVnd(version.monthlyPriceVnd) : "Miễn phí"}
-            {version.annualPriceVnd !== null && <span className="font-normal text-muted-foreground"> · {formatVnd(version.annualPriceVnd)}/năm</span>}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {formatLimit(version.entitlements.maxOwnedGroups)} nhóm · {version.entitlements.maxMembersPerGroup === null ? "∞" : version.entitlements.maxMembersPerGroup} TV/nhóm ·{" "}
-            {formatBytes(version.entitlements.maxStorageBytes)} · tệp {formatBytes(version.entitlements.maxUploadBytes)} ·{" "}
-            {version.entitlements.monthlyAiRequests} lượt AI/tháng
-          </p>
-          {version.entitlements.features.length > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">+ {version.entitlements.features.length} tính năng</p>
-          )}
-          {version.availableFrom && version.status === "published" && (
-            <p className="mt-1 text-xs text-muted-foreground">Áp dụng từ {formatVnDate(version.availableFrom, true)}</p>
-          )}
-        </>
-      ) : (
-        <p className="mt-1 text-xs text-muted-foreground">{empty}</p>
-      )}
+      <p className="text-xs text-muted-foreground">
+        {formatLimit(e.maxOwnedGroups)} nhóm · {formatLimit(e.maxMembersPerGroup)} thành viên/nhóm · {formatBytes(e.maxStorageBytes)} · tệp tối đa{" "}
+        {formatBytes(e.maxUploadBytes)} · {formatLimit(e.monthlyAiRequests)} lượt AI/tháng
+        {e.features.length > 0 && ` · ${e.features.length} tính năng`}
+      </p>
     </div>
   );
 }
 
-/** One labelled group of plan controls: what it governs, where it stands now, and the action. */
-function PlanControl({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
+function VersionPill({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2.5 py-3 md:px-4 md:first:pl-0 md:last:pr-0">
-      <div>
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</p>
-        <p className="mt-1 text-sm">{hint}</p>
-      </div>
-      <div className="mt-auto">{children}</div>
+    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-foreground">
+      <span className={`size-1.5 rounded-full ${DOT[tone]}`} aria-hidden />
+      {children}
+    </span>
+  );
+}
+
+/** One plan setting in the footer row: a label with its explanation on hover, then the control. */
+function Setting({ label, hint, children }: { label: string; hint: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+        {label}
+        <InfoHint text={hint} />
+      </span>
+      {children}
     </div>
   );
 }
@@ -294,9 +307,8 @@ function SortOrder({ plan, onSave }: { plan: AdminPlan; onSave: (n: number) => v
     >
       <input id={id} aria-label={`Thứ tự của gói ${plan.code}`} className={`${inputClassName} h-8 w-16! py-1`} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))} />
       <Button size="sm" type="submit" disabled={!changed}>
-        <FloppyDisk className="h-3.5 w-3.5" /> Lưu thứ tự
+        <FloppyDisk className="h-3.5 w-3.5" /> Lưu
       </Button>
-      {changed && <span className="text-xs text-muted-foreground">Chưa lưu (đang là {plan.sortOrder})</span>}
     </form>
   );
 }

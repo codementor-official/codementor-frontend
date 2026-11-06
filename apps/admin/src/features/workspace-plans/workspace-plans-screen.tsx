@@ -5,6 +5,7 @@ import { DiamondIcon as Gem } from "@phosphor-icons/react/ssr";
 import { PageHeader, SegmentedTabs, useUrlState } from "@codementor/ui";
 import { OverviewTab } from "./overview-tab";
 import { PlansTab } from "./plans-tab";
+import { ReportTab } from "./report-tab";
 import { SubscribersTab } from "./subscribers-tab";
 import { AuditTab, CouponsTab, OrdersTab, SettingsTab } from "./operations-tabs";
 import { SubscriberDrawer } from "./subscriber-drawer";
@@ -14,6 +15,7 @@ import { TraceProvider, setQuery, type PlansTab as Tab, type Trace } from "./tra
 
 const TABS: { value: Tab; label: string }[] = [
   { value: "overview", label: "Tổng quan" },
+  { value: "report", label: "Báo cáo doanh thu" },
   { value: "plans", label: "Gói & phiên bản" },
   { value: "subscribers", label: "Người đăng ký" },
   { value: "orders", label: "Giao dịch" },
@@ -23,7 +25,7 @@ const TABS: { value: Tab; label: string }[] = [
 ];
 
 /** Filters and pages each tab keeps in the URL; reset when another tab is opened with filters. */
-const TAB_PARAMS = ["sPage", "sQ", "sPlan", "sState", "oPage", "oStatus", "oQ", "aPage", "aCat"];
+const TAB_PARAMS = ["rPeriod", "rBucket", "sPage", "sQ", "sPlan", "sState", "oPage", "oStatus", "oQ", "aPage", "aCat"];
 
 export function WorkspacePlansScreen() {
   const [tab, setTab] = useUrlState<Tab>("tab", "overview");
@@ -60,6 +62,7 @@ export function WorkspacePlansScreen() {
           center={<SegmentedTabs options={TABS} value={tab} onChange={(v) => setTab(v as Tab)} />}
         />
         {tab === "overview" && <OverviewTab />}
+        {tab === "report" && <ReportTab />}
         {tab === "plans" && <PlansTab />}
         {tab === "subscribers" && <SubscribersTab />}
         {tab === "orders" && <OrdersTab />}
