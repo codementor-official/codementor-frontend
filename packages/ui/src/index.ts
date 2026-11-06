@@ -97,3 +97,13 @@ export { MaskedAccount } from "./masked-account";
 export { StatusPage } from "./status-page";
 export { useUrlState } from "./use-url-state";
 export { ACCOUNT_SUSPENDED, APPEAL_EMAIL, AccountSuspendedNotice, formatSuspensionLeft } from "./account-suspended-notice";
+export { CertificateView } from "./certificate/certificate-view";
+export { CertificateDesignForm } from "./certificate/certificate-design-form";
+export {
+  CERTIFICATE_PLACEHOLDERS,
+  DEFAULT_CERTIFICATE_DESIGN,
+  formatCertificateData,
+  sampleCertificateData,
+  validateDesign as validateCertificateDesign,
+} from "./certificate/design";
+export type { CertificateDesign, CertificateRawData } from "./certificate/design";
