@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Button, Input, ReasonButton, useToast } from "@codementor/ui";
+import { FileXlsIcon as FileXls } from "@phosphor-icons/react/ssr";
+import { Button, Input, ReasonButton, downloadIssuedCertificatesXlsx, useToast } from "@codementor/ui";
+import { collectAllPages } from "@codementor/utils";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { certificatesApi, type AdminCertificate } from "@/lib/api";
 
@@ -37,22 +39,45 @@ export function IssuedCertificates() {
     }
   };
 
+  // Xuất theo bộ lọc đang áp dụng (không phải chữ đang gõ dở), tối đa 5000 dòng.
+  const [exporting, setExporting] = useState(false);
+  const exportXlsx = async () => {
+    setExporting(true);
+    try {
+      const all = await collectAllPages(async (next) => ({
+        ...(await certificatesApi.issued(request, { q: query, page: next, limit: 100 })),
+        limit: 100,
+      }));
+      await downloadIssuedCertificatesXlsx({ rows: all.items, query, total: all.total });
+      if (all.truncated) toast.error(`Chỉ xuất ${all.items.length}/${all.total} chứng chỉ — hãy thu hẹp bộ lọc.`);
+    } catch (cause) {
+      toast.error(apiErrorMessage(cause));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
   return (
     <div className="mt-4">
-      <form
-        className="mb-3 flex max-w-xl gap-2"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setPage(1);
-          setQuery(q.trim());
-        }}
-      >
-        <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Mã, tên in, email hoặc tên khóa/lộ trình" containerClassName="flex-1" />
-        <Button type="submit" variant="outline">
-          Tìm
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <form
+          className="flex max-w-xl flex-1 gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setPage(1);
+            setQuery(q.trim());
+          }}
+        >
+          <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Mã, tên in, email hoặc tên khóa/lộ trình" containerClassName="flex-1" />
+          <Button type="submit" variant="outline">
+            Tìm
+          </Button>
+        </form>
+        <Button type="button" variant="outline" className="ml-auto" disabled={!data?.total || exporting} onClick={() => void exportXlsx()}>
+          <FileXls className="size-4" aria-hidden /> {exporting ? "Đang tạo file…" : "Xuất Excel"}
         </Button>
-      </form>
+      </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[760px] text-sm">

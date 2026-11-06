@@ -973,10 +973,10 @@ export const learningReportsApi = {
 };
 
 export const certificatesApi = {
-  issued: (request: Request, query: { q?: string; page: number }) =>
+  issued: (request: Request, query: { q?: string; page: number; limit?: number }) =>
     unwrap<{ items: AdminCertificate[]; total: number }>(
       request,
-      `/certificates/admin?page=${query.page}&limit=20${query.q ? `&q=${encodeURIComponent(query.q)}` : ""}`,
+      `/certificates/admin?page=${query.page}&limit=${query.limit ?? 20}${query.q ? `&q=${encodeURIComponent(query.q)}` : ""}`,
     ),
   revoke: (request: Request, id: string, reason: string) =>
     unwrap<void>(request, `/certificates/${id}/revoke`, { method: "POST", body: { reason } }),

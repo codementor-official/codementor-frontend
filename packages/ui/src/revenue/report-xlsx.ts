@@ -108,6 +108,48 @@ export function title(sheet: Worksheet, text: string, subtitle: string, span: nu
   sub.font = { italic: true, color: { argb: "FF64748B" } };
 }
 
+/** Cột nhãn – giá trị (sheet Tổng quan). `time` = ngày giờ, đã dời sang giờ Việt Nam. */
+export function facts(sheet: Worksheet, startRow: number, lines: [string, Cell, "int" | "percent" | "date" | "time" | "text"][]) {
+  lines.forEach(([label, value, format], index) => {
+    const row = sheet.getRow(startRow + index);
+    row.getCell(1).value = label;
+    row.getCell(1).font = { bold: true, color: { argb: "FF475569" } };
+    const cell = row.getCell(2);
+    cell.value = value;
+    const numFmt = { int: "#,##0", percent: "0.0%", date: "dd/mm/yyyy", time: "dd/mm/yyyy hh:mm", text: undefined }[format];
+    if (numFmt) cell.numFmt = numFmt;
+    cell.alignment = { horizontal: "left" };
+  });
+  sheet.getColumn(1).width = 40;
+  sheet.getColumn(2).width = 24;
+}
+
+/** Sheet "Cách tính": mỗi dòng một câu, đánh số. */
+export function notes(sheet: Worksheet, startRow: number, lines: string[]) {
+  lines.forEach((text, index) => {
+    const cell = sheet.getCell(startRow + index, 1);
+    cell.value = `${index + 1}. ${text}`;
+    cell.alignment = { wrapText: true, vertical: "top" };
+  });
+  sheet.getColumn(1).width = 110;
+}
+
+/** Nạp ExcelJS (~1 MB) chỉ khi người dùng bấm xuất, dựng workbook rồi tải về. */
+export async function downloadWorkbook(build: (ExcelJS: ExcelJs) => Workbook, filename: string): Promise<void> {
+  const ExcelJS = (await import("exceljs")).default as unknown as ExcelJs;
+  const buffer = await build(ExcelJS).xlsx.writeBuffer();
+  const url = URL.createObjectURL(
+    new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+  );
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /**
  * Báo cáo doanh thu thành một workbook nhiều sheet. Mọi số lấy từ CHÍNH `report` mà dashboard
  * đang vẽ (cùng bộ lọc), và phần TỔNG QUAN dùng chung `revenueSummary` với bản CSV.

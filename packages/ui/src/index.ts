@@ -109,3 +109,6 @@ export {
 export type { CertificateDesign, CertificateRawData } from "./certificate/design";
 export { LearningReport } from "./learning-report";
 export type { LearningReportData } from "./learning-report";
+export { buildLearningReportWorkbook, downloadLearningReportXlsx } from "./learning-report-xlsx";
+export { buildIssuedCertificatesWorkbook, downloadIssuedCertificatesXlsx } from "./certificate/certificates-xlsx";
+export type { IssuedCertificateRow, IssuedCertificatesExport } from "./certificate/certificates-xlsx";
