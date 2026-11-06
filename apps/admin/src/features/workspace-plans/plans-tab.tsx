@@ -86,7 +86,6 @@ export function PlansTab() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-base font-semibold">{name}</h3>
                   <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{plan.code}</code>
-                  {plan.isDefault && <StatusBadge>Gói mặc định</StatusBadge>}
                   {plan.isRecommended && <StatusBadge tone="warning">Phổ biến nhất</StatusBadge>}
                 </div>
                 <p className="flex items-center gap-2 text-sm">
@@ -168,7 +167,7 @@ export function PlansTab() {
                   )}
                 </Setting>
               )}
-              {!plan.isDefault && plan.status === "active" && !plan.isRecommended && (
+              {!plan.isDefault && plan.onSale && plan.status === "active" && !plan.isRecommended && (
                 <Setting label="Nhãn" hint="Gói gắn nhãn “Phổ biến nhất” được làm nổi trên bảng giá.">
                   <Button size="sm" variant="outline" onClick={() => patch(plan, { isRecommended: true }, "Đã đặt làm gói đề xuất")}>
                     <Star className="h-3.5 w-3.5" /> Đặt “Phổ biến nhất”
@@ -306,7 +305,7 @@ function SortOrder({ plan, onSave }: { plan: AdminPlan; onSave: (n: number) => v
       }}
     >
       <input id={id} aria-label={`Thứ tự của gói ${plan.code}`} className={`${inputClassName} h-8 w-16! py-1`} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))} />
-      <Button size="sm" type="submit" disabled={!changed}>
+      <Button size="sm" type="submit" variant={changed ? "default" : "outline"} disabled={!changed}>
         <FloppyDisk className="h-3.5 w-3.5" /> Lưu
       </Button>
     </form>
