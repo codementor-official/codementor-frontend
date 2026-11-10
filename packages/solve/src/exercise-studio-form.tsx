@@ -1037,7 +1037,7 @@ export function ExerciseCodeForm({
           try {
             return {
               ...testCase,
-              expected: JSON.parse(caseResult.actual),
+              expected: JSON.parse(caseResult.actual ?? ""),
               generated: true,
             };
           } catch {
