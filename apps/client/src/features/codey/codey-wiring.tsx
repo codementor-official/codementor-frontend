@@ -143,13 +143,24 @@ export function CodeyTools({
         const failing = result.cases
           .filter((one) => one.verdict !== "accepted")
           .slice(0, MAX_FAILING)
-          .map((one) => ({
-            order: one.order,
-            verdict: one.verdict,
-            expected: clip(one.expected),
-            actual: clip(one.actual),
-            stderr: one.stderr ? clip(one.stderr) : undefined,
-          }));
+          // Lớp thứ hai sau submission-service: test ẩn chỉ nói "chưa đạt", không bao giờ mang
+          // expected/actual sang Codey, kể cả khi backend lỡ trả về.
+          .map((one) =>
+            one.hidden
+              ? {
+                  order: one.order,
+                  verdict: one.verdict,
+                  hidden: true,
+                  note: `Test ẩn #${one.order}: chưa đạt`,
+                }
+              : {
+                  order: one.order,
+                  verdict: one.verdict,
+                  expected: clip(one.expected),
+                  actual: clip(one.actual),
+                  stderr: one.stderr ? clip(one.stderr) : undefined,
+                },
+          );
         return JSON.stringify({
           verdict: result.verdict,
           passedTests: result.passedTests,

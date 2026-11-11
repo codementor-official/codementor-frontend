@@ -1971,6 +1971,7 @@ function ExerciseDetailDialog({
                                           <tr key={testCase.order}>
                                             <td className="p-2 font-semibold">
                                               #{testCase.order}
+                                              {testCase.hidden ? " (ẩn)" : ""}
                                             </td>
                                             <td className="max-w-40 truncate p-2 font-mono">
                                               {testCase.input ?? "–"}

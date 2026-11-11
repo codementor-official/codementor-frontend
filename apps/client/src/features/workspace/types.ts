@@ -366,6 +366,8 @@ export interface WorkspaceSubmission {
     cases?: Array<{
       order: number;
       passed: boolean;
+      /** Test ẩn với thành viên không có quyền duyệt: không có expected/actual/stderr. */
+      hidden?: boolean;
       visibility?: string;
       input?: string;
       expected?: string;

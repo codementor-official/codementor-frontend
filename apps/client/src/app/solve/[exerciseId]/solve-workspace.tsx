@@ -509,14 +509,17 @@ export function SolveWorkspace({
                         className={`mb-1 flex justify-between font-sans font-semibold ${passed ? "text-success" : "text-danger"}`}
                       >
                         <span>
-                          {passed ? "✓ Đạt" : "✗ Không đạt"} — Test{" "}
+                          {passed ? "✓ Đạt" : "✗ Không đạt"} —{" "}
+                          {caseResult.hidden ? "Test ẩn" : "Test"}{" "}
                           {caseResult.order}
                         </span>
                         <span className="font-normal text-text-faint">
                           {caseResult.runtimeMs} ms
                         </span>
                       </div>
-                      {!passed && caseResult.verdict === "wrong_answer" && (
+                      {!passed &&
+                        !caseResult.hidden &&
+                        caseResult.verdict === "wrong_answer" && (
                         <>
                           <div className="text-text-faint">
                             Kết quả mong đợi: {caseResult.expected}
@@ -529,7 +532,7 @@ export function SolveWorkspace({
                       {!passed && (
                         <JudgeFailureMessage
                           verdict={caseResult.verdict}
-                          output={caseResult.stderr}
+                          output={caseResult.stderr ?? ""}
                           language={judgedInput?.language ?? language}
                           sourceCode={judgedInput?.sourceCode ?? ""}
                           availableLanguages={available}

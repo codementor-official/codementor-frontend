@@ -268,9 +268,14 @@ export const LANGUAGES: LanguageConfig[] = [
 export interface JudgeCaseResult {
   order: number;
   verdict: JudgeVerdict;
-  expected: string;
-  actual: string;
-  stderr: string;
+  /**
+   * Test ẩn trong kết quả nộp bài của học viên: submission-service bỏ `expected`, `actual`,
+   * `stderr` và gắn `hidden: true`. Chạy thử của giảng viên thì luôn đủ.
+   */
+  hidden?: boolean;
+  expected?: string;
+  actual?: string;
+  stderr?: string;
   runtimeMs: number;
   memoryKb: number;
 }
