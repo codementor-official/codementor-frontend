@@ -97,7 +97,10 @@ export const plansApi = {
     call<{ updated: true }>(r, `${base}/coupons/${id}`, "PATCH", { ...body }),
   setCouponActive: (r: Request, id: string, active: boolean) => call(r, `${base}/coupons/${id}/${active ? "activate" : "deactivate"}`, "POST"),
   settings: (r: Request) => call<BillingSettings>(r, `${base}/settings`),
-  updateSettings: (r: Request, body: Pick<BillingSettings, "graceDays" | "renewalReminderDays" | "overageNoticeDays" | "overageReadOnlyDays">) =>
+  updateSettings: (
+    r: Request,
+    body: Pick<BillingSettings, "graceDays" | "renewalReminderDays" | "overageNoticeDays" | "overageReadOnlyDays"> & { notices?: Partial<BillingSettings["notices"]> },
+  ) =>
     call<BillingSettings>(r, `${base}/settings`, "PUT", { ...body }),
   revenueReport: (r: Request, p: { from: string; to: string; bucket: ReportBucket }) =>
     call<WorkspaceRevenueReport>(r, `${base}/reports/revenue?${query(p)}`),
