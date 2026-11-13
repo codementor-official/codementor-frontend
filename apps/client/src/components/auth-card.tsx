@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EyeIcon as Eye, EyeSlashIcon as EyeOff, CircleNotchIcon as Loader2, LockIcon as Lock, EnvelopeIcon as Mail, UserCircleIcon as UserRound } from "@phosphor-icons/react/ssr";
-import { resetPasswordUrl } from "@codementor/auth";
 import { ACCOUNT_SUSPENDED, AccountSuspendedNotice, FieldError, fieldA11y, Input, useFieldErrors } from "@codementor/ui";
 import { email, length, required } from "@codementor/utils";
 import { BrandLogo } from "@/components/brand-logo";
 import { FacebookIcon, GoogleIcon } from "@/components/provider-icons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { keycloakConfig, roleHomes } from "@/lib/env";
+import { roleHomes } from "@/lib/env";
 import { postLoginTarget } from "@/lib/navigation/post-login";
 import { useAuth, type Suspension } from "@/providers/auth-provider";
 
@@ -253,12 +252,12 @@ export function AuthCard({
           )}
 
           {!isSignup && (
-            <a
+            <Link
               className="self-end text-xs font-medium text-primary hover:underline"
-              href={resetPasswordUrl(keycloakConfig)}
+              href={username.includes("@") ? `/forgot-password?email=${encodeURIComponent(username.trim())}` : "/forgot-password"}
             >
               Quên mật khẩu?
-            </a>
+            </Link>
           )}
 
           <Button className={`w-full ${isSignup ? "mt-2" : "mt-1"}`} disabled={busy} type="submit">
