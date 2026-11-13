@@ -171,16 +171,6 @@ export function registrationUrl(config: KeycloakPublicConfig, redirectOrigin: st
   return realmUrl(config) + "/protocol/openid-connect/registrations?" + params.toString();
 }
 
-/**
- * Luồng "quên mật khẩu" của Keycloak. Đặt lại mật khẩu đi qua email nên nó phải sống ở
- * phía Keycloak — CodeMentor không giữ mật khẩu, và cũng không nên tự gửi email đặt lại.
- * Chỉ cần `client_id`: Keycloak tự tạo phiên xác thực cho luồng này.
- */
-export function resetPasswordUrl(config: KeycloakPublicConfig): string {
-  const params = new URLSearchParams({ client_id: config.clientId });
-  return realmUrl(config) + "/login-actions/reset-credentials?" + params.toString();
-}
-
 /** Keycloak account console — where a user changes password, email, or 2FA. */
 export function accountConsoleUrl(config: KeycloakPublicConfig): string {
   return realmUrl(config) + "/account";
