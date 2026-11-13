@@ -365,13 +365,17 @@ export function SettingsTab() {
   if (!form || !saved) return <Card className="h-64 animate-pulse" aria-hidden />;
 
   // Saved on its own: the policy form above may hold unsaved edits, so only `saved` is refreshed.
+  // Shown at once so one click is enough; put back if the server refuses.
   async function saveNotice(key: BillingNoticeKey, mode: BillingNoticeMode) {
-    if (!saved) return;
+    if (!saved || saved.notices[key] === mode) return;
+    const previous = saved;
+    setSaved({ ...saved, notices: { ...saved.notices, [key]: mode } });
     const { graceDays, renewalReminderDays, overageNoticeDays, overageReadOnlyDays } = saved;
     try {
       setSaved(await plansApi.updateSettings(request, { graceDays, renewalReminderDays, overageNoticeDays, overageReadOnlyDays, notices: { [key]: mode } }));
-      toast.success(mode === "off" ? "Đã tắt thông báo này" : "Đã lưu kênh gửi");
+      toast.success(mode === "off" ? "Đã tắt thông báo này" : mode === "app" ? "Đã chuyển sang chỉ gửi trong app" : "Đã bật gửi trong app và email");
     } catch (e) {
+      setSaved(previous);
       toast.error(apiErrorMessage(e));
     }
   }
@@ -531,6 +535,7 @@ export function SettingsTab() {
                   <td className="px-4 py-2">
                     <div role="group" aria-label={`Kênh gửi: ${row.event}`}>
                       <SegmentedTabs
+                        className="flex-nowrap!"
                         options={key === "admin_alert" ? NOTICE_MODES.slice(1) : NOTICE_MODES}
                         value={mode}
                         onChange={(next) => void saveNotice(key, next as BillingNoticeMode)}
