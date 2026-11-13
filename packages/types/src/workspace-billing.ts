@@ -293,10 +293,16 @@ export interface BillingSettings {
   renewalReminderDays: number;
   overageNoticeDays: number;
   overageReadOnlyDays: number;
+  notices: Record<BillingNoticeKey, BillingNoticeMode>;
   termsVersion: string;
   updatedAt: string;
   updatedBy: string | null;
 }
+
+export type BillingNoticeKey =
+  | "subscription_paid" | "payment_review" | "refund" | "renewal_reminder" | "grace_notice" | "overage_notice" | "admin_alert";
+/** `all`: in the app and by email; `app`: in the app only; `off`: not sent. */
+export type BillingNoticeMode = "all" | "app" | "off";
 
 export type AuditCategory = "plan" | "subscription" | "order" | "payment" | "coupon" | "adjustment" | "settings";
 

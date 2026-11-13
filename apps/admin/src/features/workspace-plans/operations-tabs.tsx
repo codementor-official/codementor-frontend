@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { BellRingingIcon as BellRing, CalendarDotsIcon as CalendarClock, EyeSlashIcon as EyeOff, LockIcon as Lock, ShieldCheckIcon as ShieldCheck, TicketIcon as TicketPercent } from "@phosphor-icons/react/ssr";
 import { apiErrorMessage } from "@codementor/api-client";
-import { Button, Card, ConfirmButton, Field, Modal, ServerPagination, StatusBadge, useToast, useUrlState } from "@codementor/ui";
+import { Button, Card, ConfirmButton, Field, Modal, SegmentedTabs, ServerPagination, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { formatVnDate, formatVnd } from "@codementor/utils";
-import type { AdminPlan, AuditCategory, AuditEntry, BillingCycle, BillingPage, BillingSettings, SubscriberStats, WorkspaceCoupon, WorkspaceOrder } from "@codementor/types";
+import type { AdminPlan, AuditCategory, AuditEntry, BillingCycle, BillingNoticeKey, BillingNoticeMode, BillingPage, BillingSettings, SubscriberStats, WorkspaceCoupon, WorkspaceOrder } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { inputClassName } from "@/features/commerce/form-style";
 import { plansApi, type CouponInput } from "./api";
@@ -328,6 +328,12 @@ function CouponDialog({ plans, onClose, onCreated }: { plans: AdminPlan[]; onClo
   );
 }
 
+const NOTICE_MODES: { value: BillingNoticeMode; label: string }[] = [
+  { value: "all", label: "App + Email" },
+  { value: "app", label: "Chỉ trong app" },
+  { value: "off", label: "Tắt" },
+];
+
 type SettingsForm = Record<"graceDays" | "renewalReminderDays" | "overageNoticeDays" | "overageReadOnlyDays", string>;
 const SETTING_RANGE: Record<keyof SettingsForm, [number, number]> = {
   graceDays: [0, 30],
@@ -357,6 +363,18 @@ export function SettingsTab() {
     plansApi.subscriberStats(request).then(setStats).catch(() => setStats(null));
   }, [request, toast, apply]);
   if (!form || !saved) return <Card className="h-64 animate-pulse" aria-hidden />;
+
+  // Saved on its own: the policy form above may hold unsaved edits, so only `saved` is refreshed.
+  async function saveNotice(key: BillingNoticeKey, mode: BillingNoticeMode) {
+    if (!saved) return;
+    const { graceDays, renewalReminderDays, overageNoticeDays, overageReadOnlyDays } = saved;
+    try {
+      setSaved(await plansApi.updateSettings(request, { graceDays, renewalReminderDays, overageNoticeDays, overageReadOnlyDays, notices: { [key]: mode } }));
+      toast.success(mode === "off" ? "Đã tắt thông báo này" : "Đã lưu kênh gửi");
+    } catch (e) {
+      toast.error(apiErrorMessage(e));
+    }
+  }
 
   const n = (k: keyof SettingsForm) => Number(form[k] || 0);
   const invalid = (Object.keys(SETTING_RANGE) as (keyof SettingsForm)[]).filter((k) => form[k] === "" || n(k) < SETTING_RANGE[k][0] || n(k) > SETTING_RANGE[k][1]);
@@ -477,10 +495,11 @@ export function SettingsTab() {
         <div className="border-b px-4 py-3">
           <h3 className="text-sm font-semibold">Thông báo tự động</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Email gửi tới địa chỉ đã xác minh khi tài khoản còn bật nhận email; tắt từng loại email nhắc học tập hay nhóm không chặn email thanh toán. Bấm vào thông báo sẽ mở trang Gói &amp; thanh toán.
+            Chọn kênh cho từng loại; đổi là lưu ngay và áp dụng cho thông báo kế tiếp. Email chỉ đi kèm thông báo trong app, tới địa chỉ đã xác minh khi
+            tài khoản còn bật nhận email. Thông báo nhắc bị tắt vẫn được tính là đã gửi, nên bật lại không gửi bù.
           </p>
         </div>
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[960px] text-sm">
           <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
             <tr>
               <th className="px-4 py-2 font-medium">Sự kiện</th>
@@ -491,26 +510,36 @@ export function SettingsTab() {
           </thead>
           <tbody>
             {[
-              { event: "Kích hoạt, gia hạn, nâng cấp gói", to: "Người mua", when: "Ngay khi cổng thanh toán xác nhận", email: true },
-              { event: "Thanh toán cần kiểm tra", to: "Người mua", when: "Khi đã trả tiền nhưng chưa áp dụng được tự động", email: true },
-              { event: "Hoàn tiền", to: "Người mua", when: "Khi quản trị viên hoàn tiền", email: true },
-              { event: "Nhắc gia hạn", to: "Chủ gói", when: `${n("renewalReminderDays")} ngày trước khi hết kỳ`, email: true },
-              { event: "Bắt đầu ân hạn", to: "Chủ gói", when: "Ngày hết kỳ chưa gia hạn", email: true },
-              { event: "Vượt hạn mức: cảnh báo, chỉ đọc, tạm ẩn", to: "Chủ nhóm", when: "Ở mỗi mốc của lộ trình trên", email: true },
-              { event: "Đơn mới, gia hạn, thanh toán cần kiểm tra", to: "Quản trị viên", when: "Ngay khi xảy ra", email: false },
-            ].map((row) => (
-              <tr key={row.event + row.to} className="border-t">
-                <td className="px-4 py-2 font-medium">{row.event}</td>
-                <td className="px-4 py-2 text-muted-foreground">{row.to}</td>
-                <td className="px-4 py-2 text-muted-foreground">{row.when}</td>
-                <td className="px-4 py-2">
-                  <span className="flex flex-wrap gap-1.5">
-                    <StatusBadge>Trong app</StatusBadge>
-                    {row.email && <StatusBadge tone="success">Email</StatusBadge>}
-                  </span>
-                </td>
-              </tr>
-            ))}
+              { key: "subscription_paid", event: "Kích hoạt, gia hạn, nâng cấp gói", to: "Người mua", when: "Ngay khi cổng thanh toán xác nhận" },
+              { key: "payment_review", event: "Thanh toán cần kiểm tra", to: "Người mua", when: "Khi đã trả tiền nhưng chưa áp dụng được tự động" },
+              { key: "refund", event: "Hoàn tiền", to: "Người mua", when: "Khi quản trị viên hoàn tiền" },
+              { key: "renewal_reminder", event: "Nhắc gia hạn", to: "Chủ gói", when: `${saved.renewalReminderDays} ngày trước khi hết kỳ` },
+              { key: "grace_notice", event: "Bắt đầu ân hạn", to: "Chủ gói", when: "Ngày hết kỳ chưa gia hạn" },
+              { key: "overage_notice", event: "Vượt hạn mức: cảnh báo, chỉ đọc, tạm ẩn", to: "Chủ nhóm", when: "Ở mỗi mốc của lộ trình trên" },
+              { key: "admin_alert", event: "Đơn mới, gia hạn, thanh toán cần kiểm tra", to: "Quản trị viên", when: "Ngay khi xảy ra" },
+            ].map((row) => {
+              const key = row.key as BillingNoticeKey;
+              const mode = saved.notices[key];
+              return (
+                <tr key={key} className="border-t">
+                  <td className="px-4 py-2 font-medium">
+                    {row.event}
+                    {mode === "off" && <span className="ml-2"><StatusBadge tone="warning">Đang tắt</StatusBadge></span>}
+                  </td>
+                  <td className="px-4 py-2 text-muted-foreground">{row.to}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{row.when}</td>
+                  <td className="px-4 py-2">
+                    <div role="group" aria-label={`Kênh gửi: ${row.event}`}>
+                      <SegmentedTabs
+                        options={key === "admin_alert" ? NOTICE_MODES.slice(1) : NOTICE_MODES}
+                        value={mode}
+                        onChange={(next) => void saveNotice(key, next as BillingNoticeMode)}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </Card>
