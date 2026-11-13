@@ -109,6 +109,8 @@ export function AuthCard({
       // ở trên lo, sau khi provider xác nhận phiên.
       setPassword("");
       setConfirmPassword("");
+      // Emptied on purpose, not by the user: no "Mật khẩu không được để trống" while redirecting.
+      form.reset();
     } catch (cause) {
       if ((cause as { code?: string }).code === ACCOUNT_SUSPENDED) {
         setSuspended(true);
