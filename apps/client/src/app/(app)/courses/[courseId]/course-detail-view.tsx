@@ -170,6 +170,11 @@ export function CourseDetailView({ courseId, viaRoadmapId }: { courseId: string;
   const resumeLesson = firstOpen ?? lessons[0];
 
   const lessonCount = course.chapters.reduce((total, ch) => total + ch.lessons.length, 0);
+  // Mẫu số khớp với progressPercent ở backend: chỉ bài bắt buộc.
+  const requiredLessonCount = course.chapters.reduce(
+    (total, ch) => total + ch.lessons.filter((lesson) => !lesson.isOptional).length,
+    0,
+  );
 
   const curriculum =
     course.chapters.length === 0 ? (
@@ -403,7 +408,7 @@ export function CourseDetailView({ courseId, viaRoadmapId }: { courseId: string;
             )}
             {enrollment && (
               <p className="mt-2.5 text-2xs text-text-faint">
-                Đã học {enrollment.completedLessons}/{lessonCount} bài · {enrollment.progressPercent}%
+                Đã học {enrollment.completedLessons}/{requiredLessonCount} bài bắt buộc · {enrollment.progressPercent}%
               </p>
             )}
             {/* Yêu cầu đầu vào ở cùng thẻ với nút đăng ký, và CHỈ với người chưa ghi danh:

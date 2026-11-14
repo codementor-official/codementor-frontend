@@ -2389,6 +2389,7 @@ function verdictLabel(value: string) {
         runtime_error: "Lỗi thực thi",
         timeout: "Quá thời gian",
         memory_exceeded: "Quá bộ nhớ",
+        system_error: "Lỗi hệ thống chấm",
         pending: "Đang chấm",
       } as Record<string, string>
     )[value] ?? value

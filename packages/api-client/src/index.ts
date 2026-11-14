@@ -58,16 +58,27 @@ export function createApiClient({
     });
 
     if (!response.ok) {
-      const responseBody = await parseResponseBody(response);
-      throw new ApiClientError(
-        "Request failed with status " + response.status,
-        response.status,
-        responseBody,
-      );
+      // Body lỗi rỗng hoặc hỏng (vd. 502 từ gateway) vẫn phải thành ApiClientError có mã lỗi.
+      const responseBody = await parseResponseBody(response).catch(() => undefined);
+      throw new ApiClientError(readableMessage(response.status, responseBody), response.status, responseBody);
     }
 
     return (await parseResponseBody(response)) as T;
   };
+}
+
+/** Câu backend gửi kèm nếu có; không thì câu tiếng Việt theo mã lỗi, không bao giờ là "Request failed…". */
+function readableMessage(status: number, body: unknown): string {
+  const message =
+    body && typeof body === "object" && "message" in body ? (body as { message: unknown }).message : undefined;
+  if (typeof message === "string" && message.trim()) return message;
+  if (Array.isArray(message) && message.every((item) => typeof item === "string")) return message.join(". ");
+  if (status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+  if (status === 403) return "Bạn chưa có quyền thực hiện thao tác này.";
+  if (status === 404) return "Không tìm thấy nội dung yêu cầu.";
+  if (status === 429) return "Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.";
+  if (status >= 500) return "Dịch vụ tạm thời gián đoạn. Vui lòng thử lại sau.";
+  return "Không thực hiện được yêu cầu.";
 }
 
 function isJsonBody(body: BodyInit | Record<string, unknown>): body is Record<string, unknown> {

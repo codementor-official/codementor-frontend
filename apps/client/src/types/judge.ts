@@ -13,5 +13,6 @@ export const VERDICT_LABELS: Record<JudgeVerdict, string> = {
   runtime_error: "Lỗi khi chạy",
   timeout: "Quá thời gian cho phép",
   memory_exceeded: "Quá bộ nhớ cho phép",
+  system_error: "Lỗi hệ thống chấm, không tính lượt",
   skipped: "Chưa chạy",
 };
