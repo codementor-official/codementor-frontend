@@ -510,7 +510,9 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
             {initialsOf(detail.name)}
           </span>
         )}
-        <div className="min-w-0 flex-1">
+        {/* `basis-48` giữ chỗ cho tên nhóm: màn hẹp thì nhãn vai trò và nút xuống dòng thay vì ép tên
+            còn một chữ (TC-20, 375 px, góc nhìn thành viên). */}
+        <div className="min-w-0 flex-1 basis-48">
           <h1 className="truncate text-xl font-bold text-navy">
             {detail.name}
           </h1>
