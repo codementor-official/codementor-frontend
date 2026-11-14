@@ -287,6 +287,8 @@ export type JudgeVerdict =
   | "runtime_error"
   | "timeout"
   | "memory_exceeded"
+  /** Bài nộp: hệ thống chấm không trả kết quả; không tính lượt. */
+  | "system_error"
   | "skipped";
 
 export interface JudgeRunResult {
@@ -314,6 +316,7 @@ export const VERDICT_LABELS: Record<JudgeVerdict, string> = {
   runtime_error: "Lỗi khi chạy",
   timeout: "Quá thời gian",
   memory_exceeded: "Quá bộ nhớ",
+  system_error: "Lỗi hệ thống chấm",
   skipped: "Chưa chạy",
 };
 
@@ -324,6 +327,7 @@ export const VERDICT_TONES: Record<JudgeVerdict, "neutral" | "success" | "warnin
   runtime_error: "danger",
   timeout: "warning",
   memory_exceeded: "warning",
+  system_error: "neutral",
   skipped: "neutral",
 };
 

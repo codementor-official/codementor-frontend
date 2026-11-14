@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -291,7 +292,9 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
         setPublicDetail(publicWorkspace);
       } catch {
         setError(
-          messageOf(cause, "Không tải được nhóm học tập. Vui lòng thử lại."),
+          cause instanceof ApiClientError && [403, 404].includes(cause.status)
+            ? "Nhóm không tồn tại hoặc bạn chưa có quyền xem."
+            : messageOf(cause, "Không tải được nhóm học tập. Vui lòng thử lại."),
         );
       }
     } finally {
@@ -480,6 +483,9 @@ export function WorkspaceDetailScreen({ slug }: { slug: string }) {
           >
             Thử lại
           </button>
+          <Link href="/workspace" className="ml-4 mt-3 inline-block text-xs font-semibold text-primary hover:text-primary-hover">
+            Về danh sách nhóm
+          </Link>
         </Card>
       </div>
     );

@@ -281,6 +281,8 @@ export function SolveWorkspace({
         setCelebrating(true);
     } catch (cause) {
       setJudgeError(cause instanceof Error ? cause.message : "Không chấm được");
+      // Lượt nộp lỗi hệ thống vẫn được ghi (system_error) nên làm mới lịch sử để học viên thấy.
+      if (mode === "submit") setHistoryVersion((version) => version + 1);
       // Hạ tầng chấm hỏng KHÔNG phải lỗi của học viên, nên Codey không mời xem giúp: nó không
       // có gì để đọc, và lời mời sẽ dẫn tới một câu trả lời vô nghĩa.
       setLastRun(null);
