@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KeyIcon as KeyRound, UserIcon as User } from "@phosphor-icons/react/ssr";
-import { accountConsoleUrl } from "@codementor/auth";
+import { UserIcon as User } from "@phosphor-icons/react/ssr";
 import { ProfileForm } from "@/features/profile/profile-form";
 import type { UserProfile } from "@/features/profile/types";
 import { api } from "@/lib/api";
-import { keycloakConfig } from "@/lib/env";
 import { useAuth } from "@/providers/auth-provider";
-import { PageHeader } from "@codementor/ui";
+import { ChangePasswordCard, PageHeader } from "@codementor/ui";
 import { PageBody } from "@/components/page/page-body";
 
+const CLIENT_URL = (process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+
 export default function ProfilePage() {
-  const { refreshUser } = useAuth();
+  const { refreshUser, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,23 +83,11 @@ export default function ProfilePage() {
               </div>
             </dl>
           </aside>
-          <aside className="rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <KeyRound aria-hidden="true" className="size-4 text-muted-foreground" /> Đăng nhập & bảo mật
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Đổi email, mật khẩu hoặc bật xác thực hai bước tại{" "}
-              <a
-                className="text-foreground underline underline-offset-4"
-                href={accountConsoleUrl(keycloakConfig)}
-                rel="noreferrer"
-                target="_blank"
-              >
-                trang tài khoản CodeMentor ID
-              </a>
-              .
-            </p>
-          </aside>
+          <ChangePasswordCard
+            forgotHref={`${CLIENT_URL}/forgot-password`}
+            onChanged={signOut}
+            submit={(body) => api.changePassword(body)}
+          />
           </div>
         </div>
       )}

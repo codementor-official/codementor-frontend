@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
 import { FileXlsIcon as FileXls } from "@phosphor-icons/react/ssr";
-import { Button, Input, ReasonButton, downloadIssuedCertificatesXlsx, useToast } from "@codementor/ui";
+import { Button, CertificateDialog, Input, ReasonButton, downloadIssuedCertificatesXlsx, useToast } from "@codementor/ui";
 import { collectAllPages } from "@codementor/utils";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { certificatesApi, type AdminCertificate } from "@/lib/api";
+
+const CLIENT_URL = (process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
 const PAGE_SIZE = 20;
 const day = (iso: string) => new Date(iso).toLocaleDateString("vi-VN");
@@ -23,6 +25,7 @@ export function IssuedCertificates() {
   const [page, setPage] = useState(1);
   const [data, setData] = useState<{ items: AdminCertificate[]; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [shown, setShown] = useState<AdminCertificate | null>(null);
 
   const load = useCallback(() => {
     certificatesApi.issued(request, { q: query, page }).then(setData, (cause) => setError(apiErrorMessage(cause)));
@@ -113,7 +116,8 @@ export function IssuedCertificates() {
                     <span className="text-xs font-medium text-success">Hiệu lực</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <Button size="sm" variant="outline" onClick={() => setShown(row)}>Xem</Button>
                   {!row.revokedAt && (
                     <ReasonButton
                       confirmLabel="Thu hồi"
@@ -153,6 +157,7 @@ export function IssuedCertificates() {
           </Button>
         </div>
       </div>
+      <CertificateDialog certificate={shown} onClose={() => setShown(null)} verifyBaseUrl={CLIENT_URL} />
     </div>
   );
 }

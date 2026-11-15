@@ -6,6 +6,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { EyeIcon as Eye, EyeSlashIcon as EyeOff, LockKeyIcon as LockKeyhole, ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/ssr";
 import { Button, Input } from "@codementor/ui";
 import { BrandLogo } from "@/components/brand-logo";
+
+const CLIENT_URL = (process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 import { useAdminAuth } from "./auth-provider";
 
 export function LoginPage() {
@@ -70,6 +72,7 @@ export function LoginPage() {
           <form className="mt-8 space-y-5" onSubmit={(event) => void submit(event)}>
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="admin-email">Email hoặc tên đăng nhập</label><Input id="admin-email" autoComplete="username" autoFocus placeholder="codementor@gmail.com" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={pending} /></div>
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="admin-password">Mật khẩu</label><Input id="admin-password" autoComplete="current-password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} required disabled={pending} rightSlot={<button type="button" className="text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>} /></div>
+            <a className="-mt-2 block text-right text-xs font-medium text-primary hover:underline" href={`${CLIENT_URL}/forgot-password`}>Quên mật khẩu?</a>
             {error && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
             <Button className="w-full" type="submit" disabled={!initialized || pending}>{pending ? "Đang đăng nhập…" : "Đăng nhập quản trị"}</Button>
           </form>

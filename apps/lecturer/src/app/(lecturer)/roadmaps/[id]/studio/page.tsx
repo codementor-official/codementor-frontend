@@ -58,6 +58,7 @@ import {
   LEVEL_LABELS,
   type Roadmap,
 } from "@/features/roadmaps/types";
+import { useEditedIds } from "@/features/review/edited-since-review";
 
 interface Draft {
   slug: string;
@@ -94,6 +95,7 @@ function toDraft(roadmap: Roadmap): Draft {
 
 export default function RoadmapStudioPage() {
   const { id } = useParams<{ id: string }>();
+  const edited = useEditedIds("roadmaps");
   const router = useRouter();
 
   const toast = useToast();
@@ -434,15 +436,17 @@ export default function RoadmapStudioPage() {
                   <Save aria-hidden="true" className="size-4" />
                   {saving ? "Đang lưu…" : "Lưu"}
                 </Button>
-                <Button
-                  disabled={saving || blocker !== undefined}
-                  onClick={() => run(() => api.roadmaps.submit(id), "Đã gửi duyệt")}
-                  title={blocker}
-                  type="button"
-                >
-                  <Send aria-hidden="true" className="size-4" />
-                  Gửi duyệt
-                </Button>
+                {(roadmap.status !== "published" || edited(id)) && (
+                  <Button
+                    disabled={saving || blocker !== undefined}
+                    onClick={() => run(() => api.roadmaps.submit(id), "Đã gửi duyệt")}
+                    title={blocker}
+                    type="button"
+                  >
+                    <Send aria-hidden="true" className="size-4" />
+                    {roadmap.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
+                  </Button>
+                )}
               </>
             )}
           </div>

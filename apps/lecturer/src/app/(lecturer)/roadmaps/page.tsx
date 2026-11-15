@@ -36,6 +36,7 @@ import {
   LEVEL_LABELS,
   type RoadmapListItem,
 } from "@/features/roadmaps/types";
+import { useEditedIds } from "@/features/review/edited-since-review";
 
 type Tab = "mine" | "catalogue";
 
@@ -50,6 +51,7 @@ export default function RoadmapsPage() {
 }
 
 function RoadmapsPageContent() {
+  const edited = useEditedIds("roadmaps");
   const router = useRouter();
   const { user } = useAuth();
   // Breadcrumb ở studio trỏ về đây kèm id vì bản ghi không có trang riêng — mở sẵn drawer
@@ -221,15 +223,17 @@ function RoadmapsPageContent() {
                   </Button>
                 ) : (
                   <>
-                    <Button
-                      disabled={busy}
-                      onClick={() => act(() => api.roadmaps.submit(row.id))}
-                      type="button"
-                      variant="outline"
-                    >
-                      <Send aria-hidden="true" className="size-4" />
-                      {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
-                    </Button>
+                    {(row.status !== "published" || edited(row.id)) && (
+                      <Button
+                        disabled={busy}
+                        onClick={() => act(() => api.roadmaps.submit(row.id))}
+                        type="button"
+                        variant="outline"
+                      >
+                        <Send aria-hidden="true" className="size-4" />
+                        {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
+                      </Button>
+                    )}
                     {row.status === "published" && (
                       <ReasonButton
                         confirmLabel="Gửi yêu cầu"

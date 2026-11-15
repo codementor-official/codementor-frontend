@@ -10,6 +10,7 @@ import {
   BreadcrumbTitle,
   Button,
   Card,
+  CompletionsPanel,
   Modal,
   PageHeader,
   ReasonButton,
@@ -19,6 +20,8 @@ import {
   TopicPicker,
   StudioSplit,
 } from "@codementor/ui";
+
+const CLIENT_URL = (process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 import { CardHeading } from "@/components/page/card-heading";
 import { DangerZone } from "@/components/page/danger-zone";
 import { StudioScroll, StudioShell } from "@/components/page/studio-shell";
@@ -49,6 +52,7 @@ import {
   url,
   type FieldError,
 } from "@codementor/utils";
+import { useEditedIds } from "@/features/review/edited-since-review";
 
 interface Meta {
   slug: string;
@@ -131,13 +135,15 @@ function toMeta(course: Course): Meta {
 
 export default function CourseStudioPage() {
   const { id } = useParams<{ id: string }>();
+  const edited = useEditedIds("courses");
   const router = useRouter();
 
   const toast = useToast();
-  const [tab, setTab] = useState<"curriculum" | "metadata" | "purchases">("curriculum");
+  const [tab, setTab] = useState<"curriculum" | "metadata" | "purchases" | "completions">("curriculum");
+  const loadCompletions = useCallback(() => api.completions("course", id), [id]);
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("tab");
-    if (requested === "purchases" || requested === "metadata") setTab(requested);
+    if (requested === "purchases" || requested === "metadata" || requested === "completions") setTab(requested);
   }, []);
   const [course, setCourse] = useState<Course | null>(null);
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -446,7 +452,7 @@ export default function CourseStudioPage() {
       </p>
     </Modal>
     <StudioShell
-      actions={tab === "purchases" ? undefined : (
+      actions={tab === "purchases" || tab === "completions" ? undefined : (
           <div className="flex flex-wrap items-center gap-2">
             {locked ? (
               <Button
@@ -473,29 +479,32 @@ export default function CourseStudioPage() {
                 {/* Gửi LẠI thì hỏi đã sửa gì — người duyệt đã đọc bản trước, câu đó là
                     thứ duy nhất cho họ biết cần xem lại chỗ nào. Lần gửi đầu từ bản nháp
                     thì không hỏi: chưa có quyết định nào để giải thích. */}
-                {course.requiresSubmitNote ? (
-                  <ReasonButton
-                    confirmLabel="Gửi duyệt lại"
-                    description="Người duyệt đã xem bản trước. Nói ngắn gọn bạn vừa sửa gì."
-                    disabled={saving || blocker !== undefined}
-                    onConfirm={(note) => run(() => api.courses.submit(id, note), "Đã gửi duyệt")}
-                    placeholder="Đã bổ sung mô tả và sửa lại nội dung chương 2 theo góp ý."
-                    title="Gửi duyệt lại"
-                    variant="default"
-                  >
-                    <Send aria-hidden="true" className="size-4" />
-                    Gửi duyệt lại
-                  </ReasonButton>
-                ) : (
-                  <Button
-                    disabled={saving || blocker !== undefined}
-                    onClick={() => run(() => api.courses.submit(id), "Đã gửi duyệt")}
-                    title={blocker}
-                    type="button"
-                  >
-                    <Send aria-hidden="true" className="size-4" />
-                    Gửi duyệt
-                  </Button>
+                {/* Đã công khai: chỉ cần gửi lại khi đã lưu thay đổi chưa gửi. */}
+                {(course.status !== "published" || edited(id)) && (
+                  course.requiresSubmitNote ? (
+                    <ReasonButton
+                      confirmLabel="Gửi duyệt lại"
+                      description="Người duyệt đã xem bản trước. Nói ngắn gọn bạn vừa sửa gì."
+                      disabled={saving || blocker !== undefined}
+                      onConfirm={(note) => run(() => api.courses.submit(id, note), "Đã gửi duyệt")}
+                      placeholder="Đã bổ sung mô tả và sửa lại nội dung chương 2 theo góp ý."
+                      title="Gửi duyệt lại"
+                      variant="default"
+                    >
+                      <Send aria-hidden="true" className="size-4" />
+                      Gửi duyệt lại
+                    </ReasonButton>
+                  ) : (
+                    <Button
+                      disabled={saving || blocker !== undefined}
+                      onClick={() => run(() => api.courses.submit(id), "Đã gửi duyệt")}
+                      title={blocker}
+                      type="button"
+                    >
+                      <Send aria-hidden="true" className="size-4" />
+                      Gửi duyệt
+                    </Button>
+                  )
                 )}
               </>
             )}
@@ -525,9 +534,10 @@ export default function CourseStudioPage() {
           { value: "curriculum", label: "Nội dung" },
           { value: "metadata", label: "Giá, khuyến mãi & thông tin" },
           { value: "purchases", label: "Học viên đã mua" },
+          { value: "completions", label: "Đã hoàn thành" },
         ],
         value: tab,
-        onChange: (value) => setTab(value as "curriculum" | "metadata" | "purchases"),
+        onChange: (value) => setTab(value as "curriculum" | "metadata" | "purchases" | "completions"),
       }}
       title={meta.title || "Khóa học chưa đặt tên"}
     >
@@ -578,6 +588,10 @@ export default function CourseStudioPage() {
       ) : tab === "purchases" ? (
         <StudioScroll>
           <CoursePurchases courseId={course.id} />
+        </StudioScroll>
+      ) : tab === "completions" ? (
+        <StudioScroll>
+          <CompletionsPanel load={loadCompletions} verifyBaseUrl={CLIENT_URL} />
         </StudioScroll>
       ) : (
         <StudioScroll>

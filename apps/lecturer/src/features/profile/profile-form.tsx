@@ -49,6 +49,7 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
     control,
     handleSubmit,
     setError,
+    setValue,
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileFormValues>({
@@ -131,7 +132,7 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
 
       <Field
         error={avatarError ?? errors.avatarUrl?.message}
-        description="Tải ảnh PNG/JPEG/WebP tối đa 5 MB, hoặc dán đường dẫn ảnh."
+        description="Ảnh PNG/JPEG/WebP tối đa 5 MB."
         htmlFor="avatarUrl"
         label="Ảnh đại diện"
       >
@@ -149,19 +150,15 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
             </div>
           )}
           <div className="min-w-0 flex-1 space-y-2">
-            <input
-              className={inputClassName}
-              disabled={avatarFile !== null}
-              id="avatarUrl"
-              placeholder="https://"
-              {...register("avatarUrl")}
-            />
-            <div className="flex items-center gap-2">
+            {/* The stored value is a storage URL: kept in the form, never shown as text. */}
+            <input type="hidden" {...register("avatarUrl")} />
+            <div className="flex flex-wrap items-center gap-2">
               <label className="cursor-pointer rounded-md border border-border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted">
-                Chọn ảnh từ máy
+                {shownAvatar ? "Đổi ảnh" : "Chọn ảnh từ máy"}
                 <input
                   accept={AVATAR_TYPES.join(",")}
                   className="sr-only"
+                  id="avatarUrl"
                   type="file"
                   onChange={(event) => {
                     pickAvatar(event.target.files?.[0]);
@@ -179,6 +176,15 @@ export function ProfileForm({ profile, onSaved }: ProfileFormProps) {
                   }}
                 >
                   Bỏ ảnh đã chọn
+                </button>
+              )}
+              {!avatarFile && avatarUrl && (
+                <button
+                  className="text-xs text-muted-foreground underline underline-offset-4"
+                  type="button"
+                  onClick={() => setValue("avatarUrl", "", { shouldDirty: true })}
+                >
+                  Xoá ảnh
                 </button>
               )}
             </div>

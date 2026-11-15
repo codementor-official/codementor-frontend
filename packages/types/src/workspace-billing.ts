@@ -313,9 +313,16 @@ export interface AuditEntry {
   details: unknown;
   created_at: string;
   actor: string | null;
+  actor_email?: string | null;
   subject: string | null;
   /** The customer the entry concerns, when there is one: opens their detail. */
   target_user_id: string | null;
+}
+
+/** One audit entry in full, with every entry about the same thing, oldest first. */
+export interface AuditTrail {
+  entry: AuditEntry;
+  trail: AuditEntry[];
 }
 
 export interface AdminOrderDetail extends WorkspaceOrder {

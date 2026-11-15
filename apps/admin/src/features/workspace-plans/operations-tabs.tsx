@@ -5,7 +5,7 @@ import { BellRingingIcon as BellRing, CalendarDotsIcon as CalendarClock, EyeSlas
 import { apiErrorMessage } from "@codementor/api-client";
 import { Button, Card, ConfirmButton, Field, Modal, SegmentedTabs, ServerPagination, StatusBadge, useToast, useUrlState } from "@codementor/ui";
 import { formatVnDate, formatVnd } from "@codementor/utils";
-import type { AdminPlan, AuditCategory, AuditEntry, BillingCycle, BillingNoticeKey, BillingNoticeMode, BillingPage, BillingSettings, SubscriberStats, WorkspaceCoupon, WorkspaceOrder } from "@codementor/types";
+import type { AdminPlan, AuditCategory, AuditEntry, BillingCycle, AuditTrail, BillingNoticeKey, BillingNoticeMode, BillingPage, BillingSettings, SubscriberStats, WorkspaceCoupon, WorkspaceOrder } from "@codementor/types";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { inputClassName } from "@/features/commerce/form-style";
 import { plansApi, type CouponInput } from "./api";
@@ -633,20 +633,51 @@ export function AuditTab() {
   const request = useAdminApi();
   const [page, setPage] = useUrlState("aPage", 1);
   const [category, setCategory] = useUrlState<AuditCategory | "">("aCat", "");
+  const [q, setQ] = useUrlState("aQ", "");
+  const [search, setSearch] = useState(q);
+  const [opened, setOpened] = useState<string | null>(null);
   const [data, setData] = useState<BillingPage<AuditEntry> | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     plansApi
-      .audit(request, { page, limit: 20, category: category || undefined })
+      .audit(request, { page, limit: 20, category: category || undefined, q: q || undefined })
       .then((d) => {
         setError("");
         setData(d);
       })
       .catch((e) => setError(apiErrorMessage(e)));
-  }, [request, page, category]);
+  }, [request, page, category, q]);
 
   return (
     <div className="space-y-3">
+      <form
+        className="flex flex-wrap items-end gap-2"
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setQ(search.trim());
+          setPage(1);
+        }}
+      >
+        <div className="min-w-0 flex-1 sm:flex-none">
+          <label htmlFor="audit-q" className="text-xs text-muted-foreground">Tìm trong nhật ký</label>
+          <input
+            id="audit-q"
+            type="search"
+            className={`${inputClassName} w-full sm:w-96`}
+            placeholder="Tên, email, mã đơn, mã giảm giá, nội dung…"
+            value={search}
+            maxLength={100}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <Button type="submit" variant="outline">Tìm</Button>
+        {q && (
+          <Button type="button" variant="ghost" onClick={() => { setQ(""); setSearch(""); setPage(1); }}>
+            Xoá tìm kiếm
+          </Button>
+        )}
+      </form>
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lọc nhật ký">
         {AUDIT_CATEGORIES.map((c) => (
           <Button key={c.value} size="sm" variant={category === c.value ? "default" : "outline"} aria-pressed={category === c.value}
@@ -665,31 +696,33 @@ export function AuditTab() {
               <th className="px-3 py-2 font-medium">Sự kiện</th>
               <th className="px-3 py-2 font-medium">Đối tượng</th>
               <th className="px-3 py-2 font-medium">Người thực hiện</th>
+              <th className="w-20 px-3 py-2 font-medium"><span className="sr-only">Chi tiết</span></th>
             </tr>
           </thead>
           <tbody>
-            {!data && !error && <tr><td colSpan={4} className="px-3 py-6"><div className="h-4 animate-pulse rounded bg-muted" /></td></tr>}
+            {!data && !error && <tr><td colSpan={5} className="px-3 py-6"><div className="h-4 animate-pulse rounded bg-muted" /></td></tr>}
             {data?.items.map((a) => {
               const summary = auditSummary(a.details);
               return (
-                <tr key={a.id} className="border-t align-top">
+                <tr key={a.id} className="border-t align-top hover:bg-muted/30">
                   <td className="px-3 py-2 text-xs text-muted-foreground">{formatVnDate(a.created_at, true)}</td>
                   <td className="px-3 py-2">
-                    <span className="font-medium">{actionLabel(a.action)}</span>
+                    <button type="button" className="text-left font-medium hover:text-primary hover:underline" onClick={() => setOpened(a.id)}>
+                      {actionLabel(a.action)}
+                    </button>
                     {summary.length > 0 && <span className="mt-0.5 block text-xs text-muted-foreground">{summary.join(" · ")}</span>}
-                    {a.details !== null && a.details !== undefined && (
-                      <details className="mt-1">
-                        <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">Dữ liệu gốc</summary>
-                        <pre className="mt-1 max-h-48 overflow-auto rounded-md bg-muted p-2 text-xs">{JSON.stringify(a.details, null, 2)}</pre>
-                      </details>
-                    )}
                   </td>
                   <td className="px-3 py-2"><AuditSubject entry={a} /></td>
                   <td className="px-3 py-2">{a.actor ?? <span className="text-muted-foreground">Hệ thống</span>}</td>
+                  <td className="px-3 py-2 text-right">
+                    <Button size="sm" variant="ghost" onClick={() => setOpened(a.id)}>Xem</Button>
+                  </td>
                 </tr>
               );
             })}
-            {data?.items.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Chưa có mục nào.</td></tr>}
+            {data?.items.length === 0 && (
+              <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">{q ? `Không có mục nào khớp "${q}".` : "Chưa có mục nào."}</td></tr>
+            )}
           </tbody>
         </table>
         {data && data.total > 0 && (
@@ -698,6 +731,84 @@ export function AuditTab() {
           </div>
         )}
       </Card>
+      <AuditEntryModal id={opened} onClose={() => setOpened(null)} onOpen={setOpened} />
     </div>
+  );
+}
+
+/** One audit entry in full, plus every entry about the same order, subscription, coupon or plan. */
+function AuditEntryModal({ id, onClose, onOpen }: { id: string | null; onClose: () => void; onOpen: (id: string) => void }) {
+  const request = useAdminApi();
+  const [data, setData] = useState<AuditTrail | null>(null);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!id) return;
+    let live = true;
+    plansApi
+      .auditEntry(request, id)
+      .then((d) => { if (live) { setError(""); setData(d); } })
+      .catch((e) => { if (live) setError(apiErrorMessage(e)); });
+    return () => { live = false; };
+  }, [request, id]);
+  const entry = data?.entry.id === id ? data.entry : null;
+  const json = entry ? JSON.stringify(entry, null, 2) : "";
+
+  return (
+    <Modal
+      open={id !== null}
+      onClose={() => { onClose(); setCopied(false); }}
+      title={entry ? actionLabel(entry.action) : "Chi tiết nhật ký"}
+      description={entry ? `${formatVnDate(entry.created_at, true)} · ${entry.action}` : undefined}
+      width="lg"
+    >
+      {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>}
+      {!entry && !error && <div className="h-40 animate-pulse rounded-md bg-muted" aria-busy="true" />}
+      {entry && (
+        <div className="space-y-4">
+          <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+            <div><dt className="text-xs text-muted-foreground">Người thực hiện</dt><dd>{entry.actor ?? "Hệ thống"}{entry.actor_email ? <span className="block text-xs text-muted-foreground">{entry.actor_email}</span> : null}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Đối tượng</dt><dd><AuditSubject entry={entry} /></dd></div>
+            <div><dt className="text-xs text-muted-foreground">Mã mục nhật ký</dt><dd className="font-mono text-xs break-all">{entry.id}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Mã đối tượng</dt><dd className="font-mono text-xs break-all">{entry.entity_id ?? "—"}</dd></div>
+          </dl>
+          <section>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Dữ liệu đầy đủ (JSON)</h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void navigator.clipboard?.writeText(json).then(() => setCopied(true))}
+              >
+                {copied ? "Đã chép" : "Chép JSON"}
+              </Button>
+            </div>
+            <pre className="max-h-[45vh] overflow-auto rounded-md bg-muted p-3 text-xs leading-relaxed">{json}</pre>
+          </section>
+          {data && data.trail.length > 1 && (
+            <section>
+              <h3 className="mb-1.5 text-sm font-semibold">Luồng sự kiện cùng đối tượng ({data.trail.length})</h3>
+              <ol className="space-y-1.5 border-l pl-4">
+                {data.trail.map((t) => (
+                  <li key={t.id} className="relative">
+                    <span className={`absolute top-1.5 -left-[21px] size-2.5 rounded-full border-2 border-background ${t.id === entry.id ? "bg-primary" : "bg-muted-foreground/40"}`} aria-hidden="true" />
+                    <details open={t.id === entry.id}>
+                      <summary className="cursor-pointer text-sm">
+                        <span className={t.id === entry.id ? "font-semibold" : ""}>{actionLabel(t.action)}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">{formatVnDate(t.created_at, true)} · {t.actor ?? "Hệ thống"}</span>
+                        {t.id !== entry.id && (
+                          <button type="button" className="ml-2 text-xs text-primary hover:underline" onClick={(e) => { e.preventDefault(); onOpen(t.id); }}>Mở</button>
+                        )}
+                      </summary>
+                      {t.id !== entry.id && <pre className="mt-1 max-h-48 overflow-auto rounded-md bg-muted p-2 text-xs">{JSON.stringify(t.details, null, 2)}</pre>}
+                    </details>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </div>
+      )}
+    </Modal>
   );
 }

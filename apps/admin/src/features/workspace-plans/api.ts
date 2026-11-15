@@ -6,7 +6,7 @@ import type {
   OverageOwner,
   WorkspacePlanUsage,
   AuditCategory,
-  AuditEntry,
+  AuditEntry, AuditTrail,
   BillingSettings,
   SubscriberStats,
   ApiResponse,
@@ -104,6 +104,7 @@ export const plansApi = {
     call<BillingSettings>(r, `${base}/settings`, "PUT", { ...body }),
   revenueReport: (r: Request, p: { from: string; to: string; bucket: ReportBucket }) =>
     call<WorkspaceRevenueReport>(r, `${base}/reports/revenue?${query(p)}`),
-  audit: (r: Request, p: { page: number; limit: number; category?: AuditCategory }) =>
+  audit: (r: Request, p: { page: number; limit: number; category?: AuditCategory; q?: string }) =>
     call<BillingPage<AuditEntry>>(r, `${base}/audit?${query(p)}`),
+  auditEntry: (r: Request, id: string) => call<AuditTrail>(r, `${base}/audit/${id}`),
 };

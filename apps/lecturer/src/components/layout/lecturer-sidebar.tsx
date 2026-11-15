@@ -38,9 +38,17 @@ export function LecturerSidebar({ collapsed, mobile, onToggle, onClose }: Lectur
           onClick={onClose}
           title={user?.displayName ?? "Hồ sơ"}
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-foreground text-xs font-medium text-background">
-            {(user?.displayName ?? "?").trim().charAt(0).toUpperCase()}
-          </span>
+          {user?.avatarUrl ? (
+            <span
+              aria-hidden="true"
+              className="size-8 shrink-0 rounded-md bg-muted bg-cover bg-center"
+              style={{ backgroundImage: `url(${JSON.stringify(user.avatarUrl)})` }}
+            />
+          ) : (
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-foreground text-xs font-medium text-background">
+              {(user?.displayName ?? "?").trim().charAt(0).toUpperCase()}
+            </span>
+          )}
           {!compact && (
             <span className="min-w-0 flex-1 leading-tight">
               <span className="block truncate text-sm font-medium">{user?.displayName}</span>

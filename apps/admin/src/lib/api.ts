@@ -1,6 +1,6 @@
 import type { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
-import type { CertificateDesign, LearningReportData, UiNotification } from "@codementor/ui";
+import type { CertificateDesign, CertificateRawData, Completion, LearningReportData, UiNotification } from "@codementor/ui";
 import { KINDS } from "@/features/moderation/types";
 import type {
   ContentKind,
@@ -931,6 +931,12 @@ export interface PlatformSettings {
   };
 }
 
+/** The signed-in administrator's own account. */
+export const accountApi = {
+  changePassword: (request: Request, body: { currentPassword: string; newPassword: string }) =>
+    unwrap<{ signedOut: boolean }>(request, "/me/password", { method: "POST", body }),
+};
+
 export const systemApi = {
   activity: (request: Request) => unwrap<SystemActivity>(request, "/system/activity"),
   settings: (request: Request) => unwrap<PlatformSettings>(request, "/system/settings"),
@@ -960,7 +966,8 @@ export interface AdminCertificate {
   subjectId: string;
   recipientName: string;
   email: string | null;
-  data: { subjectTitle: string };
+  data: CertificateRawData;
+  design: CertificateDesign;
   issuedAt: string;
   revokedAt: string | null;
   revokeReason: string | null;
@@ -980,6 +987,9 @@ export const certificatesApi = {
     ),
   revoke: (request: Request, id: string, reason: string) =>
     unwrap<void>(request, `/certificates/${id}/revoke`, { method: "POST", body: { reason } }),
+  /** Learners who completed a course or roadmap, with their certificate if claimed. */
+  completions: (request: Request, subject: "course" | "roadmap", id: string) =>
+    unwrap<Completion[]>(request, `/certificates/completions/${subject}/${id}`),
   templates: (request: Request) => unwrap<CertificateTemplate[]>(request, "/certificate-templates"),
   updateTemplate: (request: Request, id: string, body: { name: string; subject: null; design: CertificateDesign }) =>
     unwrap<CertificateTemplate>(request, `/certificate-templates/${id}`, { method: "PATCH", body }),
