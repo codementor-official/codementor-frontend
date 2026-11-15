@@ -21,10 +21,12 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@codementor/types";
-import { Button, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
+import { Button, CompletionsPanel, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
-import { coursesApi, learningReportsApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
+import { certificatesApi, coursesApi, learningReportsApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
+
+const CLIENT_URL = (process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 import type { ModerationDecision } from "@/features/moderation/types";
 import { LecturerFilter, useLecturerOptions } from "@/features/shared/lecturer-filter";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
@@ -152,7 +154,15 @@ export function CoursesPage() {
         description: (row) =>
           `${CONTENT_STATUS_LABELS[row.status as keyof typeof CONTENT_STATUS_LABELS] ?? row.status} · ${row.authorName ?? "không rõ"}`,
         width: "wide",
-        body: (row) => <ContentPreview item={{ ...row, kind: "courses" }} />,
+        body: (row) => (
+          <div className="space-y-6">
+            <ContentPreview item={{ ...row, kind: "courses" }} />
+            <section>
+              <h3 className="mb-2 text-sm font-semibold">Học viên đã hoàn thành</h3>
+              <CourseCompletions courseId={row.id} />
+            </section>
+          </div>
+        ),
         footer: (row) => (
           <>
             {row.status !== "published" && (
@@ -268,6 +278,12 @@ export function CoursesPage() {
       view={{ mode: view, onModeChange: setView, renderCard: (row) => <CourseCard row={row} /> }}
     />
   );
+}
+
+function CourseCompletions({ courseId }: { courseId: string }) {
+  const request = useAdminApi();
+  const load = useCallback(() => certificatesApi.completions(request, "course", courseId), [request, courseId]);
+  return <CompletionsPanel load={load} verifyBaseUrl={CLIENT_URL} />;
 }
 
 function CourseCard({ row }: { row: AdminCourseListItem }) {

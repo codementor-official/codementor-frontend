@@ -48,6 +48,7 @@ import {
   LEVELS,
   LEVEL_LABELS,
 } from "@/features/roadmaps/types";
+import { useEditedIds } from "@/features/review/edited-since-review";
 
 type Tab = "mine" | "catalogue";
 
@@ -67,6 +68,7 @@ export default function CoursesPage() {
  * query string.
  */
 function CoursesPageContent() {
+  const edited = useEditedIds("courses");
   const router = useRouter();
   const { user } = useAuth();
   // Breadcrumb ở studio trỏ về đây kèm id vì bản ghi không có trang riêng — mở sẵn drawer
@@ -267,15 +269,17 @@ function CoursesPageContent() {
                   </Button>
                 ) : (
                   <>
-                    <Button
-                      disabled={busy}
-                      onClick={() => act(() => api.courses.submit(row.id))}
-                      type="button"
-                      variant="outline"
-                    >
-                      <Send aria-hidden="true" className="size-4" />
-                      {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
-                    </Button>
+                    {(row.status !== "published" || edited(row.id)) && (
+                      <Button
+                        disabled={busy}
+                        onClick={() => act(() => api.courses.submit(row.id))}
+                        type="button"
+                        variant="outline"
+                      >
+                        <Send aria-hidden="true" className="size-4" />
+                        {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
+                      </Button>
+                    )}
                     {row.status === "published" && (
                       <ReasonButton
                         confirmLabel="Gửi yêu cầu"

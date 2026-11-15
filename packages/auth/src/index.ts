@@ -171,11 +171,6 @@ export function registrationUrl(config: KeycloakPublicConfig, redirectOrigin: st
   return realmUrl(config) + "/protocol/openid-connect/registrations?" + params.toString();
 }
 
-/** Keycloak account console — where a user changes password, email, or 2FA. */
-export function accountConsoleUrl(config: KeycloakPublicConfig): string {
-  return realmUrl(config) + "/account";
-}
-
 export function accessTokenOf(oidcUser: OidcUser | null): string | null {
   if (!oidcUser || oidcUser.expired) return null;
   return oidcUser.access_token;

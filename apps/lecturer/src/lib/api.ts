@@ -22,7 +22,8 @@ import type {
   VideoUploadConfig,
 } from "@/features/courses/types";
 import type { Article, ArticleCoverUpload, ArticleCoverUploadConfig, ArticleListItem } from "@/features/articles/types";
-import type { CertificateDesign, UiNotification } from "@codementor/ui";
+import type { CertificateDesign, Completion, UiNotification } from "@codementor/ui";
+import { trackContentWrite } from "@/features/review/edited-since-review";
 
 /**
  * Trình duyệt chỉ gọi BFF cùng origin. BFF đọc phiên HttpOnly, gắn access token rồi mới
@@ -36,6 +37,7 @@ const request = createApiClient({
 /** Every backend response is wrapped by the response interceptor in libs/platform. */
 export async function unwrap<T>(path: string, options?: Parameters<typeof request>[1]): Promise<T> {
   const response = await request<ApiResponse<T> | undefined>(path, options);
+  trackContentWrite(options?.method, path);
   // 204 No Content — mọi lệnh DELETE trả về thế này. Không có thân thì không có `data` để
   // bóc, và đọc `.data` của `undefined` là chỗ "can't access property data" nổ ra ngay khi
   // xoá thành công: bản ghi đã mất rồi mà màn hình vẫn báo lỗi.
@@ -139,6 +141,9 @@ export const api = {
   me: () => unwrap<UserProfile>("/me"),
   updateProfile: (input: UpdateProfileInput) =>
     unwrap<UserProfile>("/me", { method: "PATCH", body: { ...input } }),
+  /** Needs the current password; the server then signs the account out everywhere. */
+  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+    unwrap<{ signedOut: boolean }>("/me/password", { method: "POST", body }),
   /** URL ký sẵn để PUT ảnh đại diện thẳng lên S3; cùng endpoint với hồ sơ bên Client. */
   avatarUploadUrl: (body: { filename: string; contentType: string; sizeBytes: number }) =>
     unwrap<{ uploadUrl: string; headers: Record<string, string>; publicUrl: string }>(
@@ -405,6 +410,10 @@ export const api = {
    * tượng nhận từ token, nên giảng viên chỉ thấy thông báo gửi cho mình hoặc cho tất cả.
    */
   /** Mẫu chứng chỉ (ADR 0005). `subject: null` = dùng cho cả khóa học và lộ trình. */
+  /** Learners who completed a course or roadmap you own, with their certificate if claimed. */
+  completions: (subject: "course" | "roadmap", id: string) =>
+    unwrap<Completion[]>(`/certificates/completions/${subject}/${id}`),
+
   certificateTemplates: {
     list: () => unwrap<CertificateTemplate[]>("/certificate-templates"),
     get: (id: string) => unwrap<CertificateTemplate>(`/certificate-templates/${id}`),

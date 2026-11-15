@@ -12,6 +12,7 @@ export {
 } from "./breadcrumb-title-store";
 export { Button, buttonClassName } from "./button";
 export { Card, CardContent, CardHeader } from "./card";
+export { ChangePasswordCard } from "./change-password-card";
 export { ConfirmButton } from "./confirm-button";
 export { CourseCover } from "./course-cover";
 export { CoursePrice, CoursePriceBadges, formatVndPrice } from "./course-price";
@@ -98,6 +99,10 @@ export { StatusPage } from "./status-page";
 export { useUrlState } from "./use-url-state";
 export { ACCOUNT_SUSPENDED, APPEAL_EMAIL, AccountSuspendedNotice, formatSuspensionLeft } from "./account-suspended-notice";
 export { CertificateView } from "./certificate/certificate-view";
+export { CertificateDialog } from "./certificate/certificate-dialog";
+export type { IssuedCertificate } from "./certificate/certificate-dialog";
+export { CompletionsPanel } from "./certificate/completions-panel";
+export type { Completion } from "./certificate/completions-panel";
 export { CertificateDesignForm } from "./certificate/certificate-design-form";
 export {
   CERTIFICATE_PLACEHOLDERS,

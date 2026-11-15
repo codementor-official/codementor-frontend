@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { BookOpenTextIcon as BookOpenCheck, EyeIcon as Eye, EyeSlashIcon as EyeOff, SparkleIcon as Sparkles } from "@phosphor-icons/react/ssr";
 import { AccountSuspendedNotice, Button, Input } from "@codementor/ui";
 import { BrandLogo } from "@/components/brand-logo";
+
+const CLIENT_URL = (process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 import { useAuth } from "@/providers/auth-provider";
 
 export function LoginForm({
@@ -74,6 +76,7 @@ export function LoginForm({
           <form className="mt-8 space-y-5" onSubmit={(event) => void submit(event)}>
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="lecturer-email">Email hoặc tên đăng nhập</label><Input id="lecturer-email" autoComplete="username" autoFocus placeholder="codementor@gmail.com" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={pending} /></div>
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="lecturer-password">Mật khẩu</label><Input id="lecturer-password" autoComplete="current-password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} required disabled={pending} rightSlot={<button type="button" className="text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>} /></div>
+            <a className="-mt-2 block text-right text-xs font-medium text-primary hover:underline" href={`${CLIENT_URL}/forgot-password`}>Quên mật khẩu?</a>
             {suspended && <AccountSuspendedNotice until={suspendedUntil} reason={suspensionReason} />}
             {error && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
             <Button className="w-full" type="submit" disabled={status === "loading" || pending}>{pending ? "Đang đăng nhập…" : "Vào trang giảng viên"}</Button>

@@ -46,6 +46,7 @@ import {
   ARTICLE_STATUS_TONES,
   type ArticleListItem,
 } from "@/features/articles/types";
+import { useEditedIds } from "@/features/review/edited-since-review";
 
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
 
@@ -332,6 +333,7 @@ function ArticleDrawerActions({
   onRestore: () => void;
   onRequestRemoval: (reason: string) => void;
 }) {
+  const edited = useEditedIds("articles");
   return (
     <>
       {row.status === "pending_review" ? (
@@ -344,10 +346,12 @@ function ArticleDrawerActions({
         </Button>
       ) : (
         <>
-          <Button disabled={busy} onClick={onSubmit} type="button" variant="outline">
-            <Send aria-hidden="true" className="size-4" />
-            {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
-          </Button>
+          {(row.status !== "published" || edited(row.id)) && (
+            <Button disabled={busy} onClick={onSubmit} type="button" variant="outline">
+              <Send aria-hidden="true" className="size-4" />
+              {row.status === "published" ? "Gửi duyệt lại" : "Gửi duyệt"}
+            </Button>
+          )}
           {row.status === "published" && (
             <ReasonButton
               confirmLabel="Gửi yêu cầu"

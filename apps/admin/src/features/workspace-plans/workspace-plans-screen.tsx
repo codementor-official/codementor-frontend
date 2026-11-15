@@ -25,7 +25,7 @@ const TABS: { value: Tab; label: string }[] = [
 ];
 
 /** Filters and pages each tab keeps in the URL; reset when another tab is opened with filters. */
-const TAB_PARAMS = ["rPeriod", "rBucket", "sPage", "sQ", "sPlan", "sState", "oPage", "oStatus", "oQ", "aPage", "aCat"];
+const TAB_PARAMS = ["rPeriod", "rBucket", "sPage", "sQ", "sPlan", "sState", "oPage", "oStatus", "oQ", "aPage", "aCat", "aQ"];
 
 export function WorkspacePlansScreen() {
   const [tab, setTab] = useUrlState<Tab>("tab", "overview");

@@ -2,12 +2,15 @@
 
 import { useCallback, type ReactNode } from "react";
 import { GearIcon as Settings } from "@phosphor-icons/react/ssr";
-import { Card, CardContent, CardHeader, InfoHint, PageHeader, RefreshButton } from "@codementor/ui";
+import { Card, CardContent, CardHeader, ChangePasswordCard, InfoHint, PageHeader, RefreshButton } from "@codementor/ui";
 import { AiConfigCard } from "@/features/ai-operations/ai-operations-page";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { JudgeConfigCard } from "@/features/code-judge/code-judge-page";
 import { useSummary } from "@codementor/ui";
-import { aiApi, judgeApi, systemApi, type PlatformSettings } from "@/lib/api";
+import { accountApi, aiApi, judgeApi, systemApi, type PlatformSettings } from "@/lib/api";
+import { useAdminAuth } from "@/features/auth/auth-provider";
+
+const CLIENT_URL = (process.env.NEXT_PUBLIC_CLIENT_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
 const ENV_HINT =
   "Chỉ đọc. Đổi bằng biến môi trường trong .env của backend rồi restart các service liên quan.";
@@ -19,6 +22,7 @@ const ENV_HINT =
  */
 export function SettingsPage() {
   const request = useAdminApi();
+  const { logout } = useAdminAuth();
   const platform = useSummary(useCallback(() => systemApi.settings(request), [request]));
   const ai = useSummary(useCallback(() => aiApi.config(request), [request]));
   const judge = useSummary(useCallback(() => judgeApi.config(request), [request]));
@@ -40,6 +44,11 @@ export function SettingsPage() {
         )}
         {ai.data ? <AiConfigCard config={ai.data} /> : <Unavailable loading={ai.loading} source="ai-service" />}
         <JudgeConfigCard config={judge.data} loading={judge.loading} />
+        <ChangePasswordCard
+          forgotHref={`${CLIENT_URL}/forgot-password`}
+          onChanged={() => void logout()}
+          submit={(body) => accountApi.changePassword(request, body)}
+        />
       </div>
     </div>
   );

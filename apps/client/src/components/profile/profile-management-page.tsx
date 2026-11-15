@@ -11,7 +11,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CharCount, FieldError, fieldA11y, Input, Modal, SegmentedTabs, useFieldErrors, useToast } from "@codementor/ui";
+import { ChangePasswordCard, CharCount, FieldError, fieldA11y, Input, Modal, SegmentedTabs, useFieldErrors, useToast } from "@codementor/ui";
 import { githubHandle, handle, length, url } from "@codementor/utils";
 
 type AccountTab = "profile" | "settings" | "personalization";
@@ -362,6 +362,7 @@ function ProfilePanel() {
 
 export function ProfileManagementPage({ initialTab = "profile" }: { initialTab?: AccountTab }) {
   const [tab, setTab] = useState<AccountTab>(initialTab);
+  const { signOut } = useAuth();
   function changeTab(value: string) {
     const next = value as AccountTab; setTab(next);
     window.history.replaceState(null, "", next === "profile" ? "/profile" : `/profile?tab=${next}`);
@@ -373,7 +374,16 @@ export function ProfileManagementPage({ initialTab = "profile" }: { initialTab?:
       <div role="tabpanel">
         <EmailVerificationCard />
         {tab === "profile" && <ProfilePanel />}
-        {tab === "settings" && <SettingsPanel />}
+        {tab === "settings" && (
+          <div className="grid gap-4">
+            <SettingsPanel />
+            <ChangePasswordCard
+              forgotHref="/forgot-password"
+              onChanged={() => void signOut().finally(() => window.location.assign("/login"))}
+              submit={(body) => api.account.changePassword(body)}
+            />
+          </div>
+        )}
         {tab === "personalization" && <PersonalizationPanel />}
       </div>
     </div>

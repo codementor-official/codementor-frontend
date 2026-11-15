@@ -38,6 +38,7 @@ import {
   type Draft,
 } from "@/features/articles/types";
 import { api, type Tag } from "@/lib/api";
+import { useEditedIds } from "@/features/review/edited-since-review";
 
 /** Ứng dụng người học, để mở xem trước bài. */
 const CLIENT_URL =
@@ -62,6 +63,7 @@ function signature(draft: Draft): string {
 
 export default function ArticleStudioPage() {
   const { id } = useParams<{ id: string }>();
+  const edited = useEditedIds("articles");
   const toast = useToast();
 
   const [article, setArticle] = useState<Article | null>(null);
@@ -329,22 +331,24 @@ export default function ArticleStudioPage() {
               </Button>
             ) : (
               <>
-                <Button
-                  disabled={cantWrite}
-                  onClick={() =>
-                    void act(async () => {
-                      await persistDraft();
-                      await api.articles.submit(id);
-                    }, "Đã gửi duyệt")
-                  }
-                  title={blocker}
-                  type="button"
-                >
-                  <Send aria-hidden="true" className="size-4" />
-                  {article.status === "published"
-                    ? "Gửi duyệt lại"
-                    : "Gửi duyệt"}
-                </Button>
+                {(article.status !== "published" || edited(id)) && (
+                  <Button
+                    disabled={cantWrite}
+                    onClick={() =>
+                      void act(async () => {
+                        await persistDraft();
+                        await api.articles.submit(id);
+                      }, "Đã gửi duyệt")
+                    }
+                    title={blocker}
+                    type="button"
+                  >
+                    <Send aria-hidden="true" className="size-4" />
+                    {article.status === "published"
+                      ? "Gửi duyệt lại"
+                      : "Gửi duyệt"}
+                  </Button>
+                )}
                 {article.status === "published" && (
                   <ReasonButton
                     confirmLabel="Gửi yêu cầu"

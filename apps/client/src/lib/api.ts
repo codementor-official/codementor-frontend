@@ -272,6 +272,9 @@ export const api = {
         >
       >,
     ) => unwrap<AccountProfile>("/me", { method: "PATCH", body }),
+    /** Needs the current password; the server then signs the account out everywhere. */
+    changePassword: (body: { currentPassword: string; newPassword: string }) =>
+      unwrap<{ signedOut: boolean }>("/me/password", { method: "POST", body }),
     avatarUploadUrl: (body: {
       filename: string;
       contentType: string;
