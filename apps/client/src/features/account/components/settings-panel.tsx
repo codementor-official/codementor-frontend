@@ -175,7 +175,7 @@ export function SettingsPanel() {
         </Card>
         <Card className="p-5 sm:p-6">
           <h2 className="flex items-center gap-2 text-base font-bold text-navy"><ShieldCheck className="h-4 w-4 text-text-muted" /> Tài khoản & bảo mật</h2>
-          <p className="mt-2 text-sm leading-relaxed text-text-muted">Mật khẩu, xác thực đa yếu tố và phiên đăng nhập do Keycloak quản lý. CodeMentor không lưu bản sao mật khẩu trong Profile.</p>
+          <p className="mt-2 text-sm leading-relaxed text-text-muted">Đổi mật khẩu ở khung "Đổi mật khẩu" bên dưới; sau khi đổi, mọi thiết bị sẽ được đăng xuất. Mật khẩu được mã hoá ở hệ thống đăng nhập, hồ sơ không lưu bản sao nào.</p>
         </Card>
       </div>
 
