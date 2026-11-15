@@ -22,7 +22,7 @@ import type {
   VideoUploadConfig,
 } from "@/features/courses/types";
 import type { Article, ArticleCoverUpload, ArticleCoverUploadConfig, ArticleListItem } from "@/features/articles/types";
-import type { CertificateDesign, Completion, UiNotification } from "@codementor/ui";
+import type { CertificateDesign, CompletionsPage, CompletionsQuery, UiNotification } from "@codementor/ui";
 import { trackContentWrite } from "@/features/review/edited-since-review";
 
 /**
@@ -411,8 +411,8 @@ export const api = {
    */
   /** Mẫu chứng chỉ (ADR 0005). `subject: null` = dùng cho cả khóa học và lộ trình. */
   /** Learners who completed a course or roadmap you own, with their certificate if claimed. */
-  completions: (subject: "course" | "roadmap", id: string) =>
-    unwrap<Completion[]>(`/certificates/completions/${subject}/${id}`),
+  completions: (subject: "course" | "roadmap", id: string, q: CompletionsQuery) =>
+    unwrap<CompletionsPage>(`/certificates/completions/${subject}/${id}${query({ ...q })}`),
 
   certificateTemplates: {
     list: () => unwrap<CertificateTemplate[]>("/certificate-templates"),

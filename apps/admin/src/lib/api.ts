@@ -1,6 +1,6 @@
 import type { createApiClient } from "@codementor/api-client";
 import type { ApiResponse } from "@codementor/types";
-import type { CertificateDesign, CertificateRawData, Completion, LearningReportData, UiNotification } from "@codementor/ui";
+import type { CertificateDesign, CertificateRawData, CompletionsPage, CompletionsQuery, LearningReportData, UiNotification } from "@codementor/ui";
 import { KINDS } from "@/features/moderation/types";
 import type {
   ContentKind,
@@ -78,8 +78,10 @@ export const moderationApi = {
   lessonContent: (request: Request, courseId: string, lessonId: string) =>
     unwrap<{
       summary?: string;
+      objectives?: string[];
       contentHtml?: string;
-      media?: { url: string };
+      exerciseBrief?: string[];
+      media?: { url: string; durationSeconds?: number; captionsUrl?: string };
     } | null>(request, `/courses/${courseId}/lessons/${lessonId}/content`),
 
   /**
@@ -980,16 +982,13 @@ export const learningReportsApi = {
 };
 
 export const certificatesApi = {
-  issued: (request: Request, query: { q?: string; page: number; limit?: number }) =>
-    unwrap<{ items: AdminCertificate[]; total: number }>(
-      request,
-      `/certificates/admin?page=${query.page}&limit=${query.limit ?? 20}${query.q ? `&q=${encodeURIComponent(query.q)}` : ""}`,
-    ),
+  issued: (request: Request, query: { q?: string; status?: "active" | "revoked"; subject?: "course" | "roadmap"; page: number; limit?: number }) =>
+    unwrap<{ items: AdminCertificate[]; total: number }>(request, `/certificates/admin${search({ ...query, limit: query.limit ?? 20 })}`),
   revoke: (request: Request, id: string, reason: string) =>
     unwrap<void>(request, `/certificates/${id}/revoke`, { method: "POST", body: { reason } }),
   /** Learners who completed a course or roadmap, with their certificate if claimed. */
-  completions: (request: Request, subject: "course" | "roadmap", id: string) =>
-    unwrap<Completion[]>(request, `/certificates/completions/${subject}/${id}`),
+  completions: (request: Request, subject: "course" | "roadmap", id: string, query: CompletionsQuery) =>
+    unwrap<CompletionsPage>(request, `/certificates/completions/${subject}/${id}${search({ ...query })}`),
   templates: (request: Request) => unwrap<CertificateTemplate[]>(request, "/certificate-templates"),
   updateTemplate: (request: Request, id: string, body: { name: string; subject: null; design: CertificateDesign }) =>
     unwrap<CertificateTemplate>(request, `/certificate-templates/${id}`, { method: "PATCH", body }),

@@ -699,7 +699,7 @@ function RoadmapCourseRow({
  * bên trong một bài học khi khoá học đang chờ duyệt trỏ tới nó — `compact` chỉ bớt cỡ chữ
  * tiêu đề, nội dung hiện đủ như nhau ở cả hai nơi vì admin cần đọc thật, không phải liếc qua.
  */
-function ExerciseSummary({
+export function ExerciseSummary({
   exercise,
   compact = false,
   hideReason = false,

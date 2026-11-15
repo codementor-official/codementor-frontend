@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   ArchiveIcon as Archive,
   BookOpenIcon as BookOpen,
@@ -21,7 +22,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { ApiClientError } from "@codementor/api-client";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@codementor/types";
-import { Button, CompletionsPanel, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
+import { buttonClassName, Button, CompletionsPanel, type CompletionsQuery, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { certificatesApi, coursesApi, learningReportsApi, moderationApi, type AdminCourseListItem } from "@/lib/api";
@@ -165,6 +166,9 @@ export function CoursesPage() {
         ),
         footer: (row) => (
           <>
+            <Link className={buttonClassName("outline")} href={`/courses/${row.id}`}>
+              Mở chi tiết
+            </Link>
             {row.status !== "published" && (
               <ConfirmButton
                 confirmLabel="Xoá khoá học"
@@ -282,7 +286,7 @@ export function CoursesPage() {
 
 function CourseCompletions({ courseId }: { courseId: string }) {
   const request = useAdminApi();
-  const load = useCallback(() => certificatesApi.completions(request, "course", courseId), [request, courseId]);
+  const load = useCallback((query: CompletionsQuery) => certificatesApi.completions(request, "course", courseId, query), [request, courseId]);
   return <CompletionsPanel load={load} verifyBaseUrl={CLIENT_URL} />;
 }
 
