@@ -25,6 +25,15 @@ export interface ViewerLesson {
 
 type LessonContent = Awaited<ReturnType<typeof moderationApi.lessonContent>>;
 
+/** 19 → "0:19", 3725 → "1:02:05". */
+const clock = (seconds: number) => {
+  const s = Math.round(seconds);
+  const hh = Math.floor(s / 3600);
+  const mm = Math.floor((s % 3600) / 60);
+  const ss = String(s % 60).padStart(2, "0");
+  return hh ? `${hh}:${String(mm).padStart(2, "0")}:${ss}` : `${mm}:${ss}`;
+};
+
 /** One lesson as the learner gets it: video (with captions), summary, objectives, body or exercise. */
 export function LessonPane({
   courseId,
@@ -116,7 +125,7 @@ export function LessonPane({
               />
             )}
             {body?.media?.durationSeconds ? (
-              <p className="text-xs text-muted-foreground">Thời lượng video: {Math.round(body.media.durationSeconds / 60)} phút</p>
+              <p className="text-xs text-muted-foreground">Thời lượng video: {clock(body.media.durationSeconds)}</p>
             ) : null}
             {body?.summary && (
               <section>
