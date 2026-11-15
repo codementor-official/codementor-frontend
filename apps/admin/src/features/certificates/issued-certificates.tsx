@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiErrorMessage } from "@codementor/api-client";
 import { FileXlsIcon as FileXls } from "@phosphor-icons/react/ssr";
-import { Button, CertificateDialog, Input, ReasonButton, downloadIssuedCertificatesXlsx, useToast } from "@codementor/ui";
+import { Button, CertificateDialog, Input, ReasonButton, Select, downloadIssuedCertificatesXlsx, useToast } from "@codementor/ui";
 import { collectAllPages } from "@codementor/utils";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { certificatesApi, type AdminCertificate } from "@/lib/api";
@@ -23,13 +23,16 @@ export function IssuedCertificates() {
   const [q, setQ] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [status, setStatus] = useState<"" | "active" | "revoked">("");
+  const [subject, setSubject] = useState<"" | "course" | "roadmap">("");
+  const filters = { status: status || undefined, subject: subject || undefined };
   const [data, setData] = useState<{ items: AdminCertificate[]; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [shown, setShown] = useState<AdminCertificate | null>(null);
 
   const load = useCallback(() => {
-    certificatesApi.issued(request, { q: query, page }).then(setData, (cause) => setError(apiErrorMessage(cause)));
-  }, [request, query, page]);
+    certificatesApi.issued(request, { q: query, status: status || undefined, subject: subject || undefined, page }).then(setData, (cause) => setError(apiErrorMessage(cause)));
+  }, [request, query, status, subject, page]);
   useEffect(load, [load]);
 
   const revoke = async (row: AdminCertificate, reason: string) => {
@@ -48,7 +51,7 @@ export function IssuedCertificates() {
     setExporting(true);
     try {
       const all = await collectAllPages(async (next) => ({
-        ...(await certificatesApi.issued(request, { q: query, page: next, limit: 100 })),
+        ...(await certificatesApi.issued(request, { q: query, ...filters, page: next, limit: 100 })),
         limit: 100,
       }));
       await downloadIssuedCertificatesXlsx({ rows: all.items, query, total: all.total });
@@ -77,6 +80,31 @@ export function IssuedCertificates() {
             Tìm
           </Button>
         </form>
+        <Select
+          label="Lọc theo trạng thái"
+          value={status}
+          onChange={(v) => { setStatus(v as typeof status); setPage(1); }}
+          options={[
+            { value: "", label: "Mọi trạng thái" },
+            { value: "active", label: "Hiệu lực" },
+            { value: "revoked", label: "Đã thu hồi" },
+          ]}
+        />
+        <Select
+          label="Lọc theo loại"
+          value={subject}
+          onChange={(v) => { setSubject(v as typeof subject); setPage(1); }}
+          options={[
+            { value: "", label: "Khóa học và lộ trình" },
+            { value: "course", label: "Khóa học" },
+            { value: "roadmap", label: "Lộ trình" },
+          ]}
+        />
+        {(query || status || subject) && (
+          <Button type="button" variant="ghost" onClick={() => { setQ(""); setQuery(""); setStatus(""); setSubject(""); setPage(1); }}>
+            Xoá bộ lọc
+          </Button>
+        )}
         <Button type="button" variant="outline" className="ml-auto" disabled={!data?.total || exporting} onClick={() => void exportXlsx()}>
           <FileXls className="size-4" aria-hidden /> {exporting ? "Đang tạo file…" : "Xuất Excel"}
         </Button>

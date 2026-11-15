@@ -102,7 +102,7 @@ export { CertificateView } from "./certificate/certificate-view";
 export { CertificateDialog } from "./certificate/certificate-dialog";
 export type { IssuedCertificate } from "./certificate/certificate-dialog";
 export { CompletionsPanel } from "./certificate/completions-panel";
-export type { Completion } from "./certificate/completions-panel";
+export type { Completion, CompletionsPage, CompletionsQuery } from "./certificate/completions-panel";
 export { CertificateDesignForm } from "./certificate/certificate-design-form";
 export {
   CERTIFICATE_PLACEHOLDERS,

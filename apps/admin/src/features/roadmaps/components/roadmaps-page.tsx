@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   ArchiveIcon as Archive,
   ChecksIcon as CheckCheck,
@@ -27,7 +28,7 @@ import {
   LEVELS,
   LEVEL_LABELS,
 } from "@codementor/types";
-import { Button, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
+import { buttonClassName, Button, ConfirmButton, CourseCover, ManagePage, ReasonButton, RejectDialogButton, Select, StatusBadge, useToast, type ViewMode, useUrlState } from "@codementor/ui";
 import { ContentPreview } from "@/features/moderation/content-preview";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { KpiStrip, countOf, useSummary } from "@codementor/ui";
@@ -157,6 +158,9 @@ export function RoadmapsPage() {
         body: (row) => <ContentPreview item={{ ...row, kind: "roadmaps" }} />,
         footer: (row) => (
           <>
+            <Link className={buttonClassName("outline")} href={`/learning-paths/${row.id}`}>
+              Mở chi tiết
+            </Link>
             {row.status !== "published" && (
               <ConfirmButton
                 confirmLabel="Xoá lộ trình"

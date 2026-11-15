@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   CompletionsPanel,
+  type CompletionsQuery,
   Modal,
   PageHeader,
   ReasonButton,
@@ -140,7 +141,7 @@ export default function CourseStudioPage() {
 
   const toast = useToast();
   const [tab, setTab] = useState<"curriculum" | "metadata" | "purchases" | "completions">("curriculum");
-  const loadCompletions = useCallback(() => api.completions("course", id), [id]);
+  const loadCompletions = useCallback((query: CompletionsQuery) => api.completions("course", id, query), [id]);
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("tab");
     if (requested === "purchases" || requested === "metadata" || requested === "completions") setTab(requested);
