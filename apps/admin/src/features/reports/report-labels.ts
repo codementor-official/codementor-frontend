@@ -76,8 +76,8 @@ export const SUSPENSION_OPTIONS = [
 ];
 
 /**
- * Đường dẫn bên app học viên nơi nội dung bị báo cáo hiển thị — tài liệu nhóm mở về nhóm chứa
- * nó. Chỉ trả path: `/api/auth/client-handoff` ghép origin của client và đăng nhập sẵn cho admin.
+ * Đường dẫn bên app học viên nơi nội dung bị báo cáo hiển thị — tài liệu nhóm mở thẳng bản xem
+ * trước của đúng tài liệu đó trong nhóm chứa nó. Chỉ trả path: `/api/auth/client-handoff` ghép origin của client và đăng nhập sẵn cho admin.
  */
 export function reportedContentPath(
   report: Pick<AdminContentReport, "targetType" | "targetId" | "targetRef" | "targetSlug">,
@@ -95,6 +95,8 @@ export function reportedContentPath(
     case "WORKSPACE":
       return report.targetSlug ? `/workspace/${encodeURIComponent(report.targetSlug)}` : null;
     case "DOCUMENT":
-      return report.targetSlug ? `/workspace/${encodeURIComponent(report.targetSlug)}?tab=documents` : null;
+      return report.targetSlug
+        ? `/workspace/${encodeURIComponent(report.targetSlug)}?tab=documents&doc=${encodeURIComponent(report.targetId)}`
+        : null;
   }
 }

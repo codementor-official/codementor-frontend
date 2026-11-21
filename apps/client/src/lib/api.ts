@@ -694,6 +694,9 @@ export const api = {
         `/workspaces/${encodeURIComponent(slug)}/documents/${id}`,
         { method: "PATCH", body },
       ),
+    /** One document, for a link straight to it (admin opening a reported file). */
+    document: (slug: string, id: string) =>
+      unwrap<WorkspaceDocument>(`/workspaces/${encodeURIComponent(slug)}/documents/${encodeURIComponent(id)}`),
     deleteDocument: (slug: string, id: string, reason: string) =>
       unwrap<void>(`/workspaces/${encodeURIComponent(slug)}/documents/${id}`, {
         method: "DELETE",
