@@ -84,6 +84,29 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [reporting, setReporting] = useState<WorkspaceDocument | null>(null);
+  // `?doc=<id>`: a report in admin links to this exact file, which may not be on the current page.
+  const [linkedDoc, setLinkedDoc] = useUrlState("doc", "");
+  useEffect(() => {
+    if (!linkedDoc) return;
+    let live = true;
+    Promise.all([
+      api.workspaces.document(detail.slug, linkedDoc),
+      api.workspaces.documentDownload(detail.slug, linkedDoc, true),
+    ])
+      .then(([document, signed]) => {
+        if (!live) return;
+        setPreviewing(document);
+        setPreviewUrl(signed.url);
+      })
+      .catch((e) => {
+        if (!live) return;
+        toast.error(messageOf(e));
+        setLinkedDoc("");
+      });
+    return () => {
+      live = false;
+    };
+  }, [linkedDoc, detail.slug, toast, setLinkedDoc]);
   const canUpload =
     detail.currentMembership.role === "owner" ||
     detail.currentMembership.permissions.upload_doc;
@@ -466,6 +489,7 @@ export function WorkspaceDocumentsTab({ detail }: { detail: WorkspaceDetail }) {
           onClose={() => {
             setPreviewing(null);
             setPreviewUrl(null);
+            setLinkedDoc("");
           }}
           onDownload={() => void download(previewing)}
         />
@@ -648,6 +672,7 @@ function DocumentPreviewDialog({
               {formatBytes(document.sizeBytes)} · tải bởi{" "}
               {document.uploaderName ?? "Không rõ"} ·{" "}
               {formatDate(document.uploadedAt)}
+              {document.deletedAt && <span className="font-semibold text-danger"> · Đã gỡ khỏi nhóm</span>}
             </p>
           </div>
           <Button size="sm" variant="outline" onClick={onDownload}>
