@@ -180,7 +180,7 @@ export function SolvePreview({ exercise, theme, run, back, actions }: SolvePrevi
               </span>
             </div>
             <h1 className="mb-3 text-lg font-semibold">{exercise.title}</h1>
-            <div className="prose prose-sm max-w-none text-sm">
+            <div className="rich-text">
               <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
                 {exercise.content?.statement || "_Bài này chưa có đề._"}
               </ReactMarkdown>

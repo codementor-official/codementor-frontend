@@ -352,7 +352,7 @@ function ExerciseDrawerBody({ row }: { row: ExerciseListItem }) {
 
             <DetailSection icon={FileText} title="Đề bài">
               {exercise.content?.statement ? (
-                <div className="prose prose-sm max-w-none text-sm">
+                <div className="rich-text">
                   <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
                     {exercise.content.statement}
                   </ReactMarkdown>

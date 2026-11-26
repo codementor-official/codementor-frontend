@@ -198,6 +198,28 @@ export function toDraft(chapters: StoredChapter[]): DraftChapter[] {
   }));
 }
 
+/**
+ * Giữ khoá React qua một lần lưu: hàng vừa được cấp `id` vẫn là hàng cũ trên màn hình.
+ * Đổi khoá ở đây là remount panel đang mở, mất chữ đang gõ và video đang tải. Khớp theo
+ * VỊ TRÍ vì lưu không sắp xếp lại chương/bài.
+ */
+export function keepKeys(previous: DraftChapter[], next: DraftChapter[]): DraftChapter[] {
+  const keep = (old: { key: string; id?: string } | undefined, row: { key: string; id?: string }) =>
+    old && (!old.id || old.id === row.id) ? old.key : row.key;
+
+  return next.map((chapter, index) => {
+    const old = previous[index];
+    return {
+      ...chapter,
+      key: keep(old, chapter),
+      lessons: chapter.lessons.map((lesson, position) => ({
+        ...lesson,
+        key: keep(old?.lessons[position], lesson),
+      })),
+    };
+  });
+}
+
 export function toPayload(chapters: DraftChapter[]) {
   return chapters.map((chapter) => ({
     ...(chapter.id ? { id: chapter.id } : {}),

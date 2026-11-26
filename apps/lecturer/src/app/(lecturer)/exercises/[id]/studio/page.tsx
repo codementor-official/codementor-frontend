@@ -123,10 +123,13 @@ export default function ExerciseStudioPage() {
     };
   }, [id]);
 
-  const run = async (action: () => Promise<Exercise>, done: string) => {
+  const run = async (action: () => Promise<unknown>, done: string) => {
     setSaving(true);
     try {
-      const updated = await action();
+      await action();
+      // Nạp lại thay vì dùng câu trả lời của thao tác: gửi/hủy duyệt không trả `content`,
+      // đem đặt vào bản nháp là studio trống trơn và lần "Lưu" sau ghi đè mất cả bài.
+      const updated = await api.exercises.get(id);
       setExercise(updated);
       setDraft(toDraft(updated));
       toast.success(done);

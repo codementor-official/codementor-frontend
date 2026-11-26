@@ -366,7 +366,7 @@ export function ExerciseBriefForm({
         />
 
         {previewStatement ? (
-          <div className="prose prose-sm max-w-none rounded-lg border p-4 text-sm">
+          <div className="rich-text rounded-lg border p-4">
             <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
               {value.content.statement || "_Chưa có đề bài._"}
             </ReactMarkdown>

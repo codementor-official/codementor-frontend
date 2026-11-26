@@ -34,6 +34,7 @@ import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDr
 import { CurriculumTree, type Selection } from "@/features/courses/curriculum-tree";
 import { Inspector, type ContentSaveRef } from "@/features/courses/inspector";
 import {
+  keepKeys,
   toDraft,
   toPayload,
   type Course,
@@ -74,33 +75,6 @@ interface Meta {
  */
 function signature(meta: Meta, chapters: DraftChapter[]): string {
   return JSON.stringify([meta, toPayload(chapters)]);
-}
-
-/**
- * Giữ nguyên mục đang chọn qua một lần lưu, theo VỊ TRÍ chứ không theo `key`.
- *
- * `toDraft` sinh `key` mới cho mọi hàng CHƯA có `id` (xem `keyFor` ở types.ts) — một bài
- * vừa tạo chưa lưu có key ngẫu nhiên, và sau khi lưu nó có `id` thật nên key đổi theo.
- * Không remap thì `selection` giữ key cũ, panel bên phải không khớp hàng nào trong cây
- * mới và trắng trơn ngay sau khi lưu — đúng lúc người soạn vừa bấm "Lưu" xong. Vị trí ổn
- * định vì lưu không tự sắp xếp lại chương/bài.
- */
-function remapSelection(
-  prevChapters: DraftChapter[],
-  nextChapters: DraftChapter[],
-  selection: Selection,
-): Selection {
-  if (!selection) return null;
-  const chapterIndex = prevChapters.findIndex((chapter) => chapter.key === selection.chapterKey);
-  const nextChapter = chapterIndex >= 0 ? nextChapters[chapterIndex] : undefined;
-  if (!nextChapter) return null;
-  if (selection.kind === "chapter") return { kind: "chapter", chapterKey: nextChapter.key };
-
-  const lessonIndex = prevChapters[chapterIndex].lessons.findIndex(
-    (lesson) => lesson.key === selection.lessonKey,
-  );
-  const nextLesson = lessonIndex >= 0 ? nextChapter.lessons[lessonIndex] : undefined;
-  return nextLesson ? { kind: "lesson", chapterKey: nextChapter.key, lessonKey: nextLesson.key } : null;
 }
 
 /**
@@ -183,9 +157,8 @@ export default function CourseStudioPage() {
 
   const { scheduleDelete } = useUndoableDelete();
   const [savedSignature, setSavedSignature] = useState("");
-  // Nhớ mục đang chọn từ TRƯỚC lần lưu để `apply` remap được nó sang key mới — xem
-  // `remapSelection`. Effect riêng vì `apply` phải giữ chữ ký ổn định ([] deps) để không
-  // tạo lại mỗi lần render.
+  // Cây TRƯỚC lần lưu, để `apply` giữ nguyên khoá của từng hàng — xem `keepKeys`. Ref
+  // riêng vì `apply` phải giữ chữ ký ổn định ([] deps) để không tạo lại mỗi lần render.
   const chaptersRef = useRef<DraftChapter[]>([]);
   useEffect(() => {
     chaptersRef.current = chapters;
@@ -201,12 +174,11 @@ export default function CourseStudioPage() {
 
   const apply = useCallback((loaded: Course) => {
     const nextMeta = toMeta(loaded);
-    const nextChapters = toDraft(loaded.chapters ?? []);
+    const nextChapters = keepKeys(chaptersRef.current, toDraft(loaded.chapters ?? []));
     setCourse(loaded);
     setMeta(nextMeta);
     setChapters(nextChapters);
     setSavedSignature(signature(nextMeta, nextChapters));
-    setSelection((current) => remapSelection(chaptersRef.current, nextChapters, current));
   }, []);
 
   useEffect(() => {
