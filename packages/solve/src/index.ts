@@ -1,4 +1,5 @@
 export { SolvePreview } from "./solve-preview";
+export { ExerciseStatement } from "./statement";
 export {
   ExerciseBriefForm,
   ExerciseCodeForm,

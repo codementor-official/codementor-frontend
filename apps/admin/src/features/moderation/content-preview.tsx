@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react/ssr";
 import { ApiClientError } from "@codementor/api-client";
 import { resolveVideo } from "@codementor/utils";
+import { ExerciseStatement } from "@codementor/solve";
 import { CourseCover, StatusBadge } from "@codementor/ui";
 import { useAdminApi } from "@/features/auth/admin-api";
 import { moderationApi } from "@/lib/api";
@@ -737,9 +738,10 @@ export function ExerciseSummary({
       {exercise.summary && <Quote label="Tóm tắt">{exercise.summary}</Quote>}
 
       {content.statement ? (
-        <div className="mt-4 rounded-lg border border-border p-4 text-sm whitespace-pre-wrap">
-          {content.statement}
-        </div>
+        <ExerciseStatement
+          className="mt-4 rounded-lg border border-border p-4"
+          text={content.statement}
+        />
       ) : (
         <Empty>Bài chưa có đề.</Empty>
       )}
