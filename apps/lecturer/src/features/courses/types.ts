@@ -220,6 +220,44 @@ export function keepKeys(previous: DraftChapter[], next: DraftChapter[]): DraftC
   });
 }
 
+/** Ghi lại id máy chủ cấp cho từng khoá. `saved` cùng thứ tự với cây đã gửi đi. */
+export function rememberIds(ids: Map<string, string>, sent: DraftChapter[], saved: DraftChapter[]) {
+  sent.forEach((chapter, index) => {
+    const stored = saved[index];
+    if (stored?.id) ids.set(chapter.key, stored.id);
+    chapter.lessons.forEach((lesson, position) => {
+      const id = stored?.lessons[position]?.id;
+      if (id) ids.set(lesson.key, id);
+    });
+  });
+}
+
+/**
+ * Điền id đã được cấp vào hàng còn thiếu. Gửi một hàng đã lưu mà quên id là backend xoá
+ * hàng cũ, tạo hàng mới, và thân bài đã ghi bị bỏ rơi.
+ */
+export function assignIds(chapters: DraftChapter[], ids: Map<string, string>): DraftChapter[] {
+  return chapters.map((chapter) => ({
+    ...chapter,
+    id: chapter.id ?? ids.get(chapter.key),
+    lessons: chapter.lessons.map((lesson) => ({ ...lesson, id: lesson.id ?? ids.get(lesson.key) })),
+  }));
+}
+
+/**
+ * Cây hiển thị sau một lần lưu. `sent` là cây lúc bấm gửi, `current` là cây lúc máy chủ trả
+ * lời. Không đổi gì trong lúc chờ thì lấy bản máy chủ, còn có sửa thì GIỮ bản đang soạn và
+ * chỉ nhận id: đè bản máy chủ lên là mất những gì vừa làm trong lúc chờ.
+ */
+export function mergeSaved(
+  sent: DraftChapter[],
+  current: DraftChapter[],
+  saved: DraftChapter[],
+  ids: Map<string, string>,
+): DraftChapter[] {
+  return current === sent ? keepKeys(sent, saved) : assignIds(current, ids);
+}
+
 export function toPayload(chapters: DraftChapter[]) {
   return chapters.map((chapter) => ({
     ...(chapter.id ? { id: chapter.id } : {}),

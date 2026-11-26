@@ -43,7 +43,10 @@ import {
 } from "@/features/courses/lesson-body";
 import {
   bearsExercise,
+  assignIds,
   keepKeys,
+  mergeSaved,
+  rememberIds,
   toDraft,
   toPayload,
   type Course,
@@ -264,10 +267,13 @@ export default function CourseStudioPage() {
     };
   }, []);
 
-  const run = async (action: () => Promise<Course>, done: string) => {
+  // Thao tác đổi trạng thái trả về khóa học để áp vào màn hình. "Lưu" trả `void`: nó tự gộp
+  // kết quả, áp lại lần nữa là đè mất những gì vừa sửa trong lúc chờ.
+  const run = async (action: () => Promise<Course | void>, done: string) => {
     setSaving(true);
     try {
-      apply(await action());
+      const updated = await action();
+      if (updated) apply(updated);
       toast.success(done);
     } catch (cause) {
       // Lỗi của một thao tác đi bằng toast; `error` chỉ còn giữ lỗi tải trang, thứ khiến
@@ -285,6 +291,16 @@ export default function CourseStudioPage() {
 
   // Trước early return: hook phải chạy ở mọi lần render.
   const unsavedDialog = useUnsavedGuard(dirty);
+  // Đường lưu đọc bản MỚI NHẤT qua ref: `ensureLessonId` được gọi từ một lượt tải video đã
+  // bắt đầu từ nhiều lần render trước, closure của nó giữ cây cũ.
+  const latest = useRef({ course, meta, chapters });
+  useEffect(() => {
+    latest.current = { course, meta, chapters };
+  });
+  // Id máy chủ đã cấp theo khoá, có ngay khi lưu xong, trước cả lần render kế tiếp.
+  const savedIds = useRef(new Map<string, string>());
+  // Các lượt lưu cây xếp hàng: hai lượt song song cùng gửi một bài chưa có id là tạo trùng.
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
 
   if (error && !course) {
     return (
@@ -358,18 +374,41 @@ export default function CourseStudioPage() {
   // id thật ở đầu nào cả (khác điều kiện mở khoá tự chọn trước đây, vốn phải trỏ tới id
   // bài khác nên một bài mới tạo trong CHÍNH lượt lưu này phải chờ lượt thứ hai mới có id
   // để trỏ tới). Backend tự suy toàn bộ cạnh phụ thuộc từ thứ tự chương/bài.
-  const saveAll = async (): Promise<Course> => {
+  const writeTree = async () => {
+    const { course: stored, meta: sentMeta, chapters: sent } = latest.current;
+    if (!stored || !sentMeta) return;
     await api.courses.update(id, {
-      ...(meta.slug !== course.slug ? { slug: meta.slug } : {}),
-      title: meta.title,
-      description: meta.description || null,
-      coverImageUrl: meta.coverImageUrl || null,
-      level: meta.level,
-      progressionMode: meta.progressionMode,
-      prerequisiteNote: meta.prerequisiteNote || null,
-      tagIds: meta.tagIds,
+      ...(sentMeta.slug !== stored.slug ? { slug: sentMeta.slug } : {}),
+      title: sentMeta.title,
+      description: sentMeta.description || null,
+      coverImageUrl: sentMeta.coverImageUrl || null,
+      level: sentMeta.level,
+      progressionMode: sentMeta.progressionMode,
+      prerequisiteNote: sentMeta.prerequisiteNote || null,
+      tagIds: sentMeta.tagIds,
     });
-    return api.courses.saveCurriculum(id, toPayload(chapters));
+    const rows = assignIds(sent, savedIds.current);
+    const saved = await api.courses.saveCurriculum(id, toPayload(rows));
+    const nextMeta = toMeta(saved);
+    const nextChapters = toDraft(saved.chapters ?? []);
+    rememberIds(savedIds.current, rows, nextChapters);
+    setCourse(saved);
+    // Ô nào bị sửa trong lúc chờ thì giữ chữ đang gõ, ô còn lại theo máy chủ.
+    setMeta((current) => {
+      if (!current || current === sentMeta) return nextMeta;
+      const edited = Object.entries(current).filter(
+        ([field, value]) => sentMeta[field as keyof Meta] !== value,
+      );
+      return { ...nextMeta, ...Object.fromEntries(edited) };
+    });
+    setChapters((current) => mergeSaved(sent, current, nextChapters, savedIds.current));
+    setSavedSignature(signature(nextMeta, nextChapters));
+  };
+
+  const saveTree = (): Promise<void> => {
+    const next = saveQueue.current.catch(() => undefined).then(writeTree);
+    saveQueue.current = next;
+    return next;
   };
 
   /**
@@ -377,41 +416,33 @@ export default function CourseStudioPage() {
    * ghi được. Dùng khi soạn thân bài/tải video CHƯA bấm nút "Lưu" chung: người soạn viết
    * ngay, hàm này tự lưu cây trước nếu cần thay vì bắt tự bấm "Lưu" ở đầu trang trước.
    */
-  const ensureLessonId = async (chapterIndex: number, lessonIndex: number): Promise<string> => {
-    const existing = chapters[chapterIndex]?.lessons[lessonIndex]?.id;
-    if (existing) return existing;
-    const saved = await saveAll();
-    apply(saved);
-    const newId = saved.chapters?.[chapterIndex]?.lessons[lessonIndex]?.id;
-    if (!newId) throw new Error("Không lưu được bài học — thử bấm Lưu ở đầu trang.");
-    return newId;
+  const ensureLessonId = async (lessonKey: string): Promise<string> => {
+    const find = () =>
+      savedIds.current.get(lessonKey) ??
+      latest.current.chapters.flatMap((chapter) => chapter.lessons).find((row) => row.key === lessonKey)?.id;
+    // Lượt lưu đang chạy có thể đã mang bài này đi rồi.
+    await saveQueue.current.catch(() => undefined);
+    if (!find()) await saveTree();
+    const lessonId = find();
+    if (!lessonId) throw new Error("Không lưu được bài học — thử bấm Lưu ở đầu trang.");
+    return lessonId;
   };
 
   /**
    * Nút "Lưu" chung ở đầu trang: lưu cây/metadata, rồi lưu thân của MỌI bài đã sửa. Chạy SAU
-   * khi cây đã lưu xong nên `lessonId` lấy từ `saved`, không phải từ `chapters` cũ (bài mới
-   * tạo chưa có id ở đó).
+   * khi cây đã lưu xong nên bài mới tạo đã có id.
    */
-  const saveEverything = async (): Promise<Course> => {
-    const saved = await saveAll();
-    try {
-      for (const { chapterIndex, lessonIndex, lesson, body } of unsaved) {
-        const lessonId = saved.chapters?.[chapterIndex]?.lessons[lessonIndex]?.id;
-        if (!lessonId) continue;
-        await api.courses.saveLessonContent(id, lessonId, toContent(lesson.type, body));
-        // Gõ tiếp trong lúc đang ghi thì bài vẫn còn bẩn, lần "Lưu" sau ghi nốt.
-        setBodies((current) =>
-          current[lesson.key] === body
-            ? { ...current, [lesson.key]: { ...body, dirty: false } }
-            : current,
-        );
-      }
-    } catch (cause) {
-      // Cây đã ghi rồi: giữ id vừa cấp, nếu không lần lưu sau tạo trùng bài.
-      apply(saved);
-      throw cause;
+  const saveEverything = async (): Promise<void> => {
+    await saveTree();
+    for (const { lesson, body } of unsaved) {
+      const lessonId = lesson.id ?? savedIds.current.get(lesson.key);
+      if (!lessonId) continue;
+      await api.courses.saveLessonContent(id, lessonId, toContent(lesson.type, body));
+      // Gõ tiếp trong lúc đang ghi thì bài vẫn còn bẩn, lần "Lưu" sau ghi nốt.
+      setBodies((current) =>
+        current[lesson.key] === body ? { ...current, [lesson.key]: { ...body, dirty: false } } : current,
+      );
     }
-    return saved;
   };
 
   return (
