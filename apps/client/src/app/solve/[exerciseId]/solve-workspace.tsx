@@ -343,7 +343,7 @@ export function SolveWorkspace({
                 </span>
               ))}
             </div>
-            <article className="prose-sm max-w-none text-sm leading-relaxed text-text [&_code]:rounded-sm [&_code]:bg-border-soft [&_code]:px-1 [&_code]:font-mono [&_code]:text-xs [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-ink-fixed [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:text-on-ink-fixed [&_strong]:font-semibold [&_strong]:text-navy">
+            <article className="rich-text">
               <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
                 {problem.description}
               </ReactMarkdown>

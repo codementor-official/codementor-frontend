@@ -255,7 +255,7 @@ export function CodeProblemForm() {
         }
       >
         {showPreview ? (
-          <div className="prose-sm min-h-40 rounded-md border border-border bg-bg p-4 text-sm leading-relaxed text-text">
+          <div className="rich-text min-h-40 rounded-md border border-border bg-bg p-4">
             {draft.statement.trim() ? (
               <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
                 {draft.statement}
