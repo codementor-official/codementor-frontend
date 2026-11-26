@@ -80,7 +80,7 @@ interface Props {
   onLoadBody: (lessonKey: string, body: LessonBody) => void;
   onPatchBody: (lessonKey: string, partial: Partial<LessonBody>, edited?: boolean) => void;
   /** Lưu cây (nếu cần) để một bài mới tạo có `id` thật, rồi trả về id đó. */
-  ensureLessonId: (chapterIndex: number, lessonIndex: number) => Promise<string>;
+  ensureLessonId: (lessonKey: string) => Promise<string>;
 }
 
 /** Tiêu đề một khối trong panel — cùng hình dạng với separator ở drawer danh sách. */
@@ -279,7 +279,7 @@ export function Inspector({
       chapterIndex={chapterIndex}
       courseId={courseId}
       disabled={disabled}
-      ensureLessonId={() => ensureLessonId(chapterIndex, lessonIndex)}
+      ensureLessonId={() => ensureLessonId(lesson.key)}
       exercises={exercises}
       key={lesson.key}
       lesson={lesson}
