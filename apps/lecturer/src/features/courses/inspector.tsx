@@ -323,10 +323,14 @@ function LessonInspector({
   // tạo này vì thế luôn đúng với bài đang chọn.
   const [loaded, setLoaded] = useState(!needsContent || !lesson.id);
 
+  // Chỉ bài đã có `id` TỪ LÚC MỞ panel mới có gì để nạp. Bài được cấp `id` giữa chừng
+  // (bấm "Lưu", tải video) đang giữ bản mới nhất ngay trên màn hình — nạp lại là xoá nó.
+  const [storedId] = useState(lesson.id);
+
   useEffect(() => {
-    if (!needsContent || !lesson.id) return;
+    if (!needsContent || !storedId) return;
     let cancelled = false;
-    loadContent(lesson.id)
+    loadContent(storedId)
       .then((content) => {
         if (cancelled) return;
         setHtml(content?.contentHtml ?? "");
@@ -341,7 +345,7 @@ function LessonInspector({
     return () => {
       cancelled = true;
     };
-  }, [lesson.id, needsContent, loadContent]);
+  }, [storedId, needsContent, loadContent]);
 
   /** Thứ đang chặn lưu thân bài, hoặc `undefined` khi lưu được. */
   const contentBlocker = needsContent
