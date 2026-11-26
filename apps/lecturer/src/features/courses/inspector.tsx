@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   BracketsCurlyIcon as Braces,
   CheckIcon as Check,
@@ -38,6 +46,13 @@ import {
   type LessonContent,
   type VideoUploadConfig,
 } from "@/features/courses/types";
+import {
+  EMPTY_BODY,
+  toBody,
+  type BodyDraft,
+  type BodyDrafts,
+  type LessonBody,
+} from "@/features/courses/lesson-body";
 import { api } from "@/lib/api";
 import type { Selection } from "@/features/courses/curriculum-tree";
 import {
@@ -48,31 +63,24 @@ import {
   type ExerciseListItem,
 } from "@codementor/solve";
 
-/** Cho trang cha gọi hàm lưu thân bài đang mở, từ nút "Lưu" chung ở đầu trang. */
-export type ContentSaveRef = { current: ((lessonId: string) => Promise<void>) | null };
-
 interface Props {
   chapters: DraftChapter[];
   /** Cần cho đường ký URL tải video: `POST /courses/:id/lessons/:lessonId/video-upload-url`. */
   courseId: string;
   selection: Selection;
-  onChange: (chapters: DraftChapter[]) => void;
+  /** Phải nhận hàm cập nhật: video tải xong có thể về sau khi cây đã đổi. */
+  onChange: Dispatch<SetStateAction<DraftChapter[]>>;
   disabled?: boolean;
   /** Bài code để gắn vào ô. Chỉ nạp khi thật sự cần — studio không phải màn duyệt bài. */
   exercises: ExerciseListItem[];
   loadContent: (lessonId: string) => Promise<LessonContent | null>;
-  saveContent: (lessonId: string, content: LessonContent) => Promise<void>;
+  /** Thân bài đã nạp hoặc đang sửa. Trang giữ nó, nên đổi bài không làm mất gì. */
+  bodies: BodyDrafts;
+  /** Nội dung vừa nạp từ máy chủ — không đè lên bản đang sửa. */
+  onLoadBody: (lessonKey: string, body: LessonBody) => void;
+  onPatchBody: (lessonKey: string, partial: Partial<LessonBody>, edited?: boolean) => void;
   /** Lưu cây (nếu cần) để một bài mới tạo có `id` thật, rồi trả về id đó. */
   ensureLessonId: (chapterIndex: number, lessonIndex: number) => Promise<string>;
-  /**
-   * Studio chỉ còn MỘT nút "Lưu" ở đầu trang. Bài đang mở (nếu có thân bài) đăng ký hàm
-   * lưu của nó vào đây khi mount, gỡ khi unmount/đổi bài — nút "Lưu" gọi nó sau khi lưu
-   * cây xong, với `lessonId` thật vừa có được. `null` khi mục đang chọn không có thân bài
-   * (chương, hoặc ô bài code).
-   */
-  contentSaveRef: ContentSaveRef;
-  /** Lỗi ở thân bài đang mở (ví dụ URL video sai), để nút "Lưu" chung khoá lại đúng lúc. */
-  onContentBlockerChange: (blocker: string | undefined) => void;
 }
 
 /** Tiêu đề một khối trong panel — cùng hình dạng với separator ở drawer danh sách. */
@@ -143,8 +151,8 @@ function ToggleRow({
  *
  * Nội dung bài lý thuyết được lưu RIÊNG, không đi cùng lệnh ghi curriculum: nó nằm ở
  * MongoDB và chỉ ghi được khi bài đã có `id` thật. Soạn thì soạn được ngay dù bài còn
- * chưa có id — `LessonInspector.persist` tự lưu cây trước nếu cần (xem `ensureLessonId`),
- * người soạn không phải tự bấm "Lưu" ở đầu trang trước khi viết.
+ * chưa có id. Thân bài đang soạn nằm ở trang cha (`bodies`), và nút "Lưu" của trang ghi
+ * cây trước rồi mới ghi thân của mọi bài đã sửa.
  */
 export function Inspector({
   chapters,
@@ -154,10 +162,10 @@ export function Inspector({
   disabled,
   exercises,
   loadContent,
-  saveContent,
+  bodies,
+  onLoadBody,
+  onPatchBody,
   ensureLessonId,
-  contentSaveRef,
-  onContentBlockerChange,
 }: Props) {
   if (!selection) {
     return (
@@ -255,16 +263,20 @@ export function Inspector({
   if (lessonIndex < 0) return null;
   const lesson = chapter.lessons[lessonIndex];
 
-  const patchLesson = (partial: Partial<DraftLesson>) => {
-    const lessons = [...chapter.lessons];
-    lessons[lessonIndex] = { ...lesson, ...partial };
-    patchChapter({ lessons });
-  };
+  // Cập nhật theo khoá trên cây MỚI NHẤT: video đang tải của bài này có thể xong sau khi
+  // người soạn đã sang bài khác và thêm bớt hàng — ghi cả mảng cũ là xoá mất chúng.
+  const patchLesson = (partial: Partial<DraftLesson>) =>
+    onChange((current) =>
+      current.map((item) => ({
+        ...item,
+        lessons: item.lessons.map((row) => (row.key === lesson.key ? { ...row, ...partial } : row)),
+      })),
+    );
 
   return (
     <LessonInspector
+      body={bodies[lesson.key]}
       chapterIndex={chapterIndex}
-      contentSaveRef={contentSaveRef}
       courseId={courseId}
       disabled={disabled}
       ensureLessonId={() => ensureLessonId(chapterIndex, lessonIndex)}
@@ -273,39 +285,39 @@ export function Inspector({
       lesson={lesson}
       lessonIndex={lessonIndex}
       loadContent={loadContent}
-      onContentBlockerChange={onContentBlockerChange}
+      onLoadBody={onLoadBody}
       onPatch={patchLesson}
-      saveContent={saveContent}
+      onPatchBody={onPatchBody}
     />
   );
 }
 
 function LessonInspector({
   lesson,
+  body,
   onPatch,
   disabled,
   exercises,
   loadContent,
-  saveContent,
+  onLoadBody,
+  onPatchBody,
   ensureLessonId,
   chapterIndex,
   lessonIndex,
   courseId,
-  contentSaveRef,
-  onContentBlockerChange,
 }: {
   lesson: DraftLesson;
+  body: BodyDraft | undefined;
   onPatch: (partial: Partial<DraftLesson>) => void;
   disabled?: boolean;
   exercises: ExerciseListItem[];
   loadContent: (lessonId: string) => Promise<LessonContent | null>;
-  saveContent: (lessonId: string, content: LessonContent) => Promise<void>;
+  onLoadBody: Props["onLoadBody"];
+  onPatchBody: Props["onPatchBody"];
   ensureLessonId: () => Promise<string>;
   chapterIndex: number;
   lessonIndex: number;
   courseId: string;
-  contentSaveRef: ContentSaveRef;
-  onContentBlockerChange: (blocker: string | undefined) => void;
 }) {
   // Ô bài code không có thân bài riêng. Bài lý thuyết thì LUÔN soạn được ngay — kể cả
   // trước khi có `id` thật — chỉ việc NẠP nội dung cũ mới cần đợi id (bài mới thì
@@ -314,57 +326,43 @@ function LessonInspector({
 
   const isVideo = lesson.type === "video";
 
-  const [html, setHtml] = useState<string>("");
-  const [summary, setSummary] = useState<string>("");
-  const [videoUrl, setVideoUrl] = useState<string>("");
-  // Thời lượng video, giây. `null` = chưa đọc được — xem `lessonDurationError`.
-  const [videoSeconds, setVideoSeconds] = useState<number | null>(null);
-  // Component được key theo `lesson.key` nên nó remount mỗi lần đổi bài; giá trị khởi
-  // tạo này vì thế luôn đúng với bài đang chọn.
-  const [loaded, setLoaded] = useState(!needsContent || !lesson.id);
+  const { html, summary, videoUrl, videoSeconds } = body ?? EMPTY_BODY;
+  const lessonKey = lesson.key;
 
   // Chỉ bài đã có `id` TỪ LÚC MỞ panel mới có gì để nạp. Bài được cấp `id` giữa chừng
-  // (bấm "Lưu", tải video) đang giữ bản mới nhất ngay trên màn hình — nạp lại là xoá nó.
+  // (bấm "Lưu", tải video) đang giữ bản mới nhất ở trang — không có gì để nạp thêm.
   const [storedId] = useState(lesson.id);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const cached = body !== undefined;
+  // Chưa nạp xong thì khoá ô soạn: gõ vào lúc này rồi lưu là ghi đè thân bài trên máy chủ.
+  const loaded = cached || !needsContent || !storedId;
 
   useEffect(() => {
-    if (!needsContent || !storedId) return;
+    if (!needsContent || !storedId || cached) return;
     let cancelled = false;
     loadContent(storedId)
       .then((content) => {
-        if (cancelled) return;
-        setHtml(content?.contentHtml ?? "");
-        setSummary(content?.summary ?? "");
-        setVideoUrl(content?.media?.url ?? "");
-        setVideoSeconds(content?.media?.durationSeconds ?? null);
-        setLoaded(true);
+        if (!cancelled) onLoadBody(lessonKey, toBody(content));
       })
       .catch(() => {
-        if (!cancelled) setLoaded(true);
+        if (!cancelled) setLoadFailed(true);
       });
     return () => {
       cancelled = true;
     };
-  }, [storedId, needsContent, loadContent]);
+  }, [storedId, needsContent, cached, loadContent, onLoadBody, lessonKey]);
 
-  /** Thứ đang chặn lưu thân bài, hoặc `undefined` khi lưu được. */
-  const contentBlocker = needsContent
-    ? ((isVideo ? url(videoUrl, "URL video") : undefined) ??
-      (isVideo
-        ? lessonDurationError(
-            lesson.durationMinutes.trim() ? Number(lesson.durationMinutes) : null,
-            videoSeconds,
-          )
-        : undefined) ??
-      (summary.trim().length > 2000 ? "Tóm tắt tối đa 2000 ký tự" : undefined))
-    : undefined;
+  const setHtml = useCallback(
+    (next: string) => onPatchBody(lessonKey, { html: next }),
+    [onPatchBody, lessonKey],
+  );
 
   // Đổi nguồn video thì thời lượng đo được của video CŨ lập tức vô nghĩa. Không xoá ở đây
   // là giữ lại một con số thuộc về video khác, và ràng buộc thời lượng sẽ gác nhầm số đó.
-  const changeVideoUrl = useCallback((next: string) => {
-    setVideoUrl(next);
-    setVideoSeconds(null);
-  }, []);
+  const changeVideoUrl = useCallback(
+    (next: string) => onPatchBody(lessonKey, { videoUrl: next, videoSeconds: null }),
+    [onPatchBody, lessonKey],
+  );
 
   /*
    * `applyVideoDuration` phải giữ chữ ký ỔN ĐỊNH: nó đi thẳng vào deps của hiệu ứng gắn
@@ -383,60 +381,18 @@ function LessonInspector({
    * Chỉ điền khi ô đang trống hoặc ĐANG NGẮN HƠN video: một con số dài hơn là người soạn
    * cố ý cộng thêm thời gian đọc tài liệu/làm bài, và ghi đè nó là xoá một quyết định.
    */
-  const applyVideoDuration = useCallback((seconds: number) => {
-    setVideoSeconds(seconds);
-    const { durationMinutes, onPatch: patch } = latest.current;
-    const needed = minimumLessonMinutes(seconds);
-    const current = durationMinutes.trim() ? Number(durationMinutes) : null;
-    if (current === null || !Number.isFinite(current) || current < needed) {
-      patch({ durationMinutes: String(needed) });
-    }
-  }, []);
-
-  // Bài video ghi `media`, bài lý thuyết ghi `contentHtml`. Gửi cả hai trong mọi trường
-  // hợp sẽ ghi đè thân bài cũ bằng chuỗi rỗng khi người soạn đổi một bài lý thuyết sang
-  // video rồi đổi ngược lại. `lessonId` do trang cha truyền vào — studio chỉ còn một nút
-  // "Lưu" ở đầu trang, gọi hàm này SAU KHI cây đã lưu xong nên id lúc này luôn có thật.
-  const persist = useCallback(
-    async (lessonId: string) => {
-      await saveContent(lessonId, {
-        summary: summary || undefined,
-        ...(isVideo
-          ? {
-              ...(videoUrl.trim()
-                ? {
-                    media: {
-                      url: videoUrl.trim(),
-                      // Ghi kèm để màn học viên biết đủ 80% là bao nhiêu giây mà không phải
-                      // đợi SDK trả lời. Thiếu thì bỏ hẳn khoá — `undefined` lọt qua
-                      // `IsInt()` của DTO, còn `null` thì không.
-                      ...(videoSeconds !== null ? { durationSeconds: Math.round(videoSeconds) } : {}),
-                    },
-                  }
-                : {}),
-            }
-          : { contentHtml: html }),
-      });
+  const applyVideoDuration = useCallback(
+    (seconds: number) => {
+      onPatchBody(lessonKey, { videoSeconds: seconds }, false);
+      const { durationMinutes, onPatch: patch } = latest.current;
+      const needed = minimumLessonMinutes(seconds);
+      const current = durationMinutes.trim() ? Number(durationMinutes) : null;
+      if (current === null || !Number.isFinite(current) || current < needed) {
+        patch({ durationMinutes: String(needed) });
+      }
     },
-    [saveContent, isVideo, videoUrl, videoSeconds, summary, html],
+    [onPatchBody, lessonKey],
   );
-
-  // Đăng ký hàm lưu thân bài của MỤC ĐANG MỞ vào ref của trang cha, để nút "Lưu" chung
-  // gọi được. Component này remount mỗi lần đổi bài (key={lesson.key}), nên cleanup ở
-  // đây đã đủ để gỡ đăng ký khi chuyển sang bài khác hoặc không có thân bài để lưu.
-  useEffect(() => {
-    if (!needsContent) {
-      contentSaveRef.current = null;
-      onContentBlockerChange(undefined);
-      return;
-    }
-    contentSaveRef.current = persist;
-    onContentBlockerChange(contentBlocker);
-    return () => {
-      contentSaveRef.current = null;
-      onContentBlockerChange(undefined);
-    };
-  }, [needsContent, persist, contentBlocker, contentSaveRef, onContentBlockerChange]);
 
   // Kiểu cũ (video, trắc nghiệm…) không mời chọn mới nữa, nhưng một bài đang mang kiểu đó
   // phải giữ được nó — bỏ khỏi danh sách là lặng lẽ đổi kiểu bài của người ta.
@@ -556,8 +512,9 @@ function LessonInspector({
             >
               <input
                 className={inputClassName}
+                disabled={!loaded}
                 id="lesson-summary"
-                onChange={(event) => setSummary(event.target.value)}
+                onChange={(event) => onPatchBody(lessonKey, { summary: event.target.value })}
                 value={summary}
               />
             </Field>
@@ -565,7 +522,7 @@ function LessonInspector({
             {isVideo ? (
               <VideoSourcePicker
                 courseId={courseId}
-                disabled={disabled}
+                disabled={disabled || !loaded}
                 durationSeconds={videoSeconds}
                 ensureLessonId={ensureLessonId}
                 lessonId={lesson.id}
@@ -582,7 +539,11 @@ function LessonInspector({
                 {loaded ? (
                   <RichTextEditor onChange={setHtml} value={html} />
                 ) : (
-                  <p className="text-sm text-muted-foreground">Đang tải nội dung…</p>
+                  <p className="text-sm text-muted-foreground">
+                    {loadFailed
+                      ? "Không tải được nội dung bài. Chọn lại bài này để thử lại."
+                      : "Đang tải nội dung…"}
+                  </p>
                 )}
               </div>
             )}
@@ -702,7 +663,7 @@ function VideoSourcePicker({
       // SAU `onChange`: đổi nguồn video sẽ xoá thời lượng cũ (xem `changeVideoUrl`), nên
       // ghi con số mới trước nó là ghi vào chỗ sắp bị dọn.
       if (seconds !== null) onDuration(seconds);
-      toast.success("Đã tải video lên. Bấm “Lưu nội dung bài” để gắn vào bài học.");
+      toast.success("Đã tải video lên. Bấm “Lưu” để gắn vào bài học.");
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Tải video lên thất bại");
     } finally {

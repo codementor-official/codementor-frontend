@@ -32,14 +32,22 @@ import { CoverImageField } from "@/components/form/cover-image-field";
 import { useUnsavedGuard } from "@/components/page/unsaved-guard";
 import { clearDraft, draftStorageKey, readDraft, useDraftAutosave, type StoredDraft } from "@/hooks/use-studio-draft";
 import { CurriculumTree, type Selection } from "@/features/courses/curriculum-tree";
-import { Inspector, type ContentSaveRef } from "@/features/courses/inspector";
+import { Inspector } from "@/features/courses/inspector";
 import {
+  bodyProblem,
+  patchBody,
+  toContent,
+  unsavedLessons,
+  type BodyDrafts,
+  type LessonBody,
+} from "@/features/courses/lesson-body";
+import {
+  bearsExercise,
   keepKeys,
   toDraft,
   toPayload,
   type Course,
   type DraftChapter,
-  type LessonContent,
 } from "@/features/courses/types";
 import type { ExerciseListItem } from "@codementor/solve";
 import { CONTENT_STATUS_LABELS, CONTENT_STATUS_TONES, LEVELS, LEVEL_LABELS } from "@/features/roadmaps/types";
@@ -73,6 +81,13 @@ interface Meta {
  * Cây đi qua `toPayload` chứ không so trực tiếp: `toDraft` sinh `key` ngẫu nhiên cho mỗi
  * hàng, nên hai bản sao y hệt nhau vẫn khác chuỗi JSON.
  */
+/** Bản nháp cứu hộ trong localStorage. `bodies` chỉ gồm bài chưa lưu; nháp cũ không có nó. */
+interface StudioDraft {
+  meta: Meta;
+  chapters: DraftChapter[];
+  bodies?: BodyDrafts;
+}
+
 function signature(meta: Meta, chapters: DraftChapter[]): string {
   return JSON.stringify([meta, toPayload(chapters)]);
 }
@@ -163,14 +178,22 @@ export default function CourseStudioPage() {
   useEffect(() => {
     chaptersRef.current = chapters;
   }, [chapters]);
-  // Lỗi ở thân bài của mục đang mở trong Inspector (ví dụ URL video sai) — gộp vào
-  // `blocker` chung để nút "Lưu" duy nhất khoá đúng lúc. Xem inspector.tsx.
-  const [contentBlocker, setContentBlocker] = useState<string | undefined>(undefined);
-  // Nút "Lưu" chung gọi hàm mà Inspector đăng ký vào đây, SAU KHI cây đã lưu xong.
-  const contentSaveRef = useRef<ContentSaveRef["current"]>(null);
+  // Thân bài theo khoá của từng bài. Ở đây chứ không ở Inspector để đổi bài không mất gì,
+  // và để một lần "Lưu" ghi được mọi bài đã sửa.
+  const [bodies, setBodies] = useState<BodyDrafts>({});
+  const loadBody = useCallback(
+    (key: string, body: LessonBody) =>
+      setBodies((current) => (current[key] ? current : { ...current, [key]: { ...body, dirty: false } })),
+    [],
+  );
+  const patchLessonBody = useCallback(
+    (key: string, partial: Partial<LessonBody>, edited?: boolean) =>
+      setBodies((current) => patchBody(current, key, partial, edited)),
+    [],
+  );
   // Nháp phát hiện trong localStorage lúc mở trang, còn chờ người dùng chọn khôi phục
   // hay bỏ qua — xem effect nạp khóa học bên dưới và ô thoại render ở cuối component.
-  const [pendingDraft, setPendingDraft] = useState<StoredDraft<{ meta: Meta; chapters: DraftChapter[] }> | null>(null);
+  const [pendingDraft, setPendingDraft] = useState<StoredDraft<StudioDraft> | null>(null);
 
   const apply = useCallback((loaded: Course) => {
     const nextMeta = toMeta(loaded);
@@ -189,9 +212,12 @@ export default function CourseStudioPage() {
         if (cancelled) return;
         apply(loaded);
         // Nháp cũ trùng với bản vừa tải thì không hỏi gì cả — dọn luôn cho gọn.
-        const draft = readDraft<{ meta: Meta; chapters: DraftChapter[] }>(draftStorageKey("course", id));
+        const draft = readDraft<StudioDraft>(draftStorageKey("course", id));
         if (!draft) return;
-        if (signature(draft.value.meta, draft.value.chapters) === signature(toMeta(loaded), toDraft(loaded.chapters ?? []))) {
+        if (
+          Object.keys(draft.value.bodies ?? {}).length === 0 &&
+          signature(draft.value.meta, draft.value.chapters) === signature(toMeta(loaded), toDraft(loaded.chapters ?? []))
+        ) {
           clearDraft(draftStorageKey("course", id));
         } else {
           setPendingDraft(draft);
@@ -208,10 +234,17 @@ export default function CourseStudioPage() {
   // Ghi nháp mỗi khi có thay đổi chưa lưu, xoá khi khớp lại bản đã lưu (vừa tải xong,
   // hoặc vừa lưu thành công). Đủ nhanh cho một bản nháp cỡ vài chục bài — không cần
   // debounce cho `localStorage.setItem` ở quy mô này.
+  const unsaved = unsavedLessons(chapters, bodies);
+  const dirty =
+    Boolean(meta) && (signature(meta as Meta, chapters) !== savedSignature || unsaved.length > 0);
   useDraftAutosave(
     draftStorageKey("course", id),
-    { meta: meta as Meta, chapters },
-    { ready: meta !== null, dirty: Boolean(meta) && signature(meta as Meta, chapters) !== savedSignature },
+    {
+      meta: meta as Meta,
+      chapters,
+      bodies: Object.fromEntries(unsaved.map(({ lesson, body }) => [lesson.key, body])),
+    },
+    { ready: meta !== null, dirty },
   );
 
   useEffect(() => {
@@ -249,17 +282,9 @@ export default function CourseStudioPage() {
     (lessonId: string) => api.courses.lessonContent(id, lessonId),
     [id],
   );
-  const saveContent = useCallback(
-    async (lessonId: string, content: LessonContent) => {
-      await api.courses.saveLessonContent(id, lessonId, content);
-    },
-    [id],
-  );
 
   // Trước early return: hook phải chạy ở mọi lần render.
-  const unsavedDialog = useUnsavedGuard(
-    Boolean(meta) && signature(meta as Meta, chapters) !== savedSignature,
-  );
+  const unsavedDialog = useUnsavedGuard(dirty);
 
   if (error && !course) {
     return (
@@ -311,8 +336,19 @@ export default function CourseStudioPage() {
     return problem ? [problem] : [];
   })[0];
 
+  // Thân bài: mọi bài đã sửa, cộng bài đang mở (như trước nay).
+  const selectedKey = selection?.kind === "lesson" ? selection.lessonKey : null;
+  const contentProblem = chapters.flatMap((chapter, chapterIndex) =>
+    chapter.lessons.flatMap((lesson, lessonIndex) => {
+      const body = bodies[lesson.key];
+      if (!body || bearsExercise(lesson.type) || !(body.dirty || lesson.key === selectedKey)) return [];
+      const problem = bodyProblem(lesson, body);
+      return problem ? [`Chương ${chapterIndex + 1} · Bài ${lessonIndex + 1}: ${problem}`] : [];
+    }),
+  )[0];
+
   const blocker = metaValid
-    ? (chapterProblem ?? lessonProblem ?? contentBlocker)
+    ? (chapterProblem ?? lessonProblem ?? contentProblem)
     : "Còn ô chưa hợp lệ ở tab “Thông tin khóa học”";
 
   // Metadata trước, cây sau: cây trả về đã kèm số chương/bài do trigger cập nhật, nên
@@ -352,24 +388,28 @@ export default function CourseStudioPage() {
   };
 
   /**
-   * Nút "Lưu" chung ở đầu trang: lưu cây/metadata, rồi lưu luôn thân bài của mục đang mở
-   * trong Inspector (nếu có) — studio chỉ còn MỘT nút lưu cho cả trang. Chạy SAU khi cây
-   * đã lưu xong nên `lessonId` lấy từ `saved`, không phải từ `chapters` cũ (bài mới tạo
-   * chưa có id ở đó).
+   * Nút "Lưu" chung ở đầu trang: lưu cây/metadata, rồi lưu thân của MỌI bài đã sửa. Chạy SAU
+   * khi cây đã lưu xong nên `lessonId` lấy từ `saved`, không phải từ `chapters` cũ (bài mới
+   * tạo chưa có id ở đó).
    */
   const saveEverything = async (): Promise<Course> => {
     const saved = await saveAll();
-    if (contentSaveRef.current && selection?.kind === "lesson") {
-      const chapterIndex = chapters.findIndex((chapter) => chapter.key === selection.chapterKey);
-      const lessonIndex =
-        chapterIndex >= 0
-          ? chapters[chapterIndex].lessons.findIndex((lesson) => lesson.key === selection.lessonKey)
-          : -1;
-      const freshLessonId =
-        chapterIndex >= 0 && lessonIndex >= 0
-          ? saved.chapters?.[chapterIndex]?.lessons[lessonIndex]?.id
-          : undefined;
-      if (freshLessonId) await contentSaveRef.current(freshLessonId);
+    try {
+      for (const { chapterIndex, lessonIndex, lesson, body } of unsaved) {
+        const lessonId = saved.chapters?.[chapterIndex]?.lessons[lessonIndex]?.id;
+        if (!lessonId) continue;
+        await api.courses.saveLessonContent(id, lessonId, toContent(lesson.type, body));
+        // Gõ tiếp trong lúc đang ghi thì bài vẫn còn bẩn, lần "Lưu" sau ghi nốt.
+        setBodies((current) =>
+          current[lesson.key] === body
+            ? { ...current, [lesson.key]: { ...body, dirty: false } }
+            : current,
+        );
+      }
+    } catch (cause) {
+      // Cây đã ghi rồi: giữ id vừa cấp, nếu không lần lưu sau tạo trùng bài.
+      apply(saved);
+      throw cause;
     }
     return saved;
   };
@@ -401,6 +441,7 @@ export default function CourseStudioPage() {
               if (!pendingDraft) return;
               setMeta(pendingDraft.value.meta);
               setChapters(pendingDraft.value.chapters);
+              setBodies(pendingDraft.value.bodies ?? {});
               setSelection(null);
               setPendingDraft(null);
             }}
@@ -542,16 +583,16 @@ export default function CourseStudioPage() {
             content: (
               <div className="h-full overflow-y-auto p-3">
                 <Inspector
+                  bodies={bodies}
                   chapters={chapters}
-                  contentSaveRef={contentSaveRef}
                   courseId={id}
                   disabled={locked}
                   ensureLessonId={ensureLessonId}
                   exercises={exercises}
                   loadContent={loadContent}
                   onChange={setChapters}
-                  onContentBlockerChange={setContentBlocker}
-                  saveContent={saveContent}
+                  onLoadBody={loadBody}
+                  onPatchBody={patchLessonBody}
                   selection={selection}
                 />
               </div>
