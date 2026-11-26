@@ -483,15 +483,17 @@ function LessonRow({
         )}
         <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
         {/* Bài lý thuyết không có `contentRef` là một ô rỗng với học viên — đúng thứ mà
-         * việc duyệt phải bắt được. Bài code chưa công khai thì học viên mở ra cũng
-         * không thấy gì, dù dòng chương trông như đã đủ bài. */}
+         * việc duyệt phải bắt được. Bài code chưa công khai được duyệt cùng khóa học,
+         * nên người duyệt phải mở ra đọc đề và test case ngay tại đây. */}
         {emptyTheory && (
           <span className="shrink-0 text-destructive">chưa có nội dung</span>
         )}
         {!isTheory &&
           lesson.exerciseStatus &&
           lesson.exerciseStatus !== "published" && (
-            <span className="shrink-0 text-warning">chưa công khai</span>
+            <span className="shrink-0 text-warning">
+              chưa công khai, sẽ duyệt cùng khóa học
+            </span>
           )}
       </button>
 
